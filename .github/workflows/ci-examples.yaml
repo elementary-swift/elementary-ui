@@ -19,9 +19,9 @@ jobs:
     strategy:
       matrix:
         swift:
-          - image: swift:6.2.1
-            wask-sdk-url: https://download.swift.org/swift-6.2.1-release/wasm-sdk/swift-6.2.1-RELEASE/swift-6.2.1-RELEASE_wasm.artifactbundle.tar.gz
-            wasm-sdk-checksum: 482b9f95462b87bedfafca94a092cf9ec4496671ca13b43745097122d20f18af
+          - image: swift:6.2.3
+            wask-sdk-url: https://download.swift.org/swift-6.2.3-release/wasm-sdk/swift-6.2.3-RELEASE/swift-6.2.3-RELEASE_wasm.artifactbundle.tar.gz
+            wasm-sdk-checksum: 394040ecd5260e68bb02f6c20aeede733b9b90702c2204e178f3e42413edad2a
         examples:
           - Examples/Swiftle
           - Examples/Basic
