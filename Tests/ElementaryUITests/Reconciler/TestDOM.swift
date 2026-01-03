@@ -377,8 +377,10 @@ func trackUpdating(@HTMLBuilder _ view: @escaping () -> some View, toggle: () ->
 }
 
 extension TestDOM {
-    func mount(_ view: @escaping () -> some View) {
-        _ = ApplicationRuntime(dom: self, domRoot: self.root, appView: DeferredResolutionView(root: view))
+    @discardableResult
+    func mount(_ view: @escaping () -> some View) -> MountedApplication {
+        let runtime = ApplicationRuntime(dom: self, domRoot: self.root, appView: DeferredResolutionView(root: view))
+        return MountedApplication(unmount: runtime.unmount)
     }
 }
 

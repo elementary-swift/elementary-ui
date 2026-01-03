@@ -50,6 +50,27 @@ struct ReconcilerUpdateTests {
 
         #expect(calls == ["Outer", "Inner", "value: 1"])
     }
+
+    @Test
+    func unmountsApplication() {
+        nonisolated(unsafe) var deinitCount = 0
+        let dom = TestDOM()
+        let app = dom.mount {
+            p {
+                DeinitSnifferView {
+                    deinitCount += 1
+                }
+            }
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+        app.unmount()
+        dom.runNextFrame()
+
+        #expect(deinitCount == 1)
+        #expect(!dom.hasWorkScheduled)
+        #expect(dom.ops == [.removeChild(parent: "<>", child: "<p>")])
+    }
 }
 
 @Reactive

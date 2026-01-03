@@ -144,7 +144,7 @@ public final class _ElementNode: _Reconcilable {
         let c = self.child.take()!
         c.unmount(&context)
 
-        for modifier in mountedModifieres! {
+        for modifier in mountedModifieres ?? [] {
             modifier.unmount(&context)
         }
         self.mountedModifieres = nil

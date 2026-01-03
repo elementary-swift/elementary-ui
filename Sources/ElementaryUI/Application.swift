@@ -44,10 +44,17 @@ public struct Application<ContentView: View>: ~Copyable {
 ///     // Future: mounted.unmount() to clean up
 /// }
 /// ```
-///
-/// - Note: Future versions will provide methods to control the application lifecycle.
 public struct MountedApplication: ~Copyable {
-    // TODO: unmounting goes here
+    private var _unmount: () -> Void
+
+    init(unmount: @escaping () -> Void) {
+        self._unmount = unmount
+    }
+
+    /// Removes the application from the DOM and cleans up all resources.
+    public consuming func unmount() {
+        _unmount()
+    }
 }
 
 extension Application {
@@ -87,15 +94,12 @@ extension Application {
     ///   element cannot be found.
     @discardableResult
     public consuming func mount(in element: DOMElementSelector) -> MountedApplication? {
-        let dom = JSKitDOMInteractor()
-
-        guard let domNode = element.findDOMNode(dom: dom) else {
+        guard let domNode = element.findDOMNode(dom: JSKitDOMInteractor.shared) else {
             logError("Mounting application failed: no DOM node found for \(element)")
             return nil
         }
 
-        // TODO: wire up unmounting
-        _ = ApplicationRuntime(dom: dom, domRoot: domNode, appView: contentView)
-        return MountedApplication()
+        let runtime = ApplicationRuntime(dom: JSKitDOMInteractor.shared, domRoot: domNode, appView: contentView)
+        return MountedApplication(unmount: runtime.unmount)
     }
 }
