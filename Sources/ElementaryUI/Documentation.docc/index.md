@@ -19,9 +19,9 @@ struct Counter {
 }
 ```
 
-## Guides
+## Get Started
 
-*Coming soon*
+Visit the guide at [**elementary.codes**](https://elementary.codes).
 
 ## Mounting an application
 - ``Application``

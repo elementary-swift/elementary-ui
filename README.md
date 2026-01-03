@@ -1,5 +1,7 @@
 <p align="center">
-  <img src="https://elementary-swift.github.io/assets/elementary-logo.svg" width="125px" alt="Elementary Logo">
+  <a href="https://elementary.codes">
+    <img src="https://elementary-swift.github.io/assets/elementary-logo.svg" width="125px" alt="Elementary Logo">
+  </a>
 </p>
 
 # ElementaryUI - A Swift Frontend Framework
@@ -48,9 +50,8 @@ Go from zero to Swift-in-the-browser in minutes, with the **[Vite Starter](https
 
 ## Guides & Documentation
 
-*Coming soon*
-
-[API docs](https://swiftpackageindex.com/elementary-swift/elementary-ui/documentation)
+- **Guide**: [elementary.codes](https://elementary.codes)
+- **API docs**: [Swift Package Index](https://swiftpackageindex.com/elementary-swift/elementary-ui/documentation)
 
 ## Example
 
