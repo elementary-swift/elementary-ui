@@ -148,8 +148,9 @@ public extension Animation {
     /// - Parameter delay: The delay in seconds before the animation starts.
     /// - Returns: An animation with the added delay.
     consuming func delay(_ delay: Double) -> Self {
-        self.delay = delay + self.delay
-        return self
+        var copy = consume self
+        copy.delay += delay
+        return copy
     }
 
     /// Multiplies the speed of the animation by the specified factor.
@@ -185,9 +186,10 @@ public extension Animation {
             return self
         }
 
-        self.delay = self.delay / speed
-        self.speed = speed * self.speed
-        return self
+        var copy = consume self
+        copy.delay /= speed
+        copy.speed *= speed
+        return copy
     }
 }
 

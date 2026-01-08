@@ -1,13 +1,19 @@
 extension DOM {
     struct Node: Hashable {
+        private let id: ObjectIdentifier
         let ref: AnyObject
 
+        init<T: AnyObject>(ref: T) {
+            self.ref = ref
+            self.id = ObjectIdentifier(ref)
+        }
+
         func hash(into hasher: inout Hasher) {
-            hasher.combine(ObjectIdentifier(ref))
+            hasher.combine(id)
         }
 
         static func == (lhs: Node, rhs: Node) -> Bool {
-            ObjectIdentifier(lhs.ref) == ObjectIdentifier(rhs.ref)
+            lhs.id == rhs.id
         }
     }
 

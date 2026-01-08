@@ -95,7 +95,7 @@ struct DOMEffectView<Effect: DOMElementModifier, Wrapped: View>: View {
     ) -> _MountedNode {
         let effect = Effect(value: view.value, upstream: context.modifiers, &tx)
 
-        #if hasFeature(Embedded)
+        #if hasFeature(Embedded) && compiler(<6.3)
         if __omg_this_was_annoying_I_am_false {
             var context = _CommitContext(
                 dom: JSKitDOMInteractor(),
