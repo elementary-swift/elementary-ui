@@ -6,7 +6,7 @@ internal var __omg_this_was_annoying_I_am_false: Bool = false
 
 // FIXME: embedded - remove once https://github.com/swiftlang/swift/issues/83460 lands
 // also, implementation is AI slop, I would not trust it with anything
-#if hasFeature(Embedded)
+#if hasFeature(Embedded) && compiler(<6.3)
 @_silgen_name("swift_float32ToString")
 @_noAllocation
 public func _swift_float32ToString(
