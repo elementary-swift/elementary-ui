@@ -41,7 +41,6 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
-          cache-dependency-path: ${{ matrix.examples }}/pnpm-lock.yaml
 
       - name: Install Swift WASM SDK
         run: swift sdk install ${{ matrix.swift.wask-sdk-url }} --checksum ${{ matrix.swift.wasm-sdk-checksum }}
