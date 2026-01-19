@@ -1,15 +1,14 @@
 # Basic Example
 
-Test project that builds for embedded.
-
-Requires main or 6.2 snapshot with matching *Swift SDKs for WebAssembly* from [swift.org](https://www.swift.org/install).
+See https://elementary.codes for guide.
 
 ```sh
-./build.sh
-npx serve Public
-```
+pnpm preinstall && pnpm install
 
-```sh
-# dev mode
-$ ./watch.sh
+# dev build + watch
+pnpm dev
+
+# run  embedded release build
+pnpm build
+pnpm preview
 ```

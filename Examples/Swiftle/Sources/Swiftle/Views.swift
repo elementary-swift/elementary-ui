@@ -1,4 +1,4 @@
-import ElementaryCSS
+import ElementaryFlow
 import ElementaryUI
 
 @View
@@ -10,36 +10,27 @@ struct GameView {
     }
 
     var body: some View {
-        FlexColumn(align: .center, gap: 5) {
+        FlexColumn(align: .center, gap: 20) {
 
-            FlexRow(align: .center, gap: 4) {
+            FlexRow(align: .center, gap: 16) {
                 SwiftLogo()
-                Text("SWIFTLE")
-                    .style(
-                        .fontSize(.xxl),
-                        .fontFamily(.serif),
-                        .letterSpacing(.em(0.1))
-                    )
+                Heading("SWIFTLE")
+                    .style(.fontSize(.xxl), .fontFamily(.serif), .letterSpacing(.em(0.1)))
                 SwiftLogo()
             }
 
-            FlexColumn(gap: 1) {
+            FlexColumn(gap: 4) {
                 for guess in game.guesses {
                     GuessView(guess: guess)
                 }
             }.style(.fontWeight(.semiBold), .fontSize(.lg), .fontFamily(.monospace))
 
-            Block(.position(.relative)) {
+            Block {
                 KeyboardView(keyboard: game.keyboard, onKeyPressed: onKeyPressed)
                 GameEndOverlay(game: $game)
-            }
+            }.style(.position(.relative))
 
-            Paragraph(
-                .color(.gray400),
-                .fontFamily(.sansSerif),
-                .textAlign(.center),
-                .fontSize(.xs)
-            ) {
+            Paragraph {
                 "This is a proof of concept demo of an Embedded Swift Wasm app."
                 br()
                 "Find the source code in the "
@@ -48,9 +39,14 @@ struct GameView {
                 }
                 .style(.color(.orange600))
                 .style(when: .hover, .textDecoration("underline"))
-            }
+            }.style(
+                .color(.gray400),
+                .fontFamily(.sansSerif),
+                .textAlign(.center),
+                .fontSize(.xs)
+            )
         }
-        .style(.color(.white), .padding(t: 5), .fontFamily(.sansSerif))
+        .style(.color(.white), .padding(t: 20), .fontFamily(.sansSerif))
         .receive(GlobalDocument.onKeyDown) { event in
             guard let key = EnteredKey(event) else { return }
             onKeyPressed(key)
@@ -62,7 +58,7 @@ struct GameView {
 struct SwiftLogo {
     var body: some View {
         img(.src("swift-bird.svg"))
-            .style(.height(10))
+            .style(.height(40))
     }
 }
 
@@ -71,7 +67,7 @@ struct GuessView {
     var guess: Guess
 
     var body: some View {
-        FlexRow(gap: 1) {
+        FlexRow(gap: 4) {
             for letter in guess.letters {
                 LetterView(guess: letter)
             }
@@ -84,12 +80,12 @@ struct LetterView {
     var guess: LetterGuess?
 
     var body: some View {
-        Block(.width(10), .height(10), .display(.flex)) {
-            Paragraph(.margin(.auto)) {
-                guess?.letter.value ?? ""
-            }
+        FlexRow(justify: .center, align: .center) {
+            Paragraph { guess?.letter.value ?? "" }
         }
         .style(
+            .width(40),
+            .height(40),
             .color(guess?.status == .unknown ? .gray200 : .white),
             .borderColor(guess == nil ? .gray700 : .gray400),
             .borderWidth(guess == nil || guess?.status == .unknown ? .px(2) : 0),
@@ -104,18 +100,18 @@ struct KeyboardView {
     var onKeyPressed: (EnteredKey) -> Void
 
     var body: some View {
-        FlexColumn(align: .center, gap: 1.5) {
-            FlexRow(gap: 1) {
+        FlexColumn(align: .center, gap: 6) {
+            FlexRow(gap: 4) {
                 for letter in keyboard.topRow {
                     KeyboardLetterView(guess: letter, onKeyPressed: onKeyPressed)
                 }
             }
-            FlexRow(gap: 1) {
+            FlexRow(gap: 4) {
                 for letter in keyboard.middleRow {
                     KeyboardLetterView(guess: letter, onKeyPressed: onKeyPressed)
                 }
             }
-            FlexRow(gap: 1) {
+            FlexRow(gap: 4) {
                 BackspaceKeyView(onKeyPressed: onKeyPressed)
                 for letter in keyboard.bottomRow {
                     KeyboardLetterView(guess: letter, onKeyPressed: onKeyPressed)
@@ -133,10 +129,11 @@ struct KeyboardLetterView {
 
     var body: some View {
         button {
-            Text(guess.letter.value)
-                .style(.margin(.auto), .fontSize(.lg), .fontWeight(.semiBold))
+            span {
+                guess.letter.value
+            }.style(.margin(.auto), .fontSize(.lg), .fontWeight(.semiBold))
         }
-        .style(.width(7), .height(10), .display(.flex), .borderRadius(0.5))
+        .style(.width(28), .height(40), .display(.flex), .borderRadius(2))
         .enabledMobileActive()
         .style(.background(guess.status.backgroundColor ?? .gray400))
         .style(when: .active, .background(guess.status.activeBackgroundColor))
@@ -157,10 +154,10 @@ struct EnterKeyView {
             )
         }
         .style(
-            .width(12),
-            .height(10),
-            .padding(2),
-            .borderRadius(0.5),
+            .width(48),
+            .height(40),
+            .padding(8),
+            .borderRadius(2),
             .display(.flex),
             .alignItems(.center),
             .background(.gray400)
@@ -184,10 +181,10 @@ struct BackspaceKeyView {
             )
         }
         .style(
-            .width(12),
-            .height(10),
-            .padding(1),
-            .borderRadius(0.5),
+            .width(48),
+            .height(40),
+            .padding(4),
+            .borderRadius(2),
             .display(.flex),
             .alignItems(.center),
             .background(.gray400)
@@ -206,26 +203,27 @@ struct GameEndOverlay {
 
     var body: some View {
         if game.state != .playing {
-            Block(
+            Block {
+                FlexColumn(align: .center, gap: 2) {
+                    Paragraph(game.state == .won ? "Nice job!" : "Oh no!")
+                        .style(
+                            .fontSize(.xl),
+                            .letterSpacing(.em(0.1)),
+                            .textTransform("uppercase")
+                        )
+                    button { "Restart" }
+                        .style(.background(.orange500), .padding(y: 8, x: 24), .borderRadius(4))
+                        .onClick { _ in
+                            game = Game()
+                        }
+                }
+            }.style(
                 .position(.absolute),
                 .inset(0),
                 .background(.black60a),
-                .padding(t: 4),
+                .padding(t: 16),
                 .fontWeight(.semiBold)
-            ) {
-                FlexColumn(align: .center, gap: 2) {
-                    Paragraph(.fontSize(.xl), .letterSpacing(.em(0.1)), .textTransform("uppercase")) {
-                        game.state == .won ? "Nice job!" : "Oh no!"
-                    }
-                    button {
-                        "Restart"
-                    }
-                    .style(.background(.orange500), .padding(y: 2, x: 6), .borderRadius(1))
-                    .onClick { _ in
-                        game = Game()
-                    }
-                }
-            }
+            )
         }
     }
 }

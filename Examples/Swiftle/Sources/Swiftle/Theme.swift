@@ -1,4 +1,4 @@
-import ElementaryCSS
+import ElementaryFlow
 
 extension CSSColor {
     // Gray scale

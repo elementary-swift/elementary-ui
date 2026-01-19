@@ -29,6 +29,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          cache-dependency-path: Examples/Swiftle/pnpm-lock.yaml
       - uses: swift-actions/setup-swift@v3
         with:
           swift-version: ${{ env.SWIFT_VERSION }}
@@ -38,15 +48,18 @@ jobs:
         uses: phi-ag/setup-binaryen@v1
         with:
           version: "123"
+      - name: Install dependencies
+        working-directory: Examples/Swiftle
+        run: pnpm preinstall && pnpm install
       - name: Build
         working-directory: Examples/Swiftle
-        run: ./build.sh
+        run: pnpm build
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "Examples/Swiftle/Public"
+          path: "Examples/Swiftle/dist"
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
