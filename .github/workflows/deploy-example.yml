@@ -38,6 +38,7 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
+          cache-dependency-path: Examples/Swiftle/pnpm-lock.yaml
       - uses: swift-actions/setup-swift@v3
         with:
           swift-version: ${{ env.SWIFT_VERSION }}
