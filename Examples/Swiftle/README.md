@@ -8,12 +8,12 @@ https://elementary-swift.github.io/elementary-ui/
 See https://elementary.codes for guide.
 
 ```sh
-npm install
+pnpm preinstall && pnpm install
 
 # dev build + watch
-npm run dev
+pnpm dev
 
 # run  embedded release build
-npm run build
-npm run preview
+pnpm build
+pnpm preview
 ```
