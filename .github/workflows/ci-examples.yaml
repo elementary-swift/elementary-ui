@@ -31,21 +31,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: ${{ matrix.examples }}/package-lock.json
+
       - name: Install Swift WASM SDK
         run: swift sdk install ${{ matrix.swift.wask-sdk-url }} --checksum ${{ matrix.swift.wasm-sdk-checksum }}
 
-      - name: Build (embedded)
-        id: build_embedded
+      - name: Install dependencies
         working-directory: ${{ matrix.examples }}
-        continue-on-error: true
-        run: ./build.sh
+        run: npm install
 
-      - name: Build (dev)
-        id: build_dev
+      - name: Build
         working-directory: ${{ matrix.examples }}
-        continue-on-error: true
-        run: ./build-dev.sh
-
-      - name: Fail if any build failed
-        if: ${{ steps.build_embedded.outcome == 'failure' || steps.build_dev.outcome == 'failure' }}
-        run: exit 1
+        run: npm run build
