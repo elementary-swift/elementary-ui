@@ -4,6 +4,5 @@
 /*.xcodeproj
 xcuserdata/
 Package.resolved
-Public/lib
 node_modules
 dist
