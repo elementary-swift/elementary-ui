@@ -29,12 +29,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
-          cache-dependency-path: Examples/Swiftle/package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: Examples/Swiftle/pnpm-lock.yaml
       - uses: swift-actions/setup-swift@v3
         with:
           swift-version: ${{ env.SWIFT_VERSION }}
@@ -46,10 +50,10 @@ jobs:
           version: "123"
       - name: Install dependencies
         working-directory: Examples/Swiftle
-        run: npm install
+        run: pnpm preinstall && pnpm install
       - name: Build
         working-directory: Examples/Swiftle
-        run: npm run build
+        run: pnpm build
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
