@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "preinstall": "swift package resolve",
+    "dev": "vite --open",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@elementary-swift/vite-plugin-swift-wasm": "^0.1.2",
+    "@types/node": "^25.0.9",
+    "elementary-ui-browser-runtime": "file:../../BrowserRuntime",
+    "vite": "^7.3.1"
+  }
+}

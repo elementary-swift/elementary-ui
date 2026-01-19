@@ -7,11 +7,12 @@ https://elementary-swift.github.io/elementary-ui/
 Requires main or 6.2 snapshot with matching *Swift SDKs for WebAssembly* from [swift.org](https://www.swift.org/install).
 
 ```sh
-$ ./build.sh
-$ npx serve Public
-```
+npm install
 
-```sh
-# dev mode
-$ ./watch.sh
+# dev build + watch
+npm run dev
+
+# run  embedded release build
+npm run build
+npm run preview
 ```

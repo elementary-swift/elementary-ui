@@ -6,18 +6,14 @@ let package = Package(
     platforms: [.macOS(.v15)],
     dependencies: [
         .package(name: "elementary-ui", path: "../../"),
-        .package(url: "https://github.com/elementary-swift/elementary-css", branch: "main"),
-        .package(url: "https://github.com/swiftwasm/JavaScriptKit.git", from: "0.36.0"),
+        .package(url: "https://github.com/elementary-swift/elementary-flow", from: "0.1.0-alpha"),
     ],
     targets: [
         .executableTarget(
             name: "Swiftle",
             dependencies: [
                 .product(name: "ElementaryUI", package: "elementary-ui"),
-                .product(name: "ElementaryCSS", package: "elementary-css"),
-            ],
-            linkerSettings: [
-                .unsafeFlags(["-Xlinker", "-z", "-Xlinker", "stack-size=1048576"], .when(platforms: [.wasi], configuration: .debug))
+                .product(name: "ElementaryFlow", package: "elementary-flow"),
             ]
         )
     ],
