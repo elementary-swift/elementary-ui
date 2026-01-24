@@ -67,6 +67,7 @@ final class BindingModifier<Configuration>: DOMElementModifier, Unmountable wher
             self.binding.wrappedValue = value
         }
 
+        updateDOMNode(&context)
         context.dom.addEventListener(node, event: Configuration.eventName, sink: sink)
         return AnyUnmountable(self)
     }

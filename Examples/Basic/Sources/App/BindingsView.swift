@@ -2,8 +2,8 @@ import ElementaryUI
 
 @View
 struct BindingsView {
-    @State var number: Double?
-    @State var checked: Bool = false
+    @State var number: Double? = 1.2
+    @State var checked: Bool = true
     @State var text: String = "Hello"
 
     var body: some View {
@@ -17,7 +17,8 @@ struct BindingsView {
 
             p {
                 "Number: "
-                input(.type(.number)).bindValue($number)
+                input(.type(.number))
+                    .bindValue($number)
 
                 span { " - \(number.map { "\($0)" } ?? "nil")" }
             }
