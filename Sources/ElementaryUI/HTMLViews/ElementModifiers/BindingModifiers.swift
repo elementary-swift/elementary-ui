@@ -67,8 +67,12 @@ final class BindingModifier<Configuration>: DOMElementModifier, Unmountable wher
             self.binding.wrappedValue = value
         }
 
-        updateDOMNode(&context)
         context.dom.addEventListener(node, event: Configuration.eventName, sink: sink)
+
+        // NOTE: we want to set the initial value - but we need to make sure that all
+        // attributes are set before we do so - value properties in the DOM depend on attributes
+        context.scheduler.addCommitAction(updateDOMNode)
+
         return AnyUnmountable(self)
     }
 

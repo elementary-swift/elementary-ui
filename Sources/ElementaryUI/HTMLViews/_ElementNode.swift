@@ -38,11 +38,10 @@ public final class _ElementNode: _Reconcilable {
             let ref = context.dom.createElement(tag)
             self.domNode = ManagedDOMReference(reference: ref, status: .added)
 
-                self.mountedModifieres = modifiers.reversed().map {
-                    $0.mount(ref, &context)
-                }
+            self.mountedModifieres = modifiers.reversed().map {
+                $0.mount(ref, &context)
             }
-        )
+        }
 
         self.child = makeChild(viewContext, &tx)
     }
