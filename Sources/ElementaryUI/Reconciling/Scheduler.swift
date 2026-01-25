@@ -29,7 +29,9 @@ final class Scheduler {
     private var runningAnimations: [AnyAnimatable] = []
 
     // Scheduling state
-    private var isUpdateCyclePending = false
+    // True while an update cycle is either scheduled or currently running.
+    // If this is true, callers can just enqueue work; the active cycle will pick it up.
+    private var isUpdateCycleActive = false
     private var isAnimationFramePending = false
     private var currentTransaction: Transaction?
 
@@ -37,7 +39,12 @@ final class Scheduler {
     private var ambientContext: _TransactionContext?
 
     // Safety limits
-    private let maxPasses = 100
+    private let maxTransactionPasses = 100
+    private let maxCommitPasses = 100
+
+    // Budget for running effects per frame
+    private let maxInlineEffectRounds = 30
+    private let inlineEffectsTimeBudget: Double = 0.005
 
     private var hasReconcileWork: Bool {
         !pendingFunctions.isEmpty || !pendingUpdates.isEmpty
@@ -80,15 +87,19 @@ final class Scheduler {
     }
 
     func addCommitAction(_ action: @escaping (inout _CommitContext) -> Void) {
+        assert(isUpdateCycleActive, "Commit actions must be added during an update cycle")
         pendingCommitActions.append(action)
     }
 
     func addPlacementAction(_ action: @escaping (inout _CommitContext) -> Void) {
+        assert(isUpdateCycleActive, "Placement actions must be added during an update cycle")
         pendingPlacements.append(action)
     }
 
-    func afterCommit(_ callback: @escaping () -> Void) {
+    // Effects are run after all pending transactions are committed
+    func addEffect(_ callback: @escaping () -> Void) {
         pendingEffects.append(callback)
+        ensureUpdateCycleScheduled()
     }
 
     func registerAnimation(_ animation: AnyAnimatable) {
@@ -106,37 +117,73 @@ final class Scheduler {
     // MARK: - Scheduling
 
     private func ensureUpdateCycleScheduled() {
-        guard !isUpdateCyclePending else { return }
-        isUpdateCyclePending = true
-        currentTransaction = Transaction._current
-        dom.queueMicrotask { [self] in runUpdateCycle() }
+        ensureUpdateCycleScheduled(afterPaint: false)
+    }
+
+    private func ensureUpdateCycleScheduled(afterPaint: Bool) {
+        guard !isUpdateCycleActive else { return }
+        isUpdateCycleActive = true
+
+        if afterPaint {
+            dom.runNext { [self] in runUpdateCycle() }
+        } else {
+            dom.queueMicrotask { [self] in runUpdateCycle() }
+        }
     }
 
     private func ensureAnimationFrameScheduled() {
         guard !isAnimationFramePending && needsAnimationFrame else { return }
         isAnimationFramePending = true
-        dom.requestAnimationFrame { [self] _ in runAnimationFrame() }
+        dom.requestAnimationFrame { [self] rafTime in runAnimationFrame(rafTime / 1000) }
     }
 
     // MARK: - Update Cycle
 
     private func runUpdateCycle() {
-        isUpdateCyclePending = false
-        drainAllWork(frameTime: dom.getCurrentTime())
+        let startTime = dom.getCurrentTime()
+        drainAllWork(frameTime: startTime)
+
+        var rounds = 0
+
+        while !pendingEffects.isEmpty {
+            rounds += 1
+            let now = dom.getCurrentTime()
+
+            if rounds > maxInlineEffectRounds || now - startTime > inlineEffectsTimeBudget {
+                break
+            }
+
+            let effects = pendingEffects
+            pendingEffects = []
+            for effect in effects { effect() }
+            drainAllWork(frameTime: now)
+        }
+
+        isUpdateCycleActive = false
         currentTransaction = nil
+
+        if !pendingEffects.isEmpty {
+            ensureUpdateCycleScheduled(afterPaint: true)
+        }
         ensureAnimationFrameScheduled()
     }
 
-    private func runAnimationFrame() {
+    private func runAnimationFrame(_ frameTime: Double) {
         isAnimationFramePending = false
-        let frameTime = dom.getCurrentTime()
 
-        commitFLIPAnimations(frameTime: frameTime)
+        let wasUpdateCycleActive = isUpdateCycleActive
+
+        isUpdateCycleActive = true
         tickAnimations(frameTime: frameTime)
+        drainAllWork(frameTime: frameTime)
+        isUpdateCycleActive = wasUpdateCycleActive
 
-        // Animation ticks may trigger state changes - drain any resulting work
-        if hasReconcileWork || hasCommitWork {
-            drainAllWork(frameTime: frameTime)
+        // FLIP should not trigger any work - but if it would it would be outside
+        commitFLIPAnimations(frameTime: frameTime)
+
+        // if animations trigger effects - move the out of rAF
+        if !pendingEffects.isEmpty {
+            ensureUpdateCycleScheduled(afterPaint: true)
         }
 
         ensureAnimationFrameScheduled()
@@ -145,18 +192,12 @@ final class Scheduler {
     private func drainAllWork(frameTime: Double) {
         var passes = 0
 
-        // Drain reconcile and commit work
         while hasReconcileWork || hasCommitWork {
             passes += 1
-            precondition(passes <= maxPasses, "Exceeded \(maxPasses) passes - infinite loop?")
+            precondition(passes <= maxTransactionPasses, "Exceeded \(maxTransactionPasses) passes - infinite loop?")
             reconcile(frameTime: frameTime)
             commit(frameTime: frameTime)
         }
-
-        // Run effects once - any new work they trigger goes to the next cycle
-        let effects = pendingEffects
-        pendingEffects = []
-        for effect in effects { effect() }
     }
 
     // MARK: - Reconcile & Commit
@@ -187,7 +228,7 @@ final class Scheduler {
 
         while hasCommitWork {
             passes += 1
-            precondition(passes <= maxPasses, "Exceeded \(maxPasses) commit passes - infinite loop?")
+            precondition(passes <= maxCommitPasses, "Exceeded \(maxCommitPasses) commit passes - infinite loop?")
 
             if !pendingCommitActions.isEmpty {
                 let actions = pendingCommitActions
@@ -223,8 +264,6 @@ final class Scheduler {
             transaction: transaction
         )
 
-        // Efficiently progress all animations and remove completed ones
-        // NOTE: this is a bit side-effecty, but should be fast
         runningAnimations.removeAll(where: { animation in
             let result = animation.progressAnimation(&context)
             return result == .completed
