@@ -46,7 +46,7 @@ final class FLIPAnimation<Value: CSSAnimatable> {
                                 self.animatedValue.progressToTime(context.currentFrameTime)
                                 self.isDirty = true
                                 // TODO: fix this nonsense
-                                context.scheduler.addCommitAction(CommitAction { _ in })
+                                context.scheduler.addCommitAction { _ in }
                                 return .completed
                             }
                         )

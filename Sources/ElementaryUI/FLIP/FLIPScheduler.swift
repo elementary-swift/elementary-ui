@@ -7,6 +7,11 @@ final class FLIPScheduler {
     private var absolutePositionOriginals: [DOM.Node: PreviousStyleValues] = [:]
     private var firstWindowScrollOffset: (x: Double, y: Double)? = nil
 
+    /// Whether there is pending FLIP work that needs to be committed in RAF
+    var hasPendingWork: Bool {
+        !scheduledAnimations.isEmpty || !runningAnimations.isEmpty
+    }
+
     init(dom: any DOM.Interactor) {
         self.dom = dom
     }

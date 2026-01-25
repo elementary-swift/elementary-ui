@@ -16,7 +16,7 @@ extension HTMLElement: _Mountable, View where Content: _Mountable {
             child: _ElementNode(
                 tag: self.Tag.name,
                 viewContext: context,
-                context: &tx,
+                tx: &tx,
                 makeChild: { viewContext, r in AnyReconcilable(Content._makeNode(view.content, context: viewContext, tx: &r)) }
             )
         )

@@ -4,7 +4,7 @@ import ElementaryUI
 struct BindingsView {
     @State var number: Double?
     @State var checked: Bool = false
-    @State var text: String = ""
+    @State var text: String = "Hello"
 
     var body: some View {
         div {

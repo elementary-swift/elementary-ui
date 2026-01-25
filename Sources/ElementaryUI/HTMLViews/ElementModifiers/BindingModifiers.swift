@@ -28,9 +28,7 @@ final class BindingModifier<Configuration>: DOMElementModifier, Unmountable wher
         guard !isDirty else { return }
         isDirty = true
 
-        context.scheduler.addCommitAction(
-            CommitAction(run: updateDOMNode)
-        )
+        context.scheduler.addCommitAction(updateDOMNode)
     }
 
     private func updateDOMNode(_ context: inout _CommitContext) {
