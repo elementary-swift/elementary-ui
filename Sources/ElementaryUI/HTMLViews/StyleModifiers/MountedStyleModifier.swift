@@ -69,7 +69,7 @@ final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: Unmountabl
                         DOM.Animation.KeyframeEffect(value.value, isFirst: index == 0)
                     ) { [scheduler = context.scheduler, progressAnimation] in
                         logTrace("animation finished")
-                        scheduler.registerAnimation(AnyAnimatable(progressAnimation: progressAnimation))
+                        scheduler.scheduleUpdate(progressAnimation)
                     }
                 )
             }

@@ -38,18 +38,12 @@ final class FLIPAnimation<Value: CSSAnimatable> {
                 if let domAnimation = domAnimation {
                     domAnimation.update(effect)
                 } else {
-                    // TODO: find a better way to schedule a callback here
                     domAnimation = context.dom.animateElement(node, effect) { [scheduler = context.scheduler] in
-                        scheduler.registerAnimation(
-                            AnyAnimatable { context in
-                                logTrace("CSS animation of \(Value.CSSValue.styleKey) completed, marking dirty")
-                                self.animatedValue.progressToTime(context.currentFrameTime)
-                                self.isDirty = true
-                                // TODO: fix this nonsense
-                                context.scheduler.addCommitAction { _ in }
-                                return .completed
-                            }
-                        )
+                        scheduler.scheduleUpdate { context in
+                            logTrace("CSS animation of \(Value.CSSValue.styleKey) completed, marking dirty")
+                            self.animatedValue.progressToTime(context.currentFrameTime)
+                            self.isDirty = true
+                        }
                     }
                 }
             }
