@@ -28,29 +28,40 @@ struct DOMElementModifiers {
         }
     }
 
-    private var storage: [ObjectIdentifier: any DOMElementModifier] = [:]
+    // Using arrays for stable ordering.
+    // Modifier counts are typically small (0-5), so linear search probably outperforms hashing anyway.
+    private var keys: [ObjectIdentifier] = []
+    private var values: [any DOMElementModifier] = []
 
     var isEmpty: Bool {
-        storage.isEmpty
+        keys.isEmpty
     }
 
     subscript<Directive: DOMElementModifier>(_ key: Key<Directive>) -> Directive? {
         get {
-            storage[key.typeID] as? Directive
+            guard let i = keys.firstIndex(of: key.typeID) else { return nil }
+            return values[i] as? Directive
         }
         set {
-            if let newValue = newValue {
-                storage[key.typeID] = newValue
-            } else {
-                storage.removeValue(forKey: key.typeID)
+            if let i = keys.firstIndex(of: key.typeID) {
+                if let newValue = newValue {
+                    values[i] = newValue
+                } else {
+                    keys.remove(at: i)
+                    values.remove(at: i)
+                }
+            } else if let newValue = newValue {
+                keys.append(key.typeID)
+                values.append(newValue)
             }
         }
     }
 
     mutating func take() -> [any DOMElementModifier] {
-        let directives = Array(storage.values)
-        storage.removeAll(keepingCapacity: true)
-        return directives
+        let result = values
+        keys.removeAll(keepingCapacity: true)
+        values.removeAll(keepingCapacity: true)
+        return result
     }
 }
 

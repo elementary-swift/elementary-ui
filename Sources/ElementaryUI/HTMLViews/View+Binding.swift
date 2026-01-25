@@ -75,7 +75,7 @@ public extension View where Tag == HTMLTag.input {
     ///
     /// - Parameter value: A binding to a boolean value.
     /// - Returns: An input view bound to the checkbox state.
-    consuming func bindChecked(_ value: Binding<Bool>) -> some View {
+    consuming func bindChecked(_ value: Binding<Bool>) -> some View<Tag> {
         DOMEffectView<BindingModifier<CheckboxBindingConfiguration>, Self>(value: value, wrapped: self)
     }
 }

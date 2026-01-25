@@ -30,15 +30,15 @@ public final class _ElementNode: _Reconcilable {
 
         var viewContext = copy viewContext
         viewContext.parentElement = self
-        let modifiers = viewContext.modifiers.take()
-        self.layoutObservers = viewContext.layoutObservers.take()
+        let modifiers = viewContext.takeModifiers()
+        self.layoutObservers = viewContext.takeLayoutObservers()
 
         tx.scheduler.addCommitAction { [self] context in
             precondition(self.domNode == nil, "element already has a DOM node")
             let ref = context.dom.createElement(tag)
             self.domNode = ManagedDOMReference(reference: ref, status: .added)
 
-            self.mountedModifieres = modifiers.map {
+            self.mountedModifieres = modifiers.reversed().map {
                 $0.mount(ref, &context)
             }
         }
