@@ -35,23 +35,19 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
             )
         }
 
-        // NOTE: ideally we apply the animation before first-paint, but currently we DOM nodes mount their effect during commit
-        // IDEA: if we change DOM node creation and mount to in-line (during tx), we can apply the animation before frame flush
-        tx.scheduler.registerAnimation(
-            AnyAnimatable { [self] tx in
-                guard let node = self.node, let placeholderView = self.placeholderView else { return .completed }
-                tx.withModifiedTransaction {
-                    $0.animation = transitionAnimation
-                } run: { tx in
-                    T.Body._patchNode(
-                        self.value.transition.body(content: placeholderView, phase: .identity),
-                        node: node,
-                        tx: &tx
-                    )
-                }
-                return .completed
+        // Schedule follow-up TX to patch to identity phase (triggers CSS transition)
+        tx.scheduler.scheduleUpdate { [self] tx in
+            guard let node = self.node, let placeholderView = self.placeholderView else { return }
+            tx.withModifiedTransaction {
+                $0.animation = transitionAnimation
+            } run: { tx in
+                T.Body._patchNode(
+                    self.value.transition.body(content: placeholderView, phase: .identity),
+                    node: node,
+                    tx: &tx
+                )
             }
-        )
+        }
     }
 
     func update(view: consuming _TransitionView<T, V>, context: inout _TransactionContext) {
@@ -106,15 +102,10 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
             tx.transaction.addAnimationCompletion(criteria: .removed) {
                 [scheduler = tx.scheduler, frameTime = currentRemovalAnimationTime] in
                 guard let currentTime = self.currentRemovalAnimationTime, currentTime == frameTime else { return }
-                // TODO: think if this is the right scheduling, we remove the node in the frame after we flush the final values
-                // probably correct, actually...
-                scheduler.registerAnimation(
-                    AnyAnimatable { [self] context in
-                        guard let node = self.node else { return .completed }
-                        node.apply(.startRemoval, &context)
-                        return .completed
-                    }
-                )
+                scheduler.scheduleUpdate { [self] tx in
+                    guard let node = self.node else { return }
+                    node.apply(.startRemoval, &tx)
+                }
             }
         case .cancelRemoval:
             currentRemovalAnimationTime = nil

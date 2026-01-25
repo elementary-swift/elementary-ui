@@ -104,18 +104,16 @@ struct _LifecycleEventView<Wrapped: View>: View {
 
     final class LifecycleState: Unmountable {
         var onUnmount: (() -> Void)?
-        let scheduler: Scheduler
 
-        init(hook: LifecycleHook, scheduler: Scheduler) {
-            self.scheduler = scheduler
+        init(hook: LifecycleHook, tx: borrowing _TransactionContext) {
 
             switch hook {
             case .onAppear(let onAppear):
-                scheduler.onNextTick { onAppear() }
+                tx.scheduler.addEffect { onAppear() }
             case .onDisappear(let callback):
                 self.onUnmount = callback
             case .onAppearReturningCancelFunction(let onAppearReturningCancelFunction):
-                scheduler.onNextTick {
+                tx.scheduler.addEffect {
                     let cancelFunc = onAppearReturningCancelFunction()
                     self.onUnmount = cancelFunc
                 }
@@ -123,7 +121,7 @@ struct _LifecycleEventView<Wrapped: View>: View {
         }
 
         func unmount(_ context: inout _CommitContext) {
-            scheduler.onNextTick {
+            context.scheduler.addEffect {
                 self.onUnmount?()
                 self.onUnmount = nil
             }
@@ -135,7 +133,7 @@ struct _LifecycleEventView<Wrapped: View>: View {
         context: borrowing _ViewContext,
         tx: inout _TransactionContext
     ) -> _MountedNode {
-        let state = LifecycleState(hook: view.listener, scheduler: tx.scheduler)
+        let state = LifecycleState(hook: view.listener, tx: tx)
         let child = Wrapped._makeNode(view.wrapped, context: context, tx: &tx)
 
         let node = _StatefulNode(state: state, child: child)

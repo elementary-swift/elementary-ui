@@ -101,7 +101,7 @@ where Value: __FunctionView, ChildNode: _Reconcilable, ChildNode == Value.Body._
         let (newContent, session) = withReactiveTrackingSession {
             value.body
         } onWillSet: { [scheduler = tx.scheduler, asFunctionNode = asFunctionNode!] in
-            scheduler.scheduleFunction(asFunctionNode)
+            scheduler.invalidateFunction(asFunctionNode)
         }
 
         self.trackingSession = session

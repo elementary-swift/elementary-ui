@@ -13,223 +13,262 @@ struct AnyAnimatable {
     let progressAnimation: (inout _TransactionContext) -> AnimationProgressResult
 }
 
-struct CommitAction {
-    let run: (inout _CommitContext) -> Void
-}
-
 final class Scheduler {
-    // TODO: review the scheduling / timing of all this
-    // it seems a bit many "versions" of callback scheduling
-    // there are a few "one-shot" animation callbacks - maybe not ideal
-    // why not commit two transactions in one raf? no need to wait (better for layout)
-    // thinking about things like geometry reader and the like: we need to commit and re-read before paint ideally
+    private let dom: any DOM.Interactor
 
-    private var dom: any DOM.Interactor
-
-    // Phase 1: View function updates (reconciliation)
-    private var pendingFunctionsQueue: PendingFunctionQueue = .init()
-
-    // Phase 2: After reconciliation callbacks (onChange)
-    private var afterReconcileCallbacks: [() -> Void] = []
-
-    // Phase 3: DOM operations (RAF)
-    private var commitActions: [CommitAction] = []
-    private var placementActions: [CommitAction] = []
-
-    // Phase 4: Next tick callbacks (onAppear, onDisappear)
-    private var onNextTickCallbacks: [() -> Void] = []
-
-    // Continuous: Animations
-    private var runningAnimations: [AnyAnimatable] = []
-
-    // TODO: ideally this could be a completely decoupled extensions-style thing, but for now it's just here
+    // TODO: ideally this could be a completely decoupled extensions-style thing
+    // TODO: make this more pluggable / strippable
     let flip: FLIPScheduler
 
-    private var isAnimationFramePending: Bool = false
+    // Work queues
+    private var pendingFunctions: PendingFunctionQueue = .init()
+    private var pendingUpdates: [(inout _TransactionContext) -> Void] = []
+    private var pendingCommitActions: [(inout _CommitContext) -> Void] = []
+    private var pendingPlacements: [(inout _CommitContext) -> Void] = []
+    private var pendingEffects: [() -> Void] = []
+    private var runningAnimations: [AnyAnimatable] = []
+
+    // Scheduling state
+    // True while an update cycle is either scheduled or currently running.
+    // If this is true, callers can just enqueue work; the active cycle will pick it up.
+    private var isUpdateCycleActive = false
+    private var isAnimationFramePending = false
     private var currentTransaction: Transaction?
-    private var currentFrameTime: Double = 0
 
     // TODO: this is a bit hacky, ideally we can use explicit dependencies on Environment
-    private var ambientTransactionContext: _TransactionContext?
+    private var ambientContext: _TransactionContext?
 
-    private var needsFrame: Bool { !commitActions.isEmpty || !placementActions.isEmpty || !runningAnimations.isEmpty }
+    // Safety limits
+    private let maxTransactionPasses = 100
+    private let maxCommitPasses = 100
+
+    // Budget for running effects per frame
+    private let maxInlineEffectRounds = 30
+    private let inlineEffectsTimeBudget: Double = 0.005
+
+    private var hasReconcileWork: Bool {
+        !pendingFunctions.isEmpty || !pendingUpdates.isEmpty
+    }
+
+    private var hasCommitWork: Bool {
+        !pendingCommitActions.isEmpty || !pendingPlacements.isEmpty
+    }
+
+    private var needsAnimationFrame: Bool {
+        flip.hasPendingWork || !runningAnimations.isEmpty
+    }
 
     init(dom: any DOM.Interactor) {
         self.dom = dom
-        self.flip = FLIPScheduler(dom: dom)  // TODO: make this more pluggable
+        self.flip = FLIPScheduler(dom: dom)
     }
 
-    func scheduleFunction(_ function: AnyFunctionNode) {
-        // NOTE: this is a bit of a hack to scheduel function in the same transaction run if environment values change
-        // we currently uses the same Reactivity tracking for environment changes, but they always happen during reconciliation
-        guard ambientTransactionContext == nil else {
-            ambientTransactionContext!.addFunction(function)
+    // MARK: - Public API
+
+    func invalidateFunction(_ function: AnyFunctionNode) {
+        if ambientContext != nil {
+            ambientContext!.addFunction(function)
             return
         }
 
-        if pendingFunctionsQueue.isEmpty {
-            currentTransaction = Transaction._current
+        ensureUpdateCycleScheduled()
 
-            dom.queueMicrotask { [self] in
-                self.reconcileTransaction()
-
-                // Flush afterReconcile callbacks (onChange)
-                if !self.afterReconcileCallbacks.isEmpty {
-                    let callbacks = self.afterReconcileCallbacks
-                    self.afterReconcileCallbacks.removeAll(keepingCapacity: true)
-                    for callback in callbacks {
-                        callback()
-                    }
-                }
-            }
-        } else if currentTransaction?._id != Transaction._current?._id {
-            // in-line a reconcile run if the transaction has changed
-            reconcileTransaction()
+        if currentTransaction?._id != Transaction._current?._id {
+            reconcile(frameTime: dom.getCurrentTime())
             currentTransaction = Transaction._current
         }
 
-        pendingFunctionsQueue.registerFunctionForUpdate(function, transaction: currentTransaction)
+        pendingFunctions.registerFunctionForUpdate(function, transaction: currentTransaction)
     }
 
-    /// Register a continuous animation
-    func registerAnimation(_ node: AnyAnimatable) {
-        runningAnimations.append(node)
-        scheduleFrameIfNecessary()
+    func scheduleUpdate(_ callback: @escaping (inout _TransactionContext) -> Void) {
+        ensureUpdateCycleScheduled()
+        pendingUpdates.append(callback)
     }
 
-    // TODO: maybe move this onto the _TransactionContext itself?
-    /// Schedule a callback to run after reconciliation completes (for onChange)
-    func afterReconcile(_ callback: @escaping () -> Void) {
-        afterReconcileCallbacks.append(callback)
+    func addCommitAction(_ action: @escaping (inout _CommitContext) -> Void) {
+        assert(isUpdateCycleActive, "Commit actions must be added during an update cycle")
+        pendingCommitActions.append(action)
     }
 
-    /// Schedule a DOM operation for the commit phase (RAF)
-    func addCommitAction(_ action: CommitAction) {
-        commitActions.append(action)
+    func addPlacementAction(_ action: @escaping (inout _CommitContext) -> Void) {
+        assert(isUpdateCycleActive, "Placement actions must be added during an update cycle")
+        pendingPlacements.append(action)
     }
 
-    /// Schedule a DOM placement for the commit phase (RAF, runs in reverse order)
-    func addPlacementAction(_ action: CommitAction) {
-        placementActions.append(action)
+    // Effects are run after all pending transactions are committed
+    func addEffect(_ callback: @escaping () -> Void) {
+        pendingEffects.append(callback)
+        ensureUpdateCycleScheduled()
     }
 
-    /// Schedule a callback for next tick after RAF (for onAppear, onDisappear)
-    func onNextTick(_ callback: @escaping () -> Void) {
-        onNextTickCallbacks.append(callback)
+    func registerAnimation(_ animation: AnyAnimatable) {
+        runningAnimations.append(animation)
+        ensureAnimationFrameScheduled()
     }
 
-    // TODO: get rid of this
     func withAmbientTransactionContext(_ context: inout _TransactionContext, _ block: () -> Void) {
-        precondition(ambientTransactionContext == nil, "ambient reconciliation already exists")
-        ambientTransactionContext = consume context
+        precondition(ambientContext == nil)
+        ambientContext = consume context
         block()
-        context = ambientTransactionContext.take()!
+        context = ambientContext.take()!
     }
 
-    private func reconcileTransaction() {
-        // Frame time is set to 0 on every paint, first reconcile after RAF establishes the time
-        updateFrameTimeIfNecessary()
+    // MARK: - Scheduling
 
-        var functions = PendingFunctionQueue()
-        swap(&pendingFunctionsQueue, &functions)
-
-        _TransactionContext(
-            scheduler: self,
-            currentTime: currentFrameTime,
-            transaction: self.currentTransaction,
-            pendingFunctions: consume functions,
-        ).drain()
-
-        scheduleFrameIfNecessary()
+    private func ensureUpdateCycleScheduled() {
+        ensureUpdateCycleScheduled(afterPaint: false)
     }
 
-    private func updateFrameTimeIfNecessary() {
-        if currentFrameTime <= 0 {
-            currentFrameTime = dom.getCurrentTime()
+    private func ensureUpdateCycleScheduled(afterPaint: Bool) {
+        guard !isUpdateCycleActive else { return }
+        isUpdateCycleActive = true
+
+        if afterPaint {
+            dom.runNext { [self] in runUpdateCycle() }
+        } else {
+            dom.queueMicrotask { [self] in runUpdateCycle() }
         }
     }
 
-    private func scheduleFrameIfNecessary() {
-        if !isAnimationFramePending && needsFrame {
-            isAnimationFramePending = true
-            dom.requestAnimationFrame { [self] _ in
-                isAnimationFramePending = false
-                currentTransaction = nil
-                flushCommitPlan()
-                if !runningAnimations.isEmpty {
-                    dom.runNext {
-                        self.tickAnimations()
-                    }
-                }
-            }
-        }
+    private func ensureAnimationFrameScheduled() {
+        guard !isAnimationFramePending && needsAnimationFrame else { return }
+        isAnimationFramePending = true
+        dom.requestAnimationFrame { [self] rafTime in runAnimationFrame(rafTime / 1000) }
     }
 
-    private func flushCommitPlan() {
-        var context = _CommitContext(
-            dom: dom,
-            scheduler: self,
-            currentFrameTime: currentFrameTime
-        )
-        currentFrameTime = 0
+    // MARK: - Update Cycle
 
-        for action in commitActions {
-            action.run(&context)
-        }
-        commitActions.removeAll(keepingCapacity: true)
+    private func runUpdateCycle() {
+        let startTime = dom.getCurrentTime()
+        drainAllWork(frameTime: startTime)
 
-        for placement in placementActions.reversed() {
-            placement.run(&context)
-        }
-        placementActions.removeAll(keepingCapacity: true)
+        var rounds = 0
 
-        flip.commitScheduledAnimations(context: &context)
+        while !pendingEffects.isEmpty {
+            rounds += 1
+            let now = dom.getCurrentTime()
 
-        if !onNextTickCallbacks.isEmpty {
-            let callbacks = onNextTickCallbacks
-            onNextTickCallbacks.removeAll(keepingCapacity: true)
-            dom.runNext {
-                for callback in callbacks {
-                    callback()
-                }
-            }
-        }
-    }
-
-    private func tickAnimations() {
-        updateFrameTimeIfNecessary()
-
-        var removedAnimations: [Int] = []
-
-        for index in runningAnimations.indices {
-            switch progressAnimation(runningAnimations[index]) {
-            case .completed:
-                removedAnimations.append(index)
-            case .stillRunning:
+            if rounds > maxInlineEffectRounds || now - startTime > inlineEffectsTimeBudget {
                 break
             }
+
+            let effects = pendingEffects
+            pendingEffects = []
+            for effect in effects { effect() }
+            drainAllWork(frameTime: now)
         }
 
-        for index in removedAnimations.reversed() {
-            runningAnimations.remove(at: index)
-        }
+        isUpdateCycleActive = false
+        currentTransaction = nil
 
-        scheduleFrameIfNecessary()
+        if !pendingEffects.isEmpty {
+            ensureUpdateCycleScheduled(afterPaint: true)
+        }
+        ensureAnimationFrameScheduled()
     }
 
-    private func progressAnimation(_ animation: AnyAnimatable) -> AnimationProgressResult {
+    private func runAnimationFrame(_ frameTime: Double) {
+        isAnimationFramePending = false
+
+        let wasUpdateCycleActive = isUpdateCycleActive
+
+        isUpdateCycleActive = true
+        tickAnimations(frameTime: frameTime)
+        drainAllWork(frameTime: frameTime)
+        isUpdateCycleActive = wasUpdateCycleActive
+
+        // FLIP should not trigger any work - but if it would it would be outside
+        commitFLIPAnimations(frameTime: frameTime)
+
+        // if animations trigger effects - move the out of rAF
+        if !pendingEffects.isEmpty {
+            ensureUpdateCycleScheduled(afterPaint: true)
+        }
+
+        ensureAnimationFrameScheduled()
+    }
+
+    private func drainAllWork(frameTime: Double) {
+        var passes = 0
+
+        while hasReconcileWork || hasCommitWork {
+            passes += 1
+            precondition(passes <= maxTransactionPasses, "Exceeded \(maxTransactionPasses) passes - infinite loop?")
+            reconcile(frameTime: frameTime)
+            commit(frameTime: frameTime)
+        }
+    }
+
+    // MARK: - Reconcile & Commit
+
+    private func reconcile(frameTime: Double) {
+        guard hasReconcileWork else { return }
+
+        var queue = PendingFunctionQueue()
+        swap(&pendingFunctions, &queue)
+
+        let updates = pendingUpdates
+        pendingUpdates = []
+
+        var context = _TransactionContext(
+            scheduler: self,
+            currentTime: frameTime,
+            transaction: currentTransaction,
+            pendingFunctions: consume queue
+        )
+
+        for update in updates { update(&context) }
+        context.drain()
+    }
+
+    private func commit(frameTime: Double) {
+        var context = _CommitContext(dom: dom, scheduler: self, currentFrameTime: frameTime)
+        var passes = 0
+
+        while hasCommitWork {
+            passes += 1
+            precondition(passes <= maxCommitPasses, "Exceeded \(maxCommitPasses) commit passes - infinite loop?")
+
+            if !pendingCommitActions.isEmpty {
+                let actions = pendingCommitActions
+                pendingCommitActions = []
+                for action in actions { action(&context) }
+            }
+
+            if !pendingPlacements.isEmpty {
+                let placements = pendingPlacements
+                pendingPlacements = []
+                for action in placements.reversed() { action(&context) }
+            }
+        }
+    }
+
+    // MARK: - Animations
+
+    private func commitFLIPAnimations(frameTime: Double) {
+        guard flip.hasPendingWork else { return }
+        var context = _CommitContext(dom: dom, scheduler: self, currentFrameTime: frameTime)
+        flip.commitScheduledAnimations(context: &context)
+    }
+
+    private func tickAnimations(frameTime: Double) {
+        guard !runningAnimations.isEmpty else { return }
+
         var transaction = Transaction()
         transaction.disablesAnimation = true
 
         var context = _TransactionContext(
             scheduler: self,
-            currentTime: currentFrameTime,
+            currentTime: frameTime,
             transaction: transaction
         )
 
-        let result = animation.progressAnimation(&context)
+        runningAnimations.removeAll(where: { animation in
+            let result = animation.progressAnimation(&context)
+            return result == .completed
+        })
 
         context.drain()
-        return result
     }
 }

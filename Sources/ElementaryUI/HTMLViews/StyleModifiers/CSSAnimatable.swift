@@ -93,12 +93,10 @@ final class CSSValueSource<Value: CSSAnimatable & Equatable> {
             updateValue(&context)
         }
 
-        func progressAnimation(_ context: inout _TransactionContext) -> AnimationProgressResult {
+        func progressAnimation(_ context: inout _TransactionContext) {
             animatedValue.progressToTime(context.currentFrameTime)
 
             updateValue(&context)
-            // NOTE: this is always false because we send down chunks of peaked values and do not progress the animation on every frame
-            return .completed
         }
 
         func unmount(_ context: inout _CommitContext) {
@@ -120,11 +118,11 @@ protocol CSSAnimatedValueInstance<CSSValue> {
     var isDirty: Bool { get nonmutating set }
     func setTarget(_ target: AnyInvalidateable)
     func unmount(_ context: inout _CommitContext)
-    func progressAnimation(_ context: inout _TransactionContext) -> AnimationProgressResult
+    func progressAnimation(_ context: inout _TransactionContext)
 }
 
 struct AnyCSSAnimatedValueInstance<CSSProperty: CSSPropertyValue>: CSSAnimatedValueInstance {
-    let _progressAnimation: (inout _TransactionContext) -> AnimationProgressResult
+    let _progressAnimation: (inout _TransactionContext) -> Void
     let _getValue: () -> CSSAnimatedValue<CSSProperty>
     let _getIsDirty: () -> Bool
     let _setIsDirty: (Bool) -> Void
@@ -140,7 +138,7 @@ struct AnyCSSAnimatedValueInstance<CSSProperty: CSSPropertyValue>: CSSAnimatedVa
         self._unmount = { value.unmount(&$0) }
     }
 
-    func progressAnimation(_ context: inout _TransactionContext) -> AnimationProgressResult {
+    func progressAnimation(_ context: inout _TransactionContext) {
         _progressAnimation(&context)
     }
 

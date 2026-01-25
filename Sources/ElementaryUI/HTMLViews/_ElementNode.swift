@@ -18,7 +18,7 @@ public final class _ElementNode: _Reconcilable {
     init(
         tag: String,
         viewContext: borrowing _ViewContext,
-        context: inout _TransactionContext,
+        tx: inout _TransactionContext,
         makeChild: (borrowing _ViewContext, inout _TransactionContext) -> AnyReconcilable
     ) {
         precondition(viewContext.parentElement != nil, "parent element must be set")
@@ -26,32 +26,30 @@ public final class _ElementNode: _Reconcilable {
         self.identifier = "\(tag):\(ObjectIdentifier(self))"
 
         logTrace("created element \(identifier) in \(viewContext.parentElement!.identifier)")
-        viewContext.parentElement!.reportChangedChildren(.elementAdded, context: &context)
+        viewContext.parentElement!.reportChangedChildren(.elementAdded, tx: &tx)
 
         var viewContext = copy viewContext
         viewContext.parentElement = self
         let modifiers = viewContext.modifiers.take()
         self.layoutObservers = viewContext.layoutObservers.take()
 
-        context.scheduler.addCommitAction(
-            CommitAction { [self] context in
-                precondition(self.domNode == nil, "element already has a DOM node")
-                let ref = context.dom.createElement(tag)
-                self.domNode = ManagedDOMReference(reference: ref, status: .added)
+        tx.scheduler.addCommitAction { [self] context in
+            precondition(self.domNode == nil, "element already has a DOM node")
+            let ref = context.dom.createElement(tag)
+            self.domNode = ManagedDOMReference(reference: ref, status: .added)
 
-                self.mountedModifieres = modifiers.map {
-                    $0.mount(ref, &context)
-                }
+            self.mountedModifieres = modifiers.map {
+                $0.mount(ref, &context)
             }
-        )
+        }
 
-        self.child = makeChild(viewContext, &context)
+        self.child = makeChild(viewContext, &tx)
     }
 
     init(
         root: DOM.Node,
         viewContext: consuming _ViewContext,
-        context: inout _TransactionContext,
+        tx: inout _TransactionContext,
         makeChild: (borrowing _ViewContext, inout _TransactionContext) -> AnyReconcilable
     ) {
         self.domNode = .init(reference: root, status: .unchanged)
@@ -65,7 +63,7 @@ public final class _ElementNode: _Reconcilable {
             self.layoutObservers = layoutObservers
         }
 
-        self.child = makeChild(viewContext, &context)
+        self.child = makeChild(viewContext, &tx)
     }
 
     func updateChild<Node: _Reconcilable>(
@@ -76,17 +74,17 @@ public final class _ElementNode: _Reconcilable {
         block(self.child.unwrap(), &context)
     }
 
-    func reportChangedChildren(_ change: ElementNodeChildrenChange, context: inout _TransactionContext) {
+    func reportChangedChildren(_ change: ElementNodeChildrenChange, tx: inout _TransactionContext) {
         // TODO: count needed storage for children
         // TODO: optimize for changes that do not require children re-run (leaving and re-entering nodes)
 
         if !childrenLayoutStatus.isDirty {
             childrenLayoutStatus.isDirty = true
-            context.scheduler.addPlacementAction(CommitAction(run: performLayout(_:)))
+            tx.scheduler.addPlacementAction(performLayout(_:))
 
             if let ref = domNode?.reference {
                 for observer in layoutObservers {
-                    observer.willLayoutChildren(parent: ref, context: &context)
+                    observer.willLayoutChildren(parent: ref, context: &tx)
                 }
             }
         }
@@ -94,11 +92,11 @@ public final class _ElementNode: _Reconcilable {
         switch change {
         case let .elementLeaving(node):
             for observer in layoutObservers {
-                observer.setLeaveStatus(node, isLeaving: true, context: &context)
+                observer.setLeaveStatus(node, isLeaving: true, context: &tx)
             }
         case let .elementReentered(node):
             for observer in layoutObservers {
-                observer.setLeaveStatus(node, isLeaving: false, context: &context)
+                observer.setLeaveStatus(node, isLeaving: false, context: &tx)
             }
         default:
             break
@@ -115,28 +113,28 @@ public final class _ElementNode: _Reconcilable {
         case .startRemoval:
             assert(domNode != nil, "unitialized element in startRemoval")
             domNode?.status = .removed
-            parentNode?.reportChangedChildren(.elementRemoved, context: &tx)
+            parentNode?.reportChangedChildren(.elementRemoved, tx: &tx)
         case .cancelRemoval:
             if domNode?.status == .removed {
                 domNode?.status = .moved
-                parentNode?.reportChangedChildren(.elementAdded, context: &tx)
+                parentNode?.reportChangedChildren(.elementAdded, tx: &tx)
             } else {
                 guard let node = domNode?.reference else {
                     assertionFailure("unitialized element in cancelRemoval")
                     return
                 }
-                parentNode?.reportChangedChildren(.elementReentered(node), context: &tx)
+                parentNode?.reportChangedChildren(.elementReentered(node), tx: &tx)
             }
         case .markAsMoved:
             assert(domNode != nil, "unitialized element in markAsMoved")
             domNode?.status = .moved
-            parentNode?.reportChangedChildren(.elementMoved, context: &tx)
+            parentNode?.reportChangedChildren(.elementMoved, tx: &tx)
         case .markAsLeaving:
             guard let node = domNode?.reference else {
                 assertionFailure("unitialized element in markAsLeaving")
                 return
             }
-            parentNode?.reportChangedChildren(.elementLeaving(node), context: &tx)
+            parentNode?.reportChangedChildren(.elementLeaving(node), tx: &tx)
         }
     }
 

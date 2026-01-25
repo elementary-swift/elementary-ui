@@ -174,6 +174,8 @@ final class JSKitDOMInteractor: DOM.Interactor {
                 logTrace("updating animation with effect \(effect)")
                 _ = animation.effect.setKeyframes(effect.jsKeyframes)
                 _ = animation.effect.updateTiming(effect.jsTiming)
+                // Reset to start of new keyframes - required for retargeting mid-animation
+                // New keyframes always start from current presentation value
                 animation.currentTime = 0.jsValue
                 if effect.duration > 0 {
                     _ = animation.play()

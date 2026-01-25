@@ -42,7 +42,7 @@ public final class _ConditionalNode {
         case .b(let b):
             let a = AnyReconcilable(makeNode(context, &tx))
             b.apply(.startRemoval, &tx)
-            self.context.parentElement?.reportChangedChildren(.elementMoved, context: &tx)
+            self.context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
             state = .aWithBLeaving(a, b)
         case .aWithBLeaving(let a, let b):
             updateNode(a.unwrap(), &tx)
@@ -51,7 +51,7 @@ public final class _ConditionalNode {
             updateNode(a.unwrap(), &tx)
             a.apply(.cancelRemoval, &tx)
             b.apply(.startRemoval, &tx)
-            self.context.parentElement?.reportChangedChildren(.elementMoved, context: &tx)
+            self.context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
             state = .aWithBLeaving(a, b)
         }
     }
@@ -68,7 +68,7 @@ public final class _ConditionalNode {
         case .a(let a):
             let b = AnyReconcilable(makeNode(context, &tx))
             a.apply(.startRemoval, &tx)
-            self.context.parentElement?.reportChangedChildren(.elementMoved, context: &tx)
+            self.context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
             state = .bWithALeaving(b, a)
         case .aWithBLeaving(let a, let b):
             updateNode(b.unwrap(), &tx)

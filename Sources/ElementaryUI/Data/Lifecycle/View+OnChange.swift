@@ -60,7 +60,7 @@ struct _OnChangeView<Wrapped: View, Value: Equatable>: View {
         if view.initial {
             let initialValue = view.value
             let action = view.action
-            tx.scheduler.afterReconcile {
+            tx.scheduler.addEffect {
                 action(initialValue, initialValue)
             }
         }
@@ -81,7 +81,7 @@ struct _OnChangeView<Wrapped: View, Value: Equatable>: View {
             node.state.value = newValue
 
             let action = view.action
-            tx.scheduler.afterReconcile {
+            tx.scheduler.addEffect {
                 action(oldValue, newValue)
             }
         }

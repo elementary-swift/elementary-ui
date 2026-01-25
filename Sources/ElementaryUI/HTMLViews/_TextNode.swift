@@ -9,15 +9,13 @@ public final class _TextNode: _Reconcilable {
         self.domNode = nil
         self.parentElement = viewContext.parentElement
 
-        self.parentElement?.reportChangedChildren(.elementAdded, context: &context)
+        self.parentElement?.reportChangedChildren(.elementAdded, tx: &context)
 
         isDirty = true
-        context.scheduler.addCommitAction(
-            CommitAction { [self] context in
-                self.domNode = ManagedDOMReference(reference: context.dom.createText(newValue), status: .added)
-                self.isDirty = false
-            }
-        )
+        context.scheduler.addCommitAction { [self] context in
+            self.domNode = ManagedDOMReference(reference: context.dom.createText(newValue), status: .added)
+            self.isDirty = false
+        }
     }
 
     func patch(_ newValue: String, context: inout _TransactionContext) {
@@ -27,15 +25,13 @@ public final class _TextNode: _Reconcilable {
         guard needsUpdate else { return }
 
         isDirty = true
-        context.scheduler.addCommitAction(
-            CommitAction { [self] context in
-                assert(isDirty, "text node is not dirty")
-                assert(domNode != nil, "text node is not mounted")
+        context.scheduler.addCommitAction { [self] context in
+            assert(isDirty, "text node is not dirty")
+            assert(domNode != nil, "text node is not mounted")
 
-                (domNode?.reference).map { context.dom.patchText($0, with: value) }
-                self.isDirty = false
-            }
-        )
+            (domNode?.reference).map { context.dom.patchText($0, with: value) }
+            self.isDirty = false
+        }
     }
 
     public func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
@@ -47,10 +43,10 @@ public final class _TextNode: _Reconcilable {
         switch op {
         case .startRemoval:
             domNode?.status = .removed
-            self.parentElement?.reportChangedChildren(.elementRemoved, context: &tx)
+            self.parentElement?.reportChangedChildren(.elementRemoved, tx: &tx)
         case .markAsMoved:
             domNode?.status = .moved
-            self.parentElement?.reportChangedChildren(.elementMoved, context: &tx)
+            self.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
         case .cancelRemoval:
             // a text node can not leave and re-enter
             break
