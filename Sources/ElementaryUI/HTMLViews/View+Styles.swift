@@ -86,6 +86,7 @@ extension View {
     }
 
     @available(*, deprecated, message: "Use offset(x: Double, y: Double) instead")
+    @_disfavoredOverload
     public func offset(x: Float = 0, y: Float = 0) -> some View<Self.Tag> {
         DOMEffectView<TransformModifier, Self>(value: .translation(CSSTransform.Translation(x: Double(x), y: Double(y))), wrapped: self)
     }
