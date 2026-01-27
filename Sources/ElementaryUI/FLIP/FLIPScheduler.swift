@@ -458,46 +458,56 @@ extension DOM.Interactor {
 }
 
 private extension DOM.Interactor {
+    typealias PositionStyleAccessors = (
+        position: DOM.StyleAccessor,
+        left: DOM.StyleAccessor,
+        top: DOM.StyleAccessor,
+        width: DOM.StyleAccessor,
+        height: DOM.StyleAccessor
+    )
+
+    func makePositionStyleAccessors(_ node: DOM.Node) -> PositionStyleAccessors {
+        (
+            position: makeStyleAccessor(node, cssName: "position"),
+            left: makeStyleAccessor(node, cssName: "left"),
+            top: makeStyleAccessor(node, cssName: "top"),
+            width: makeStyleAccessor(node, cssName: "width"),
+            height: makeStyleAccessor(node, cssName: "height")
+        )
+    }
+
     func fixAbsolutePosition(_ node: DOM.Node, toRect rect: DOM.Rect) -> FLIPScheduler.PreviousStyleValues {
-        let stylePosition = makeStyleAccessor(node, cssName: "position")
-        let styleLeft = makeStyleAccessor(node, cssName: "left")
-        let styleTop = makeStyleAccessor(node, cssName: "top")
-        let styleWidth = makeStyleAccessor(node, cssName: "width")
-        let styleHeight = makeStyleAccessor(node, cssName: "height")
+        let styles = makePositionStyleAccessors(node)
 
         // Extract previous style values for later reversal
         let previousValues = FLIPScheduler.PreviousStyleValues(
-            position: stylePosition.get(),
-            left: styleLeft.get(),
-            top: styleTop.get(),
-            width: styleWidth.get(),
-            height: styleHeight.get()
+            position: styles.position.get(),
+            left: styles.left.get(),
+            top: styles.top.get(),
+            width: styles.width.get(),
+            height: styles.height.get()
         )
 
         logTrace(
             "setting position of node \(node) to absolute, left: \(rect.x)px, top: \(rect.y)px, width: \(rect.width)px, height: \(rect.height)px"
         )
 
-        stylePosition.set("absolute")
-        styleLeft.set("\(rect.x)px")
-        styleTop.set("\(rect.y)px")
-        styleWidth.set("\(rect.width)px")
-        styleHeight.set("\(rect.height)px")
+        styles.position.set("absolute")
+        styles.left.set("\(rect.x)px")
+        styles.top.set("\(rect.y)px")
+        styles.width.set("\(rect.width)px")
+        styles.height.set("\(rect.height)px")
 
         return previousValues
     }
 
     func undoFixAbsolutePosition(_ node: DOM.Node, style: FLIPScheduler.PreviousStyleValues) {
-        let stylePosition = makeStyleAccessor(node, cssName: "position")
-        let styleLeft = makeStyleAccessor(node, cssName: "left")
-        let styleTop = makeStyleAccessor(node, cssName: "top")
-        let styleWidth = makeStyleAccessor(node, cssName: "width")
-        let styleHeight = makeStyleAccessor(node, cssName: "height")
+        let styles = makePositionStyleAccessors(node)
 
-        stylePosition.set(style.position)
-        styleLeft.set(style.left)
-        styleTop.set(style.top)
-        styleWidth.set(style.width)
-        styleHeight.set(style.height)
+        styles.position.set(style.position)
+        styles.left.set(style.left)
+        styles.top.set(style.top)
+        styles.width.set(style.width)
+        styles.height.set(style.height)
     }
 }
