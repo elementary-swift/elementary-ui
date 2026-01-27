@@ -2,9 +2,9 @@ import Reactivity
 
 public struct _StorageKey<Container, Value>: Sendable {
     private let defaultValueClosure: (@Sendable () -> sending Value)?
-    public let propertyID: PropertyID
+    internal let propertyID: PropertyID
 
-    public var defaultValue: Value {
+    internal var defaultValue: Value {
         if let closure = defaultValueClosure {
             return closure()
         } else {
@@ -13,13 +13,16 @@ public struct _StorageKey<Container, Value>: Sendable {
         }
     }
 
-    public init(_ propertyID: PropertyID, defaultValue: @autoclosure @Sendable @escaping () -> sending Value) {
-        self.propertyID = propertyID
-        defaultValueClosure = defaultValue
+    public init(_ propertyName: String, defaultValue: @autoclosure @Sendable @escaping () -> sending Value) {
+        self.init(PropertyID(propertyName), defaultValue: defaultValue)
     }
 
-    public init(_ propertyID: PropertyID) {
+    public init(_ propertyName: String) {
+        self.init(PropertyID(propertyName), defaultValue: nil)
+    }
+
+    internal init(_ propertyID: PropertyID, defaultValue: (@Sendable () -> sending Value)? = nil) {
         self.propertyID = propertyID
-        defaultValueClosure = nil
+        defaultValueClosure = defaultValue
     }
 }

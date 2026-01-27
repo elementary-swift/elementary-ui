@@ -57,7 +57,7 @@ extension EntryMacro: PeerMacro {
                 DeclSyntax(
                     """
                     \(property.modifiers) static let \(raw: keyName(for: identifier.text)) = \(keyType)(
-                        PropertyID("\(uniqueName)"), 
+                        "\(uniqueName)", 
                         defaultValue: \(initializer.value)
                     )
                     """
@@ -67,9 +67,7 @@ extension EntryMacro: PeerMacro {
             return [
                 DeclSyntax(
                     """
-                    \(property.modifiers) static let \(raw: keyName(for: identifier.text)) = \(keyType)(
-                        PropertyID("\(uniqueName)")
-                    )
+                    \(property.modifiers) static let \(raw: keyName(for: identifier.text)) = \(keyType)("\(uniqueName)")
                     """
                 )
             ]
