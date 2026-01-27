@@ -22,6 +22,21 @@ final class FLIPAnimation<Value: CSSAnimatable> {
         animatedValue.cancelAnimation()
     }
 
+    /// Clears the DOM animation for measurement, but keeps the AnimatedValue state.
+    /// Animation will either be re-applied, retargeted or canceled.
+    func clearForMeasurement() {
+        domAnimation?.cancel()
+        domAnimation = nil
+        isDirty = true
+    }
+
+    /// Retargets the animation to a new value, stacking on top of existing animation.
+    /// This preserves velocity and creates smoother transitions than canceling and recreating.
+    func retarget(to newLast: Value, transaction: Transaction, frameTime: Double) {
+        _ = animatedValue.setValueAndReturnIfAnimationWasStarted(newLast, transaction: transaction, frameTime: frameTime)
+        isDirty = true
+    }
+
     func commit(context: inout _CommitContext) {
         if isDirty {
             logTrace("committing dirty animation \(Value.CSSValue.styleKey)")

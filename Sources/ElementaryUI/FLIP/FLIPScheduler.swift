@@ -96,17 +96,19 @@ final class FLIPScheduler {
     private func commitPreMeasurementChanges(context: inout _CommitContext) {
 
         for (node, animation) in scheduledAnimations {
-            // TODO: find a good way to preserve velocities of redirected animations
-            // undo all running animations that are effected
-            runningAnimations[node]?.cancelAll()
-
             switch animation.layoutAction {
             case .none:
-                continue
+                // Clear DOM animations so we can measure true layout position,
+                // but keep the AnimatedValue state in case we want to restore
+                runningAnimations[node]?.clearDOMAnimations()
             case .moveAbsolute(let rect):
+                // Moving to absolute positioning requires fully cancelling
+                runningAnimations[node]?.cancelAll()
                 let previousValues = context.dom.fixAbsolutePosition(node, toRect: rect)
                 absolutePositionOriginals[node] = previousValues
             case .undoMoveAbsolute(let style):
+                // Re-entering layout requires fully cancelling
+                runningAnimations[node]?.cancelAll()
                 context.dom.undoFixAbsolutePosition(node, style: style)
             }
         }
@@ -123,28 +125,38 @@ final class FLIPScheduler {
                 }
         )
 
-        // measure all LAST states
-        for (node, animation) in scheduledAnimations {
-            // we keep these for cancelling running animations, but there is nothing new to schedule
-            guard animation.transaction.animation != nil else { continue }
-
-            var lastGeometry: NodeGeometry
-
-            if let parent = animation.containerNode, let parentRect = parentRects[parent] {
+        // measure all LAST states and update/create animations
+        for (node, scheduled) in scheduledAnimations {
+            let lastGeometry: NodeGeometry
+            if let parent = scheduled.containerNode, let parentRect = parentRects[parent] {
                 lastGeometry = getNodeGeometry(node, scopedTo: parentRect)
             } else {
                 lastGeometry = getNodeGeometry(node)
             }
 
-            runningAnimations[node] =
-                GeometryAnimation(
+            if let existingAnimation = runningAnimations[node] {
+                existingAnimation.updateAnimations(
                     node: node,
-                    first: animation.geometry,
+                    first: scheduled.geometry,
                     last: lastGeometry,
                     windowScrollDelta: windowScrollDelta,
-                    transaction: animation.transaction,
+                    animation: scheduled.transaction.animation,
+                    transaction: scheduled.transaction,
                     frameTime: context.currentFrameTime
                 )
+            } else if let animation = scheduled.transaction.animation {
+                // No existing animation and we have a new animation - create
+                runningAnimations[node] = GeometryAnimation(
+                    node: node,
+                    first: scheduled.geometry,
+                    last: lastGeometry,
+                    windowScrollDelta: windowScrollDelta,
+                    animation: animation,
+                    transaction: scheduled.transaction,
+                    frameTime: context.currentFrameTime
+                )
+            }
+            // else: no existing animation and no new animation requested - nothing to do
         }
 
         scheduledAnimations.removeAll()
@@ -226,9 +238,22 @@ private extension FLIPScheduler {
         var translation: FLIPAnimation<CSSTransform.Translation>?
         var width: FLIPAnimation<CSSWidth>?
         var height: FLIPAnimation<CSSHeight>?
+        /// The target geometry this animation is animating towards
+        private var targetGeometry: NodeGeometry
 
         var isCompleted: Bool {
             translation == nil && width == nil && height == nil
+        }
+
+        /// Check if this animation's target position matches (for translation)
+        func targetPositionMatches(_ other: NodeGeometry) -> Bool {
+            abs(targetGeometry.boundingClientRect.x - other.boundingClientRect.x) < positionEpsilon
+                && abs(targetGeometry.boundingClientRect.y - other.boundingClientRect.y) < positionEpsilon
+        }
+
+        /// Check if this animation's target size matches (for width/height)
+        func targetSizeMatches(_ other: NodeGeometry) -> Bool {
+            abs(targetGeometry.width - other.width) < sizeEpsilon && abs(targetGeometry.height - other.height) < sizeEpsilon
         }
 
         init(
@@ -236,42 +261,133 @@ private extension FLIPScheduler {
             first: NodeGeometry,
             last: NodeGeometry,
             windowScrollDelta: (x: Double, y: Double),
+            animation: Animation,
+            transaction: Transaction,
+            frameTime: Double
+        ) {
+            self.targetGeometry = last
+            let (dx, dy, dw, dh) = first.difference(from: last, scrollDelta: windowScrollDelta)
+
+            self.translation = Self.createTranslation(node: node, dx: dx, dy: dy, transaction: transaction, frameTime: frameTime)
+            self.width = Self.createSizeAnimation(
+                node: node,
+                first: CSSWidth(value: first.width),
+                last: CSSWidth(value: last.width),
+                delta: dw,
+                transaction: transaction,
+                frameTime: frameTime
+            )
+            self.height = Self.createSizeAnimation(
+                node: node,
+                first: CSSHeight(value: first.height),
+                last: CSSHeight(value: last.height),
+                delta: dh,
+                transaction: transaction,
+                frameTime: frameTime
+            )
+        }
+
+        /// Updates animations based on new geometry.
+        /// - If target matches: preserves existing animation
+        /// - If target changed and animation provided: creates/retargets animation
+        /// - If target changed and no animation: cancels existing animation
+        func updateAnimations(
+            node: DOM.Node,
+            first: NodeGeometry,
+            last: NodeGeometry,
+            windowScrollDelta: (x: Double, y: Double),
+            animation: Animation?,
             transaction: Transaction,
             frameTime: Double
         ) {
             let (dx, dy, dw, dh) = first.difference(from: last, scrollDelta: windowScrollDelta)
 
-            // TODO: implement scale animation as option
-
-            if shouldAnimateTranslation(dx, dy) {
-                self.translation = FLIPAnimation<CSSTransform.Translation>(
-                    node: node,
-                    first: CSSTransform.Translation(x: dx, y: dy),
-                    last: CSSTransform.Translation(x: 0, y: 0),
-                    transaction: transaction,
-                    frameTime: frameTime
-                )
+            // Handle translation (cannot retarget - target is always (0,0), offset changes)
+            if !targetPositionMatches(last) {
+                translation?.cancel()
+                self.translation =
+                    animation != nil
+                    ? Self.createTranslation(node: node, dx: dx, dy: dy, transaction: transaction, frameTime: frameTime)
+                    : nil
             }
 
-            if shouldAnimateSizeDelta(dw) {
-                self.width = FLIPAnimation<CSSWidth>(
-                    node: node,
-                    first: CSSWidth(value: first.width),
-                    last: CSSWidth(value: last.width),
-                    transaction: transaction,
-                    frameTime: frameTime
-                )
+            // Handle size (can retarget existing animations)
+            if !targetSizeMatches(last) {
+                if animation != nil {
+                    self.width = Self.retargetOrCreate(
+                        existing: width,
+                        node: node,
+                        first: CSSWidth(value: first.width),
+                        last: CSSWidth(value: last.width),
+                        delta: dw,
+                        transaction: transaction,
+                        frameTime: frameTime
+                    )
+                    self.height = Self.retargetOrCreate(
+                        existing: height,
+                        node: node,
+                        first: CSSHeight(value: first.height),
+                        last: CSSHeight(value: last.height),
+                        delta: dh,
+                        transaction: transaction,
+                        frameTime: frameTime
+                    )
+                } else {
+                    width?.cancel()
+                    height?.cancel()
+                    self.width = nil
+                    self.height = nil
+                }
             }
 
-            if shouldAnimateSizeDelta(dh) {
-                self.height = FLIPAnimation<CSSHeight>(
-                    node: node,
-                    first: CSSHeight(value: first.height),
-                    last: CSSHeight(value: last.height),
-                    transaction: transaction,
-                    frameTime: frameTime
-                )
+            self.targetGeometry = last
+        }
+
+        // MARK: - Animation Factories
+
+        private static func createTranslation(
+            node: DOM.Node,
+            dx: Double,
+            dy: Double,
+            transaction: Transaction,
+            frameTime: Double
+        ) -> FLIPAnimation<CSSTransform.Translation>? {
+            guard shouldAnimateTranslation(dx, dy) else { return nil }
+            return FLIPAnimation(
+                node: node,
+                first: CSSTransform.Translation(x: dx, y: dy),
+                last: CSSTransform.Translation(x: 0, y: 0),
+                transaction: transaction,
+                frameTime: frameTime
+            )
+        }
+
+        private static func createSizeAnimation<V: CSSAnimatable>(
+            node: DOM.Node,
+            first: V,
+            last: V,
+            delta: Double,
+            transaction: Transaction,
+            frameTime: Double
+        ) -> FLIPAnimation<V>? {
+            guard shouldAnimateSizeDelta(delta) else { return nil }
+            return FLIPAnimation(node: node, first: first, last: last, transaction: transaction, frameTime: frameTime)
+        }
+
+        private static func retargetOrCreate<V: CSSAnimatable>(
+            existing: FLIPAnimation<V>?,
+            node: DOM.Node,
+            first: V,
+            last: V,
+            delta: Double,
+            transaction: Transaction,
+            frameTime: Double
+        ) -> FLIPAnimation<V>? {
+            if let existing {
+                existing.retarget(to: last, transaction: transaction, frameTime: frameTime)
+                return existing
             }
+            return createSizeAnimation(node: node, first: first, last: last, delta: delta, transaction: transaction, frameTime: frameTime)
         }
 
         func cancelAll() {
@@ -283,6 +399,13 @@ private extension FLIPScheduler {
             self.translation = nil
             self.width = nil
             self.height = nil
+        }
+
+        /// Clears DOM animations for measurement, but keeps AnimatedValue state
+        func clearDOMAnimations() {
+            translation?.clearForMeasurement()
+            width?.clearForMeasurement()
+            height?.clearForMeasurement()
         }
 
         func applyChanges(context: inout _CommitContext) {
@@ -319,6 +442,12 @@ fileprivate extension FLIPScheduler {
         )
     }
 }
+
+/// Epsilon for comparing position equality (in pixels)
+private let positionEpsilon: Double = 2
+
+/// Epsilon for comparing size equality (in pixels)
+private let sizeEpsilon: Double = 2
 
 private func shouldAnimateSizeDelta(_ ds: Double) -> Bool {
     ds > 1 || ds < -1
