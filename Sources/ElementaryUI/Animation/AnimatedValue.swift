@@ -63,11 +63,22 @@ struct AnimatedValue<Value: AnimatableVectorConvertible>: ~Copyable {
         setValue(currentTarget)
     }
 
-    mutating func animate(to value: Value, startTime: Double, animation: Animation, tracker: AnimationTracker? = nil) {
+    mutating func animate(
+        to value: Value,
+        startTime: Double,
+        animation: Animation,
+        tracker: AnimationTracker? = nil,
+        initialVelocity: AnimatableVector? = nil
+    ) {
 
         self.progressToTime(startTime)
         var animationTarget = value.animatableVector - currentTarget.animatableVector
         var context = AnimationContext()
+
+        // If initial velocity is provided (e.g., from a canceled animation), use it
+        if let initialVelocity {
+            context.initialVelocity = initialVelocity
+        }
 
         if let previous = runningAnimations.last {
             var previousContext = previous.context
@@ -99,6 +110,13 @@ struct AnimatedValue<Value: AnimatableVectorConvertible>: ~Copyable {
                 context: context
             )
         )
+    }
+
+    /// Returns the current velocity of the animation, if animating.
+    func getVelocity(at time: Double) -> AnimatableVector? {
+        guard let last = runningAnimations.last else { return nil }
+        let elapsedTime = time - last.startTime
+        return last.animation.velocity(value: last.target, time: elapsedTime, context: last.context)
     }
 
     mutating func progressToTime(_ time: Double) {
@@ -225,7 +243,12 @@ private func calculateAnimationAtTime(
 }
 
 internal extension AnimatedValue {
-    mutating func setValueAndReturnIfAnimationWasStarted(_ value: Value, transaction: borrowing Transaction, frameTime: Double) -> Bool {
+    mutating func setValueAndReturnIfAnimationWasStarted(
+        _ value: Value,
+        transaction: borrowing Transaction,
+        frameTime: Double,
+        initialVelocity: AnimatableVector? = nil
+    ) -> Bool {
         guard value != currentTarget else { return false }
 
         let wasAnimating = isAnimating
@@ -237,7 +260,8 @@ internal extension AnimatedValue {
                 to: value,
                 startTime: frameTime,
                 animation: animation,
-                tracker: transaction._animationTracker
+                tracker: transaction._animationTracker,
+                initialVelocity: initialVelocity
             )
         } else {
             self.setValue(value)

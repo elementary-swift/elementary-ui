@@ -191,6 +191,39 @@ struct AnimatedValueTests {
 
         #expect(events == ["C1", "R1"])
     }
+
+    @Test
+    func springVelocityIsNonZeroAndChanges() {
+        var value = AnimatedValue(value: 0.0 as Double)
+        value.animate(to: 10.0, startTime: 0.0, animation: .smooth)
+
+        let v1 = value.getVelocity(at: 0.1)
+        let v2 = value.getVelocity(at: 0.2)
+
+        #expect(v1 != nil)
+        #expect(v2 != nil)
+        #expect(v1 != v2)
+        #expect(v1!.magnitude > 0)
+    }
+
+    @Test
+    func initialVelocityChangesSpringValues() {
+        var valueWithoutVelocity = AnimatedValue(value: 0.0 as Double)
+        var valueWithVelocity = AnimatedValue(value: 0.0 as Double)
+
+        valueWithoutVelocity.animate(to: 10.0, startTime: 0.0, animation: .smooth)
+        valueWithVelocity.animate(
+            to: 10.0,
+            startTime: 0.0,
+            animation: .smooth,
+            initialVelocity: 5.0.animatableVector
+        )
+
+        valueWithoutVelocity.progressToTime(0.1)
+        valueWithVelocity.progressToTime(0.1)
+
+        #expect(valueWithoutVelocity.presentation != valueWithVelocity.presentation)
+    }
 }
 
 extension AnimatedValue {
