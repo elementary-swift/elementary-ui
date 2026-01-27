@@ -8,11 +8,23 @@ final class FLIPAnimation<Value: CSSAnimatable> {
         !animatedValue.isAnimating
     }
 
-    init(node: DOM.Node, first: Value, last: Value, transaction: Transaction, frameTime: Double) {
+    init(
+        node: DOM.Node,
+        first: Value,
+        last: Value,
+        transaction: Transaction,
+        frameTime: Double,
+        initialVelocity: AnimatableVector? = nil
+    ) {
         self.node = node
         self.animatedValue = AnimatedValue(value: first)
 
-        _ = self.animatedValue.setValueAndReturnIfAnimationWasStarted(last, transaction: transaction, frameTime: frameTime)
+        _ = self.animatedValue.setValueAndReturnIfAnimationWasStarted(
+            last,
+            transaction: transaction,
+            frameTime: frameTime,
+            initialVelocity: initialVelocity
+        )
         isDirty = true
     }
 
@@ -23,18 +35,17 @@ final class FLIPAnimation<Value: CSSAnimatable> {
     }
 
     /// Clears the DOM animation for measurement, but keeps the AnimatedValue state.
-    /// Animation will either be re-applied, retargeted or canceled.
+    /// Animation will either be re-applied or canceled.
     func clearForMeasurement() {
         domAnimation?.cancel()
         domAnimation = nil
         isDirty = true
     }
 
-    /// Retargets the animation to a new value, stacking on top of existing animation.
-    /// This preserves velocity and creates smoother transitions than canceling and recreating.
-    func retarget(to newLast: Value, transaction: Transaction, frameTime: Double) {
-        _ = animatedValue.setValueAndReturnIfAnimationWasStarted(newLast, transaction: transaction, frameTime: frameTime)
-        isDirty = true
+    /// Returns the current presentation value and velocity, synced to frame time.
+    func snapshot(at frameTime: Double) -> (value: Value, velocity: AnimatableVector?) {
+        animatedValue.progressToTime(frameTime)
+        return (animatedValue.presentation, animatedValue.getVelocity(at: frameTime))
     }
 
     func commit(context: inout _CommitContext) {
