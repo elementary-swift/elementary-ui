@@ -18,6 +18,8 @@ final class TransformModifier: DOMElementModifier {
             rotation.updateValue(newRotation, &context)
         case (.translation(let translation), .translation(let newTranslation)):
             translation.updateValue(newTranslation, &context)
+        case (.scale(let scale), .scale(let newScale)):
+            scale.updateValue(newScale, &context)
         default:
             assertionFailure("Cannot update value of different type")
         }
@@ -41,12 +43,15 @@ extension CSSTransform.AnyFunction {
     enum ValueSource {
         case rotation(CSSValueSource<CSSTransform.Rotation>)
         case translation(CSSValueSource<CSSTransform.Translation>)
+        case scale(CSSValueSource<CSSTransform.Scale>)
 
         func makeInstance() -> AnyCSSAnimatedValueInstance<CSSTransform> {
             switch self {
             case .rotation(let value):
                 AnyCSSAnimatedValueInstance(value.makeInstance())
             case .translation(let value):
+                AnyCSSAnimatedValueInstance(value.makeInstance())
+            case .scale(let value):
                 AnyCSSAnimatedValueInstance(value.makeInstance())
             }
         }
@@ -58,6 +63,8 @@ extension CSSTransform.AnyFunction {
             .rotation(CSSValueSource(value: value))
         case .translation(let value):
             .translation(CSSValueSource(value: value))
+        case .scale(let value):
+            .scale(CSSValueSource(value: value))
         }
     }
 }

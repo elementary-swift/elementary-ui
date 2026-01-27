@@ -246,7 +246,7 @@ private extension FLIPScheduler {
             if shouldAnimateTranslation(dx, dy) {
                 self.translation = FLIPAnimation<CSSTransform.Translation>(
                     node: node,
-                    first: CSSTransform.Translation(x: Float(dx), y: Float(dy)),
+                    first: CSSTransform.Translation(x: dx, y: dy),
                     last: CSSTransform.Translation(x: 0, y: 0),
                     transaction: transaction,
                     frameTime: frameTime

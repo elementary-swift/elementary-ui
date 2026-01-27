@@ -81,7 +81,69 @@ extension View {
     /// - Returns: A view offset by the specified amounts.
     ///
     /// - Note: Changes to offset are automatically animated when done in an animated transaction.
-    public func offset(x: Float = 0, y: Float = 0) -> some View<Self.Tag> {
+    public func offset(x: Double = 0, y: Double = 0) -> some View<Self.Tag> {
         DOMEffectView<TransformModifier, Self>(value: .translation(CSSTransform.Translation(x: x, y: y)), wrapped: self)
+    }
+
+    /// Scales the view uniformly by the specified factor.
+    ///
+    /// Use this modifier to uniformly scale a view along both axes.
+    ///
+    /// ## Usage
+    ///
+    /// ```swift
+    /// div { "Scaled content" }
+    ///     .scaleEffect(1.5)
+    ///
+    /// // Scale from a corner
+    /// div { "Growing" }
+    ///     .scaleEffect(scale, anchor: .topLeading)
+    ///
+    /// // Animate scale changes
+    /// withAnimation {
+    ///     scale = 2.0
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - scale: The scale factor to apply uniformly to both axes. 1.0 is the original size.
+    ///   - anchor: The point around which to scale. Default is `.center`.
+    /// - Returns: A view scaled by the specified factor.
+    ///
+    /// - Note: Changes to scale are automatically animated when done in an animated transaction.
+    public func scaleEffect(_ scale: Double, anchor: UnitPoint = .center) -> some View<Self.Tag> {
+        DOMEffectView<TransformModifier, Self>(value: .scale(CSSTransform.Scale(x: scale, y: scale, anchor: anchor)), wrapped: self)
+    }
+
+    /// Scales the view by the specified horizontal and vertical factors.
+    ///
+    /// Use this modifier to scale a view independently along each axis.
+    ///
+    /// ## Usage
+    ///
+    /// ```swift
+    /// div { "Stretched content" }
+    ///     .scaleEffect(x: 2.0, y: 1.0)
+    ///
+    /// // Scale from a specific anchor point
+    /// div { "Scaling" }
+    ///     .scaleEffect(x: scaleX, y: scaleY, anchor: .bottom)
+    ///
+    /// // Animate scale changes
+    /// withAnimation {
+    ///     scaleX = 1.5
+    ///     scaleY = 0.5
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - x: The horizontal scale factor. 1.0 is the original width.
+    ///   - y: The vertical scale factor. 1.0 is the original height.
+    ///   - anchor: The point around which to scale. Default is `.center`.
+    /// - Returns: A view scaled by the specified factors.
+    ///
+    /// - Note: Changes to scale are automatically animated when done in an animated transaction.
+    public func scaleEffect(x: Double = 1, y: Double = 1, anchor: UnitPoint = .center) -> some View<Self.Tag> {
+        DOMEffectView<TransformModifier, Self>(value: .scale(CSSTransform.Scale(x: x, y: y, anchor: anchor)), wrapped: self)
     }
 }

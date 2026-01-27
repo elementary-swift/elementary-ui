@@ -57,6 +57,7 @@ struct CSSTransform: CSSPropertyValue {
     enum AnyFunction {
         case rotation(Rotation)
         case translation(Translation)
+        case scale(Scale)
     }
 
     var value: [AnyFunction]
@@ -96,6 +97,14 @@ extension CSSTransform.AnyFunction {
             }
         case .translation(let translation):
             "translate(\(translation.x)px, \(translation.y)px)"
+        case .scale(let scale):
+            if scale.anchor.isCenter {
+                "scale(\(scale.x), \(scale.y))"
+            } else {
+                """
+                translate(\(scale.anchor.cssXPercent)%, \(scale.anchor.cssYPercent)%) scale(\(scale.x), \(scale.y)) translate(\(-scale.anchor.cssXPercent)%, \(-scale.anchor.cssYPercent)%)
+                """
+            }
         }
     }
 }
@@ -134,10 +143,10 @@ extension CSSTransform {
 
 extension CSSTransform {
     struct Translation: CSSAnimatable {
-        var x: Float
-        var y: Float
+        var x: Double
+        var y: Double
 
-        init(x: Float, y: Float) {
+        init(x: Double, y: Double) {
             self.x = x
             self.y = y
         }
@@ -147,13 +156,47 @@ extension CSSTransform {
         }
 
         init(_animatableVector animatableVector: AnimatableVector) {
-            let simd = SIMD2(_animatableVector: animatableVector)
+            let simd = SIMD2<Double>(_animatableVector: animatableVector)
             self.x = simd[0]
             self.y = simd[1]
         }
 
         var animatableVector: AnimatableVector {
-            SIMD2(x, y).animatableVector
+            SIMD2<Double>(x, y).animatableVector
+        }
+    }
+}
+
+extension CSSTransform {
+    struct Scale: CSSAnimatable {
+        var x: Double
+        var y: Double
+        var anchor: UnitPoint
+
+        init(x: Double, y: Double, anchor: UnitPoint) {
+            self.x = x
+            self.y = y
+            self.anchor = anchor
+        }
+
+        var isIdentity: Bool {
+            x == 1 && y == 1
+        }
+
+        var cssValue: CSSTransform {
+            guard !isIdentity else { return .none }
+            return CSSTransform(.scale(self))
+        }
+
+        init(_animatableVector animatableVector: AnimatableVector) {
+            let simd = SIMD4<Double>(_animatableVector: animatableVector)
+            self.x = simd[0]
+            self.y = simd[1]
+            self.anchor = UnitPoint(x: Float(simd[2]), y: Float(simd[3]))
+        }
+
+        var animatableVector: AnimatableVector {
+            SIMD4<Double>(x, y, Double(anchor.x), Double(anchor.y)).animatableVector
         }
     }
 }
@@ -200,13 +243,13 @@ struct CSSTranslate {
 extension CSSTranslate: CSSAnimatable {
     var cssValue: CSSTranslate { self }
     init(_animatableVector animatableVector: AnimatableVector) {
-        let simd = SIMD2(_animatableVector: animatableVector)
-        self.x = Double(simd[0])
-        self.y = Double(simd[1])
+        let simd = SIMD2<Double>(_animatableVector: animatableVector)
+        self.x = simd[0]
+        self.y = simd[1]
     }
 
     var animatableVector: AnimatableVector {
-        SIMD2(Float(x), Float(y)).animatableVector
+        SIMD2<Double>(x, y).animatableVector
     }
 }
 

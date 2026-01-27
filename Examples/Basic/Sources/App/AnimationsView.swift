@@ -20,9 +20,11 @@ struct AnimationsView {
                             isBallFading.toggle()
                         }
                     }
+                Square(color: "green")
+                    .scaleEffect(angle, anchor: .leading)
                 Square(color: "blue")
                     .rotationEffect(.degrees(0))
-                    .rotationEffect(.radians(angle), anchor: .topTrailing)
+                    .rotationEffect(.radians(angle), anchor: .topLeading)
                 Square(color: "red")
                     .rotationEffect(.degrees(isRotated ? 360 : 0))
                     .offset(x: isOffset ? 100 : 0)
