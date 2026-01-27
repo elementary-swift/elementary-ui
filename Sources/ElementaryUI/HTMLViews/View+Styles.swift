@@ -85,6 +85,11 @@ extension View {
         DOMEffectView<TransformModifier, Self>(value: .translation(CSSTransform.Translation(x: x, y: y)), wrapped: self)
     }
 
+    @available(*, deprecated, message: "Use offset(x: Double, y: Double) instead")
+    public func offset(x: Float = 0, y: Float = 0) -> some View<Self.Tag> {
+        DOMEffectView<TransformModifier, Self>(value: .translation(CSSTransform.Translation(x: Double(x), y: Double(y))), wrapped: self)
+    }
+
     /// Scales the view uniformly by the specified factor.
     ///
     /// Use this modifier to uniformly scale a view along both axes.
