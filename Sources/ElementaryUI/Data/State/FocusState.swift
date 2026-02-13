@@ -96,23 +96,24 @@ public extension FocusState {
 
 internal final class FocusStateStorage<Value: Hashable> {
     private let registrar = ReactivityRegistrar()
-    let noneValue: Value
+    private let _valueID = PropertyID(0)
 
-    var _value: Value
+    private let noneValue: Value
+
+    private var _value: Value
 
     private(set) var value: Value {
         get {
-            registrar.access(PropertyID(0))
+            registrar.access(_valueID)
             return _value
         }
         set {
-            registrar.willSet(PropertyID(0))
+            registrar.willSet(_valueID)
             _value = newValue
-            registrar.didSet(PropertyID(0))
+            registrar.didSet(_valueID)
         }
     }
 
-    @ReactiveIgnored
     private var focusables: [Value: any Focusable] = [:]
 
     init(noneValue: Value) {
