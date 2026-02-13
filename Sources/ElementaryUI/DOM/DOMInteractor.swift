@@ -10,6 +10,7 @@ enum DOM {
         func makePropertyAccessor(_ node: Node, name: String) -> PropertyAccessor
         func makeStyleAccessor(_ node: Node, cssName: String) -> StyleAccessor
         func makeComputedStyleAccessor(_ node: Node) -> ComputedStyleAccessor
+        func makeFocusAccessor(_ node: Node, onEvent: @escaping (FocusEvent) -> Void) -> FocusAccessor
 
         // Fine-grained style property operations
         func setStyleProperty(_ node: Node, name: String, value: String)

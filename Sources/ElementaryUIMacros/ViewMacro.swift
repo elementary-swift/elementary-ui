@@ -9,6 +9,7 @@ let skippableAttributesForEquating = Set<String>([
     "Environment",
     "State",
     "ViewEquatableIgnored",
+    "FocusState",
 ])
 
 let wrappingAttributesForEquating = Set<String>([
@@ -175,7 +176,7 @@ extension VariableDeclSyntax {
     }
 
     var isStateProperty: Bool {
-        isVar && hasAttribute(named: "State")
+        isVar && (hasAttribute(named: "State") || hasAttribute(named: "FocusState"))
     }
 
     var isEnvironmentProperty: Bool {

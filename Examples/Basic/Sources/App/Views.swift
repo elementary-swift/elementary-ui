@@ -33,6 +33,13 @@ struct AppView {
             ToggleTestView()
             hr()
         }
+
+        div {
+            hr()
+            FocusDemoView()
+            hr()
+        }
+
         // TODE: replaceChildren does not keep animations and similar going....
         // if counters.count > 1 {
         //     span {}.attributes(.style(["display": "none"]))

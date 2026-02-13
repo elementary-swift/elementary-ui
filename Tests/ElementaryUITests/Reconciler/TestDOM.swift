@@ -148,6 +148,10 @@ final class TestDOM: DOM.Interactor {
         fatalError("Not implemented")
     }
 
+    func makeFocusAccessor(_ node: DOM.Node, onEvent: @escaping (DOM.FocusEvent) -> Void) -> DOM.FocusAccessor {
+        fatalError("Not implemented")
+    }
+
     func setStyleProperty(_ node: DOM.Node, name: String, value: String) {
         guard case let .element(data) = node.value.kind else { return }
         data.inlineStyles[name] = value

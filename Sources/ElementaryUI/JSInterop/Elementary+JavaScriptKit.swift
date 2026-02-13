@@ -121,6 +121,38 @@ final class JSKitDOMInteractor: DOM.Interactor {
         )
     }
 
+    func makeFocusAccessor(_ node: DOM.Node, onEvent: @escaping (DOM.FocusEvent) -> Void) -> DOM.FocusAccessor {
+        let focusSink = DOM.EventSink(
+            JSClosure { _ in
+                onEvent(.focus)
+                return .undefined
+            }
+        )
+
+        let blurSink = DOM.EventSink(
+            JSClosure { _ in
+                onEvent(.blur)
+                return .undefined
+            }
+        )
+
+        addEventListener(node, event: "focus", sink: focusSink)
+        addEventListener(node, event: "blur", sink: blurSink)
+
+        return .init(
+            focus: {
+                _ = node.jsObject.focus!()
+            },
+            blur: {
+                _ = node.jsObject.blur!()
+            },
+            unmount: { [self] in
+                self.removeEventListener(node, event: "focus", sink: focusSink)
+                self.removeEventListener(node, event: "blur", sink: blurSink)
+            }
+        )
+    }
+
     func setStyleProperty(_ node: DOM.Node, name: String, value: String) {
         let style = node.jsObject.style
         _ = style.setProperty(JSString(name).jsValue, JSString(value).jsValue)
