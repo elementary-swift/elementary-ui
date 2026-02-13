@@ -1,19 +1,43 @@
 import Reactivity
 
+/// A property wrapper that tracks and controls focus for one or more views.
+///
+/// Use ``FocusState`` to:
+/// - observe which view is currently focused, and
+/// - move focus programmatically by assigning a new value.
+/// - bind focusable views with ``View/focused(_:)`` or ``View/focused(_:equals:)``
+///
+/// This wrapper supports two common shapes:
+/// - `Bool` for a single focused/not-focused target
+/// - optional hashable values (for example an enum) to identify which view is focused
 @propertyWrapper
 public struct FocusState<Value: Hashable> {
     internal typealias Storage = FocusStateStorage<Value>
 
     private let noneValue: Value
     private var storage: Storage?
+
+    /// Creates a boolean focus state.
+    ///
+    /// Use this when you only need to track whether one target is focused.
+    /// Assign `true` to request focus, or `false` to clear focus.
     public init() where Value == Bool {
         self.noneValue = false
     }
 
+    /// Creates an optional keyed focus state.
+    ///
+    /// Use this when a single optional value identifies the
+    /// currently focused target. Assign a matching value to request focus,
+    /// or `nil` to clear focus.
     public init<T: Hashable>() where Value == T? {
         self.noneValue = nil
     }
 
+    /// The current focus value.
+    ///
+    /// Reading returns the currently focused value.
+    /// Writing updates focus on the view with the matching value (if any).
     public var wrappedValue: Value {
         get {
             guard let storage else {
@@ -31,6 +55,10 @@ public struct FocusState<Value: Hashable> {
         }
     }
 
+    /// A binding projection used by `.focused(...)` modifiers.
+    ///
+    /// Access this value with the `$` prefix.
+    /// Example: `input(...).focused($focusedField, equals: .username)`
     public var projectedValue: Binding {
         get {
             guard let storage else {
@@ -54,6 +82,9 @@ public extension FocusState {
 }
 
 public extension FocusState {
+    /// A projected focus binding type used by `.focused(...)`.
+    ///
+    /// Instances are created by ``FocusState/projectedValue`` (`$` syntax).
     struct Binding {
         internal let storage: Storage
 
@@ -112,7 +143,8 @@ internal final class FocusStateStorage<Value: Hashable> {
     }
 
     func reportBlur(value: Value) {
-        // NOTE: maybe add checks or something here? should be fine though, as changes are read after the "transaction" (ie: it will often be blur (old), focus (new), then read value)
+        // NOTE: there should be no case where this is a problem, if another view
+        // using this binding is focused it will happen "in transaction" (ie: before first read of the value)
         self.value = noneValue
     }
 
@@ -135,6 +167,11 @@ internal final class FocusStateStorage<Value: Hashable> {
         guard currentFocusable === focusable else { return }
 
         focusables.remove(at: index)
+
+        // clean up focus if this element was currently focused
+        if value == self._value {
+            self.value = noneValue
+        }
     }
 }
 
