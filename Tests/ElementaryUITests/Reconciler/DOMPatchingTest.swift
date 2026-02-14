@@ -356,7 +356,7 @@ struct DOMPatchingTests {
 
         #expect(
             ops == [
-                .patchText(node: "false", to: "true"),
+                .patchText(node: "false", to: "true")
             ]
         )
     }
