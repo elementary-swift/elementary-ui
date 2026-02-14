@@ -59,9 +59,6 @@ struct DOMStyleTests {
         )
     }
 
-
-
-
     @Test
     func patchesNonStyleAttributesAlongsideStylesAsOps() {
         let state = StyleToggleState()
