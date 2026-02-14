@@ -341,6 +341,25 @@ struct DOMPatchingTests {
 
         #expect(deinitCount == 15)
     }
+
+    @Test
+    func patchesGroup() {
+        let state = ToggleState()
+        let ops = patchOps {
+            Group {
+                p { "\(state.value)" }
+                a { "Static" }
+            }
+        } toggle: {
+            state.toggle()
+        }
+
+        #expect(
+            ops == [
+                .patchText(node: "false", to: "true"),
+            ]
+        )
+    }
 }
 
 @Reactive

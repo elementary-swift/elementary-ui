@@ -217,6 +217,22 @@ struct DOMMountingTests {
             ]
         )
     }
+
+    @Test
+    func mountsGroup() {
+        #expect(
+            mountOps {
+                Group {
+                    p { "First" }
+                }
+            } == [
+                .createElement("p"),
+                .createText("First"),
+                .addChild(parent: "<p>", child: "First"),
+                .addChild(parent: "<>", child: "<p>"),
+            ]
+        )
+    }
 }
 
 @View
