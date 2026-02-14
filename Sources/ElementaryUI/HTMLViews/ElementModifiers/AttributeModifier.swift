@@ -120,8 +120,10 @@ extension _AttributeModifier {
                         return
                     }
 
-                    if old._styleKeyValuePairs != nil || new._styleKeyValuePairs != nil {
-                        applyStyleChanges(from: old._styleKeyValuePairs, to: new._styleKeyValuePairs, on: dom)
+                    let oldStyle = old._styleKeyValuePairs
+                    let newStyle = new._styleKeyValuePairs
+                    if oldStyle != nil || newStyle != nil {
+                        applyStyleChanges(from: oldStyle, to: newStyle, on: dom)
                     } else if !old.value.utf8Equals(new.value) {
                         logTrace("updating attribute \(new.name) from \(old.value ?? "") to \(new.value ?? "")")
                         dom.setAttribute(node, name: new.name, value: new.value)
@@ -156,30 +158,23 @@ extension _AttributeModifier {
                 oldByKey[HashableUTF8View(old.name)] = old
             }
 
-            func apply(_ new: _StoredAttribute, _ dom: any DOM.Interactor) {
+            func apply(_ new: _StoredAttribute) {
                 let key = HashableUTF8View(new.name)
-                if let old = oldByKey.removeValue(forKey: key) {
-                    if old._styleKeyValuePairs != nil || new._styleKeyValuePairs != nil {
-                        applyStyleChanges(from: old._styleKeyValuePairs, to: new._styleKeyValuePairs, on: dom)
-                    } else if !old.value.utf8Equals(new.value) {
-                        logTrace("updating attribute \(new.name) from \(old.value ?? "") to \(new.value ?? "")")
-                        dom.setAttribute(node, name: new.name, value: new.value)
-                    }
-                } else {
-                    if let newStylePairs = new._styleKeyValuePairs {
-                        applyStyleChanges(from: nil, to: newStylePairs, on: dom)
-                    } else {
-                        logTrace("setting attribute \(new.name) to \(new.value ?? "")")
-                        dom.setAttribute(node, name: new.name, value: new.value)
-                    }
+                let old = oldByKey.removeValue(forKey: key)
+                let oldStyle = old?._styleKeyValuePairs
+                let newStyle = new._styleKeyValuePairs
+                if oldStyle != nil || newStyle != nil {
+                    applyStyleChanges(from: oldStyle, to: newStyle, on: dom)
+                } else if old == nil || !old!.value.utf8Equals(new.value) {
+                    dom.setAttribute(node, name: new.name, value: new.value)
                 }
             }
 
             if let firstNew {
-                apply(firstNew, dom)
+                apply(firstNew)
             }
             while let new = newIterator.next() {
-                apply(new, dom)
+                apply(new)
             }
 
             for old in oldByKey.values {
@@ -276,21 +271,8 @@ extension _AttributeModifier {
 
             func apply(_ pair: StylePair) {
                 let key = HashableUTF8View(pair.key)
-                if let oldValue = oldByKey.removeValue(forKey: key) {
-                    if !oldValue.elementsEqual(pair.value) {
-                        dom.setStyleProperty(
-                            node,
-                            name: key.stringValue,
-                            value: String(decoding: pair.value, as: UTF8.self)
-                        )
-                    }
-                } else {
-                    dom.setStyleProperty(
-                        node,
-                        name: key.stringValue,
-                        value: String(decoding: pair.value, as: UTF8.self)
-                    )
-                }
+                if let oldValue = oldByKey.removeValue(forKey: key), oldValue.elementsEqual(pair.value) { return }
+                dom.setStyleProperty(node, name: key.stringValue, value: String(decoding: pair.value, as: UTF8.self))
             }
 
             if let firstNew {
