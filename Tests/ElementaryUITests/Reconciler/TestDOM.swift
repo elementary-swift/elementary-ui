@@ -20,6 +20,8 @@ final class TestDOM: DOM.Interactor {
         case createText(String)
         case setAttr(node: String, name: String, value: String?)
         case removeAttr(node: String, name: String)
+        case setStyle(node: String, name: String, value: String)
+        case removeStyle(node: String, name: String)
         case addListener(node: String, event: String)
         case removeListener(node: String, event: String)
         case patchText(node: String, to: String)
@@ -37,6 +39,10 @@ final class TestDOM: DOM.Interactor {
                 "setAttr \(node) \(name)=\(value ?? "nil")"
             case let .removeAttr(node, name):
                 "removeAttr \(node) \(name)"
+            case let .setStyle(node, name, value):
+                "setStyle \(node) \(name)=\(value)"
+            case let .removeStyle(node, name):
+                "removeStyle \(node) \(name)"
             case let .addListener(node, event):
                 "addListener \(node) \(event)"
             case let .removeListener(node, event):
@@ -155,13 +161,13 @@ final class TestDOM: DOM.Interactor {
     func setStyleProperty(_ node: DOM.Node, name: String, value: String) {
         guard case let .element(data) = node.value.kind else { return }
         data.inlineStyles[name] = value
-        // Model as attribute op for trace? We keep ops minimal; no op appended here.
+        ops.append(.setStyle(node: label(node), name: name, value: value))
     }
 
     func removeStyleProperty(_ node: DOM.Node, name: String) {
         guard case let .element(data) = node.value.kind else { return }
         data.inlineStyles.removeValue(forKey: name)
-        // No op trace for simplicity
+        ops.append(.removeStyle(node: label(node), name: name))
     }
 
     func createText(_ text: String) -> DOM.Node {
@@ -385,6 +391,19 @@ extension TestDOM {
     func mount(_ view: @escaping () -> some View) -> MountedApplication {
         let runtime = ApplicationRuntime(dom: self, domRoot: self.root, appView: DeferredResolutionView(root: view))
         return MountedApplication(unmount: runtime.unmount)
+    }
+
+    func inlineStyles(ofFirstChildElement tag: String? = nil) -> [String: String] {
+        guard case let .element(rootData) = root.value.kind else { return [:] }
+
+        let child = rootData.children.first {
+            guard case let .element(data) = $0.kind else { return false }
+            guard let tag else { return true }
+            return data.tag == tag
+        }
+
+        guard let child, case let .element(data) = child.kind else { return [:] }
+        return data.inlineStyles
     }
 }
 
