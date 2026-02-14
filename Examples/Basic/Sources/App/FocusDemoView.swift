@@ -39,7 +39,7 @@ struct FocusDemoView {
                     .onClick { focusedField = nil }
             }
 
-            div {
+            Group {
                 p {
                     "First: "
                     input(.type(.text))

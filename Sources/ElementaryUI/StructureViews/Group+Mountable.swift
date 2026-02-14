@@ -1,4 +1,5 @@
-extension Group: _Mountable, View where Content: _Mountable {
+extension Group: View where Content: View {}
+extension Group: _Mountable where Content: _Mountable {
     public typealias _MountedNode = Self.Content._MountedNode
 
     public static func _makeNode(
