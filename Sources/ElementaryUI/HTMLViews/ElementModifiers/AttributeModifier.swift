@@ -1,3 +1,5 @@
+import struct Reactivity.HashableUTF8View
+
 public final class _AttributeModifier: DOMElementModifier, Invalidateable {
     typealias Value = _AttributeStorage
 
@@ -21,8 +23,10 @@ public final class _AttributeModifier: DOMElementModifier, Invalidateable {
         if __omg_this_was_annoying_I_am_false {
             // this is to force inclusion of types
             _ = p {}.attributes(.class([""]), .style(["": ""]))
-            var dict = [MountedInstance.StyleKey: Substring.UTF8View]()
-            dict[.init(""[...].utf8)] = ""[...].utf8
+            var f = [HashableUTF8View: _StoredAttribute]()
+            f[HashableUTF8View("")] = .none
+            var u = [HashableUTF8View: Substring.UTF8View]()
+            u[HashableUTF8View("")] = .none
         }
         #endif
     }
@@ -46,34 +50,13 @@ public final class _AttributeModifier: DOMElementModifier, Invalidateable {
 
 extension _AttributeModifier {
     final class MountedInstance: Unmountable, Invalidateable {
-        fileprivate struct StyleKey: Hashable {
-            let raw: Substring.UTF8View
-
-            init(_ raw: Substring.UTF8View) {
-                self.raw = raw
-            }
-
-            static func == (lhs: StyleKey, rhs: StyleKey) -> Bool {
-                lhs.raw.elementsEqual(rhs.raw)
-            }
-
-            func hash(into hasher: inout Hasher) {
-                raw.withContiguousStorageIfAvailable {
-                    hasher.combine(bytes: UnsafeRawBufferPointer($0))
-                }
-            }
-
-            var stringValue: String {
-                String(raw)
-            }
-        }
+        private typealias StylePair = (key: Substring.UTF8View, value: Substring.UTF8View)
 
         let modifier: _AttributeModifier
         let node: DOM.Node
 
         var isDirty: Bool = false
         var previousAttributes: _AttributeStorage = .none
-        private var cachedStylePairs: _StoredAttribute._StyleKeyValuePairs?
 
         init(_ node: DOM.Node, _ modifier: _AttributeModifier, _ context: inout _CommitContext) {
             self.node = node
@@ -105,54 +88,132 @@ extension _AttributeModifier {
         private func patchAttributes(with attributes: _AttributeStorage, on dom: any DOM.Interactor) {
             guard attributes != .none || previousAttributes != .none else { return }
 
-            var previous = previousAttributes.flattened().reversed()
-            var newStylePairs: _StoredAttribute._StyleKeyValuePairs?
-
-            for attribute in attributes.flattened() {
-                if let pairs = attribute._styleKeyValuePairs {
-                    newStylePairs = pairs
-                    if let idx = previous.firstIndex(where: { $0._styleKeyValuePairs != nil }) {
-                        previous.remove(at: idx)
-                    }
-                } else if let idx = previous.firstIndex(where: { $0.name.utf8Equals(attribute.name) }) {
-                    let old = previous.remove(at: idx)
-                    if !old.value.utf8Equals(attribute.value) {
-                        logTrace("updating attribute \(attribute.name) from \(old.value ?? "") to \(attribute.value ?? "")")
-                        dom.setAttribute(node, name: attribute.name, value: attribute.value)
-                    }
-                } else {
-                    logTrace("setting attribute \(attribute.name) to \(attribute.value ?? "")")
-                    dom.setAttribute(node, name: attribute.name, value: attribute.value)
-                }
-            }
-
-            for attribute in previous where attribute._styleKeyValuePairs == nil {
-                logTrace("removing attribute \(attribute.name)")
-                dom.removeAttribute(node, name: attribute.name)
-            }
-
-            applyStyleChanges(newStylePairs, on: dom)
+            var oldIterator = previousAttributes.flattened().makeIterator()
+            var newIterator = attributes.flattened().makeIterator()
+            applyAttributeChanges(
+                oldIterator: &oldIterator,
+                newIterator: &newIterator,
+                on: dom
+            )
             previousAttributes = attributes
         }
 
-        private func applyStyleChanges(_ newStylePairs: _StoredAttribute._StyleKeyValuePairs?, on dom: any DOM.Interactor) {
-            let oldStylePairs = cachedStylePairs
+        private func applyAttributeChanges(
+            oldIterator: inout _MergedAttributes.Iterator,
+            newIterator: inout _MergedAttributes.Iterator,
+            on dom: any DOM.Interactor
+        ) {
+            while true {
+                let oldNext = oldIterator.next()
+                let newNext = newIterator.next()
 
+                switch (oldNext, newNext) {
+                case let (.some(old), .some(new)):
+                    guard old.name.utf8Equals(new.name) else {
+                        applyAttributesSlowPath(
+                            firstOld: old,
+                            oldIterator: &oldIterator,
+                            firstNew: new,
+                            newIterator: &newIterator,
+                            on: dom
+                        )
+                        return
+                    }
+
+                    if old._styleKeyValuePairs != nil || new._styleKeyValuePairs != nil {
+                        applyStyleChanges(from: old._styleKeyValuePairs, to: new._styleKeyValuePairs, on: dom)
+                    } else if !old.value.utf8Equals(new.value) {
+                        logTrace("updating attribute \(new.name) from \(old.value ?? "") to \(new.value ?? "")")
+                        dom.setAttribute(node, name: new.name, value: new.value)
+                    }
+                case (.none, .none):
+                    return
+                default:
+                    applyAttributesSlowPath(
+                        firstOld: oldNext,
+                        oldIterator: &oldIterator,
+                        firstNew: newNext,
+                        newIterator: &newIterator,
+                        on: dom
+                    )
+                    return
+                }
+            }
+        }
+
+        private func applyAttributesSlowPath(
+            firstOld: _StoredAttribute?,
+            oldIterator: inout _MergedAttributes.Iterator,
+            firstNew: _StoredAttribute?,
+            newIterator: inout _MergedAttributes.Iterator,
+            on dom: any DOM.Interactor
+        ) {
+            var oldByKey: [HashableUTF8View: _StoredAttribute] = [:]
+            if let firstOld {
+                oldByKey[HashableUTF8View(firstOld.name)] = firstOld
+            }
+            while let old = oldIterator.next() {
+                oldByKey[HashableUTF8View(old.name)] = old
+            }
+
+            func apply(_ new: _StoredAttribute, _ dom: any DOM.Interactor) {
+                let key = HashableUTF8View(new.name)
+                if let old = oldByKey.removeValue(forKey: key) {
+                    if old._styleKeyValuePairs != nil || new._styleKeyValuePairs != nil {
+                        applyStyleChanges(from: old._styleKeyValuePairs, to: new._styleKeyValuePairs, on: dom)
+                    } else if !old.value.utf8Equals(new.value) {
+                        logTrace("updating attribute \(new.name) from \(old.value ?? "") to \(new.value ?? "")")
+                        dom.setAttribute(node, name: new.name, value: new.value)
+                    }
+                } else {
+                    if let newStylePairs = new._styleKeyValuePairs {
+                        applyStyleChanges(from: nil, to: newStylePairs, on: dom)
+                    } else {
+                        logTrace("setting attribute \(new.name) to \(new.value ?? "")")
+                        dom.setAttribute(node, name: new.name, value: new.value)
+                    }
+                }
+            }
+
+            if let firstNew {
+                apply(firstNew, dom)
+            }
+            while let new = newIterator.next() {
+                apply(new, dom)
+            }
+
+            for old in oldByKey.values {
+                if let oldStylePairs = old._styleKeyValuePairs {
+                    applyStyleChanges(from: oldStylePairs, to: nil, on: dom)
+                } else {
+                    logTrace("removing attribute \(old.name)")
+                    dom.removeAttribute(node, name: old.name)
+                }
+            }
+        }
+
+        private func applyStyleChanges(
+            from oldStylePairs: _StoredAttribute._StyleKeyValuePairs?,
+            to newStylePairs: _StoredAttribute._StyleKeyValuePairs?,
+            on dom: any DOM.Interactor
+        ) {
             guard let newStylePairs else {
                 if let oldStylePairs {
                     for (oldKey, _) in oldStylePairs {
-                        dom.removeStyleProperty(node, name: String(oldKey))
+                        dom.removeStyleProperty(node, name: String(decoding: oldKey, as: UTF8.self))
                     }
                 }
-                cachedStylePairs = nil
                 return
             }
 
             guard let oldStylePairs else {
                 for (newKey, newValue) in newStylePairs {
-                    dom.setStyleProperty(node, name: String(newKey), value: String(newValue))
+                    dom.setStyleProperty(
+                        node,
+                        name: String(decoding: newKey, as: UTF8.self),
+                        value: String(decoding: newValue, as: UTF8.self)
+                    )
                 }
-                cachedStylePairs = newStylePairs
                 return
             }
 
@@ -166,68 +227,77 @@ extension _AttributeModifier {
                 switch (oldNext, newNext) {
                 case let (.some(oldPair), .some(newPair)):
                     guard oldPair.key.elementsEqual(newPair.key) else {
-                        applyStyleFallback(
+                        applyStylesSlowPath(
                             firstOld: oldPair,
                             oldIterator: &oldIterator,
                             firstNew: newPair,
                             newIterator: &newIterator,
                             on: dom
                         )
-                        cachedStylePairs = newStylePairs
                         return
                     }
 
                     if !oldPair.value.elementsEqual(newPair.value) {
-                        dom.setStyleProperty(node, name: String(newPair.key), value: String(newPair.value))
+                        dom.setStyleProperty(
+                            node,
+                            name: String(decoding: newPair.key, as: UTF8.self),
+                            value: String(decoding: newPair.value, as: UTF8.self)
+                        )
                     }
                 case (.none, .none):
-                    cachedStylePairs = newStylePairs
                     return
                 default:
-                    applyStyleFallback(
+                    applyStylesSlowPath(
                         firstOld: oldNext,
                         oldIterator: &oldIterator,
                         firstNew: newNext,
                         newIterator: &newIterator,
                         on: dom
                     )
-                    cachedStylePairs = newStylePairs
                     return
                 }
             }
         }
 
-        private func applyStyleFallback(
-            firstOld: (key: Substring.UTF8View, value: Substring.UTF8View)?,
+        private func applyStylesSlowPath(
+            firstOld: StylePair?,
             oldIterator: inout _StoredAttribute._StyleKeyValuePairs.Iterator,
-            firstNew: (key: Substring.UTF8View, value: Substring.UTF8View)?,
+            firstNew: StylePair?,
             newIterator: inout _StoredAttribute._StyleKeyValuePairs.Iterator,
             on dom: any DOM.Interactor
         ) {
-            var oldByKey: [StyleKey: Substring.UTF8View] = [:]
+            var oldByKey: [HashableUTF8View: Substring.UTF8View] = [:]
             if let firstOld {
-                oldByKey[StyleKey(firstOld.key)] = firstOld.value
+                oldByKey[HashableUTF8View(firstOld.key)] = firstOld.value
             }
-            while let oldPair = oldIterator.next() {
-                oldByKey[StyleKey(oldPair.key)] = oldPair.value
+            while let pair = oldIterator.next() {
+                oldByKey[HashableUTF8View(pair.key)] = pair.value
             }
 
-            func apply(_ newPair: (key: Substring.UTF8View, value: Substring.UTF8View)) {
-                let key = StyleKey(newPair.key)
+            func apply(_ pair: StylePair) {
+                let key = HashableUTF8View(pair.key)
                 if let oldValue = oldByKey.removeValue(forKey: key) {
-                    if !oldValue.elementsEqual(newPair.value) {
-                        dom.setStyleProperty(node, name: key.stringValue, value: String(newPair.value))
+                    if !oldValue.elementsEqual(pair.value) {
+                        dom.setStyleProperty(
+                            node,
+                            name: key.stringValue,
+                            value: String(decoding: pair.value, as: UTF8.self)
+                        )
                     }
                 } else {
-                    dom.setStyleProperty(node, name: key.stringValue, value: String(newPair.value))
+                    dom.setStyleProperty(
+                        node,
+                        name: key.stringValue,
+                        value: String(decoding: pair.value, as: UTF8.self)
+                    )
                 }
             }
 
             if let firstNew {
                 apply(firstNew)
             }
-            while let newPair = newIterator.next() {
-                apply(newPair)
+            while let pair = newIterator.next() {
+                apply(pair)
             }
 
             for remainingKey in oldByKey.keys {
@@ -235,11 +305,5 @@ extension _AttributeModifier {
             }
         }
 
-    }
-}
-
-private extension String {
-    init(_ content: Substring.UTF8View) {
-        self = String(Substring(content))
     }
 }

@@ -10,7 +10,7 @@ public struct PropertyID: Hashable, Sendable, CustomStringConvertible {
     @usableFromInline
     enum _Storage: Hashable, Sendable {
         case index(Int)
-        case name([UInt8])
+        case name(HashableUTF8View)
         case objectIdentifier(ObjectIdentifier)
     }
 
@@ -22,7 +22,7 @@ public struct PropertyID: Hashable, Sendable, CustomStringConvertible {
     /// - Parameter name: A unique string identifier for the property.
     @inlinable
     public init(_ name: String) {
-        id = .name(Array(name.utf8))
+        id = .name(HashableUTF8View(name))
     }
 
     /// Creates a property identifier using an integer index.
@@ -49,7 +49,7 @@ public struct PropertyID: Hashable, Sendable, CustomStringConvertible {
         case let .index(index):
             return "\(index)"
         case let .name(name):
-            return String(decoding: name, as: UTF8.self)
+            return name.stringValue
         case let .objectIdentifier(identifier):
             return "\(identifier)"
         }
