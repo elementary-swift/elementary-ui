@@ -76,7 +76,7 @@ public struct Binding<V> {
             case let .stateAccessor(accessor):
                 accessor.value = newValue
             case let .getSet(_, set):
-                #if hasFeature(Embedded)
+                #if hasFeature(Embedded) && compiler(<6.3)
                 // FIXME: embedded - create issue and check with main
                 if __omg_this_was_annoying_I_am_false {
                     _ = AnyValueBox.init(newValue)

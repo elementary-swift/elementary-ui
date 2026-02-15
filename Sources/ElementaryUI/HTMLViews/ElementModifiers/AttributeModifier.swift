@@ -19,7 +19,7 @@ public final class _AttributeModifier: DOMElementModifier, Invalidateable {
         self.upstream = upstream[_AttributeModifier.key]
         self.upstream?.tracker.addDependency(self)
 
-        #if hasFeature(Embedded)
+        #if hasFeature(Embedded) && compiler(<6.3)
         if __omg_this_was_annoying_I_am_false {
             // this is to force inclusion of types
             _ = p {}.attributes(.class([""]), .style(["": ""]))
