@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "types": [
+      "vite/client",
+      "@elementary-swift/vite-plugin-swift-wasm/client",
+      "node"
+    ],
+    "isolatedModules": true,
+    "strict": true,
+    "noEmit": true
+  }
+}
