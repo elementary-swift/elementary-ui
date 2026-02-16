@@ -152,4 +152,28 @@ extension View {
     public func scaleEffect(x: Double = 1, y: Double = 1, anchor: UnitPoint = .center) -> some View<Self.Tag> {
         DOMEffectView<TransformModifier, Self>(value: .scale(CSSTransform.Scale(x: x, y: y, anchor: anchor)), wrapped: self)
     }
+
+    /// Applies a Gaussian blur effect to the view.
+    ///
+    /// - Parameter radius: The blur radius in pixels. Use 0 for no blur.
+    /// - Returns: A view with the specified blur effect.
+    public func blur(radius: Double) -> some View<Self.Tag> {
+        DOMEffectView<FilterModifier, Self>(value: .blur(CSSFilter.Blur(radius: radius)), wrapped: self)
+    }
+
+    /// Adjusts the color saturation of the view.
+    ///
+    /// - Parameter amount: The saturation multiplier. 1.0 is normal, 0.0 is grayscale, >1.0 is oversaturated.
+    /// - Returns: A view with adjusted saturation.
+    public func saturation(_ amount: Double) -> some View<Self.Tag> {
+        DOMEffectView<FilterModifier, Self>(value: .saturation(CSSFilter.Saturation(amount: amount)), wrapped: self)
+    }
+
+    /// Adjusts the brightness of the view.
+    ///
+    /// - Parameter amount: The brightness multiplier. 1.0 is normal, 0.0 is black, >1.0 is brighter.
+    /// - Returns: A view with adjusted brightness.
+    public func brightness(_ amount: Double) -> some View<Self.Tag> {
+        DOMEffectView<FilterModifier, Self>(value: .brightness(CSSFilter.Brightness(amount: amount)), wrapped: self)
+    }
 }
