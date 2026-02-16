@@ -30,5 +30,10 @@ export default defineConfig({
   build: {
     outDir: `dist/${product}`,
   },
-  plugins: [injectBenchProduct(), swiftWasm({ useEmbeddedSDK: true })],
+  plugins: [
+    injectBenchProduct(),
+    swiftWasm({
+      useEmbeddedSDK: true,
+      linkEmbeddedUnicodeDataTables: false
+    })],
 });

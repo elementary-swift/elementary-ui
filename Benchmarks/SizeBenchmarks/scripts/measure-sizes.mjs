@@ -14,8 +14,18 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, "..");
 
-const ALL_TARGETS = ["HelloWorld", "Counter", "Animations"];
-const targets = process.argv.length > 2 ? process.argv.slice(2) : ALL_TARGETS;
+function discoverTargets() {
+  const output = execFileSync("swift", ["package", "show-executables", "--format", "json"], {
+    cwd: projectRoot,
+    encoding: "utf-8",
+  });
+  return JSON.parse(output)
+    .filter((e) => !e.package)
+    .map((e) => e.name)
+    .sort();
+}
+
+const targets = process.argv.length > 2 ? process.argv.slice(2) : discoverTargets();
 
 // Vite output lines look like:
 //   dist/HelloWorld/assets/HelloWorld-D4RrNIe6.wasm  3,219.44 kB │ gzip: 1,143.90 kB

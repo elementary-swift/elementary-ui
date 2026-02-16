@@ -17,6 +17,9 @@ let package = Package(
         .executableTarget(name: "Animations", dependencies: [
             .product(name: "ElementaryUI", package: "elementary-ui"),
         ]),
+        .executableTarget(name: "Inputs", dependencies: [
+            .product(name: "ElementaryUI", package: "elementary-ui"),
+        ]),
     ],
     swiftLanguageModes: [.v5]
 )
