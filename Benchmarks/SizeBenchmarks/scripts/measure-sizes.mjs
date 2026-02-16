@@ -47,7 +47,7 @@ function buildAndMeasure(product) {
       encoding: "utf-8",
       stdio: ["ignore", "pipe", "pipe"],
       timeout: 600_000,
-    },
+    }
   );
 
   // Vite prints the size table to stdout
@@ -92,21 +92,32 @@ console.error("");
 console.error("  WASM Size Benchmark Results");
 console.error("");
 console.error(
-  `  ${"Target".padEnd(nameWidth)}   ${pad("Raw", rawWidth)}   ${pad("Gzip", gzipWidth)}`,
+  `  ${"Target".padEnd(nameWidth)}   ${pad("Raw", rawWidth)}   ${pad(
+    "Gzip",
+    gzipWidth
+  )}`
 );
-console.error(`  ${"─".repeat(nameWidth)}   ${"─".repeat(rawWidth)}   ${"─".repeat(gzipWidth)}`);
+console.error(
+  `  ${"─".repeat(nameWidth)}   ${"─".repeat(rawWidth)}   ${"─".repeat(
+    gzipWidth
+  )}`
+);
 for (let i = 0; i < measurements.length; i++) {
   const m = measurements[i];
   console.error(
-    `  ${m.name.padEnd(nameWidth)}   ${pad(rawStrs[i], rawWidth)}   ${pad(gzipStrs[i], gzipWidth)}`,
+    `  ${m.name.padEnd(nameWidth)}   ${pad(rawStrs[i], rawWidth)}   ${pad(
+      gzipStrs[i],
+      gzipWidth
+    )}`
   );
 }
 console.error("");
 
-// Machine-readable JSON to stdout
-const benchmarkResults = measurements.flatMap((m) => [
-  { name: `${m.name} (raw)`, unit: "bytes", value: m.rawBytes },
-  { name: `${m.name} (gzip)`, unit: "bytes", value: m.gzipBytes },
-]);
+// Machine-readable JSON to stdout (gzip only — the metric that matters for users)
+const benchmarkResults = measurements.map((m) => ({
+  name: m.name,
+  unit: "kB",
+  value: parseFloat((m.gzipBytes / 1000).toFixed(2)),
+}));
 
 console.log(JSON.stringify(benchmarkResults, null, 2));

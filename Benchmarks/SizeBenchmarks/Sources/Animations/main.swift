@@ -3,18 +3,28 @@ import ElementaryUI
 @View
 struct AnimationsApp {
     @State var isVisible = false
+    @State var isOffset = false
 
     var body: some View {
         button { "Toggle" }
             .onClick { _ in
-                withAnimation {
+                withAnimation(.bouncy) {
                     isVisible.toggle()
+                    isOffset.toggle()
                 }
             }
-        if isVisible {
-            div { "Animated!" }
-                .transition(.fade, animation: .bouncy)
-        }
+
+        div {
+            if isVisible {
+                span { "Hello" }
+                    .transition(.fade, animation: .bouncy)
+            }
+        }.animateContainerLayout()
+
+        p { "Scaled" }
+            .scaleEffect(isOffset ? 1.5 : 1, anchor: .topLeading)
+            .offset(x: isOffset ? 80 : 0, y: 0)
+            .animation(.easeIn, value: isOffset)
     }
 }
 
