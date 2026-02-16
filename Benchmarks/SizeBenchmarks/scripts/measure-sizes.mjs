@@ -34,8 +34,9 @@ const targets = process.argv.length > 2 ? process.argv.slice(2) : discoverTarget
 //   dist/HelloWorld/assets/HelloWorld-D4RrNIe6.wasm  3,219.44 kB │ gzip: 1,143.90 kB
 //   dist/Counter/assets/Counter-CiP1900W.wasm          326.71 kB │ gzip:   137.18 kB
 // Numbers may contain commas as thousands separators.
+// Match either the Unicode box-drawing │ (U+2502, used in TTY) or plain ASCII | (used in CI).
 const SIZE_LINE_RE =
-  /(\S+\.wasm)\s+([\d,]+(?:\.\d+)?)\s+(kB|B)\s+│\s+gzip:\s+([\d,]+(?:\.\d+)?)\s+(kB|B)/;
+  /(\S+\.wasm)\s+([\d,]+(?:\.\d+)?)\s+(kB|B)\s+[│|]\s+gzip:\s+([\d,]+(?:\.\d+)?)\s+(kB|B)/;
 
 function parseSize(value, unit) {
   const num = parseFloat(value.replace(/,/g, ""));
