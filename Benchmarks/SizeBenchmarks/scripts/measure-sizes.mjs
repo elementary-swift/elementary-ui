@@ -38,6 +38,11 @@ const targets = process.argv.length > 2 ? process.argv.slice(2) : discoverTarget
 const SIZE_LINE_RE =
   /(\S+\.wasm)\s+([\d,]+(?:\.\d+)?)\s+(kB|B)\s+[│|]\s+gzip:\s+([\d,]+(?:\.\d+)?)\s+(kB|B)/;
 
+// Strip ANSI escape codes (colors, bold, etc.) that Vite may emit.
+function stripAnsi(str) {
+  return str.replace(/\x1b\[[0-9;]*m/g, "");
+}
+
 function parseSize(value, unit) {
   const num = parseFloat(value.replace(/,/g, ""));
   return Math.round(unit === "kB" ? num * 1000 : num);
@@ -70,8 +75,9 @@ function buildAndMeasure(product) {
   }
 
   // Vite may print the size table to either stdout or stderr depending
-  // on the environment (TTY vs pipe), so search both.
-  const combined = `${result.stdout}\n${result.stderr}`;
+  // on the environment (TTY vs pipe), so search both. Strip ANSI codes
+  // that break regex matching in CI.
+  const combined = stripAnsi(`${result.stdout}\n${result.stderr}`);
   for (const line of combined.split("\n")) {
     const m = line.match(SIZE_LINE_RE);
     if (!m) continue;
