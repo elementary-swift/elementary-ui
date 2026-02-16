@@ -7,7 +7,7 @@
 // Usage: node scripts/measure-sizes.mjs
 //        node scripts/measure-sizes.mjs HelloWorld Counter  (subset)
 
-import { execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -15,11 +15,14 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, "..");
 
 function discoverTargets() {
-  const output = execFileSync("swift", ["package", "show-executables", "--format", "json"], {
+  const result = spawnSync("swift", ["package", "show-executables", "--format", "json"], {
     cwd: projectRoot,
     encoding: "utf-8",
   });
-  return JSON.parse(output)
+  if (result.status !== 0) {
+    throw new Error(`swift package show-executables failed:\n${result.stderr}`);
+  }
+  return JSON.parse(result.stdout)
     .filter((e) => !e.package)
     .map((e) => e.name)
     .sort();
@@ -48,20 +51,26 @@ function extractProductName(filePath) {
 function buildAndMeasure(product) {
   console.error(`Building ${product}...`);
 
-  const output = execFileSync(
+  const result = spawnSync(
     resolve(projectRoot, "node_modules/.bin/vite"),
     ["build"],
     {
       cwd: projectRoot,
       env: { ...process.env, BENCH_PRODUCT: product },
       encoding: "utf-8",
-      stdio: ["ignore", "pipe", "pipe"],
       timeout: 600_000,
-    }
+    },
   );
 
-  // Vite prints the size table to stdout
-  const combined = output;
+  if (result.status !== 0) {
+    throw new Error(
+      `vite build failed for ${product}:\n${result.stdout}\n${result.stderr}`,
+    );
+  }
+
+  // Vite may print the size table to either stdout or stderr depending
+  // on the environment (TTY vs pipe), so search both.
+  const combined = `${result.stdout}\n${result.stderr}`;
   for (const line of combined.split("\n")) {
     const m = line.match(SIZE_LINE_RE);
     if (!m) continue;
@@ -74,7 +83,11 @@ function buildAndMeasure(product) {
     return { name, rawBytes, gzipBytes };
   }
 
-  throw new Error(`No .wasm file found in vite build output for ${product}`);
+  throw new Error(
+    `No .wasm file found in vite build output for ${product}.\n` +
+      `stdout: ${result.stdout.slice(-500)}\n` +
+      `stderr: ${result.stderr.slice(-500)}`,
+  );
 }
 
 function formatBytes(bytes) {
