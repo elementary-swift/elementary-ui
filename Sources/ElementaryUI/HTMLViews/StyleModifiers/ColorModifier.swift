@@ -36,6 +36,24 @@ public struct CSSColor: Equatable, Sendable {
     public static func rgba(_ red: Float, _ green: Float, _ blue: Float, _ alpha: Float) -> CSSColor {
         CSSColor(red: red, green: green, blue: blue, alpha: alpha)
     }
+
+    public static func hex(_ hex: String, alpha: Float = 1.0) -> CSSColor {
+        var hexString = hex
+        if hexString.hasPrefix("#") {
+            hexString.removeFirst()
+        }
+
+        guard hexString.count == 6,
+              let hexValue = UInt32(hexString, radix: 16) else {
+            return CSSColor(red: 0, green: 0, blue: 0, alpha: alpha)
+        }
+
+        let red = Float((hexValue >> 16) & 0xFF)
+        let green = Float((hexValue >> 8) & 0xFF)
+        let blue = Float(hexValue & 0xFF)
+
+        return CSSColor(red: red, green: green, blue: blue, alpha: alpha)
+    }
 }
 
 extension CSSColor: AnimatableVectorConvertible {
