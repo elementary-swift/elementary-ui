@@ -177,19 +177,21 @@ struct FilterBox {
     var label: String
 
     var body: some View {
-        div(.style([
-            "background": color,
-            "width": "100px",
-            "height": "100px",
-            "display": "flex",
-            "align-items": "center",
-            "justify-content": "center",
-            "color": "white",
-            "font-size": "12px",
-            "text-align": "center",
-            "cursor": "pointer",
-            "border-radius": "8px",
-        ])) {
+        div(
+            .style([
+                "background": color,
+                "width": "100px",
+                "height": "100px",
+                "display": "flex",
+                "align-items": "center",
+                "justify-content": "center",
+                "color": "white",
+                "font-size": "12px",
+                "text-align": "center",
+                "cursor": "pointer",
+                "border-radius": "8px",
+            ])
+        ) {
             span { label }
         }
     }
