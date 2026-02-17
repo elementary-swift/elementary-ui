@@ -21,7 +21,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 env:
   SWIFT_VERSION: "6.2.3"
@@ -29,7 +28,7 @@ env:
   WASM_SDK_CHECKSUM: 394040ecd5260e68bb02f6c20aeede733b9b90702c2204e178f3e42413edad2a
 
 jobs:
-  benchmark:
+  measure:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -69,7 +68,15 @@ jobs:
         working-directory: Benchmarks/SizeBenchmarks
         run: pnpm --silent measure > benchmark-results.json
 
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: Benchmarks/SizeBenchmarks/benchmark-results.json
+
+      # On push to main / schedule: store results directly (has write permissions)
       - name: Store benchmark results
+        if: github.event_name != 'pull_request'
         uses: benchmark-action/github-action-benchmark@v1
         with:
           tool: customSmallerIsBetter
@@ -77,9 +84,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           gh-pages-branch: benchmark-data
           benchmark-data-dir-path: size-benchmarks
-          auto-push: ${{ github.event_name != 'pull_request' }}
-          comment-always: ${{ github.event_name == 'pull_request' }}
+          auto-push: true
           comment-on-alert: true
           alert-threshold: "105%"
           fail-on-alert: false
-          alert-comment-cc-users: ""
