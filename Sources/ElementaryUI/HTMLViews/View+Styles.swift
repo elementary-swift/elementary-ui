@@ -155,24 +155,78 @@ extension View {
 
     /// Applies a Gaussian blur effect to the view.
     ///
+    /// Use this modifier to blur the content of a view.
+    ///
+    /// ## Usage
+    ///
+    /// ```swift
+    /// div { "Blurred content" }
+    ///     .blur(radius: 5)
+    ///
+    /// // Animate blur changes
+    /// withAnimation {
+    ///     isBlurred.toggle()
+    /// }
+    /// div { "Content" }
+    ///     .blur(radius: isBlurred ? 10 : 0)
+    /// ```
+    ///
     /// - Parameter radius: The blur radius in pixels. Use 0 for no blur.
     /// - Returns: A view with the specified blur effect.
+    ///
+    /// - Note: Changes to blur are automatically animated when done in an animated transaction.
     public func blur(radius: Double) -> some View<Self.Tag> {
         DOMEffectView<FilterModifier, Self>(value: .blur(CSSFilter.Blur(radius: radius)), wrapped: self)
     }
 
     /// Adjusts the color saturation of the view.
     ///
+    /// Use this modifier to control the color intensity of a view.
+    ///
+    /// ## Usage
+    ///
+    /// ```swift
+    /// div { "Grayscale" }
+    ///     .saturation(0)
+    ///
+    /// // Animate saturation changes
+    /// withAnimation {
+    ///     isDesaturated.toggle()
+    /// }
+    /// div { "Content" }
+    ///     .saturation(isDesaturated ? 0 : 1)
+    /// ```
+    ///
     /// - Parameter amount: The saturation multiplier. 1.0 is normal, 0.0 is grayscale, >1.0 is oversaturated.
     /// - Returns: A view with adjusted saturation.
+    ///
+    /// - Note: Changes to saturation are automatically animated when done in an animated transaction.
     public func saturation(_ amount: Double) -> some View<Self.Tag> {
         DOMEffectView<FilterModifier, Self>(value: .saturation(CSSFilter.Saturation(amount: amount)), wrapped: self)
     }
 
     /// Adjusts the brightness of the view.
     ///
+    /// Use this modifier to make a view brighter or darker.
+    ///
+    /// ## Usage
+    ///
+    /// ```swift
+    /// div { "Bright content" }
+    ///     .brightness(1.5)
+    ///
+    /// // Animate brightness changes
+    /// withAnimation {
+    ///     isDimmed.toggle()
+    /// }
+    /// div { "Content" }
+    ///     .brightness(isDimmed ? 0.5 : 1)
+    /// ```
+    ///
     /// - Parameter amount: The brightness multiplier. 1.0 is normal, 0.0 is black, >1.0 is brighter.
     /// - Returns: A view with adjusted brightness.
+    ///
+    /// - Note: Changes to brightness are automatically animated when done in an animated transaction.
     public func brightness(_ amount: Double) -> some View<Self.Tag> {
         DOMEffectView<FilterModifier, Self>(value: .brightness(CSSFilter.Brightness(amount: amount)), wrapped: self)
     }

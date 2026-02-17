@@ -109,3 +109,88 @@ struct Ball {
             )
     }
 }
+
+@View
+struct FilterDemoView {
+    @State var blurAmount: Double = 0
+    @State var saturationAmount: Double = 1
+    @State var brightnessAmount: Double = 1
+
+    var body: some View {
+        div {
+            h3 { "Filter Stacked Animation Test" }
+            p { "Click buttons to toggle each filter independently on the same box" }
+
+            div(.style(["display": "flex", "flex-direction": "row", "gap": "20px", "align-items": "flex-start"])) {
+                // The test box with all stacked filters
+                div(.style(["display": "flex", "flex-direction": "column", "align-items": "center", "gap": "10px"])) {
+                    FilterBox(color: "purple", label: "Stacked Filters")
+                        .blur(radius: blurAmount)
+                        .saturation(saturationAmount)
+                        .brightness(brightnessAmount)
+
+                    p(.style(["font-size": "11px", "margin": "0"])) {
+                        "blur: \(Int(blurAmount)) sat: \(saturationAmount) bright: \(brightnessAmount)"
+                    }
+                }
+
+                // Control buttons
+                div(.style(["display": "flex", "flex-direction": "column", "gap": "8px"])) {
+                    button { "Toggle Blur" }
+                        .onClick { _ in
+                            withAnimation(.easeInOut(duration: 1)) {
+                                blurAmount = blurAmount > 0 ? 0 : 8
+                            }
+                        }
+
+                    button { "Toggle Saturation" }
+                        .onClick { _ in
+                            withAnimation(.easeInOut(duration: 1)) {
+                                saturationAmount = saturationAmount < 1 ? 1 : 0.2
+                            }
+                        }
+
+                    button { "Toggle Brightness" }
+                        .onClick { _ in
+                            withAnimation(.easeInOut(duration: 1)) {
+                                brightnessAmount = brightnessAmount > 1 ? 1 : 1.5
+                            }
+                        }
+
+                    button { "Reset All" }
+                        .onClick { _ in
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                blurAmount = 0
+                                saturationAmount = 1
+                                brightnessAmount = 1
+                            }
+                        }
+                }
+            }
+        }
+    }
+}
+
+@View
+struct FilterBox {
+    var color: String
+    var label: String
+
+    var body: some View {
+        div(.style([
+            "background": color,
+            "width": "100px",
+            "height": "100px",
+            "display": "flex",
+            "align-items": "center",
+            "justify-content": "center",
+            "color": "white",
+            "font-size": "12px",
+            "text-align": "center",
+            "cursor": "pointer",
+            "border-radius": "8px",
+        ])) {
+            span { label }
+        }
+    }
+}
