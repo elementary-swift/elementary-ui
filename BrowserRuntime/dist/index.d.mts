@@ -3,10 +3,11 @@ type WasmInstanceInitializer = (importsObject?: WebAssembly.Imports) => Promise<
 /**
  * Runs an ElementaryUI application.
  *
- * This function will bootstrap a new JavaScriptKit SwiftRuntime and a WASI shim, and then run the application.
+ * This function bootstraps a JavaScriptKit SwiftRuntime and WASI shim,
+ * then runs the application by calling Swift's main entry point.
  *
- * @param initializer - The initializer function that taked WebAssembly imports and returns a WebAssembly instance.
- * @returns A promise that resolves when the application is running.
+ * @param initializer - A function that receives WebAssembly imports and returns a WebAssembly instance.
+ * @returns A promise that resolves when initialization is complete and the Swift application has started.
  */
 declare function runApplication(initializer: WasmInstanceInitializer): Promise<void>;
 //#endregion

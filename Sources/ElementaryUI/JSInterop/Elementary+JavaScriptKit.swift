@@ -34,21 +34,20 @@ extension DOM.PropertyValue {
     }
 
     init?(_ jsValue: JSValue) {
-        switch jsValue {
-        case let .string(value):
-            self = .string(value.description)
-        case let .number(value):
+        if let value = jsValue.string {
+            self = .string(value)
+        } else if let value = jsValue.number {
             self = .number(value)
-        case let .boolean(value):
+        } else if let value = jsValue.boolean {
             self = .boolean(value)
-        case let .object(object):
+        } else if let object = jsValue.object {
             guard let array = JSArray(object) else { return nil }
             self = .stringArray(array.compactMap { $0.string })
-        case .null:
+        } else if jsValue.isNull {
             self = .null
-        case .undefined:
+        } else if jsValue.isUndefined {
             self = .undefined
-        default:
+        } else {
             return nil
         }
     }
