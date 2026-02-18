@@ -70,7 +70,7 @@ final class BenchmarkStore {
 
     func swapRows() {
         guard rows.count > 998 else { return }
-        swap(&rows[1], &rows[998])
+        rows.swapAt(1, 998)
     }
 
     func select(_ id: Int) {
@@ -82,16 +82,13 @@ final class BenchmarkStore {
     }
 
     private func buildData(_ count: Int) -> [Row] {
-        var data: [Row] = []
-        let d = ContinuousClock().measure {
-
-            data.reserveCapacity(count)
+        var data: [Row] = .init(capacity: count) { span in
             for _ in 0..<count {
-                data.append(Row(id: nextID, label: randomLabel()))
+                span.append(Row(id: nextID, label: randomLabel()))
                 nextID += 1
             }
         }
-        print("buildData: \(d)")
+
         return data
     }
 }
@@ -148,7 +145,6 @@ struct DataTable {
     var body: some View {
         table(.class("table table-hover table-striped test-data")) {
             tbody(.id("tbody")) {
-                let _ = print("DataTable: \(store.selectedID)")
                 ForEach(store.rows, key: { $0.id }) { row in
                     RowView(
                         row: row,

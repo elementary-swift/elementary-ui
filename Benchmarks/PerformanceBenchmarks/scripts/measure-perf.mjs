@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 
 // Builds the benchmark app via `vite build`, serves it with `vite preview`,
-// then uses Playwright (headless Chromium) to run js-framework-benchmark-style
-// operations and measure timing + memory via Chrome DevTools Protocol.
+// then runs js-framework-benchmark-style tests in Chromium.
 //
-// Benchmark parameters (warmup counts, CPU throttling, naming) match the
-// official js-framework-benchmark configuration:
-// https://github.com/krausest/js-framework-benchmark/blob/master/webdriver-ts/src/benchmarksCommon.ts
+// CPU timings follow the upstream krausest approach:
+// - Trace around exactly one benchmark click
+// - Extract EventDispatch/Commit events from trace
+// - Compute total duration from click to commit end
+//
+// Reference implementation:
+// https://github.com/krausest/js-framework-benchmark/tree/master/webdriver-ts/src
 //
 // Outputs JSON in github-action-benchmark's "customSmallerIsBetter" format.
 //
@@ -16,17 +19,25 @@
 import { spawn, spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright";
+import puppeteer from "puppeteer";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, "..");
 
 const ITERATIONS = parseInt(
-  process.argv.find((_, i, a) => a[i - 1] === "--iterations") ?? "10",
+  process.argv.find((_, i, a) => a[i - 1] === "--iterations") ?? "5",
   10,
 );
 const PREVIEW_PORT = 4173;
 const PREVIEW_URL = `http://localhost:${PREVIEW_PORT}`;
+const START_LOGIC_EVENT = "click";
+
+const TRACE_CATEGORIES = [
+  "disabled-by-default-v8.cpu_profiler",
+  "blink.user_timing",
+  "devtools.timeline",
+  "disabled-by-default-devtools.timeline",
+];
 
 // ---------------------------------------------------------------------------
 // Build
@@ -116,15 +127,74 @@ function median(values) {
     : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function waitForReady(page) {
   await page.waitForSelector("#app[data-ready='true']", { timeout: 30_000 });
+}
+
+async function clickElement(page, selector) {
+  const element = await page.$(selector);
+  if (!element) {
+    throw new Error(`Element not found for click: ${selector}`);
+  }
+  try {
+    await element.click();
+  } finally {
+    await element.dispose();
+  }
+}
+
+async function checkElementExists(page, selector) {
+  await page.waitForSelector(selector, { timeout: 30_000 });
+}
+
+async function checkElementNotExists(page, selector) {
+  await page.waitForFunction(
+    (selector) => !document.querySelector(selector),
+    { timeout: 30_000 },
+    selector,
+  );
+}
+
+async function checkElementContainsText(page, selector, expectedText) {
+  await page.waitForFunction(
+    ({ selector, expectedText }) => {
+      const el = document.querySelector(selector);
+      return !!el && (el.textContent ?? "").includes(expectedText);
+    },
+    { timeout: 30_000 },
+    { selector, expectedText },
+  );
+}
+
+async function checkElementHasClass(page, selector, className) {
+  await page.waitForFunction(
+    ({ selector, className }) => {
+      const el = document.querySelector(selector);
+      return !!el && el.classList.contains(className);
+    },
+    { timeout: 30_000 },
+    { selector, className },
+  );
+}
+
+async function checkCountForSelector(page, selector, expectedCount) {
+  await page.waitForFunction(
+    ({ selector, expectedCount }) =>
+      document.querySelectorAll(selector).length === expectedCount,
+    { timeout: 30_000 },
+    { selector, expectedCount },
+  );
 }
 
 async function waitForRowCount(page, expected) {
   await page.waitForFunction(
     (n) => document.querySelectorAll("#tbody tr").length === n,
-    expected,
     { timeout: 30_000 },
+    expected,
   );
 }
 
@@ -140,35 +210,153 @@ async function setCPUThrottling(cdp, factor) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Timing measurement via performance.now()
-//
-// We measure from just before the click to after the DOM has settled and
-// a requestAnimationFrame fires (indicating the browser has rendered).
-// ---------------------------------------------------------------------------
+async function startTrace(cdp) {
+  await cdp.send("Tracing.start", {
+    categories: TRACE_CATEGORIES.join(","),
+    transferMode: "ReturnAsStream",
+  });
+}
 
-async function measureClick(page, selector, waitConditionFn) {
-  const duration = await page.evaluate(
-    async ({ selector }) => {
-      const el = document.querySelector(selector);
-      if (!el) throw new Error(`Element not found: ${selector}`);
+async function stopTrace(cdp) {
+  return new Promise((resolve, reject) => {
+    const onComplete = async ({ stream }) => {
+      try {
+        let traceData = "";
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const chunk = await cdp.send("IO.read", { handle: stream });
+          traceData += chunk.data ?? "";
+          if (chunk.eof) break;
+        }
+        await cdp.send("IO.close", { handle: stream });
+        const parsed = JSON.parse(traceData);
+        resolve(parsed.traceEvents ?? []);
+      } catch (err) {
+        reject(err);
+      } finally {
+        cdp.off("Tracing.tracingComplete", onComplete);
+      }
+    };
 
-      const start = performance.now();
-      el.click();
+    cdp.on("Tracing.tracingComplete", onComplete);
+    cdp.send("Tracing.end").catch((err) => {
+      cdp.off("Tracing.tracingComplete", onComplete);
+      reject(err);
+    });
+  });
+}
 
-      // Wait for the next animation frame to ensure rendering
-      await new Promise((r) => requestAnimationFrame(r));
-      // Wait one more frame to ensure paint
-      await new Promise((r) => requestAnimationFrame(r));
+function extractRelevantEvents(entries, startLogicEvent) {
+  const filteredEvents = [];
 
-      return performance.now() - start;
-    },
-    { selector },
+  for (const e of entries) {
+    if (e.name === "EventDispatch") {
+      const type = e.args?.data?.type;
+      if (type === startLogicEvent) {
+        filteredEvents.push({
+          type: "startLogicEvent",
+          ts: +e.ts,
+          dur: +e.dur,
+          end: +e.ts + +e.dur,
+          pid: e.pid,
+        });
+      }
+      if (type === "click") {
+        filteredEvents.push({
+          type: "click",
+          ts: +e.ts,
+          dur: +e.dur,
+          end: +e.ts + +e.dur,
+          pid: e.pid,
+        });
+      } else if (type === "mousedown") {
+        filteredEvents.push({
+          type: "mousedown",
+          ts: +e.ts,
+          dur: +e.dur,
+          end: +e.ts + +e.dur,
+          pid: e.pid,
+        });
+      } else if (type === "pointerup") {
+        filteredEvents.push({
+          type: "pointerup",
+          ts: +e.ts,
+          dur: +e.dur,
+          end: +e.ts + +e.dur,
+          pid: e.pid,
+        });
+      }
+    } else if (e.name === "Layout" && e.ph === "X") {
+      filteredEvents.push({ type: "layout", ts: +e.ts, dur: +e.dur, end: +e.ts + +e.dur, pid: e.pid });
+    } else if (e.name === "FunctionCall" && e.ph === "X") {
+      filteredEvents.push({ type: "functioncall", ts: +e.ts, dur: +e.dur, end: +e.ts + +e.dur, pid: e.pid });
+    } else if (e.name === "HitTest" && e.ph === "X") {
+      filteredEvents.push({ type: "hittest", ts: +e.ts, dur: +e.dur, end: +e.ts + +e.dur, pid: e.pid });
+    } else if (e.name === "Commit" && e.ph === "X") {
+      filteredEvents.push({ type: "commit", ts: +e.ts, dur: +e.dur, end: +e.ts + +e.dur, pid: e.pid });
+    } else if (e.name === "Paint" && e.ph === "X") {
+      filteredEvents.push({ type: "paint", ts: +e.ts, dur: +e.dur, end: +e.ts + +e.dur, pid: e.pid });
+    } else if (e.name === "FireAnimationFrame" && e.ph === "X") {
+      filteredEvents.push({ type: "fireAnimationFrame", ts: +e.ts, dur: +e.dur, end: +e.ts + +e.dur, pid: e.pid });
+    } else if (e.name === "TimerFire" && e.ph === "X") {
+      filteredEvents.push({ type: "timerFire", ts: +e.ts, dur: 0, end: +e.ts, pid: e.pid });
+    } else if (e.name === "RequestAnimationFrame") {
+      filteredEvents.push({ type: "requestAnimationFrame", ts: +e.ts, dur: 0, end: +e.ts, pid: e.pid });
+    }
+  }
+
+  return filteredEvents;
+}
+
+function computeDurationFromTrace(traceEvents, startLogicEvent = START_LOGIC_EVENT) {
+  const events = extractRelevantEvents(traceEvents, startLogicEvent).sort((a, b) => a.end - b.end);
+  const mousedowns = events.filter((e) => e.type === "mousedown");
+  if (mousedowns.length > 1) {
+    throw new Error("at most one mousedown event is expected");
+  }
+
+  const clicks = events.filter((e) => e.type === "startLogicEvent");
+  if (clicks.length !== 1) {
+    throw new Error("exactly one click event is expected");
+  }
+  const click = clicks[0];
+  const pid = click.pid;
+
+  const eventsDuringBenchmark = events.filter((e) => e.ts > click.end || e.type === "click");
+  const eventsOnMainThread = eventsDuringBenchmark.filter((e) => e.pid === pid);
+  const startFrom = eventsOnMainThread.filter((e) =>
+    ["click", "fireAnimationFrame", "timerFire", "layout", "functioncall"].includes(e.type),
+  );
+  const startFromEvent = startFrom.at(-1) ?? click;
+
+  const commits = eventsOnMainThread.filter((e) => e.type === "commit");
+  if (commits.length === 0) {
+    throw new Error("No commit event found");
+  }
+  let commit = commits.find((e) => e.ts > startFromEvent.end);
+  if (!commit) {
+    commit = commits.at(-1);
+  }
+
+  let duration = (commit.end - click.ts) / 1000.0;
+
+  // Upstream correction for unusual RAF -> FireAnimationFrame delay
+  const layouts = eventsOnMainThread.filter((e) => e.type === "layout");
+  const rafsWithinClick = events.filter(
+    (e) => e.type === "requestAnimationFrame" && e.ts >= click.ts && e.ts <= click.end,
+  );
+  const fafs = events.filter(
+    (e) => e.type === "fireAnimationFrame" && e.ts >= click.ts && e.ts < commit.ts,
   );
 
-  // Optionally wait for a DOM condition from the Playwright side (more robust)
-  if (waitConditionFn) {
-    await waitConditionFn(page);
+  if (rafsWithinClick.length === 1 && fafs.length === 1) {
+    const waitDelay = (fafs[0].ts - click.end) / 1000.0;
+    if (waitDelay > 16) {
+      const hasLayoutBeforeFaf = layouts.some((e) => e.ts < fafs[0].ts);
+      if (!hasLayoutBeforeFaf) {
+        duration -= waitDelay - 16;
+      }
+    }
   }
 
   return duration;
@@ -185,110 +373,219 @@ const timingBenchmarks = [
     id: "01_run1k",
     label: "create rows",
     warmup: 5,
+    additionalRuns: 0,
     cpuThrottle: undefined,
-    setup: null,
-    action: "#run",
-    wait: (page) => waitForRowCount(page, 1000),
+    init: async (page) => {
+      await checkElementExists(page, "#run");
+      for (let i = 0; i < 5; i++) {
+        await clickElement(page, "#run");
+        await checkElementContainsText(page, "#tbody tr:nth-of-type(1) td:nth-of-type(1)", String(i * 1000 + 1));
+        await clickElement(page, "#clear");
+        await checkElementNotExists(page, "#tbody tr:nth-of-type(1000) td:nth-of-type(1)");
+      }
+    },
+    run: async (page) => {
+      await clickElement(page, "#run");
+      await checkElementContainsText(page, "#tbody tr:nth-of-type(1000) td:nth-of-type(1)", String((5 + 1) * 1000));
+    },
   },
   {
     id: "02_replace1k",
     label: "replace all rows",
     warmup: 5,
+    additionalRuns: 0,
     cpuThrottle: undefined,
-    setup: async (page) => {
-      await page.click("#run");
-      await waitForRowCount(page, 1000);
+    init: async (page) => {
+      await checkElementExists(page, "#run");
+      for (let i = 0; i < 5; i++) {
+        await clickElement(page, "#run");
+        await checkElementContainsText(page, "#tbody tr:nth-of-type(1) td:nth-of-type(1)", String(i * 1000 + 1));
+      }
     },
-    action: "#run",
-    wait: (page) => waitForRowCount(page, 1000),
+    run: async (page) => {
+      await clickElement(page, "#run");
+      await checkElementContainsText(page, "#tbody tr:nth-of-type(1) td:nth-of-type(1)", String(5 * 1000 + 1));
+    },
   },
   {
     id: "03_update10th1k_x16",
     label: "partial update",
     warmup: 3,
+    additionalRuns: 0,
     cpuThrottle: 4,
-    setup: async (page) => {
-      await page.click("#run");
-      await waitForRowCount(page, 1000);
+    init: async (page) => {
+      await checkElementExists(page, "#run");
+      await clickElement(page, "#run");
+      await checkElementExists(page, "#tbody tr:nth-of-type(1000) td:nth-of-type(1)");
+      for (let i = 0; i < 3; i++) {
+        await clickElement(page, "#update");
+        await checkElementContainsText(page, "#tbody tr:nth-of-type(991) td:nth-of-type(2) a", " !!!".repeat(i + 1));
+      }
     },
-    action: "#update",
-    wait: null,
+    run: async (page) => {
+      await clickElement(page, "#update");
+      await checkElementContainsText(page, "#tbody tr:nth-of-type(991) td:nth-of-type(2) a", " !!!".repeat(4));
+    },
   },
   {
     id: "04_select1k",
     label: "select row",
     warmup: 5,
+    additionalRuns: 10,
     cpuThrottle: 4,
-    setup: async (page) => {
-      await page.click("#run");
-      await waitForRowCount(page, 1000);
+    init: async (page) => {
+      await checkElementExists(page, "#run");
+      await clickElement(page, "#run");
+      await checkElementContainsText(page, "#tbody tr:nth-of-type(1000) td:nth-of-type(1)", "1000");
+      await clickElement(page, "#tbody tr:nth-of-type(5) td:nth-of-type(2) a");
+      await checkElementHasClass(page, "#tbody tr:nth-of-type(5)", "danger");
+      await checkCountForSelector(page, "#tbody tr.danger", 1);
     },
-    action: "#tbody tr:nth-child(2) td:nth-child(2) a",
-    wait: (page) =>
-      page.waitForFunction(
-        () => {
-          const row = document.querySelector("#tbody tr:nth-child(2)");
-          return row && row.classList.contains("danger");
-        },
-        { timeout: 10_000 },
-      ),
+    run: async (page) => {
+      await clickElement(page, "#tbody tr:nth-of-type(2) td:nth-of-type(2) a");
+      await checkElementHasClass(page, "#tbody tr:nth-of-type(2)", "danger");
+    },
   },
   {
     id: "05_swap1k",
     label: "swap rows",
     warmup: 5,
+    additionalRuns: 0,
     cpuThrottle: 4,
-    setup: async (page) => {
-      await page.click("#run");
-      await waitForRowCount(page, 1000);
+    init: async (page) => {
+      await checkElementExists(page, "#run");
+      await clickElement(page, "#run");
+      await checkElementExists(page, "#tbody tr:nth-of-type(1000) td:nth-of-type(1)");
+      for (let i = 0; i <= 5; i++) {
+        const text = i % 2 === 0 ? "2" : "999";
+        await clickElement(page, "#swaprows");
+        await checkElementContainsText(page, "#tbody tr:nth-of-type(999) td:nth-of-type(1)", text);
+      }
     },
-    action: "#swaprows",
-    wait: null,
+    run: async (page) => {
+      await clickElement(page, "#swaprows");
+      const text999 = 5 % 2 === 0 ? "999" : "2";
+      const text2 = 5 % 2 === 0 ? "2" : "999";
+      await checkElementContainsText(page, "#tbody tr:nth-of-type(999) td:nth-of-type(1)", text999);
+      await checkElementContainsText(page, "#tbody tr:nth-of-type(2) td:nth-of-type(1)", text2);
+    },
   },
   {
     id: "06_remove-one-1k",
     label: "remove row",
     warmup: 5,
+    additionalRuns: 0,
     cpuThrottle: 2,
-    setup: async (page) => {
-      await page.click("#run");
-      await waitForRowCount(page, 1000);
+    init: async (page) => {
+      const rowsToSkip = 4;
+      await checkElementExists(page, "#run");
+      await clickElement(page, "#run");
+      await checkElementExists(page, "#tbody tr:nth-of-type(1000) td:nth-of-type(1)");
+      for (let i = 0; i < 5; i++) {
+        const rowToClick = 5 - i + rowsToSkip;
+        await checkElementContainsText(
+          page,
+          `#tbody tr:nth-of-type(${rowToClick}) td:nth-of-type(1)`,
+          String(rowToClick),
+        );
+        await clickElement(
+          page,
+          `#tbody tr:nth-of-type(${rowToClick}) td:nth-of-type(3) a span:nth-of-type(1)`,
+        );
+        await checkElementContainsText(
+          page,
+          `#tbody tr:nth-of-type(${rowToClick}) td:nth-of-type(1)`,
+          String(rowsToSkip + 5 + 1),
+        );
+      }
+      await checkElementContainsText(page, `#tbody tr:nth-of-type(${rowsToSkip + 1}) td:nth-of-type(1)`, String(rowsToSkip + 5 + 1));
+      await checkElementContainsText(page, `#tbody tr:nth-of-type(${rowsToSkip}) td:nth-of-type(1)`, String(rowsToSkip));
+      await checkElementContainsText(
+        page,
+        `#tbody tr:nth-of-type(${rowsToSkip + 2}) td:nth-of-type(1)`,
+        String(rowsToSkip + 5 + 2),
+      );
+      await clickElement(page, `#tbody tr:nth-of-type(${rowsToSkip + 2}) td:nth-of-type(3) a span:nth-of-type(1)`);
+      await checkElementContainsText(
+        page,
+        `#tbody tr:nth-of-type(${rowsToSkip + 2}) td:nth-of-type(1)`,
+        String(rowsToSkip + 5 + 3),
+      );
     },
-    action: "#tbody tr:nth-child(2) td:nth-child(3) a",
-    wait: (page) => waitForRowCount(page, 999),
+    run: async (page) => {
+      const rowsToSkip = 4;
+      await clickElement(page, `#tbody tr:nth-of-type(${rowsToSkip}) td:nth-of-type(3) a span:nth-of-type(1)`);
+      await checkElementContainsText(
+        page,
+        `#tbody tr:nth-of-type(${rowsToSkip}) td:nth-of-type(1)`,
+        String(rowsToSkip + 5 + 1),
+      );
+    },
   },
-  {
-    id: "07_create10k",
-    label: "create many rows",
-    warmup: 5,
-    cpuThrottle: undefined,
-    setup: null,
-    action: "#runlots",
-    wait: (page) => waitForRowCount(page, 10000),
-  },
+  // Temporarily disabled to keep CI runtime reasonable.
+  // {
+  //   id: "07_create10k",
+  //   label: "create many rows",
+  //   warmup: 5,
+  //   additionalRuns: 0,
+  //   cpuThrottle: undefined,
+  //   init: async (page) => {
+  //     await checkElementExists(page, "#run");
+  //     for (let i = 0; i < 5; i++) {
+  //       await clickElement(page, "#run");
+  //       await checkElementContainsText(page, "#tbody tr:nth-of-type(1) td:nth-of-type(1)", String(i * 1000 + 1));
+  //       await clickElement(page, "#clear");
+  //       await checkElementNotExists(page, "#tbody tr:nth-of-type(1000) td:nth-of-type(1)");
+  //     }
+  //   },
+  //   run: async (page) => {
+  //     await clickElement(page, "#runlots");
+  //     await checkElementExists(page, "#tbody tr:nth-of-type(10000) td:nth-of-type(2) a");
+  //   },
+  // },
   {
     id: "08_create1k-after1k_x2",
     label: "append rows to large table",
     warmup: 5,
+    additionalRuns: 0,
     cpuThrottle: undefined,
-    setup: async (page) => {
-      await page.click("#run");
-      await waitForRowCount(page, 1000);
+    init: async (page) => {
+      await checkElementExists(page, "#run");
+      for (let i = 0; i < 5; i++) {
+        await clickElement(page, "#run");
+        await checkElementContainsText(page, "#tbody tr:nth-of-type(1) td:nth-of-type(1)", String(i * 1000 + 1));
+        await clickElement(page, "#clear");
+        await checkElementNotExists(page, "#tbody tr:nth-of-type(1000) td:nth-of-type(1)");
+      }
+      await clickElement(page, "#run");
+      await checkElementExists(page, "#tbody tr:nth-of-type(1000) td:nth-of-type(1)");
     },
-    action: "#add",
-    wait: (page) => waitForRowCount(page, 2000),
+    run: async (page) => {
+      await clickElement(page, "#add");
+      await checkElementExists(page, "#tbody tr:nth-of-type(2000) td:nth-of-type(1)");
+    },
   },
   {
     id: "09_clear1k_x8",
     label: "clear rows",
     warmup: 5,
+    additionalRuns: 0,
     cpuThrottle: 4,
-    setup: async (page) => {
-      await page.click("#run");
-      await waitForRowCount(page, 1000);
+    init: async (page) => {
+      await checkElementExists(page, "#run");
+      for (let i = 0; i < 5; i++) {
+        await clickElement(page, "#run");
+        await checkElementContainsText(page, "#tbody tr:nth-of-type(1) td:nth-of-type(1)", String(i * 1000 + 1));
+        await clickElement(page, "#clear");
+        await checkElementNotExists(page, "#tbody tr:nth-of-type(1000) td:nth-of-type(1)");
+      }
+      await clickElement(page, "#run");
+      await checkElementContainsText(page, "#tbody tr:nth-of-type(1) td:nth-of-type(1)", String(5 * 1000 + 1));
     },
-    action: "#clear",
-    wait: (page) => waitForRowCount(page, 0),
+    run: async (page) => {
+      await clickElement(page, "#clear");
+      await checkElementNotExists(page, "#tbody tr:nth-of-type(1000) td:nth-of-type(1)");
+    },
   },
 ];
 
@@ -309,25 +606,34 @@ const memoryBenchmarks = [
   {
     id: "21_ready-memory",
     label: "ready memory",
+    init: async (page) => {
+      await checkElementExists(page, "#run");
+    },
     run: async () => {},
   },
   {
     id: "22_run-memory",
     label: "run memory",
+    init: async (page) => {
+      await checkElementExists(page, "#run");
+    },
     run: async (page) => {
-      await page.click("#run");
-      await waitForRowCount(page, 1000);
+      await clickElement(page, "#run");
+      await checkElementExists(page, "#tbody tr:nth-of-type(1) td:nth-of-type(2) a");
     },
   },
   {
     id: "25_run-clear-memory",
     label: "creating/clearing 1k rows (5 cycles)",
+    init: async (page) => {
+      await checkElementExists(page, "#run");
+    },
     run: async (page) => {
       for (let i = 0; i < 5; i++) {
-        await page.click("#run");
-        await waitForRowCount(page, 1000);
-        await page.click("#clear");
-        await waitForRowCount(page, 0);
+        await clickElement(page, "#run");
+        await checkElementContainsText(page, "#tbody tr:nth-of-type(1000) td:nth-of-type(1)", String(1000 * (i + 1)));
+        await clickElement(page, "#clear");
+        await checkElementNotExists(page, "#tbody tr:nth-of-type(1000) td:nth-of-type(1)");
       }
     },
   },
@@ -341,35 +647,31 @@ async function runTimingBenchmarks(browser) {
   const results = [];
 
   for (const bench of timingBenchmarks) {
-    const totalRuns = bench.warmup + ITERATIONS;
-    console.error(`  ${bench.id} (${bench.label}): ${bench.warmup} warmup + ${ITERATIONS} measured...`);
+    const runCount = ITERATIONS + (bench.additionalRuns ?? 0);
+    console.error(`  ${bench.id} (${bench.label}): warmup in init, ${runCount} measured...`);
     const durations = [];
 
-    for (let i = 0; i < totalRuns; i++) {
+    for (let i = 0; i < runCount; i++) {
       const page = await browser.newPage();
-      const cdp = await page.context().newCDPSession(page);
+      const cdp = await page.target().createCDPSession();
 
-      await page.goto(PREVIEW_URL);
+      await page.goto(PREVIEW_URL, { waitUntil: "networkidle0" });
       await waitForReady(page);
-
-      if (bench.setup) {
-        await bench.setup(page);
-        await page.evaluate(
-          () => new Promise((r) => requestAnimationFrame(r)),
-        );
-      }
+      await bench.init(page);
 
       // Apply CPU throttling for the measured action
       await setCPUThrottling(cdp, bench.cpuThrottle);
-
-      const duration = await measureClick(page, bench.action, bench.wait);
+      await startTrace(cdp);
+      await sleep(50);
+      await cdp.send("HeapProfiler.collectGarbage").catch(() => {});
+      await bench.run(page);
+      await sleep(100);
+      const traceEvents = await stopTrace(cdp);
+      const duration = computeDurationFromTrace(traceEvents, START_LOGIC_EVENT);
 
       // Reset throttling
       await setCPUThrottling(cdp, undefined);
-
-      if (i >= bench.warmup) {
-        durations.push(duration);
-      }
+      durations.push(duration);
 
       await cdp.detach();
       await page.close();
@@ -392,23 +694,35 @@ async function runMemoryBenchmarks(browser) {
 
     for (let i = 0; i < 3; i++) {
       const page = await browser.newPage();
-      const cdp = await page.context().newCDPSession(page);
+      const cdp = await page.target().createCDPSession();
 
-      await page.goto(PREVIEW_URL);
+      await page.goto(PREVIEW_URL, { waitUntil: "networkidle0" });
       await waitForReady(page);
-
+      await bench.init(page);
       await bench.run(page);
-
-      const memBytes = await measureMemory(cdp);
-      measurements.push(memBytes);
+      await cdp.send("HeapProfiler.collectGarbage").catch(() => {});
+      await sleep(40);
+      const memFromUA = await page.evaluate(async () => {
+        if (typeof performance.measureUserAgentSpecificMemory !== "function") {
+          return null;
+        }
+        const result = await performance.measureUserAgentSpecificMemory();
+        return result.bytes / 1024 / 1024;
+      });
+      if (memFromUA != null) {
+        measurements.push(memFromUA);
+      } else {
+        const memBytes = await measureMemory(cdp);
+        measurements.push(memBytes / 1024 / 1024);
+      }
 
       await cdp.detach();
       await page.close();
     }
 
-    const value = parseFloat((median(measurements) / 1024).toFixed(1));
-    results.push({ name: bench.id, unit: "kB", value });
-    console.error(`    -> ${value} kB (median of ${measurements.length})`);
+    const value = parseFloat(median(measurements).toFixed(2));
+    results.push({ name: bench.id, unit: "MB", value });
+    console.error(`    -> ${value} MB (median of ${measurements.length})`);
   }
 
   return results;
@@ -426,7 +740,7 @@ async function main() {
   console.error(`Preview server running on ${PREVIEW_URL}`);
 
   try {
-    const browser = await chromium.launch({ headless: true });
+    const browser = await puppeteer.launch({ headless: true });
 
     console.error("");
     console.error("  Performance Benchmark");

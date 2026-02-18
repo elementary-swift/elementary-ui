@@ -64,13 +64,13 @@ jobs:
         working-directory: Benchmarks/PerformanceBenchmarks
         run: pnpm preinstall && pnpm install
 
-      - name: Install Playwright Chromium
+      - name: Install Puppeteer Chrome
         working-directory: Benchmarks/PerformanceBenchmarks
-        run: npx playwright install --with-deps chromium
+        run: npx puppeteer browsers install chrome --install-deps
 
       - name: Build and measure
         working-directory: Benchmarks/PerformanceBenchmarks
-        run: pnpm --silent measure > benchmark-results.json
+        run: pnpm --silent measure -- --iterations 5 > benchmark-results.json
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4

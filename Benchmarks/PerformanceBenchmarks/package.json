@@ -12,7 +12,7 @@
     "@elementary-swift/vite-plugin-swift-wasm": "^0.1.2",
     "@types/node": "^25.2.3",
     "elementary-ui-browser-runtime": "file:../../BrowserRuntime",
-    "playwright": "^1.50.0",
+    "puppeteer": "^24.22.3",
     "vite": "^7.3.1"
   }
 }
