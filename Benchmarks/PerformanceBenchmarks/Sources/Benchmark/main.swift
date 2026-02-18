@@ -82,11 +82,11 @@ final class BenchmarkStore {
     }
 
     private func buildData(_ count: Int) -> [Row] {
-        var data: [Row] = .init(capacity: count) { span in
-            for _ in 0..<count {
-                span.append(Row(id: nextID, label: randomLabel()))
-                nextID += 1
-            }
+        var data: [Row] = []
+        data.reserveCapacity(count)
+        for _ in 0..<count {
+            data.append(Row(id: nextID, label: randomLabel()))
+            nextID += 1
         }
 
         return data
