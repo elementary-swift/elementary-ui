@@ -755,7 +755,11 @@ async function main() {
   console.error(`Preview server running on ${PREVIEW_URL}`);
 
   try {
-    const browser = await puppeteer.launch({ headless: true });
+    const isCI = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: isCI ? ["--no-sandbox", "--disable-setuid-sandbox"] : [],
+    });
 
     console.error("");
     console.error("  Performance Benchmark");
