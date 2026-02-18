@@ -12,7 +12,9 @@ on:
 permissions:
   pull-requests: write
   issues: write
-  contents: read
+  contents: write
+  checks: write
+  statuses: write
   actions: read
 
 jobs:
@@ -37,6 +39,9 @@ jobs:
         with:
           tool: customSmallerIsBetter
           output-file-path: benchmark-results.json
+          # workflow_run executes on the default branch context; force
+          # benchmark reporting/commenting against the PR head commit.
+          ref: ${{ github.event.workflow_run.head_sha }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           gh-pages-branch: benchmark-data
           benchmark-data-dir-path: size-benchmarks
