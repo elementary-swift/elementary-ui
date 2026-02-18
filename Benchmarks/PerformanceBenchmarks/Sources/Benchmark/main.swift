@@ -145,7 +145,7 @@ struct DataTable {
     var body: some View {
         table(.class("table table-hover table-striped test-data")) {
             tbody(.id("tbody")) {
-                ForEach(store.rows, key: { $0.id }) { row in
+                ForEach(store.rows, key: { "\($0.id)" }) { row in
                     RowView(
                         row: row,
                         isSelected: store.selectedID == row.id
