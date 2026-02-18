@@ -1,0 +1,18 @@
+{
+  "private": true,
+  "scripts": {
+    "preinstall": "swift package resolve",
+    "measure": "node scripts/measure-perf.mjs"
+  },
+  "dependencies": {
+    "bootstrap": "^3.4.1"
+  },
+  "devDependencies": {
+    "@bjorn3/browser_wasi_shim": "~0.4.2",
+    "@elementary-swift/vite-plugin-swift-wasm": "^0.1.2",
+    "@types/node": "^25.2.3",
+    "elementary-ui-browser-runtime": "file:../../BrowserRuntime",
+    "puppeteer": "^24.22.3",
+    "vite": "^7.3.1"
+  }
+}

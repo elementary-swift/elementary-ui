@@ -1,0 +1,51 @@
+name: Performance Benchmark Comment
+
+# Runs after the Performance Benchmarks workflow completes on a PR.
+# Uses workflow_run so it executes in the base repo context with write
+# permissions, allowing it to post comments on fork PRs.
+
+on:
+  workflow_run:
+    workflows: ["Performance Benchmarks"]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
+  actions: read
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download benchmark results
+        uses: actions/download-artifact@v4
+        with:
+          name: perf-benchmark-results
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Post benchmark comment
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: customSmallerIsBetter
+          output-file-path: benchmark-results.json
+          # workflow_run executes on default-branch context; force reporting
+          # against the PR head commit to ensure comment/update targets the PR.
+          ref: ${{ github.event.workflow_run.head_sha }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          gh-pages-branch: benchmark-data
+          benchmark-data-dir-path: perf-benchmarks
+          auto-push: false
+          save-data-file: false
+          comment-always: true
+          comment-on-alert: true
+          alert-threshold: "110%"
+          fail-on-alert: false
