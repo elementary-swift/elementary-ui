@@ -242,6 +242,31 @@ struct DOMPatchingTests {
     }
 
     @Test
+    func patchesForEachClosureReactiveState() {
+        let items = ["A", "B"]
+        nonisolated(unsafe) let state = CounterState()
+
+        let dom = TestDOM()
+        dom.mount {
+            ForEach(items, key: \.self) { item in
+                p(.class(item == items[state.number] ? "selected" : "")) {}
+            }
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        state.number += 1
+        dom.runNextFrame()
+
+        #expect(
+            dom.ops == [
+                .setAttr(node: "<p>", name: "class", value: ""),
+                .setAttr(node: "<p>", name: "class", value: "selected"),
+            ]
+        )
+    }
+
+    @Test
     func countsUp() {
         let state = CounterState()
 
