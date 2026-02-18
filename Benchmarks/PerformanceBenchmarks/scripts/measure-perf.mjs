@@ -82,20 +82,9 @@ function startPreview() {
     const timeout = setTimeout(() => {
       if (!settled) {
         settled = true;
-        reject(new Error("Preview server did not start within 15s"));
+        reject(new Error("Preview server did not start within 60s"));
       }
-    }, 15_000);
-
-    const onData = (chunk) => {
-      if (!settled && chunk.toString().includes("Local:")) {
-        settled = true;
-        clearTimeout(timeout);
-        resolve(proc);
-      }
-    };
-
-    proc.stdout.on("data", onData);
-    proc.stderr.on("data", onData);
+    }, 60_000);
 
     proc.on("error", (err) => {
       if (!settled) {
@@ -110,6 +99,32 @@ function startPreview() {
         settled = true;
         clearTimeout(timeout);
         reject(new Error(`Preview server exited with code ${code}`));
+      }
+    });
+
+    const startedAt = Date.now();
+    const waitForHttp = async () => {
+      while (!settled && Date.now() - startedAt < 60_000) {
+        try {
+          const response = await fetch(PREVIEW_URL, { method: "GET" });
+          if (response.ok) {
+            settled = true;
+            clearTimeout(timeout);
+            resolve(proc);
+            return;
+          }
+        } catch {
+          // Server not ready yet.
+        }
+        await sleep(250);
+      }
+    };
+
+    waitForHttp().catch((err) => {
+      if (!settled) {
+        settled = true;
+        clearTimeout(timeout);
+        reject(err);
       }
     });
   });

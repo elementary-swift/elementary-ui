@@ -13,7 +13,7 @@ let package = Package(
             dependencies: [
                 .product(name: "ElementaryUI", package: "elementary-ui")
             ]
-        ),
+        )
     ],
     swiftLanguageModes: [.v5]
 )
