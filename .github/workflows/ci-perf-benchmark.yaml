@@ -66,7 +66,7 @@ jobs:
 
       - name: Install Puppeteer Chrome
         working-directory: Benchmarks/PerformanceBenchmarks
-        run: npx puppeteer browsers install chrome --install-deps
+        run: npx puppeteer browsers install chrome
 
       - name: Build and measure
         working-directory: Benchmarks/PerformanceBenchmarks
