@@ -12,7 +12,9 @@ on:
 permissions:
   pull-requests: write
   issues: write
-  contents: read
+  contents: write
+  checks: write
+  statuses: write
   actions: read
 
 jobs:
