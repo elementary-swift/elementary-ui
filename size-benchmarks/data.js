@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771321724849,
+  "lastUpdate": 1771374062261,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -124,6 +124,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "HelloWorld",
             "value": 115.77,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 160.64,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e713492189d50593a26b131d06270b80a9b5d7e2",
+          "message": "fixed ForEach reactivity gap (#73)\n\n* fixed ForEach reaactivity gap\n\n* let's try this",
+          "timestamp": "2026-02-18T01:18:38+01:00",
+          "tree_id": "4c4e0212917f3bb6deef273a601c900aebc7961c",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/e713492189d50593a26b131d06270b80a9b5d7e2"
+        },
+        "date": 1771374061961,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 157.93,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 130.36,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 115.79,
             "unit": "kB"
           },
           {
