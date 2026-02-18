@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771374062261,
+  "lastUpdate": 1771379057972,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -173,6 +173,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 160.64,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4a8e3dfe56aca3abdb4e1e134df642eaf6f537f8",
+          "message": "add CI for performance benchmarks (#74)\n\n* WIP\n\n* basic benchmark setup\n\n* ci\n\n* ci\n\n* 6.2\n\n* 6.2\n\n* format\n\n* ai slop hell",
+          "timestamp": "2026-02-18T02:41:29+01:00",
+          "tree_id": "e92f39d6b530c3e23a519865afde8e7d0fb23e85",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/4a8e3dfe56aca3abdb4e1e134df642eaf6f537f8"
+        },
+        "date": 1771379057051,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 157.93,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 130.37,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 115.79,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 160.65,
             "unit": "kB"
           }
         ]
