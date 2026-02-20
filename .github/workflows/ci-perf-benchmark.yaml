@@ -15,8 +15,6 @@ on:
       - "Benchmarks/**"
       - "BrowserRuntime/**"
       - "Package.swift"
-  schedule:
-    - cron: "0 7 * * *"
   workflow_dispatch:
 
 permissions:
