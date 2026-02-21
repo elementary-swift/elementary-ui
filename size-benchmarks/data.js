@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771570316027,
+  "lastUpdate": 1771655864156,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -372,6 +372,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "Animations",
             "value": 157.83,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 130.2,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 115.57,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 160.45,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "a0b1bc047cf2951f8a97bcd04d95299d5f0537aa",
+          "message": "Update ci-perf-benchmark.yaml",
+          "timestamp": "2026-02-20T20:18:20Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/a0b1bc047cf2951f8a97bcd04d95299d5f0537aa"
+        },
+        "date": 1771655863274,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 157.82,
             "unit": "kB"
           },
           {
