@@ -1,6 +1,6 @@
 import { createDefaultWASI } from "./wasi-shim";
 import { SwiftRuntime } from "./vendored/javascriptkit/index.mjs";
-import { createBridgeJSStubs } from "./bridgejs-shims";
+import { createInstantiator } from "./generated/bridge-js";
 
 type WasmInstanceInitializer = (
   importsObject?: WebAssembly.Imports
@@ -20,15 +20,20 @@ type WasmInstanceInitializer = (
 export async function runApplication(initializer: WasmInstanceInitializer) {
   const wasi = createDefaultWASI();
   const swiftRuntime = new SwiftRuntime();
-  const bridgeJSStubs = createBridgeJSStubs();
-
-  const instance = await initializer({
+  let instance: WebAssembly.Instance | null = null;
+  const instantiator = await createInstantiator({
+    imports: {},
+  }, swiftRuntime as any);
+  const importsObject: WebAssembly.Imports = {
     javascript_kit: swiftRuntime.wasmImports,
     wasi_snapshot_preview1: wasi.wasiImport,
-    bjs: bridgeJSStubs,
-  });
+  };
+  instantiator.addImports(importsObject);
+
+  instance = await initializer(importsObject);
 
   swiftRuntime.setInstance(instance);
+  instantiator.setInstance(instance);
   // TODO: deal with this typing issue later
   wasi.initialize(instance as any);
 

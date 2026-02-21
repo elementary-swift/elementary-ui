@@ -1,0 +1,1173 @@
+{
+  "imported" : {
+    "children" : [
+      {
+        "functions" : [
+
+        ],
+        "types" : [
+          {
+            "getters" : [
+              {
+                "name" : "body",
+                "type" : {
+                  "jsObject" : {
+                    "_0" : "JSElement"
+                  }
+                }
+              }
+            ],
+            "jsName" : "Document",
+            "methods" : [
+              {
+                "name" : "createElement",
+                "parameters" : [
+                  {
+                    "name" : "tagName",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "jsObject" : {
+                    "_0" : "JSElement"
+                  }
+                }
+              },
+              {
+                "name" : "createTextNode",
+                "parameters" : [
+                  {
+                    "name" : "text",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "jsObject" : {
+                    "_0" : "JSNode"
+                  }
+                }
+              },
+              {
+                "name" : "querySelector",
+                "parameters" : [
+                  {
+                    "name" : "selector",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "jsObject" : {
+                    "_0" : "JSElement"
+                  }
+                }
+              },
+              {
+                "name" : "addEventListener",
+                "parameters" : [
+                  {
+                    "name" : "type",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  },
+                  {
+                    "name" : "listener",
+                    "type" : {
+                      "jsObject" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "removeEventListener",
+                "parameters" : [
+                  {
+                    "name" : "type",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  },
+                  {
+                    "name" : "listener",
+                    "type" : {
+                      "jsObject" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              }
+            ],
+            "name" : "JSDocument",
+            "setters" : [
+
+            ],
+            "staticMethods" : [
+
+            ]
+          },
+          {
+            "getters" : [
+              {
+                "name" : "scrollX",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "scrollY",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              }
+            ],
+            "jsName" : "Window",
+            "methods" : [
+              {
+                "name" : "getComputedStyle",
+                "parameters" : [
+                  {
+                    "name" : "element",
+                    "type" : {
+                      "jsObject" : {
+                        "_0" : "JSElement"
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "jsObject" : {
+                    "_0" : "JSCSSStyleDeclaration"
+                  }
+                }
+              }
+            ],
+            "name" : "JSWindow",
+            "setters" : [
+
+            ],
+            "staticMethods" : [
+
+            ]
+          },
+          {
+            "getters" : [
+
+            ],
+            "jsName" : "Performance",
+            "methods" : [
+              {
+                "name" : "now",
+                "parameters" : [
+
+                ],
+                "returnType" : {
+                  "double" : {
+
+                  }
+                }
+              }
+            ],
+            "name" : "JSPerformance",
+            "setters" : [
+
+            ],
+            "staticMethods" : [
+
+            ]
+          },
+          {
+            "getters" : [
+              {
+                "name" : "textContent",
+                "type" : {
+                  "nullable" : {
+                    "_0" : {
+                      "string" : {
+
+                      }
+                    },
+                    "_1" : "null"
+                  }
+                }
+              }
+            ],
+            "jsName" : "Node",
+            "methods" : [
+
+            ],
+            "name" : "JSNode",
+            "setters" : [
+              {
+                "functionName" : "textContent_set",
+                "name" : "textContent",
+                "type" : {
+                  "nullable" : {
+                    "_0" : {
+                      "string" : {
+
+                      }
+                    },
+                    "_1" : "null"
+                  }
+                }
+              }
+            ],
+            "staticMethods" : [
+
+            ]
+          },
+          {
+            "getters" : [
+              {
+                "name" : "style",
+                "type" : {
+                  "jsObject" : {
+                    "_0" : "JSCSSStyleDeclaration"
+                  }
+                }
+              },
+              {
+                "name" : "textContent",
+                "type" : {
+                  "nullable" : {
+                    "_0" : {
+                      "string" : {
+
+                      }
+                    },
+                    "_1" : "null"
+                  }
+                }
+              },
+              {
+                "name" : "offsetParent",
+                "type" : {
+                  "jsObject" : {
+                    "_0" : "JSElement"
+                  }
+                }
+              }
+            ],
+            "jsName" : "Element",
+            "methods" : [
+              {
+                "name" : "setAttribute",
+                "parameters" : [
+                  {
+                    "name" : "name",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  },
+                  {
+                    "name" : "value",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "removeAttribute",
+                "parameters" : [
+                  {
+                    "name" : "name",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "appendChild",
+                "parameters" : [
+                  {
+                    "name" : "child",
+                    "type" : {
+                      "jsObject" : {
+                        "_0" : "JSNode"
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "removeChild",
+                "parameters" : [
+                  {
+                    "name" : "child",
+                    "type" : {
+                      "jsObject" : {
+                        "_0" : "JSNode"
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "getBoundingClientRect",
+                "parameters" : [
+
+                ],
+                "returnType" : {
+                  "jsObject" : {
+                    "_0" : "JSDOMRect"
+                  }
+                }
+              },
+              {
+                "name" : "addEventListener",
+                "parameters" : [
+                  {
+                    "name" : "type",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  },
+                  {
+                    "name" : "listener",
+                    "type" : {
+                      "jsObject" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "removeEventListener",
+                "parameters" : [
+                  {
+                    "name" : "type",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  },
+                  {
+                    "name" : "listener",
+                    "type" : {
+                      "jsObject" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "focus",
+                "parameters" : [
+
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "blur",
+                "parameters" : [
+
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "animate",
+                "parameters" : [
+                  {
+                    "name" : "keyframes",
+                    "type" : {
+                      "jsObject" : {
+
+                      }
+                    }
+                  },
+                  {
+                    "name" : "options",
+                    "type" : {
+                      "jsObject" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "jsObject" : {
+                    "_0" : "JSAnimation"
+                  }
+                }
+              }
+            ],
+            "name" : "JSElement",
+            "setters" : [
+              {
+                "functionName" : "textContent_set",
+                "name" : "textContent",
+                "type" : {
+                  "nullable" : {
+                    "_0" : {
+                      "string" : {
+
+                      }
+                    },
+                    "_1" : "null"
+                  }
+                }
+              }
+            ],
+            "staticMethods" : [
+
+            ]
+          },
+          {
+            "getters" : [
+
+            ],
+            "jsName" : "CSSStyleDeclaration",
+            "methods" : [
+              {
+                "name" : "getPropertyValue",
+                "parameters" : [
+                  {
+                    "name" : "name",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "string" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "setProperty",
+                "parameters" : [
+                  {
+                    "name" : "name",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  },
+                  {
+                    "name" : "value",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "removeProperty",
+                "parameters" : [
+                  {
+                    "name" : "name",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              }
+            ],
+            "name" : "JSCSSStyleDeclaration",
+            "setters" : [
+
+            ],
+            "staticMethods" : [
+
+            ]
+          },
+          {
+            "getters" : [
+              {
+                "name" : "x",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "y",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "width",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "height",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              }
+            ],
+            "jsName" : "DOMRect",
+            "methods" : [
+
+            ],
+            "name" : "JSDOMRect",
+            "setters" : [
+
+            ],
+            "staticMethods" : [
+
+            ]
+          },
+          {
+            "getters" : [
+              {
+                "name" : "effect",
+                "type" : {
+                  "jsObject" : {
+                    "_0" : "JSAnimationEffect"
+                  }
+                }
+              }
+            ],
+            "jsName" : "Animation",
+            "methods" : [
+              {
+                "name" : "persist",
+                "parameters" : [
+
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "pause",
+                "parameters" : [
+
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "play",
+                "parameters" : [
+
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "cancel",
+                "parameters" : [
+
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              }
+            ],
+            "name" : "JSAnimation",
+            "setters" : [
+              {
+                "functionName" : "currentTime_set",
+                "name" : "currentTime",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "functionName" : "onfinish_set",
+                "name" : "onfinish",
+                "type" : {
+                  "nullable" : {
+                    "_0" : {
+                      "jsObject" : {
+
+                      }
+                    },
+                    "_1" : "null"
+                  }
+                }
+              }
+            ],
+            "staticMethods" : [
+
+            ]
+          },
+          {
+            "getters" : [
+
+            ],
+            "jsName" : "AnimationEffect",
+            "methods" : [
+              {
+                "name" : "setKeyframes",
+                "parameters" : [
+                  {
+                    "name" : "keyframes",
+                    "type" : {
+                      "jsObject" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "updateTiming",
+                "parameters" : [
+                  {
+                    "name" : "timing",
+                    "type" : {
+                      "jsObject" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              }
+            ],
+            "name" : "JSAnimationEffect",
+            "setters" : [
+
+            ],
+            "staticMethods" : [
+
+            ]
+          }
+        ]
+      },
+      {
+        "functions" : [
+
+        ],
+        "types" : [
+          {
+            "getters" : [
+              {
+                "name" : "type",
+                "type" : {
+                  "string" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "target",
+                "type" : {
+                  "jsObject" : {
+
+                  }
+                }
+              }
+            ],
+            "jsName" : "Event",
+            "methods" : [
+
+            ],
+            "name" : "JSEvent",
+            "setters" : [
+
+            ],
+            "staticMethods" : [
+
+            ]
+          },
+          {
+            "getters" : [
+              {
+                "name" : "key",
+                "type" : {
+                  "string" : {
+
+                  }
+                }
+              }
+            ],
+            "jsName" : "KeyboardEvent",
+            "methods" : [
+
+            ],
+            "name" : "JSKeyboardEvent",
+            "setters" : [
+
+            ],
+            "staticMethods" : [
+
+            ]
+          },
+          {
+            "getters" : [
+              {
+                "name" : "altKey",
+                "type" : {
+                  "bool" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "button",
+                "type" : {
+                  "int" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "buttons",
+                "type" : {
+                  "int" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "clientX",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "clientY",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "ctrlKey",
+                "type" : {
+                  "bool" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "metaKey",
+                "type" : {
+                  "bool" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "movementX",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "movementY",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "offsetX",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "offsetY",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "pageX",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "pageY",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "screenX",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "screenY",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "shiftKey",
+                "type" : {
+                  "bool" : {
+
+                  }
+                }
+              }
+            ],
+            "jsName" : "MouseEvent",
+            "methods" : [
+
+            ],
+            "name" : "JSMouseEvent",
+            "setters" : [
+
+            ],
+            "staticMethods" : [
+
+            ]
+          },
+          {
+            "getters" : [
+              {
+                "name" : "data",
+                "type" : {
+                  "nullable" : {
+                    "_0" : {
+                      "string" : {
+
+                      }
+                    },
+                    "_1" : "null"
+                  }
+                }
+              },
+              {
+                "name" : "target",
+                "type" : {
+                  "jsObject" : {
+
+                  }
+                }
+              }
+            ],
+            "jsName" : "InputEvent",
+            "methods" : [
+
+            ],
+            "name" : "JSInputEvent",
+            "setters" : [
+
+            ],
+            "staticMethods" : [
+
+            ]
+          }
+        ]
+      },
+      {
+        "functions" : [
+          {
+            "from" : "global",
+            "name" : "requestAnimationFrame",
+            "parameters" : [
+              {
+                "name" : "callback",
+                "type" : {
+                  "closure" : {
+                    "_0" : {
+                      "isAsync" : false,
+                      "isThrows" : false,
+                      "mangleName" : "14BrowserInteropSd_y",
+                      "moduleName" : "BrowserInterop",
+                      "parameters" : [
+                        {
+                          "double" : {
+
+                          }
+                        }
+                      ],
+                      "returnType" : {
+                        "void" : {
+
+                        }
+                      }
+                    },
+                    "useJSTypedClosure" : false
+                  }
+                }
+              }
+            ],
+            "returnType" : {
+              "double" : {
+
+              }
+            }
+          },
+          {
+            "from" : "global",
+            "name" : "cancelAnimationFrame",
+            "parameters" : [
+              {
+                "name" : "handle",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              }
+            ],
+            "returnType" : {
+              "void" : {
+
+              }
+            }
+          },
+          {
+            "from" : "global",
+            "name" : "queueMicrotask",
+            "parameters" : [
+              {
+                "name" : "callback",
+                "type" : {
+                  "closure" : {
+                    "_0" : {
+                      "isAsync" : false,
+                      "isThrows" : false,
+                      "mangleName" : "14BrowserInteropy_y",
+                      "moduleName" : "BrowserInterop",
+                      "parameters" : [
+
+                      ],
+                      "returnType" : {
+                        "void" : {
+
+                        }
+                      }
+                    },
+                    "useJSTypedClosure" : false
+                  }
+                }
+              }
+            ],
+            "returnType" : {
+              "void" : {
+
+              }
+            }
+          },
+          {
+            "from" : "global",
+            "name" : "setTimeout",
+            "parameters" : [
+              {
+                "name" : "callback",
+                "type" : {
+                  "closure" : {
+                    "_0" : {
+                      "isAsync" : false,
+                      "isThrows" : false,
+                      "mangleName" : "14BrowserInteropy_y",
+                      "moduleName" : "BrowserInterop",
+                      "parameters" : [
+
+                      ],
+                      "returnType" : {
+                        "void" : {
+
+                        }
+                      }
+                    },
+                    "useJSTypedClosure" : false
+                  }
+                }
+              },
+              {
+                "name" : "timeout",
+                "type" : {
+                  "double" : {
+
+                  }
+                }
+              }
+            ],
+            "returnType" : {
+              "void" : {
+
+              }
+            }
+          }
+        ],
+        "globalGetters" : [
+          {
+            "from" : "global",
+            "name" : "window",
+            "type" : {
+              "jsObject" : {
+                "_0" : "JSWindow"
+              }
+            }
+          },
+          {
+            "from" : "global",
+            "name" : "document",
+            "type" : {
+              "jsObject" : {
+                "_0" : "JSDocument"
+              }
+            }
+          },
+          {
+            "from" : "global",
+            "name" : "performance",
+            "type" : {
+              "jsObject" : {
+                "_0" : "JSPerformance"
+              }
+            }
+          }
+        ],
+        "types" : [
+
+        ]
+      }
+    ]
+  },
+  "moduleName" : "BrowserInterop"
+}

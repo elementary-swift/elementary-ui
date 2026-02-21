@@ -22,12 +22,30 @@ let package = Package(
             dependencies: [
                 .product(name: "Elementary", package: "elementary"),
                 .product(name: "JavaScriptKit", package: "JavaScriptKit"),
+                .target(name: "BrowserInterop"),
                 .target(name: "ElementaryUIMacros"),
                 .target(name: "Reactivity"),
                 .target(name: "_ElementaryMath"),
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v5),
+                .enableUpcomingFeature("ExistentialAny"),
+                .enableUpcomingFeature("ConciseMagicFile"),
+                .enableUpcomingFeature("ImplicitOpenExistentials"),
+            ]
+        ),
+        .target(
+            name: "BrowserInterop",
+            dependencies: [
+                .product(name: "JavaScriptKit", package: "JavaScriptKit")
+            ],
+            exclude: [
+                "bridge-js.config.json",
+                "Generated/JavaScript/BridgeJS.json",
+            ],
+            swiftSettings: [
+                .swiftLanguageMode(.v5),
+                .enableExperimentalFeature("Extern"),
                 .enableUpcomingFeature("ExistentialAny"),
                 .enableUpcomingFeature("ConciseMagicFile"),
                 .enableUpcomingFeature("ImplicitOpenExistentials"),
