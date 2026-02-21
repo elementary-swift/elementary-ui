@@ -94,7 +94,7 @@ public struct Environment<V> {
             }
         case let .objectReader(reader, _):
             storage = .objectReader(reader, values.boxes[reader.propertyID])
-            #if hasFeature(Embedded)
+            #if hasFeature(Embedded) && compiler(<6.3)
             // FIXME: embedded - create issue and check with main
             if __omg_this_was_annoying_I_am_false {
                 // NOTE: this is only to force inclusion of the the box type for V
