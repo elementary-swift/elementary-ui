@@ -20,15 +20,15 @@ jobs:
       fail-fast: false
       matrix:
         swift:
-          - version: 6.3-snapshot-2026-01-09
-            wasm-sdk-url: https://download.swift.org/swift-6.3-branch/wasm-sdk/swift-6.3-DEVELOPMENT-SNAPSHOT-2026-01-09-a/swift-6.3-DEVELOPMENT-SNAPSHOT-2026-01-09-a_wasm.artifactbundle.tar.gz
-            wasm-sdk-checksum: 9fba6f3f2fc5346e053fa99c623f36dd6f5fd35fd287064c0f0d0869b1f7b33a
-            wasm_sdk_id: swift-6.3-DEVELOPMENT-SNAPSHOT-2026-01-09-a_wasm-embedded
+          - version: 6.3-snapshot-2026-02-14
+            wasm-sdk-url: https://download.swift.org/swift-6.3-branch/wasm-sdk/swift-6.3-DEVELOPMENT-SNAPSHOT-2026-02-14-a/swift-6.3-DEVELOPMENT-SNAPSHOT-2026-02-14-a_wasm.artifactbundle.tar.gz
+            wasm-sdk-checksum: e56084b2bfa90dbd3a6c3d11a779a387bae99ba83b985062e2a9ef51da55ce2f
+            wasm_sdk_id: swift-6.3-DEVELOPMENT-SNAPSHOT-2026-02-14-a_wasm-embedded
 
-          - version: main-snapshot-2026-01-09
-            wasm-sdk-url: https://download.swift.org/development/wasm-sdk/swift-DEVELOPMENT-SNAPSHOT-2026-01-09-a/swift-DEVELOPMENT-SNAPSHOT-2026-01-09-a_wasm.artifactbundle.tar.gz
-            wasm-sdk-checksum: cbea924333df569d19340f618e31e593f808e45115f79217b6d3282e64683cf1
-            wasm_sdk_id: swift-DEVELOPMENT-SNAPSHOT-2026-01-09-a_wasm-embedded
+          - version: main-snapshot-2026-02-19
+            wasm-sdk-url: https://download.swift.org/development/wasm-sdk/swift-DEVELOPMENT-SNAPSHOT-2026-02-19-a/swift-DEVELOPMENT-SNAPSHOT-2026-02-19-a_wasm.artifactbundle.tar.gz
+            wasm-sdk-checksum: 9671979f6a6585b642834993e0c63b6cae084a43dc6103a87a2e8f8929094e08
+            wasm_sdk_id: swift-DEVELOPMENT-SNAPSHOT-2026-02-19-a_wasm-embedded
 
     steps:
       - name: Checkout
