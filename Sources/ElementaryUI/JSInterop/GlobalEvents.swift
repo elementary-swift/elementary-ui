@@ -1,3 +1,4 @@
+import BrowserInterop
 import JavaScriptKit
 
 // NOTE: all of this is because
@@ -31,10 +32,12 @@ public extension View {
 }
 
 public enum GlobalDocument {
-    static let document = JSObject.global.document
-
     static var body: DOM.Node {
-        DOM.Node(document.body.object!)
+        guard let document = try? BrowserInterop.document,
+              let body = try? document.body else {
+            return DOM.Node(ref: JSObject())
+        }
+        return DOM.Node(ref: body.jsObject)
     }
 }
 
@@ -54,10 +57,13 @@ extension GlobalDocument {
                 return .undefined
             }
 
-            _ = document.addEventListener(eventName, closure)
+            guard let document = try? BrowserInterop.document else {
+                return EventSourceSubscription {}
+            }
+            _ = try? document.addEventListener(eventName, closure)
 
             return EventSourceSubscription {
-                _ = document.removeEventListener(eventName, closure)
+                _ = try? document.removeEventListener(eventName, closure)
             }
         }
     }
@@ -70,27 +76,26 @@ public var onAnimationFrame: some EventSource<AnimationFrameEvent> {
 
 struct AnimationFrameEventSource: EventSource {
     typealias Event = AnimationFrameEvent
-    static let _requestAnimationFrame = JSObject.global.requestAnimationFrame.function!
-    static let _cancelAnimationFrame = JSObject.global.cancelAnimationFrame.function!
 
     func subscribe(_ callback: @escaping (AnimationFrameEvent) -> Void) -> EventSourceSubscription {
-        var rafID: JSValue?
-        var closure: JSClosure?
+        var rafID: Double?
+        var closure: ((Double) -> Void)?
 
-        closure = JSClosure { value in
+        closure = { value in
             guard let closure else {
-                return .undefined
+                return
             }
-            rafID = AnimationFrameEventSource._requestAnimationFrame(closure)
-            callback(AnimationFrameEvent(timestamp: value[0].number!))
-            return .undefined
+            rafID = try? BrowserInterop.requestAnimationFrame(closure)
+            callback(AnimationFrameEvent(timestamp: value))
         }
 
-        rafID = AnimationFrameEventSource._requestAnimationFrame(closure)
+        if let closure {
+            rafID = try? BrowserInterop.requestAnimationFrame(closure)
+        }
 
         return EventSourceSubscription {
             if let rafID = rafID {
-                AnimationFrameEventSource._cancelAnimationFrame(rafID)
+                _ = try? BrowserInterop.cancelAnimationFrame(rafID)
             }
             closure = nil
             rafID = nil

@@ -12,7 +12,7 @@ let package = Package(
         .trait(name: "TraceLogs", description: "Enables trace logs for the ElementaryUI internals")
     ],
     dependencies: [
-        .package(url: "https://github.com/swiftwasm/JavaScriptKit", .upToNextMinor(from: "0.45.0")),
+        .package(url: "https://github.com/swiftwasm/JavaScriptKit", .upToNextMinor(from: "0.46.2")),
         .package(url: "https://github.com/elementary-swift/elementary", from: "0.6.3"),
         .package(url: "https://github.com/swiftlang/swift-syntax", "600.0.0"..<"603.0.0"),
     ],
@@ -22,12 +22,30 @@ let package = Package(
             dependencies: [
                 .product(name: "Elementary", package: "elementary"),
                 .product(name: "JavaScriptKit", package: "JavaScriptKit"),
+                .target(name: "BrowserInterop"),
                 .target(name: "ElementaryUIMacros"),
                 .target(name: "Reactivity"),
                 .target(name: "_ElementaryMath"),
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v5),
+                .enableUpcomingFeature("ExistentialAny"),
+                .enableUpcomingFeature("ConciseMagicFile"),
+                .enableUpcomingFeature("ImplicitOpenExistentials"),
+            ]
+        ),
+        .target(
+            name: "BrowserInterop",
+            dependencies: [
+                .product(name: "JavaScriptKit", package: "JavaScriptKit")
+            ],
+            exclude: [
+                "bridge-js.config.json",
+                "Generated/JavaScript/BridgeJS.json",
+            ],
+            swiftSettings: [
+                .swiftLanguageMode(.v5),
+                .enableExperimentalFeature("Extern"),
                 .enableUpcomingFeature("ExistentialAny"),
                 .enableUpcomingFeature("ConciseMagicFile"),
                 .enableUpcomingFeature("ImplicitOpenExistentials"),
