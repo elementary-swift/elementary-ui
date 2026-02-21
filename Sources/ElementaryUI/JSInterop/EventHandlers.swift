@@ -1,3 +1,4 @@
+import BrowserInterop
 import JavaScriptKit
 
 // TODO: figure out the typing for this, this is not great
@@ -19,12 +20,11 @@ public struct KeyboardEvent: _TypedDOMEvent {
     var rawEvent: JSObject
 
     public init?(__jsObject rawEvent: JSObject) {
-        // TODO: maybe check some stuff..
         self.rawEvent = rawEvent
     }
 
     public var key: String {
-        rawEvent.key.string!
+        (try? JSKeyboardEvent(unsafelyWrapping: rawEvent).key) ?? ""
     }
 }
 
@@ -32,72 +32,71 @@ public struct MouseEvent: _TypedDOMEvent {
     var rawEvent: JSObject
 
     public init?(__jsObject rawEvent: JSObject) {
-        // TODO: maybe check some stuff..
         self.rawEvent = rawEvent
     }
 
     public var altKey: Bool {
-        rawEvent.altKey.boolean!
+        (try? JSMouseEvent(unsafelyWrapping: rawEvent).altKey) ?? false
     }
 
     public var button: Int {
-        Int(rawEvent.button.number!)
+        (try? JSMouseEvent(unsafelyWrapping: rawEvent).button) ?? 0
     }
 
     public var buttons: Int {
-        Int(rawEvent.buttons.number!)
+        (try? JSMouseEvent(unsafelyWrapping: rawEvent).buttons) ?? 0
     }
 
     public var clientX: Double {
-        rawEvent.clientX.number!
+        (try? JSMouseEvent(unsafelyWrapping: rawEvent).clientX) ?? 0
     }
 
     public var clientY: Double {
-        rawEvent.clientY.number!
+        (try? JSMouseEvent(unsafelyWrapping: rawEvent).clientY) ?? 0
     }
 
     public var ctrlKey: Bool {
-        rawEvent.ctrlKey.boolean!
+        (try? JSMouseEvent(unsafelyWrapping: rawEvent).ctrlKey) ?? false
     }
 
     public var metaKey: Bool {
-        rawEvent.metaKey.boolean!
+        (try? JSMouseEvent(unsafelyWrapping: rawEvent).metaKey) ?? false
     }
 
     public var movementX: Double {
-        rawEvent.movementX.number!
+        (try? JSMouseEvent(unsafelyWrapping: rawEvent).movementX) ?? 0
     }
 
     public var movementY: Double {
-        rawEvent.movementY.number!
+        (try? JSMouseEvent(unsafelyWrapping: rawEvent).movementY) ?? 0
     }
 
     public var offsetX: Double {
-        rawEvent.offsetX.number!
+        (try? JSMouseEvent(unsafelyWrapping: rawEvent).offsetX) ?? 0
     }
 
     public var offsetY: Double {
-        rawEvent.offsetY.number!
+        (try? JSMouseEvent(unsafelyWrapping: rawEvent).offsetY) ?? 0
     }
 
     public var pageX: Double {
-        rawEvent.pageX.number!
+        (try? JSMouseEvent(unsafelyWrapping: rawEvent).pageX) ?? 0
     }
 
     public var pageY: Double {
-        rawEvent.pageY.number!
+        (try? JSMouseEvent(unsafelyWrapping: rawEvent).pageY) ?? 0
     }
 
     public var screenX: Double {
-        rawEvent.screenX.number!
+        (try? JSMouseEvent(unsafelyWrapping: rawEvent).screenX) ?? 0
     }
 
     public var screenY: Double {
-        rawEvent.screenY.number!
+        (try? JSMouseEvent(unsafelyWrapping: rawEvent).screenY) ?? 0
     }
 
     public var shiftKey: Bool {
-        rawEvent.shiftKey.boolean!
+        (try? JSMouseEvent(unsafelyWrapping: rawEvent).shiftKey) ?? false
     }
 }
 
@@ -109,10 +108,10 @@ public struct InputEvent: _TypedDOMEvent {
     }
 
     public var data: String? {
-        rawEvent.data.string
+        try? JSInputEvent(unsafelyWrapping: rawEvent).data
     }
 
     public var targetValue: String? {
-        rawEvent.target.value.string
+        (try? JSInputEvent(unsafelyWrapping: rawEvent).target.value.string) ?? nil
     }
 }
