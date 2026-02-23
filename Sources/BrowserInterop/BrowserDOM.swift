@@ -1,4 +1,4 @@
-import JavaScriptKit
+@_spi(BridgeJS) import JavaScriptKit
 
 @JSClass(jsName: "Document")
 public struct JSDocument {
@@ -38,6 +38,8 @@ public struct JSElement {
     @JSFunction public func removeAttribute(_ name: String) throws(JSException)
     @JSFunction public func appendChild(_ child: JSNode) throws(JSException)
     @JSFunction public func removeChild(_ child: JSNode) throws(JSException)
+    @JSFunction public func insertBefore(_ newChild: JSNode, _ refChild: JSNode?) throws(JSException)
+    //@JSFunction public func replaceChildren(_ children: JSNode) throws(JSException)
     @JSFunction public func getBoundingClientRect() throws(JSException) -> JSDOMRect
     @JSFunction public func addEventListener(_ type: String, _ listener: JSObject) throws(JSException)
     @JSFunction public func removeEventListener(_ type: String, _ listener: JSObject) throws(JSException)
@@ -90,17 +92,13 @@ public extension JSElement {
     }
 }
 
-public func jsInsertChild(_ child: JSElement, before sibling: JSElement?, in parent: JSElement) {
-    if let sibling {
-        _ = parent.jsObject.insertBefore?(child.jsObject.jsValue, sibling.jsObject.jsValue)
-    } else {
-        _ = parent.jsObject.appendChild?(child.jsObject.jsValue)
+extension JSNode? {
+    func bridgeJSLowerParameter() -> (Int32, Int32) {
+        if let node = self {
+            return (1, node.jsObject.bridgeJSLowerParameter())
+        } else {
+            return (0, 0)
+        }
     }
-}
 
-public func jsReplaceChildren(in parent: JSElement, with children: [JSElement]) {
-    parent.jsObject.replaceChildren.function?.callAsFunction(
-        this: parent.jsObject,
-        arguments: children.map { $0.jsObject.jsValue }
-    )
 }

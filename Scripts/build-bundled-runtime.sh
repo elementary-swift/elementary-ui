@@ -7,8 +7,8 @@ JSKITDIR="$SCRIPT_DIR/../.build/checkouts/JavaScriptKit"
 VENDORDIR="$SCRIPT_DIR/../BrowserRuntime/src/vendored/javascriptkit"
 
 cd "$JSKITDIR"
-pnpm install --frozen-lockfile
-pnpm run build
+npm ci
+npm run build
 
 rm -rf "$VENDORDIR"/*
 cp Runtime/lib/* "$VENDORDIR/"

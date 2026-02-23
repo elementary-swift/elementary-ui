@@ -1,6 +1,13 @@
 import BrowserInterop
 import JavaScriptKit
 
+extension DOM.Node {
+    init(_ node: JSObject) { self.init(ref: node) }
+    //var jsObject: JSObject { ref as! JSObject }
+    var jsNode: JSNode { JSNode(unsafelyWrapping: ref as! JSObject) }
+    var jsElement: JSElement { JSElement(unsafelyWrapping: ref as! JSObject) }
+}
+
 final class BridgeJSDOMInteractor: DOM.Interactor {
     func makeEventSink(_ handler: @escaping (String, DOM.Event) -> Void) -> DOM.EventSink {
         .init(
@@ -21,29 +28,29 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
     }
 
     func makePropertyAccessor(_ node: DOM.Node, name: String) -> DOM.PropertyAccessor {
-        return .init(
-            get: { .init(node.jsObject[name]) },
-            set: { node.jsObject[name] = $0.jsValue }
+        .init(
+            get: { .init(node.jsElement.jsObject[name]) },
+            set: { node.jsElement.jsObject[name] = $0.jsValue }
         )
     }
 
     func makeStyleAccessor(_ node: DOM.Node, cssName: String) -> DOM.StyleAccessor {
-        return .init(
+        .init(
             get: {
-                let element = JSElement(unsafelyWrapping: node.jsObject)
+                let element = node.jsElement
                 return (try? element.style.getPropertyValue(cssName)) ?? ""
             },
             set: {
-                let element = JSElement(unsafelyWrapping: node.jsObject)
+                let element = node.jsElement
                 _ = try? element.style.setProperty(cssName, $0)
             }
         )
     }
 
     func makeComputedStyleAccessor(_ node: DOM.Node) -> DOM.ComputedStyleAccessor {
-        return .init(
+        .init(
             get: { cssName in
-                let element = JSElement(unsafelyWrapping: node.jsObject)
+                let element = node.jsElement
                 let style = (try? window.getComputedStyle(element)) ?? (try? element.style)
                 return (try? style?.getPropertyValue(cssName)) ?? ""
             }
@@ -70,10 +77,10 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
 
         return .init(
             focus: {
-                _ = try? JSElement(unsafelyWrapping: node.jsObject).focus()
+                _ = try? node.jsElement.focus()
             },
             blur: {
-                _ = try? JSElement(unsafelyWrapping: node.jsObject).blur()
+                _ = try? node.jsElement.blur()
             },
             unmount: { [self] in
                 self.removeEventListener(node, event: "focus", sink: focusSink)
@@ -83,12 +90,12 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
     }
 
     func setStyleProperty(_ node: DOM.Node, name: String, value: String) {
-        let element = JSElement(unsafelyWrapping: node.jsObject)
+        let element = node.jsElement
         _ = try? element.style.setProperty(name, value)
     }
 
     func removeStyleProperty(_ node: DOM.Node, name: String) {
-        let element = JSElement(unsafelyWrapping: node.jsObject)
+        let element = node.jsElement
         _ = try? element.style.removeProperty(name)
     }
 
@@ -107,7 +114,7 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
     }
 
     func setAttribute(_ node: DOM.Node, name: String, value: String?) {
-        let element = JSElement(unsafelyWrapping: node.jsObject)
+        let element = node.jsElement
         if let value {
             _ = try? element.setAttribute(name, value)
         } else {
@@ -116,11 +123,11 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
     }
 
     func removeAttribute(_ node: DOM.Node, name: String) {
-        _ = try? JSElement(unsafelyWrapping: node.jsObject).removeAttribute(name)
+        _ = try? node.jsElement.removeAttribute(name)
     }
 
     func animateElement(_ element: DOM.Node, _ effect: DOM.Animation.KeyframeEffect, onFinish: @escaping () -> Void) -> DOM.Animation {
-        guard let animation = try? JSElement(unsafelyWrapping: element.jsObject).animate(effect.jsKeyframes, effect.jsTiming) else {
+        guard let animation = try? element.jsElement.animate(effect.jsKeyframes, effect.jsTiming) else {
             return .init(_cancel: {}, _update: { _ in })
         }
 
@@ -154,38 +161,40 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
     }
 
     func addEventListener(_ node: DOM.Node, event: String, sink: DOM.EventSink) {
-        _ = try? JSElement(unsafelyWrapping: node.jsObject).addEventListener(event, sink.jsClosure)
+        _ = try? node.jsElement.addEventListener(event, sink.jsClosure)
     }
 
     func removeEventListener(_ node: DOM.Node, event: String, sink: DOM.EventSink) {
-        _ = try? JSElement(unsafelyWrapping: node.jsObject).removeEventListener(event, sink.jsClosure)
+        _ = try? node.jsElement.removeEventListener(event, sink.jsClosure)
     }
 
     func patchText(_ node: DOM.Node, with text: String) {
-        _ = try? JSNode(unsafelyWrapping: node.jsObject).setTextContent(text)
+        _ = try? node.jsNode.setTextContent(text)
     }
 
     func replaceChildren(_ children: [DOM.Node], in parent: DOM.Node) {
-        jsReplaceChildren(
-            in: JSElement(unsafelyWrapping: parent.jsObject),
-            with: children.map { JSElement(unsafelyWrapping: $0.jsObject) }
+        // TODO: this is not supported rn - maybe create a hand-made JS tranpoline for this
+        // _ = try? parent.jsElement.replaceChildren(children.map { $0.jsNode })
+
+        parent.jsNode.jsObject.replaceChildren.function!.callAsFunction(
+            this: parent.jsElement.jsObject,
+            arguments: children.map { $0.jsNode.jsObject.jsValue }
         )
     }
 
     func insertChild(_ child: DOM.Node, before sibling: DOM.Node?, in parent: DOM.Node) {
-        jsInsertChild(
-            JSElement(unsafelyWrapping: child.jsObject),
-            before: sibling.map { JSElement(unsafelyWrapping: $0.jsObject) },
-            in: JSElement(unsafelyWrapping: parent.jsObject)
+        _ = try? parent.jsElement.insertBefore(
+            child.jsNode,
+            sibling.map({ $0.jsNode })
         )
     }
 
     func removeChild(_ child: DOM.Node, from parent: DOM.Node) {
-        _ = try? JSElement(unsafelyWrapping: parent.jsObject).removeChild(JSNode(unsafelyWrapping: child.jsObject))
+        _ = try? parent.jsElement.removeChild(child.jsNode)
     }
 
     func getBoundingClientRect(_ node: DOM.Node) -> DOM.Rect {
-        guard let rect = try? JSElement(unsafelyWrapping: node.jsObject).getBoundingClientRect() else {
+        guard let rect = try? node.jsElement.getBoundingClientRect() else {
             return DOM.Rect(x: 0, y: 0, width: 0, height: 0)
         }
         return DOM.Rect(
@@ -197,7 +206,7 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
     }
 
     func getOffsetParent(_ node: DOM.Node) -> DOM.Node? {
-        guard let parent = try? JSElement(unsafelyWrapping: node.jsObject).offsetParent else {
+        guard let parent = try? node.jsElement.offsetParent else {
             return nil
         }
         if parent.jsObject.jsValue.isNull || parent.jsObject.jsValue.isUndefined {

@@ -245,11 +245,7 @@ function deserializeError(error) {
     return Object.assign(new Error(error.value.message), error.value);
   return error.value;
 }
-let globalVariable;
-if (typeof globalThis !== "undefined") globalVariable = globalThis;
-else if (typeof window !== "undefined") globalVariable = window;
-else if (typeof global !== "undefined") globalVariable = global;
-else if (typeof self !== "undefined") globalVariable = self;
+const globalVariable = globalThis;
 var JSObjectSpace = class {
   constructor() {
     this._heapValueById = /* @__PURE__ */ new Map();
@@ -570,7 +566,7 @@ var SwiftRuntime = class {
       swjs_call_function: (ref, argv, argc, payload1_ptr, payload2_ptr) => {
         const memory = this.memory;
         const func = memory.getObject(ref);
-        let result = void 0;
+        let result;
         try {
           result = func(...decodeArray(argv, argc, this.getDataView(), memory));
         } catch (error) {
@@ -656,11 +652,9 @@ var SwiftRuntime = class {
         const memory = this.memory;
         const obj = memory.getObject(obj_ref);
         const func = memory.getObject(func_ref);
-        let result = void 0;
         const args = decodeArray(argv, argc, this.getDataView(), memory);
-        result = func.apply(obj, args);
         return writeAndReturnKindBits(
-          result,
+          func.apply(obj, args),
           payload1_ptr,
           payload2_ptr,
           false,
@@ -830,9 +824,10 @@ var SwiftRuntime = class {
             case "response":
               broker$1.onReceivingResponse(message);
               break;
-            default:
+            default: {
               const unknownMessage = message;
               throw new Error(`Unknown message type: ${unknownMessage}`);
+            }
           }
         });
       },
@@ -859,9 +854,10 @@ var SwiftRuntime = class {
             case "response":
               broker$1.onReceivingResponse(message);
               break;
-            default:
+            default: {
               const unknownMessage = message;
               throw new Error(`Unknown message type: ${unknownMessage}`);
+            }
           }
         });
       },
@@ -996,7 +992,6 @@ async function createInstantiator(options, swift) {
   let f32Stack = [];
   let f64Stack = [];
   let ptrStack = [];
-  let tmpStructCleanups = [];
   let bjs = null;
   const swiftClosureRegistry =
     typeof FinalizationRegistry === "undefined"
@@ -1093,18 +1088,6 @@ async function createInstantiator(options, swift) {
       };
       bjs["swift_js_pop_pointer"] = function () {
         return ptrStack.pop();
-      };
-      bjs["swift_js_struct_cleanup"] = function (cleanupId) {
-        if (cleanupId === 0) return;
-        const index = (cleanupId | 0) - 1;
-        const cleanup = tmpStructCleanups[index];
-        tmpStructCleanups[index] = null;
-        if (cleanup) cleanup();
-        while (
-          tmpStructCleanups.length > 0 &&
-          tmpStructCleanups[tmpStructCleanups.length - 1] == null
-        )
-          tmpStructCleanups.pop();
       };
       bjs["swift_js_return_optional_bool"] = function (isSome, value) {
         if (isSome === 0) {
@@ -1250,9 +1233,9 @@ async function createInstantiator(options, swift) {
       };
       const BrowserInterop = (importObject["env"] = importObject["env"] || {});
       BrowserInterop["bjs_JSDocument_body_get"] =
-        function bjs_JSDocument_body_get(self$1) {
+        function bjs_JSDocument_body_get(self) {
           try {
-            let ret = swift.memory.getObject(self$1).body;
+            let ret = swift.memory.getObject(self).body;
             return swift.memory.retain(ret);
           } catch (error) {
             setException(error);
@@ -1260,13 +1243,11 @@ async function createInstantiator(options, swift) {
           }
         };
       BrowserInterop["bjs_JSDocument_createElement"] =
-        function bjs_JSDocument_createElement(self$1, tagName) {
+        function bjs_JSDocument_createElement(self, tagName) {
           try {
             const tagNameObject = swift.memory.getObject(tagName);
             swift.memory.release(tagName);
-            let ret = swift.memory
-              .getObject(self$1)
-              .createElement(tagNameObject);
+            let ret = swift.memory.getObject(self).createElement(tagNameObject);
             return swift.memory.retain(ret);
           } catch (error) {
             setException(error);
@@ -1274,11 +1255,11 @@ async function createInstantiator(options, swift) {
           }
         };
       BrowserInterop["bjs_JSDocument_createTextNode"] =
-        function bjs_JSDocument_createTextNode(self$1, text) {
+        function bjs_JSDocument_createTextNode(self, text) {
           try {
             const textObject = swift.memory.getObject(text);
             swift.memory.release(text);
-            let ret = swift.memory.getObject(self$1).createTextNode(textObject);
+            let ret = swift.memory.getObject(self).createTextNode(textObject);
             return swift.memory.retain(ret);
           } catch (error) {
             setException(error);
@@ -1286,12 +1267,12 @@ async function createInstantiator(options, swift) {
           }
         };
       BrowserInterop["bjs_JSDocument_querySelector"] =
-        function bjs_JSDocument_querySelector(self$1, selector) {
+        function bjs_JSDocument_querySelector(self, selector) {
           try {
             const selectorObject = swift.memory.getObject(selector);
             swift.memory.release(selector);
             let ret = swift.memory
-              .getObject(self$1)
+              .getObject(self)
               .querySelector(selectorObject);
             return swift.memory.retain(ret);
           } catch (error) {
@@ -1300,24 +1281,24 @@ async function createInstantiator(options, swift) {
           }
         };
       BrowserInterop["bjs_JSDocument_addEventListener"] =
-        function bjs_JSDocument_addEventListener(self$1, type, listener) {
+        function bjs_JSDocument_addEventListener(self, type, listener) {
           try {
             const typeObject = swift.memory.getObject(type);
             swift.memory.release(type);
             swift.memory
-              .getObject(self$1)
+              .getObject(self)
               .addEventListener(typeObject, swift.memory.getObject(listener));
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSDocument_removeEventListener"] =
-        function bjs_JSDocument_removeEventListener(self$1, type, listener) {
+        function bjs_JSDocument_removeEventListener(self, type, listener) {
           try {
             const typeObject = swift.memory.getObject(type);
             swift.memory.release(type);
             swift.memory
-              .getObject(self$1)
+              .getObject(self)
               .removeEventListener(
                 typeObject,
                 swift.memory.getObject(listener)
@@ -1327,28 +1308,28 @@ async function createInstantiator(options, swift) {
           }
         };
       BrowserInterop["bjs_JSWindow_scrollX_get"] =
-        function bjs_JSWindow_scrollX_get(self$1) {
+        function bjs_JSWindow_scrollX_get(self) {
           try {
-            return swift.memory.getObject(self$1).scrollX;
+            return swift.memory.getObject(self).scrollX;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSWindow_scrollY_get"] =
-        function bjs_JSWindow_scrollY_get(self$1) {
+        function bjs_JSWindow_scrollY_get(self) {
           try {
-            return swift.memory.getObject(self$1).scrollY;
+            return swift.memory.getObject(self).scrollY;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSWindow_getComputedStyle"] =
-        function bjs_JSWindow_getComputedStyle(self$1, element) {
+        function bjs_JSWindow_getComputedStyle(self, element) {
           try {
             let ret = swift.memory
-              .getObject(self$1)
+              .getObject(self)
               .getComputedStyle(swift.memory.getObject(element));
             return swift.memory.retain(ret);
           } catch (error) {
@@ -1357,48 +1338,47 @@ async function createInstantiator(options, swift) {
           }
         };
       BrowserInterop["bjs_JSPerformance_now"] = function bjs_JSPerformance_now(
-        self$1
+        self
       ) {
         try {
-          return swift.memory.getObject(self$1).now();
+          return swift.memory.getObject(self).now();
         } catch (error) {
           setException(error);
           return 0;
         }
       };
       BrowserInterop["bjs_JSNode_textContent_get"] =
-        function bjs_JSNode_textContent_get(self$1) {
+        function bjs_JSNode_textContent_get(self) {
           try {
-            let ret = swift.memory.getObject(self$1).textContent;
-            if (ret != null) tmpRetString = ret;
-            else tmpRetString = null;
+            let ret = swift.memory.getObject(self).textContent;
+            tmpRetString = ret != null ? ret : null;
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSNode_textContent_set"] =
         function bjs_JSNode_textContent_set(
-          self$1,
+          self,
           newValueIsSome,
-          newValueWrappedValue
+          newValueObjectId
         ) {
           try {
-            let obj;
+            let optResult;
             if (newValueIsSome) {
-              obj = swift.memory.getObject(newValueWrappedValue);
-              swift.memory.release(newValueWrappedValue);
-            }
-            swift.memory.getObject(self$1).textContent = newValueIsSome
-              ? obj
-              : null;
+              const newValueObjectIdObject =
+                swift.memory.getObject(newValueObjectId);
+              swift.memory.release(newValueObjectId);
+              optResult = newValueObjectIdObject;
+            } else optResult = null;
+            swift.memory.getObject(self).textContent = optResult;
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSElement_style_get"] =
-        function bjs_JSElement_style_get(self$1) {
+        function bjs_JSElement_style_get(self) {
           try {
-            let ret = swift.memory.getObject(self$1).style;
+            let ret = swift.memory.getObject(self).style;
             return swift.memory.retain(ret);
           } catch (error) {
             setException(error);
@@ -1406,19 +1386,18 @@ async function createInstantiator(options, swift) {
           }
         };
       BrowserInterop["bjs_JSElement_textContent_get"] =
-        function bjs_JSElement_textContent_get(self$1) {
+        function bjs_JSElement_textContent_get(self) {
           try {
-            let ret = swift.memory.getObject(self$1).textContent;
-            if (ret != null) tmpRetString = ret;
-            else tmpRetString = null;
+            let ret = swift.memory.getObject(self).textContent;
+            tmpRetString = ret != null ? ret : null;
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSElement_offsetParent_get"] =
-        function bjs_JSElement_offsetParent_get(self$1) {
+        function bjs_JSElement_offsetParent_get(self) {
           try {
-            let ret = swift.memory.getObject(self$1).offsetParent;
+            let ret = swift.memory.getObject(self).offsetParent;
             return swift.memory.retain(ret);
           } catch (error) {
             setException(error);
@@ -1427,71 +1406,104 @@ async function createInstantiator(options, swift) {
         };
       BrowserInterop["bjs_JSElement_textContent_set"] =
         function bjs_JSElement_textContent_set(
-          self$1,
+          self,
           newValueIsSome,
-          newValueWrappedValue
+          newValueObjectId
         ) {
           try {
-            let obj;
+            let optResult;
             if (newValueIsSome) {
-              obj = swift.memory.getObject(newValueWrappedValue);
-              swift.memory.release(newValueWrappedValue);
-            }
-            swift.memory.getObject(self$1).textContent = newValueIsSome
-              ? obj
-              : null;
+              const newValueObjectIdObject =
+                swift.memory.getObject(newValueObjectId);
+              swift.memory.release(newValueObjectId);
+              optResult = newValueObjectIdObject;
+            } else optResult = null;
+            swift.memory.getObject(self).textContent = optResult;
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSElement_setAttribute"] =
-        function bjs_JSElement_setAttribute(self$1, name, value) {
+        function bjs_JSElement_setAttribute(self, name, value) {
           try {
             const nameObject = swift.memory.getObject(name);
             swift.memory.release(name);
             const valueObject = swift.memory.getObject(value);
             swift.memory.release(value);
-            swift.memory
-              .getObject(self$1)
-              .setAttribute(nameObject, valueObject);
+            swift.memory.getObject(self).setAttribute(nameObject, valueObject);
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSElement_removeAttribute"] =
-        function bjs_JSElement_removeAttribute(self$1, name) {
+        function bjs_JSElement_removeAttribute(self, name) {
           try {
             const nameObject = swift.memory.getObject(name);
             swift.memory.release(name);
-            swift.memory.getObject(self$1).removeAttribute(nameObject);
+            swift.memory.getObject(self).removeAttribute(nameObject);
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSElement_appendChild"] =
-        function bjs_JSElement_appendChild(self$1, child) {
+        function bjs_JSElement_appendChild(self, child) {
           try {
             swift.memory
-              .getObject(self$1)
+              .getObject(self)
               .appendChild(swift.memory.getObject(child));
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSElement_removeChild"] =
-        function bjs_JSElement_removeChild(self$1, child) {
+        function bjs_JSElement_removeChild(self, child) {
           try {
             swift.memory
-              .getObject(self$1)
+              .getObject(self)
               .removeChild(swift.memory.getObject(child));
           } catch (error) {
             setException(error);
           }
         };
-      BrowserInterop["bjs_JSElement_getBoundingClientRect"] =
-        function bjs_JSElement_getBoundingClientRect(self$1) {
+      BrowserInterop["bjs_JSElement_insertBefore"] =
+        function bjs_JSElement_insertBefore(
+          self,
+          newChild,
+          refChildIsSome,
+          refChildObjectId
+        ) {
           try {
-            let ret = swift.memory.getObject(self$1).getBoundingClientRect();
+            swift.memory
+              .getObject(self)
+              .insertBefore(
+                swift.memory.getObject(newChild),
+                refChildIsSome ? swift.memory.getObject(refChildObjectId) : null
+              );
+          } catch (error) {
+            setException(error);
+          }
+        };
+      BrowserInterop["bjs_JSElement_replaceChildren"] =
+        function bjs_JSElement_replaceChildren(self) {
+          try {
+            const arrayLen = i32Stack.pop();
+            const arrayResult = [];
+            for (let i = 0; i < arrayLen; i++) {
+              const objId = i32Stack.pop();
+              const obj = swift.memory.getObject(objId);
+              swift.memory.release(objId);
+              arrayResult.push(obj);
+            }
+            arrayResult.reverse();
+            swift.memory.getObject(self).replaceChildren(arrayResult);
+          } catch (error) {
+            setException(error);
+          }
+        };
+      BrowserInterop["bjs_JSElement_getBoundingClientRect"] =
+        function bjs_JSElement_getBoundingClientRect(self) {
+          try {
+            let ret = swift.memory.getObject(self).getBoundingClientRect();
             return swift.memory.retain(ret);
           } catch (error) {
             setException(error);
@@ -1499,24 +1511,24 @@ async function createInstantiator(options, swift) {
           }
         };
       BrowserInterop["bjs_JSElement_addEventListener"] =
-        function bjs_JSElement_addEventListener(self$1, type, listener) {
+        function bjs_JSElement_addEventListener(self, type, listener) {
           try {
             const typeObject = swift.memory.getObject(type);
             swift.memory.release(type);
             swift.memory
-              .getObject(self$1)
+              .getObject(self)
               .addEventListener(typeObject, swift.memory.getObject(listener));
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSElement_removeEventListener"] =
-        function bjs_JSElement_removeEventListener(self$1, type, listener) {
+        function bjs_JSElement_removeEventListener(self, type, listener) {
           try {
             const typeObject = swift.memory.getObject(type);
             swift.memory.release(type);
             swift.memory
-              .getObject(self$1)
+              .getObject(self)
               .removeEventListener(
                 typeObject,
                 swift.memory.getObject(listener)
@@ -1526,31 +1538,29 @@ async function createInstantiator(options, swift) {
           }
         };
       BrowserInterop["bjs_JSElement_focus"] = function bjs_JSElement_focus(
-        self$1
+        self
       ) {
         try {
-          swift.memory.getObject(self$1).focus();
+          swift.memory.getObject(self).focus();
         } catch (error) {
           setException(error);
         }
       };
-      BrowserInterop["bjs_JSElement_blur"] = function bjs_JSElement_blur(
-        self$1
-      ) {
+      BrowserInterop["bjs_JSElement_blur"] = function bjs_JSElement_blur(self) {
         try {
-          swift.memory.getObject(self$1).blur();
+          swift.memory.getObject(self).blur();
         } catch (error) {
           setException(error);
         }
       };
       BrowserInterop["bjs_JSElement_animate"] = function bjs_JSElement_animate(
-        self$1,
+        self,
         keyframes,
         options$1
       ) {
         try {
           let ret = swift.memory
-            .getObject(self$1)
+            .getObject(self)
             .animate(
               swift.memory.getObject(keyframes),
               swift.memory.getObject(options$1)
@@ -1562,13 +1572,11 @@ async function createInstantiator(options, swift) {
         }
       };
       BrowserInterop["bjs_JSCSSStyleDeclaration_getPropertyValue"] =
-        function bjs_JSCSSStyleDeclaration_getPropertyValue(self$1, name) {
+        function bjs_JSCSSStyleDeclaration_getPropertyValue(self, name) {
           try {
             const nameObject = swift.memory.getObject(name);
             swift.memory.release(name);
-            let ret = swift.memory
-              .getObject(self$1)
-              .getPropertyValue(nameObject);
+            let ret = swift.memory.getObject(self).getPropertyValue(nameObject);
             tmpRetBytes = textEncoder.encode(ret);
             return tmpRetBytes.length;
           } catch (error) {
@@ -1576,69 +1584,69 @@ async function createInstantiator(options, swift) {
           }
         };
       BrowserInterop["bjs_JSCSSStyleDeclaration_setProperty"] =
-        function bjs_JSCSSStyleDeclaration_setProperty(self$1, name, value) {
+        function bjs_JSCSSStyleDeclaration_setProperty(self, name, value) {
           try {
             const nameObject = swift.memory.getObject(name);
             swift.memory.release(name);
             const valueObject = swift.memory.getObject(value);
             swift.memory.release(value);
-            swift.memory.getObject(self$1).setProperty(nameObject, valueObject);
+            swift.memory.getObject(self).setProperty(nameObject, valueObject);
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSCSSStyleDeclaration_removeProperty"] =
-        function bjs_JSCSSStyleDeclaration_removeProperty(self$1, name) {
+        function bjs_JSCSSStyleDeclaration_removeProperty(self, name) {
           try {
             const nameObject = swift.memory.getObject(name);
             swift.memory.release(name);
-            swift.memory.getObject(self$1).removeProperty(nameObject);
+            swift.memory.getObject(self).removeProperty(nameObject);
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSDOMRect_x_get"] = function bjs_JSDOMRect_x_get(
-        self$1
+        self
       ) {
         try {
-          return swift.memory.getObject(self$1).x;
+          return swift.memory.getObject(self).x;
         } catch (error) {
           setException(error);
           return 0;
         }
       };
       BrowserInterop["bjs_JSDOMRect_y_get"] = function bjs_JSDOMRect_y_get(
-        self$1
+        self
       ) {
         try {
-          return swift.memory.getObject(self$1).y;
+          return swift.memory.getObject(self).y;
         } catch (error) {
           setException(error);
           return 0;
         }
       };
       BrowserInterop["bjs_JSDOMRect_width_get"] =
-        function bjs_JSDOMRect_width_get(self$1) {
+        function bjs_JSDOMRect_width_get(self) {
           try {
-            return swift.memory.getObject(self$1).width;
+            return swift.memory.getObject(self).width;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSDOMRect_height_get"] =
-        function bjs_JSDOMRect_height_get(self$1) {
+        function bjs_JSDOMRect_height_get(self) {
           try {
-            return swift.memory.getObject(self$1).height;
+            return swift.memory.getObject(self).height;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSAnimation_effect_get"] =
-        function bjs_JSAnimation_effect_get(self$1) {
+        function bjs_JSAnimation_effect_get(self) {
           try {
-            let ret = swift.memory.getObject(self$1).effect;
+            let ret = swift.memory.getObject(self).effect;
             return swift.memory.retain(ret);
           } catch (error) {
             setException(error);
@@ -1646,86 +1654,86 @@ async function createInstantiator(options, swift) {
           }
         };
       BrowserInterop["bjs_JSAnimation_currentTime_set"] =
-        function bjs_JSAnimation_currentTime_set(self$1, newValue) {
+        function bjs_JSAnimation_currentTime_set(self, newValue) {
           try {
-            swift.memory.getObject(self$1).currentTime = newValue;
+            swift.memory.getObject(self).currentTime = newValue;
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSAnimation_onfinish_set"] =
         function bjs_JSAnimation_onfinish_set(
-          self$1,
+          self,
           newValueIsSome,
-          newValueWrappedValue
+          newValueObjectId
         ) {
           try {
-            swift.memory.getObject(self$1).onfinish = newValueIsSome
-              ? swift.memory.getObject(newValueWrappedValue)
+            swift.memory.getObject(self).onfinish = newValueIsSome
+              ? swift.memory.getObject(newValueObjectId)
               : null;
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSAnimation_persist"] =
-        function bjs_JSAnimation_persist(self$1) {
+        function bjs_JSAnimation_persist(self) {
           try {
-            swift.memory.getObject(self$1).persist();
+            swift.memory.getObject(self).persist();
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSAnimation_pause"] = function bjs_JSAnimation_pause(
-        self$1
+        self
       ) {
         try {
-          swift.memory.getObject(self$1).pause();
+          swift.memory.getObject(self).pause();
         } catch (error) {
           setException(error);
         }
       };
       BrowserInterop["bjs_JSAnimation_play"] = function bjs_JSAnimation_play(
-        self$1
+        self
       ) {
         try {
-          swift.memory.getObject(self$1).play();
+          swift.memory.getObject(self).play();
         } catch (error) {
           setException(error);
         }
       };
       BrowserInterop["bjs_JSAnimation_cancel"] =
-        function bjs_JSAnimation_cancel(self$1) {
+        function bjs_JSAnimation_cancel(self) {
           try {
-            swift.memory.getObject(self$1).cancel();
+            swift.memory.getObject(self).cancel();
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSAnimationEffect_setKeyframes"] =
-        function bjs_JSAnimationEffect_setKeyframes(self$1, keyframes) {
+        function bjs_JSAnimationEffect_setKeyframes(self, keyframes) {
           try {
             swift.memory
-              .getObject(self$1)
+              .getObject(self)
               .setKeyframes(swift.memory.getObject(keyframes));
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSAnimationEffect_updateTiming"] =
-        function bjs_JSAnimationEffect_updateTiming(self$1, timing) {
+        function bjs_JSAnimationEffect_updateTiming(self, timing) {
           try {
             swift.memory
-              .getObject(self$1)
+              .getObject(self)
               .updateTiming(swift.memory.getObject(timing));
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSEvent_type_get"] = function bjs_JSEvent_type_get(
-        self$1
+        self
       ) {
         try {
-          let ret = swift.memory.getObject(self$1).type;
+          let ret = swift.memory.getObject(self).type;
           tmpRetBytes = textEncoder.encode(ret);
           return tmpRetBytes.length;
         } catch (error) {
@@ -1733,9 +1741,9 @@ async function createInstantiator(options, swift) {
         }
       };
       BrowserInterop["bjs_JSEvent_target_get"] =
-        function bjs_JSEvent_target_get(self$1) {
+        function bjs_JSEvent_target_get(self) {
           try {
-            let ret = swift.memory.getObject(self$1).target;
+            let ret = swift.memory.getObject(self).target;
             return swift.memory.retain(ret);
           } catch (error) {
             setException(error);
@@ -1743,9 +1751,9 @@ async function createInstantiator(options, swift) {
           }
         };
       BrowserInterop["bjs_JSKeyboardEvent_key_get"] =
-        function bjs_JSKeyboardEvent_key_get(self$1) {
+        function bjs_JSKeyboardEvent_key_get(self) {
           try {
-            let ret = swift.memory.getObject(self$1).key;
+            let ret = swift.memory.getObject(self).key;
             tmpRetBytes = textEncoder.encode(ret);
             return tmpRetBytes.length;
           } catch (error) {
@@ -1753,163 +1761,162 @@ async function createInstantiator(options, swift) {
           }
         };
       BrowserInterop["bjs_JSMouseEvent_altKey_get"] =
-        function bjs_JSMouseEvent_altKey_get(self$1) {
+        function bjs_JSMouseEvent_altKey_get(self) {
           try {
-            return swift.memory.getObject(self$1).altKey ? 1 : 0;
+            return swift.memory.getObject(self).altKey ? 1 : 0;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSMouseEvent_button_get"] =
-        function bjs_JSMouseEvent_button_get(self$1) {
+        function bjs_JSMouseEvent_button_get(self) {
           try {
-            return swift.memory.getObject(self$1).button;
+            return swift.memory.getObject(self).button;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSMouseEvent_buttons_get"] =
-        function bjs_JSMouseEvent_buttons_get(self$1) {
+        function bjs_JSMouseEvent_buttons_get(self) {
           try {
-            return swift.memory.getObject(self$1).buttons;
+            return swift.memory.getObject(self).buttons;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSMouseEvent_clientX_get"] =
-        function bjs_JSMouseEvent_clientX_get(self$1) {
+        function bjs_JSMouseEvent_clientX_get(self) {
           try {
-            return swift.memory.getObject(self$1).clientX;
+            return swift.memory.getObject(self).clientX;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSMouseEvent_clientY_get"] =
-        function bjs_JSMouseEvent_clientY_get(self$1) {
+        function bjs_JSMouseEvent_clientY_get(self) {
           try {
-            return swift.memory.getObject(self$1).clientY;
+            return swift.memory.getObject(self).clientY;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSMouseEvent_ctrlKey_get"] =
-        function bjs_JSMouseEvent_ctrlKey_get(self$1) {
+        function bjs_JSMouseEvent_ctrlKey_get(self) {
           try {
-            return swift.memory.getObject(self$1).ctrlKey ? 1 : 0;
+            return swift.memory.getObject(self).ctrlKey ? 1 : 0;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSMouseEvent_metaKey_get"] =
-        function bjs_JSMouseEvent_metaKey_get(self$1) {
+        function bjs_JSMouseEvent_metaKey_get(self) {
           try {
-            return swift.memory.getObject(self$1).metaKey ? 1 : 0;
+            return swift.memory.getObject(self).metaKey ? 1 : 0;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSMouseEvent_movementX_get"] =
-        function bjs_JSMouseEvent_movementX_get(self$1) {
+        function bjs_JSMouseEvent_movementX_get(self) {
           try {
-            return swift.memory.getObject(self$1).movementX;
+            return swift.memory.getObject(self).movementX;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSMouseEvent_movementY_get"] =
-        function bjs_JSMouseEvent_movementY_get(self$1) {
+        function bjs_JSMouseEvent_movementY_get(self) {
           try {
-            return swift.memory.getObject(self$1).movementY;
+            return swift.memory.getObject(self).movementY;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSMouseEvent_offsetX_get"] =
-        function bjs_JSMouseEvent_offsetX_get(self$1) {
+        function bjs_JSMouseEvent_offsetX_get(self) {
           try {
-            return swift.memory.getObject(self$1).offsetX;
+            return swift.memory.getObject(self).offsetX;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSMouseEvent_offsetY_get"] =
-        function bjs_JSMouseEvent_offsetY_get(self$1) {
+        function bjs_JSMouseEvent_offsetY_get(self) {
           try {
-            return swift.memory.getObject(self$1).offsetY;
+            return swift.memory.getObject(self).offsetY;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSMouseEvent_pageX_get"] =
-        function bjs_JSMouseEvent_pageX_get(self$1) {
+        function bjs_JSMouseEvent_pageX_get(self) {
           try {
-            return swift.memory.getObject(self$1).pageX;
+            return swift.memory.getObject(self).pageX;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSMouseEvent_pageY_get"] =
-        function bjs_JSMouseEvent_pageY_get(self$1) {
+        function bjs_JSMouseEvent_pageY_get(self) {
           try {
-            return swift.memory.getObject(self$1).pageY;
+            return swift.memory.getObject(self).pageY;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSMouseEvent_screenX_get"] =
-        function bjs_JSMouseEvent_screenX_get(self$1) {
+        function bjs_JSMouseEvent_screenX_get(self) {
           try {
-            return swift.memory.getObject(self$1).screenX;
+            return swift.memory.getObject(self).screenX;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSMouseEvent_screenY_get"] =
-        function bjs_JSMouseEvent_screenY_get(self$1) {
+        function bjs_JSMouseEvent_screenY_get(self) {
           try {
-            return swift.memory.getObject(self$1).screenY;
+            return swift.memory.getObject(self).screenY;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSMouseEvent_shiftKey_get"] =
-        function bjs_JSMouseEvent_shiftKey_get(self$1) {
+        function bjs_JSMouseEvent_shiftKey_get(self) {
           try {
-            return swift.memory.getObject(self$1).shiftKey ? 1 : 0;
+            return swift.memory.getObject(self).shiftKey ? 1 : 0;
           } catch (error) {
             setException(error);
             return 0;
           }
         };
       BrowserInterop["bjs_JSInputEvent_data_get"] =
-        function bjs_JSInputEvent_data_get(self$1) {
+        function bjs_JSInputEvent_data_get(self) {
           try {
-            let ret = swift.memory.getObject(self$1).data;
-            if (ret != null) tmpRetString = ret;
-            else tmpRetString = null;
+            let ret = swift.memory.getObject(self).data;
+            tmpRetString = ret != null ? ret : null;
           } catch (error) {
             setException(error);
           }
         };
       BrowserInterop["bjs_JSInputEvent_target_get"] =
-        function bjs_JSInputEvent_target_get(self$1) {
+        function bjs_JSInputEvent_target_get(self) {
           try {
-            let ret = swift.memory.getObject(self$1).target;
+            let ret = swift.memory.getObject(self).target;
             return swift.memory.retain(ret);
           } catch (error) {
             setException(error);
