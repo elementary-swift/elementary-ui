@@ -59,8 +59,9 @@ export async function createInstantiator(options, swift) {
          * @param {WebAssembly.Imports} importObject
          */
         addImports: (importObject, importsContext) => {
-            bjs = {};
-            importObject["bjs"] = bjs;
+            const env = importObject["env"] = importObject["env"] || {};
+            bjs = env;
+            importObject["bjs"] = env;
             bjs["swift_js_return_string"] = function(ptr, len) {
                 const bytes = new Uint8Array(memory.buffer, ptr, len);
                 tmpRetString = textDecoder.decode(bytes);
@@ -253,7 +254,8 @@ export async function createInstantiator(options, swift) {
                 };
                 return makeClosure(boxPtr, file, line, lower_closure_BrowserInterop_14BrowserInteropy_y);
             }
-            const BrowserInterop = importObject["BrowserInterop"] = importObject["BrowserInterop"] || {};
+            const BrowserInterop = env;
+            importObject["BrowserInterop"] = env;
             BrowserInterop["bjs_JSDocument_body_get"] = function bjs_JSDocument_body_get(self) {
                 try {
                     let ret = swift.memory.getObject(self).body;

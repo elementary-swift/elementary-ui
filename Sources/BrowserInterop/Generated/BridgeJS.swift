@@ -8,7 +8,7 @@
 @_spi(BridgeJS) import JavaScriptKit
 
 #if arch(wasm32)
-@_extern(wasm, module: "bjs", name: "invoke_js_callback_BrowserInterop_14BrowserInteropSd_y")
+@_extern(wasm, module: "env", name: "invoke_js_callback_BrowserInterop_14BrowserInteropSd_y")
 fileprivate func invoke_js_callback_BrowserInterop_14BrowserInteropSd_y_extern(_ callback: Int32, _ param0: Float64) -> Void
 #else
 fileprivate func invoke_js_callback_BrowserInterop_14BrowserInteropSd_y_extern(_ callback: Int32, _ param0: Float64) -> Void {
@@ -20,7 +20,7 @@ fileprivate func invoke_js_callback_BrowserInterop_14BrowserInteropSd_y_extern(_
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "bjs", name: "make_swift_closure_BrowserInterop_14BrowserInteropSd_y")
+@_extern(wasm, module: "env", name: "make_swift_closure_BrowserInterop_14BrowserInteropSd_y")
 fileprivate func make_swift_closure_BrowserInterop_14BrowserInteropSd_y_extern(_ boxPtr: UnsafeMutableRawPointer, _ file: UnsafePointer<UInt8>, _ line: UInt32) -> Int32
 #else
 fileprivate func make_swift_closure_BrowserInterop_14BrowserInteropSd_y_extern(_ boxPtr: UnsafeMutableRawPointer, _ file: UnsafePointer<UInt8>, _ line: UInt32) -> Int32 {
@@ -69,7 +69,7 @@ public func _invoke_swift_closure_BrowserInterop_14BrowserInteropSd_y(_ boxPtr: 
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "bjs", name: "invoke_js_callback_BrowserInterop_14BrowserInteropy_y")
+@_extern(wasm, module: "env", name: "invoke_js_callback_BrowserInterop_14BrowserInteropy_y")
 fileprivate func invoke_js_callback_BrowserInterop_14BrowserInteropy_y_extern(_ callback: Int32) -> Void
 #else
 fileprivate func invoke_js_callback_BrowserInterop_14BrowserInteropy_y_extern(_ callback: Int32) -> Void {
@@ -81,7 +81,7 @@ fileprivate func invoke_js_callback_BrowserInterop_14BrowserInteropy_y_extern(_ 
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "bjs", name: "make_swift_closure_BrowserInterop_14BrowserInteropy_y")
+@_extern(wasm, module: "env", name: "make_swift_closure_BrowserInterop_14BrowserInteropy_y")
 fileprivate func make_swift_closure_BrowserInterop_14BrowserInteropy_y_extern(_ boxPtr: UnsafeMutableRawPointer, _ file: UnsafePointer<UInt8>, _ line: UInt32) -> Int32
 #else
 fileprivate func make_swift_closure_BrowserInterop_14BrowserInteropy_y_extern(_ boxPtr: UnsafeMutableRawPointer, _ file: UnsafePointer<UInt8>, _ line: UInt32) -> Int32 {
@@ -129,7 +129,7 @@ public func _invoke_swift_closure_BrowserInterop_14BrowserInteropy_y(_ boxPtr: U
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_body_get")
+@_extern(wasm, module: "env", name: "bjs_JSDocument_body_get")
 fileprivate func bjs_JSDocument_body_get_extern(_ self: Int32) -> Int32
 #else
 fileprivate func bjs_JSDocument_body_get_extern(_ self: Int32) -> Int32 {
@@ -141,7 +141,7 @@ fileprivate func bjs_JSDocument_body_get_extern(_ self: Int32) -> Int32 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_createElement")
+@_extern(wasm, module: "env", name: "bjs_JSDocument_createElement")
 fileprivate func bjs_JSDocument_createElement_extern(_ self: Int32, _ tagName: Int32) -> Int32
 #else
 fileprivate func bjs_JSDocument_createElement_extern(_ self: Int32, _ tagName: Int32) -> Int32 {
@@ -153,7 +153,7 @@ fileprivate func bjs_JSDocument_createElement_extern(_ self: Int32, _ tagName: I
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_createTextNode")
+@_extern(wasm, module: "env", name: "bjs_JSDocument_createTextNode")
 fileprivate func bjs_JSDocument_createTextNode_extern(_ self: Int32, _ text: Int32) -> Int32
 #else
 fileprivate func bjs_JSDocument_createTextNode_extern(_ self: Int32, _ text: Int32) -> Int32 {
@@ -165,7 +165,7 @@ fileprivate func bjs_JSDocument_createTextNode_extern(_ self: Int32, _ text: Int
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_querySelector")
+@_extern(wasm, module: "env", name: "bjs_JSDocument_querySelector")
 fileprivate func bjs_JSDocument_querySelector_extern(_ self: Int32, _ selector: Int32) -> Int32
 #else
 fileprivate func bjs_JSDocument_querySelector_extern(_ self: Int32, _ selector: Int32) -> Int32 {
@@ -177,7 +177,7 @@ fileprivate func bjs_JSDocument_querySelector_extern(_ self: Int32, _ selector: 
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_addEventListener")
+@_extern(wasm, module: "env", name: "bjs_JSDocument_addEventListener")
 fileprivate func bjs_JSDocument_addEventListener_extern(_ self: Int32, _ type: Int32, _ listener: Int32) -> Void
 #else
 fileprivate func bjs_JSDocument_addEventListener_extern(_ self: Int32, _ type: Int32, _ listener: Int32) -> Void {
@@ -189,7 +189,7 @@ fileprivate func bjs_JSDocument_addEventListener_extern(_ self: Int32, _ type: I
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_removeEventListener")
+@_extern(wasm, module: "env", name: "bjs_JSDocument_removeEventListener")
 fileprivate func bjs_JSDocument_removeEventListener_extern(_ self: Int32, _ type: Int32, _ listener: Int32) -> Void
 #else
 fileprivate func bjs_JSDocument_removeEventListener_extern(_ self: Int32, _ type: Int32, _ listener: Int32) -> Void {
@@ -260,7 +260,7 @@ func _$JSDocument_removeEventListener(_ self: JSObject, _ type: String, _ listen
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSWindow_scrollX_get")
+@_extern(wasm, module: "env", name: "bjs_JSWindow_scrollX_get")
 fileprivate func bjs_JSWindow_scrollX_get_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSWindow_scrollX_get_extern(_ self: Int32) -> Float64 {
@@ -272,7 +272,7 @@ fileprivate func bjs_JSWindow_scrollX_get_extern(_ self: Int32) -> Float64 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSWindow_scrollY_get")
+@_extern(wasm, module: "env", name: "bjs_JSWindow_scrollY_get")
 fileprivate func bjs_JSWindow_scrollY_get_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSWindow_scrollY_get_extern(_ self: Int32) -> Float64 {
@@ -284,7 +284,7 @@ fileprivate func bjs_JSWindow_scrollY_get_extern(_ self: Int32) -> Float64 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSWindow_getComputedStyle")
+@_extern(wasm, module: "env", name: "bjs_JSWindow_getComputedStyle")
 fileprivate func bjs_JSWindow_getComputedStyle_extern(_ self: Int32, _ element: Int32) -> Int32
 #else
 fileprivate func bjs_JSWindow_getComputedStyle_extern(_ self: Int32, _ element: Int32) -> Int32 {
@@ -324,7 +324,7 @@ func _$JSWindow_getComputedStyle(_ self: JSObject, _ element: JSElement) throws(
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSPerformance_now")
+@_extern(wasm, module: "env", name: "bjs_JSPerformance_now")
 fileprivate func bjs_JSPerformance_now_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSPerformance_now_extern(_ self: Int32) -> Float64 {
@@ -345,7 +345,7 @@ func _$JSPerformance_now(_ self: JSObject) throws(JSException) -> Double {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSNode_textContent_get")
+@_extern(wasm, module: "env", name: "bjs_JSNode_textContent_get")
 fileprivate func bjs_JSNode_textContent_get_extern(_ self: Int32) -> Void
 #else
 fileprivate func bjs_JSNode_textContent_get_extern(_ self: Int32) -> Void {
@@ -357,7 +357,7 @@ fileprivate func bjs_JSNode_textContent_get_extern(_ self: Int32) -> Void {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSNode_textContent_set")
+@_extern(wasm, module: "env", name: "bjs_JSNode_textContent_set")
 fileprivate func bjs_JSNode_textContent_set_extern(_ self: Int32, _ newValueIsSome: Int32, _ newValueValue: Int32) -> Void
 #else
 fileprivate func bjs_JSNode_textContent_set_extern(_ self: Int32, _ newValueIsSome: Int32, _ newValueValue: Int32) -> Void {
@@ -387,7 +387,7 @@ func _$JSNode_textContent_set(_ self: JSObject, _ newValue: Optional<String>) th
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_style_get")
+@_extern(wasm, module: "env", name: "bjs_JSElement_style_get")
 fileprivate func bjs_JSElement_style_get_extern(_ self: Int32) -> Int32
 #else
 fileprivate func bjs_JSElement_style_get_extern(_ self: Int32) -> Int32 {
@@ -399,7 +399,7 @@ fileprivate func bjs_JSElement_style_get_extern(_ self: Int32) -> Int32 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_textContent_get")
+@_extern(wasm, module: "env", name: "bjs_JSElement_textContent_get")
 fileprivate func bjs_JSElement_textContent_get_extern(_ self: Int32) -> Void
 #else
 fileprivate func bjs_JSElement_textContent_get_extern(_ self: Int32) -> Void {
@@ -411,7 +411,7 @@ fileprivate func bjs_JSElement_textContent_get_extern(_ self: Int32) -> Void {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_offsetParent_get")
+@_extern(wasm, module: "env", name: "bjs_JSElement_offsetParent_get")
 fileprivate func bjs_JSElement_offsetParent_get_extern(_ self: Int32) -> Int32
 #else
 fileprivate func bjs_JSElement_offsetParent_get_extern(_ self: Int32) -> Int32 {
@@ -423,7 +423,7 @@ fileprivate func bjs_JSElement_offsetParent_get_extern(_ self: Int32) -> Int32 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_textContent_set")
+@_extern(wasm, module: "env", name: "bjs_JSElement_textContent_set")
 fileprivate func bjs_JSElement_textContent_set_extern(_ self: Int32, _ newValueIsSome: Int32, _ newValueValue: Int32) -> Void
 #else
 fileprivate func bjs_JSElement_textContent_set_extern(_ self: Int32, _ newValueIsSome: Int32, _ newValueValue: Int32) -> Void {
@@ -435,7 +435,7 @@ fileprivate func bjs_JSElement_textContent_set_extern(_ self: Int32, _ newValueI
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_setAttribute")
+@_extern(wasm, module: "env", name: "bjs_JSElement_setAttribute")
 fileprivate func bjs_JSElement_setAttribute_extern(_ self: Int32, _ name: Int32, _ value: Int32) -> Void
 #else
 fileprivate func bjs_JSElement_setAttribute_extern(_ self: Int32, _ name: Int32, _ value: Int32) -> Void {
@@ -447,7 +447,7 @@ fileprivate func bjs_JSElement_setAttribute_extern(_ self: Int32, _ name: Int32,
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_removeAttribute")
+@_extern(wasm, module: "env", name: "bjs_JSElement_removeAttribute")
 fileprivate func bjs_JSElement_removeAttribute_extern(_ self: Int32, _ name: Int32) -> Void
 #else
 fileprivate func bjs_JSElement_removeAttribute_extern(_ self: Int32, _ name: Int32) -> Void {
@@ -459,7 +459,7 @@ fileprivate func bjs_JSElement_removeAttribute_extern(_ self: Int32, _ name: Int
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_appendChild")
+@_extern(wasm, module: "env", name: "bjs_JSElement_appendChild")
 fileprivate func bjs_JSElement_appendChild_extern(_ self: Int32, _ child: Int32) -> Void
 #else
 fileprivate func bjs_JSElement_appendChild_extern(_ self: Int32, _ child: Int32) -> Void {
@@ -471,7 +471,7 @@ fileprivate func bjs_JSElement_appendChild_extern(_ self: Int32, _ child: Int32)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_removeChild")
+@_extern(wasm, module: "env", name: "bjs_JSElement_removeChild")
 fileprivate func bjs_JSElement_removeChild_extern(_ self: Int32, _ child: Int32) -> Void
 #else
 fileprivate func bjs_JSElement_removeChild_extern(_ self: Int32, _ child: Int32) -> Void {
@@ -483,7 +483,7 @@ fileprivate func bjs_JSElement_removeChild_extern(_ self: Int32, _ child: Int32)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_getBoundingClientRect")
+@_extern(wasm, module: "env", name: "bjs_JSElement_getBoundingClientRect")
 fileprivate func bjs_JSElement_getBoundingClientRect_extern(_ self: Int32) -> Int32
 #else
 fileprivate func bjs_JSElement_getBoundingClientRect_extern(_ self: Int32) -> Int32 {
@@ -495,7 +495,7 @@ fileprivate func bjs_JSElement_getBoundingClientRect_extern(_ self: Int32) -> In
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_addEventListener")
+@_extern(wasm, module: "env", name: "bjs_JSElement_addEventListener")
 fileprivate func bjs_JSElement_addEventListener_extern(_ self: Int32, _ type: Int32, _ listener: Int32) -> Void
 #else
 fileprivate func bjs_JSElement_addEventListener_extern(_ self: Int32, _ type: Int32, _ listener: Int32) -> Void {
@@ -507,7 +507,7 @@ fileprivate func bjs_JSElement_addEventListener_extern(_ self: Int32, _ type: In
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_removeEventListener")
+@_extern(wasm, module: "env", name: "bjs_JSElement_removeEventListener")
 fileprivate func bjs_JSElement_removeEventListener_extern(_ self: Int32, _ type: Int32, _ listener: Int32) -> Void
 #else
 fileprivate func bjs_JSElement_removeEventListener_extern(_ self: Int32, _ type: Int32, _ listener: Int32) -> Void {
@@ -519,7 +519,7 @@ fileprivate func bjs_JSElement_removeEventListener_extern(_ self: Int32, _ type:
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_focus")
+@_extern(wasm, module: "env", name: "bjs_JSElement_focus")
 fileprivate func bjs_JSElement_focus_extern(_ self: Int32) -> Void
 #else
 fileprivate func bjs_JSElement_focus_extern(_ self: Int32) -> Void {
@@ -531,7 +531,7 @@ fileprivate func bjs_JSElement_focus_extern(_ self: Int32) -> Void {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_blur")
+@_extern(wasm, module: "env", name: "bjs_JSElement_blur")
 fileprivate func bjs_JSElement_blur_extern(_ self: Int32) -> Void
 #else
 fileprivate func bjs_JSElement_blur_extern(_ self: Int32) -> Void {
@@ -543,7 +543,7 @@ fileprivate func bjs_JSElement_blur_extern(_ self: Int32) -> Void {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_animate")
+@_extern(wasm, module: "env", name: "bjs_JSElement_animate")
 fileprivate func bjs_JSElement_animate_extern(_ self: Int32, _ keyframes: Int32, _ options: Int32) -> Int32
 #else
 fileprivate func bjs_JSElement_animate_extern(_ self: Int32, _ keyframes: Int32, _ options: Int32) -> Int32 {
@@ -684,7 +684,7 @@ func _$JSElement_animate(_ self: JSObject, _ keyframes: JSObject, _ options: JSO
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSCSSStyleDeclaration_getPropertyValue")
+@_extern(wasm, module: "env", name: "bjs_JSCSSStyleDeclaration_getPropertyValue")
 fileprivate func bjs_JSCSSStyleDeclaration_getPropertyValue_extern(_ self: Int32, _ name: Int32) -> Int32
 #else
 fileprivate func bjs_JSCSSStyleDeclaration_getPropertyValue_extern(_ self: Int32, _ name: Int32) -> Int32 {
@@ -696,7 +696,7 @@ fileprivate func bjs_JSCSSStyleDeclaration_getPropertyValue_extern(_ self: Int32
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSCSSStyleDeclaration_setProperty")
+@_extern(wasm, module: "env", name: "bjs_JSCSSStyleDeclaration_setProperty")
 fileprivate func bjs_JSCSSStyleDeclaration_setProperty_extern(_ self: Int32, _ name: Int32, _ value: Int32) -> Void
 #else
 fileprivate func bjs_JSCSSStyleDeclaration_setProperty_extern(_ self: Int32, _ name: Int32, _ value: Int32) -> Void {
@@ -708,7 +708,7 @@ fileprivate func bjs_JSCSSStyleDeclaration_setProperty_extern(_ self: Int32, _ n
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSCSSStyleDeclaration_removeProperty")
+@_extern(wasm, module: "env", name: "bjs_JSCSSStyleDeclaration_removeProperty")
 fileprivate func bjs_JSCSSStyleDeclaration_removeProperty_extern(_ self: Int32, _ name: Int32) -> Void
 #else
 fileprivate func bjs_JSCSSStyleDeclaration_removeProperty_extern(_ self: Int32, _ name: Int32) -> Void {
@@ -749,7 +749,7 @@ func _$JSCSSStyleDeclaration_removeProperty(_ self: JSObject, _ name: String) th
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDOMRect_x_get")
+@_extern(wasm, module: "env", name: "bjs_JSDOMRect_x_get")
 fileprivate func bjs_JSDOMRect_x_get_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSDOMRect_x_get_extern(_ self: Int32) -> Float64 {
@@ -761,7 +761,7 @@ fileprivate func bjs_JSDOMRect_x_get_extern(_ self: Int32) -> Float64 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDOMRect_y_get")
+@_extern(wasm, module: "env", name: "bjs_JSDOMRect_y_get")
 fileprivate func bjs_JSDOMRect_y_get_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSDOMRect_y_get_extern(_ self: Int32) -> Float64 {
@@ -773,7 +773,7 @@ fileprivate func bjs_JSDOMRect_y_get_extern(_ self: Int32) -> Float64 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDOMRect_width_get")
+@_extern(wasm, module: "env", name: "bjs_JSDOMRect_width_get")
 fileprivate func bjs_JSDOMRect_width_get_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSDOMRect_width_get_extern(_ self: Int32) -> Float64 {
@@ -785,7 +785,7 @@ fileprivate func bjs_JSDOMRect_width_get_extern(_ self: Int32) -> Float64 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDOMRect_height_get")
+@_extern(wasm, module: "env", name: "bjs_JSDOMRect_height_get")
 fileprivate func bjs_JSDOMRect_height_get_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSDOMRect_height_get_extern(_ self: Int32) -> Float64 {
@@ -833,7 +833,7 @@ func _$JSDOMRect_height_get(_ self: JSObject) throws(JSException) -> Double {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimation_effect_get")
+@_extern(wasm, module: "env", name: "bjs_JSAnimation_effect_get")
 fileprivate func bjs_JSAnimation_effect_get_extern(_ self: Int32) -> Int32
 #else
 fileprivate func bjs_JSAnimation_effect_get_extern(_ self: Int32) -> Int32 {
@@ -845,7 +845,7 @@ fileprivate func bjs_JSAnimation_effect_get_extern(_ self: Int32) -> Int32 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimation_currentTime_set")
+@_extern(wasm, module: "env", name: "bjs_JSAnimation_currentTime_set")
 fileprivate func bjs_JSAnimation_currentTime_set_extern(_ self: Int32, _ newValue: Float64) -> Void
 #else
 fileprivate func bjs_JSAnimation_currentTime_set_extern(_ self: Int32, _ newValue: Float64) -> Void {
@@ -857,7 +857,7 @@ fileprivate func bjs_JSAnimation_currentTime_set_extern(_ self: Int32, _ newValu
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimation_onfinish_set")
+@_extern(wasm, module: "env", name: "bjs_JSAnimation_onfinish_set")
 fileprivate func bjs_JSAnimation_onfinish_set_extern(_ self: Int32, _ newValueIsSome: Int32, _ newValueValue: Int32) -> Void
 #else
 fileprivate func bjs_JSAnimation_onfinish_set_extern(_ self: Int32, _ newValueIsSome: Int32, _ newValueValue: Int32) -> Void {
@@ -869,7 +869,7 @@ fileprivate func bjs_JSAnimation_onfinish_set_extern(_ self: Int32, _ newValueIs
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimation_persist")
+@_extern(wasm, module: "env", name: "bjs_JSAnimation_persist")
 fileprivate func bjs_JSAnimation_persist_extern(_ self: Int32) -> Void
 #else
 fileprivate func bjs_JSAnimation_persist_extern(_ self: Int32) -> Void {
@@ -881,7 +881,7 @@ fileprivate func bjs_JSAnimation_persist_extern(_ self: Int32) -> Void {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimation_pause")
+@_extern(wasm, module: "env", name: "bjs_JSAnimation_pause")
 fileprivate func bjs_JSAnimation_pause_extern(_ self: Int32) -> Void
 #else
 fileprivate func bjs_JSAnimation_pause_extern(_ self: Int32) -> Void {
@@ -893,7 +893,7 @@ fileprivate func bjs_JSAnimation_pause_extern(_ self: Int32) -> Void {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimation_play")
+@_extern(wasm, module: "env", name: "bjs_JSAnimation_play")
 fileprivate func bjs_JSAnimation_play_extern(_ self: Int32) -> Void
 #else
 fileprivate func bjs_JSAnimation_play_extern(_ self: Int32) -> Void {
@@ -905,7 +905,7 @@ fileprivate func bjs_JSAnimation_play_extern(_ self: Int32) -> Void {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimation_cancel")
+@_extern(wasm, module: "env", name: "bjs_JSAnimation_cancel")
 fileprivate func bjs_JSAnimation_cancel_extern(_ self: Int32) -> Void
 #else
 fileprivate func bjs_JSAnimation_cancel_extern(_ self: Int32) -> Void {
@@ -976,7 +976,7 @@ func _$JSAnimation_cancel(_ self: JSObject) throws(JSException) -> Void {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimationEffect_setKeyframes")
+@_extern(wasm, module: "env", name: "bjs_JSAnimationEffect_setKeyframes")
 fileprivate func bjs_JSAnimationEffect_setKeyframes_extern(_ self: Int32, _ keyframes: Int32) -> Void
 #else
 fileprivate func bjs_JSAnimationEffect_setKeyframes_extern(_ self: Int32, _ keyframes: Int32) -> Void {
@@ -988,7 +988,7 @@ fileprivate func bjs_JSAnimationEffect_setKeyframes_extern(_ self: Int32, _ keyf
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimationEffect_updateTiming")
+@_extern(wasm, module: "env", name: "bjs_JSAnimationEffect_updateTiming")
 fileprivate func bjs_JSAnimationEffect_updateTiming_extern(_ self: Int32, _ timing: Int32) -> Void
 #else
 fileprivate func bjs_JSAnimationEffect_updateTiming_extern(_ self: Int32, _ timing: Int32) -> Void {
@@ -1018,7 +1018,7 @@ func _$JSAnimationEffect_updateTiming(_ self: JSObject, _ timing: JSObject) thro
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSEvent_type_get")
+@_extern(wasm, module: "env", name: "bjs_JSEvent_type_get")
 fileprivate func bjs_JSEvent_type_get_extern(_ self: Int32) -> Int32
 #else
 fileprivate func bjs_JSEvent_type_get_extern(_ self: Int32) -> Int32 {
@@ -1030,7 +1030,7 @@ fileprivate func bjs_JSEvent_type_get_extern(_ self: Int32) -> Int32 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSEvent_target_get")
+@_extern(wasm, module: "env", name: "bjs_JSEvent_target_get")
 fileprivate func bjs_JSEvent_target_get_extern(_ self: Int32) -> Int32
 #else
 fileprivate func bjs_JSEvent_target_get_extern(_ self: Int32) -> Int32 {
@@ -1060,7 +1060,7 @@ func _$JSEvent_target_get(_ self: JSObject) throws(JSException) -> JSObject {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSKeyboardEvent_key_get")
+@_extern(wasm, module: "env", name: "bjs_JSKeyboardEvent_key_get")
 fileprivate func bjs_JSKeyboardEvent_key_get_extern(_ self: Int32) -> Int32
 #else
 fileprivate func bjs_JSKeyboardEvent_key_get_extern(_ self: Int32) -> Int32 {
@@ -1081,7 +1081,7 @@ func _$JSKeyboardEvent_key_get(_ self: JSObject) throws(JSException) -> String {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_altKey_get")
+@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_altKey_get")
 fileprivate func bjs_JSMouseEvent_altKey_get_extern(_ self: Int32) -> Int32
 #else
 fileprivate func bjs_JSMouseEvent_altKey_get_extern(_ self: Int32) -> Int32 {
@@ -1093,7 +1093,7 @@ fileprivate func bjs_JSMouseEvent_altKey_get_extern(_ self: Int32) -> Int32 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_button_get")
+@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_button_get")
 fileprivate func bjs_JSMouseEvent_button_get_extern(_ self: Int32) -> Int32
 #else
 fileprivate func bjs_JSMouseEvent_button_get_extern(_ self: Int32) -> Int32 {
@@ -1105,7 +1105,7 @@ fileprivate func bjs_JSMouseEvent_button_get_extern(_ self: Int32) -> Int32 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_buttons_get")
+@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_buttons_get")
 fileprivate func bjs_JSMouseEvent_buttons_get_extern(_ self: Int32) -> Int32
 #else
 fileprivate func bjs_JSMouseEvent_buttons_get_extern(_ self: Int32) -> Int32 {
@@ -1117,7 +1117,7 @@ fileprivate func bjs_JSMouseEvent_buttons_get_extern(_ self: Int32) -> Int32 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_clientX_get")
+@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_clientX_get")
 fileprivate func bjs_JSMouseEvent_clientX_get_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSMouseEvent_clientX_get_extern(_ self: Int32) -> Float64 {
@@ -1129,7 +1129,7 @@ fileprivate func bjs_JSMouseEvent_clientX_get_extern(_ self: Int32) -> Float64 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_clientY_get")
+@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_clientY_get")
 fileprivate func bjs_JSMouseEvent_clientY_get_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSMouseEvent_clientY_get_extern(_ self: Int32) -> Float64 {
@@ -1141,7 +1141,7 @@ fileprivate func bjs_JSMouseEvent_clientY_get_extern(_ self: Int32) -> Float64 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_ctrlKey_get")
+@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_ctrlKey_get")
 fileprivate func bjs_JSMouseEvent_ctrlKey_get_extern(_ self: Int32) -> Int32
 #else
 fileprivate func bjs_JSMouseEvent_ctrlKey_get_extern(_ self: Int32) -> Int32 {
@@ -1153,7 +1153,7 @@ fileprivate func bjs_JSMouseEvent_ctrlKey_get_extern(_ self: Int32) -> Int32 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_metaKey_get")
+@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_metaKey_get")
 fileprivate func bjs_JSMouseEvent_metaKey_get_extern(_ self: Int32) -> Int32
 #else
 fileprivate func bjs_JSMouseEvent_metaKey_get_extern(_ self: Int32) -> Int32 {
@@ -1165,7 +1165,7 @@ fileprivate func bjs_JSMouseEvent_metaKey_get_extern(_ self: Int32) -> Int32 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_movementX_get")
+@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_movementX_get")
 fileprivate func bjs_JSMouseEvent_movementX_get_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSMouseEvent_movementX_get_extern(_ self: Int32) -> Float64 {
@@ -1177,7 +1177,7 @@ fileprivate func bjs_JSMouseEvent_movementX_get_extern(_ self: Int32) -> Float64
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_movementY_get")
+@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_movementY_get")
 fileprivate func bjs_JSMouseEvent_movementY_get_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSMouseEvent_movementY_get_extern(_ self: Int32) -> Float64 {
@@ -1189,7 +1189,7 @@ fileprivate func bjs_JSMouseEvent_movementY_get_extern(_ self: Int32) -> Float64
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_offsetX_get")
+@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_offsetX_get")
 fileprivate func bjs_JSMouseEvent_offsetX_get_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSMouseEvent_offsetX_get_extern(_ self: Int32) -> Float64 {
@@ -1201,7 +1201,7 @@ fileprivate func bjs_JSMouseEvent_offsetX_get_extern(_ self: Int32) -> Float64 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_offsetY_get")
+@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_offsetY_get")
 fileprivate func bjs_JSMouseEvent_offsetY_get_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSMouseEvent_offsetY_get_extern(_ self: Int32) -> Float64 {
@@ -1213,7 +1213,7 @@ fileprivate func bjs_JSMouseEvent_offsetY_get_extern(_ self: Int32) -> Float64 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_pageX_get")
+@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_pageX_get")
 fileprivate func bjs_JSMouseEvent_pageX_get_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSMouseEvent_pageX_get_extern(_ self: Int32) -> Float64 {
@@ -1225,7 +1225,7 @@ fileprivate func bjs_JSMouseEvent_pageX_get_extern(_ self: Int32) -> Float64 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_pageY_get")
+@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_pageY_get")
 fileprivate func bjs_JSMouseEvent_pageY_get_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSMouseEvent_pageY_get_extern(_ self: Int32) -> Float64 {
@@ -1237,7 +1237,7 @@ fileprivate func bjs_JSMouseEvent_pageY_get_extern(_ self: Int32) -> Float64 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_screenX_get")
+@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_screenX_get")
 fileprivate func bjs_JSMouseEvent_screenX_get_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSMouseEvent_screenX_get_extern(_ self: Int32) -> Float64 {
@@ -1249,7 +1249,7 @@ fileprivate func bjs_JSMouseEvent_screenX_get_extern(_ self: Int32) -> Float64 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_screenY_get")
+@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_screenY_get")
 fileprivate func bjs_JSMouseEvent_screenY_get_extern(_ self: Int32) -> Float64
 #else
 fileprivate func bjs_JSMouseEvent_screenY_get_extern(_ self: Int32) -> Float64 {
@@ -1261,7 +1261,7 @@ fileprivate func bjs_JSMouseEvent_screenY_get_extern(_ self: Int32) -> Float64 {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_shiftKey_get")
+@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_shiftKey_get")
 fileprivate func bjs_JSMouseEvent_shiftKey_get_extern(_ self: Int32) -> Int32
 #else
 fileprivate func bjs_JSMouseEvent_shiftKey_get_extern(_ self: Int32) -> Int32 {
@@ -1417,7 +1417,7 @@ func _$JSMouseEvent_shiftKey_get(_ self: JSObject) throws(JSException) -> Bool {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSInputEvent_data_get")
+@_extern(wasm, module: "env", name: "bjs_JSInputEvent_data_get")
 fileprivate func bjs_JSInputEvent_data_get_extern(_ self: Int32) -> Void
 #else
 fileprivate func bjs_JSInputEvent_data_get_extern(_ self: Int32) -> Void {
@@ -1429,7 +1429,7 @@ fileprivate func bjs_JSInputEvent_data_get_extern(_ self: Int32) -> Void {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_JSInputEvent_target_get")
+@_extern(wasm, module: "env", name: "bjs_JSInputEvent_target_get")
 fileprivate func bjs_JSInputEvent_target_get_extern(_ self: Int32) -> Int32
 #else
 fileprivate func bjs_JSInputEvent_target_get_extern(_ self: Int32) -> Int32 {
@@ -1459,7 +1459,7 @@ func _$JSInputEvent_target_get(_ self: JSObject) throws(JSException) -> JSObject
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_window_get")
+@_extern(wasm, module: "env", name: "bjs_window_get")
 fileprivate func bjs_window_get_extern() -> Int32
 #else
 fileprivate func bjs_window_get_extern() -> Int32 {
@@ -1479,7 +1479,7 @@ func _$window_get() throws(JSException) -> JSWindow {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_document_get")
+@_extern(wasm, module: "env", name: "bjs_document_get")
 fileprivate func bjs_document_get_extern() -> Int32
 #else
 fileprivate func bjs_document_get_extern() -> Int32 {
@@ -1499,7 +1499,7 @@ func _$document_get() throws(JSException) -> JSDocument {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_performance_get")
+@_extern(wasm, module: "env", name: "bjs_performance_get")
 fileprivate func bjs_performance_get_extern() -> Int32
 #else
 fileprivate func bjs_performance_get_extern() -> Int32 {
@@ -1519,7 +1519,7 @@ func _$performance_get() throws(JSException) -> JSPerformance {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_requestAnimationFrame")
+@_extern(wasm, module: "env", name: "bjs_requestAnimationFrame")
 fileprivate func bjs_requestAnimationFrame_extern(_ callback: Int32) -> Float64
 #else
 fileprivate func bjs_requestAnimationFrame_extern(_ callback: Int32) -> Float64 {
@@ -1543,7 +1543,7 @@ func _$requestAnimationFrame(_ callback: @escaping (Double) -> Void) throws(JSEx
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_cancelAnimationFrame")
+@_extern(wasm, module: "env", name: "bjs_cancelAnimationFrame")
 fileprivate func bjs_cancelAnimationFrame_extern(_ handle: Float64) -> Void
 #else
 fileprivate func bjs_cancelAnimationFrame_extern(_ handle: Float64) -> Void {
@@ -1563,7 +1563,7 @@ func _$cancelAnimationFrame(_ handle: Double) throws(JSException) -> Void {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_queueMicrotask")
+@_extern(wasm, module: "env", name: "bjs_queueMicrotask")
 fileprivate func bjs_queueMicrotask_extern(_ callback: Int32) -> Void
 #else
 fileprivate func bjs_queueMicrotask_extern(_ callback: Int32) -> Void {
@@ -1586,7 +1586,7 @@ func _$queueMicrotask(_ callback: @escaping () -> Void) throws(JSException) -> V
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "BrowserInterop", name: "bjs_setTimeout")
+@_extern(wasm, module: "env", name: "bjs_setTimeout")
 fileprivate func bjs_setTimeout_extern(_ callback: Int32, _ timeout: Float64) -> Void
 #else
 fileprivate func bjs_setTimeout_extern(_ callback: Int32, _ timeout: Float64) -> Void {
