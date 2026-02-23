@@ -28,6 +28,8 @@ export interface JSElement {
     removeAttribute(name: string): void;
     appendChild(child: JSNode): void;
     removeChild(child: JSNode): void;
+    insertBefore(newChild: JSNode, refChild: JSNode | null): void;
+    replaceChildren(children: JSNode[]): void;
     getBoundingClientRect(): JSDOMRect;
     addEventListener(type: string, listener: any): void;
     removeEventListener(type: string, listener: any): void;

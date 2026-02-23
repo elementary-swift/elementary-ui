@@ -364,6 +364,59 @@
                 }
               },
               {
+                "name" : "insertBefore",
+                "parameters" : [
+                  {
+                    "name" : "newChild",
+                    "type" : {
+                      "jsObject" : {
+                        "_0" : "JSNode"
+                      }
+                    }
+                  },
+                  {
+                    "name" : "refChild",
+                    "type" : {
+                      "nullable" : {
+                        "_0" : {
+                          "jsObject" : {
+                            "_0" : "JSNode"
+                          }
+                        },
+                        "_1" : "null"
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "replaceChildren",
+                "parameters" : [
+                  {
+                    "name" : "children",
+                    "type" : {
+                      "array" : {
+                        "_0" : {
+                          "jsObject" : {
+                            "_0" : "JSNode"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
                 "name" : "getBoundingClientRect",
                 "parameters" : [
 

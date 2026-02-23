@@ -59,9 +59,8 @@ export async function createInstantiator(options, swift) {
          * @param {WebAssembly.Imports} importObject
          */
         addImports: (importObject, importsContext) => {
-            const env = importObject["env"] = importObject["env"] || {};
-            bjs = env;
-            importObject["bjs"] = env;
+            bjs = {};
+            importObject["bjs"] = bjs;
             bjs["swift_js_return_string"] = function(ptr, len) {
                 const bytes = new Uint8Array(memory.buffer, ptr, len);
                 tmpRetString = textDecoder.decode(bytes);
@@ -254,8 +253,7 @@ export async function createInstantiator(options, swift) {
                 };
                 return makeClosure(boxPtr, file, line, lower_closure_BrowserInterop_14BrowserInteropy_y);
             }
-            const BrowserInterop = env;
-            importObject["BrowserInterop"] = env;
+            const BrowserInterop = importObject["BrowserInterop"] = importObject["BrowserInterop"] || {};
             BrowserInterop["bjs_JSDocument_body_get"] = function bjs_JSDocument_body_get(self) {
                 try {
                     let ret = swift.memory.getObject(self).body;
@@ -448,6 +446,29 @@ export async function createInstantiator(options, swift) {
             BrowserInterop["bjs_JSElement_removeChild"] = function bjs_JSElement_removeChild(self, child) {
                 try {
                     swift.memory.getObject(self).removeChild(swift.memory.getObject(child));
+                } catch (error) {
+                    setException(error);
+                }
+            }
+            BrowserInterop["bjs_JSElement_insertBefore"] = function bjs_JSElement_insertBefore(self, newChild, refChildIsSome, refChildObjectId) {
+                try {
+                    swift.memory.getObject(self).insertBefore(swift.memory.getObject(newChild), refChildIsSome ? swift.memory.getObject(refChildObjectId) : null);
+                } catch (error) {
+                    setException(error);
+                }
+            }
+            BrowserInterop["bjs_JSElement_replaceChildren"] = function bjs_JSElement_replaceChildren(self) {
+                try {
+                    const arrayLen = i32Stack.pop();
+                    const arrayResult = [];
+                    for (let i = 0; i < arrayLen; i++) {
+                        const objId = i32Stack.pop();
+                        const obj = swift.memory.getObject(objId);
+                        swift.memory.release(objId);
+                        arrayResult.push(obj);
+                    }
+                    arrayResult.reverse();
+                    swift.memory.getObject(self).replaceChildren(arrayResult);
                 } catch (error) {
                     setException(error);
                 }
