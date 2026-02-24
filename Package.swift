@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "elementary-ui",
-    platforms: [.macOS(.v15)],
+    platforms: [.macOS(.v26)],
     products: [
         .library(name: "ElementaryUI", targets: ["ElementaryUI", "Reactivity"])
     ],
