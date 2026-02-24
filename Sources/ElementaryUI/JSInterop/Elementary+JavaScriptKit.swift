@@ -74,6 +74,8 @@ final class JSKitDOMInteractor: DOM.Interactor {
     private let jsNodeRemoveChild = JSObject.global.Node.prototype.removeChild.function!
     private let jsNodeGetBoundingClientRect = JSObject.global.Element.prototype.getBoundingClientRect.function!
 
+    private let staticStrings = StaticJSStringCache()
+
     init() {
         #if hasFeature(Embedded)
         if __omg_this_was_annoying_I_am_false {
@@ -180,16 +182,35 @@ final class JSKitDOMInteractor: DOM.Interactor {
     }
 
     func createElement(_ element: String) -> DOM.Node {
-        .init(jsCreateElement.callAsFunction(this: jsDocument, arguments: [element.jsValue]).object!)
+        DOM.Node(
+            jsCreateElement.callAsFunction(
+                this: jsDocument,
+                arguments: [
+                    staticStrings.get(element).jsValue
+                ]
+            ).object!
+        )
     }
 
     // Low-level DOM-like operations used by protocol extensions
     func setAttribute(_ node: DOM.Node, name: String, value: String?) {
-        _ = jsNodeSetAttribute.callAsFunction(this: node.jsObject, arguments: [name.jsValue, value.jsValue])
+        _ = jsNodeSetAttribute.callAsFunction(
+            this: node.jsObject,
+            arguments: [
+                staticStrings.get(name).jsValue,
+                value.jsValue,
+            ]
+        )
     }
 
     func removeAttribute(_ node: DOM.Node, name: String) {
-        _ = jsNodeRemoveAttribute.callAsFunction(this: node.jsObject, arguments: [name.jsValue])
+
+        _ = jsNodeRemoveAttribute.callAsFunction(
+            this: node.jsObject,
+            arguments: [
+                staticStrings.get(name).jsValue
+            ]
+        )
     }
 
     func animateElement(_ element: DOM.Node, _ effect: DOM.Animation.KeyframeEffect, onFinish: @escaping () -> Void) -> DOM.Animation {
@@ -229,11 +250,23 @@ final class JSKitDOMInteractor: DOM.Interactor {
     }
 
     func addEventListener(_ node: DOM.Node, event: String, sink: DOM.EventSink) {
-        _ = jsNodeAddEventListener.callAsFunction(this: node.jsObject, arguments: [event.jsValue, sink.jsClosure.jsValue])
+        _ = jsNodeAddEventListener.callAsFunction(
+            this: node.jsObject,
+            arguments: [
+                staticStrings.get(event).jsValue,
+                sink.jsClosure.jsValue,
+            ]
+        )
     }
 
     func removeEventListener(_ node: DOM.Node, event: String, sink: DOM.EventSink) {
-        _ = jsNodeRemoveEventListener.callAsFunction(this: node.jsObject, arguments: [event.jsValue, sink.jsClosure.jsValue])
+        _ = jsNodeRemoveEventListener.callAsFunction(
+            this: node.jsObject,
+            arguments: [
+                staticStrings.get(event).jsValue,
+                sink.jsClosure.jsValue,
+            ]
+        )
     }
 
     func patchText(_ node: DOM.Node, with text: String) {
