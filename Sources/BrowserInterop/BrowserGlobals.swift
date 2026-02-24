@@ -1,5 +1,7 @@
 import JavaScriptKit
 
+// TODO: rename these or move them into some namespace
+
 @JSGetter(from: .global)
 public var window: JSWindow
 

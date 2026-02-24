@@ -9,6 +9,16 @@ extension DOM.Node {
 }
 
 final class BridgeJSDOMInteractor: DOM.Interactor {
+    private let _document: JSDocument
+    private let _window: JSWindow
+    private let _performance: JSPerformance
+
+    init() {
+        _document = try! BrowserInterop.document
+        _window = try! BrowserInterop.window
+        _performance = try! BrowserInterop.performance
+    }
+
     func makeEventSink(_ handler: @escaping (String, DOM.Event) -> Void) -> DOM.EventSink {
         .init(
             JSClosure { arguments in
@@ -51,7 +61,7 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
         .init(
             get: { cssName in
                 let element = node.jsElement
-                let style = (try? window.getComputedStyle(element)) ?? (try? element.style)
+                let style = (try? self._window.getComputedStyle(element)) ?? (try? element.style)
                 return (try? style?.getPropertyValue(cssName)) ?? ""
             }
         )
@@ -100,14 +110,14 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
     }
 
     func createText(_ text: String) -> DOM.Node {
-        guard let node = try? document.createTextNode(text) else {
+        guard let node = try? _document.createTextNode(text) else {
             return .init(ref: JSObject())
         }
         return .init(ref: node.jsObject)
     }
 
     func createElement(_ element: String) -> DOM.Node {
-        guard let node = try? document.createElement(element) else {
+        guard let node = try? _document.createElement(element) else {
             return .init(ref: JSObject())
         }
         return .init(ref: node.jsObject)
@@ -216,30 +226,30 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
     }
 
     func requestAnimationFrame(_ callback: @escaping (Double) -> Void) {
-        _ = try? BrowserInterop.requestAnimationFrame(callback)
+        _ = try! BrowserInterop.requestAnimationFrame(callback)
     }
 
     func queueMicrotask(_ callback: @escaping () -> Void) {
-        _ = try? BrowserInterop.queueMicrotask(callback)
+        try! BrowserInterop.queueMicrotask(callback)
     }
 
     func setTimeout(_ callback: @escaping () -> Void, _ timeout: Double) {
-        _ = try? BrowserInterop.setTimeout(callback, timeout)
+        try! BrowserInterop.setTimeout(callback, timeout)
     }
 
     func getCurrentTime() -> Double {
-        ((try? BrowserInterop.performance.now()) ?? 0) / 1000
+        try! _performance.now() / 1000
     }
 
     func getScrollOffset() -> (x: Double, y: Double) {
         (
-            x: (try? BrowserInterop.window.scrollX) ?? 0,
-            y: (try? BrowserInterop.window.scrollY) ?? 0
+            x: (try? _window.scrollX) ?? 0,
+            y: (try? _window.scrollY) ?? 0
         )
     }
 
     func querySelector(_ selector: String) -> DOM.Node? {
-        guard let element = try? BrowserInterop.document.querySelector(selector) else {
+        guard let element = try? _document.querySelector(selector) else {
             return nil
         }
         if element.jsObject.jsValue.isNull || element.jsObject.jsValue.isUndefined {
