@@ -19,7 +19,17 @@ package struct HashableUTF8View: Hashable, Sendable {
 
     @inlinable
     package static func == (lhs: HashableUTF8View, rhs: HashableUTF8View) -> Bool {
-        lhs.raw.elementsEqual(rhs.raw)
+        let lSpan = lhs.raw.span
+        let rSpan = rhs.raw.span
+
+        guard lSpan.count == rSpan.count else { return false }
+        guard !lSpan.isIdentical(to: rSpan) else { return true }
+
+        for i in 0..<lSpan.count {
+            guard lSpan[unchecked: i] == rSpan[unchecked: i] else { return false }
+        }
+
+        return true
     }
 
     @inlinable

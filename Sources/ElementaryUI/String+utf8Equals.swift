@@ -2,13 +2,23 @@ extension String {
     @inline(__always)
     @inlinable
     func utf8Equals(_ other: borrowing String) -> Bool {
-        utf8.elementsEqual(other.utf8)
+        let lSpan = self.utf8.span
+        let rSpan = other.utf8.span
+
+        guard lSpan.count == rSpan.count else { return false }
+        guard !lSpan.isIdentical(to: rSpan) else { return true }
+
+        for i in 0..<lSpan.count {
+            guard lSpan[unchecked: i] == rSpan[unchecked: i] else { return false }
+        }
+
+        return true
     }
 
     @inlinable
     @inline(__always)
     static func utf8Equals(_ lhs: borrowing String, _ rhs: borrowing String) -> Bool {
-        lhs.utf8.elementsEqual(rhs.utf8)
+        lhs.utf8Equals(rhs)
     }
 }
 
