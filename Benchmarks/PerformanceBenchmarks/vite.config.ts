@@ -5,8 +5,7 @@ export default defineConfig({
   plugins: [
     swiftWasm({
       useEmbeddedSDK: true,
-      linkEmbeddedUnicodeDataTables: false,
-      useWasmOpt: false,
+      linkEmbeddedUnicodeDataTables: false
     }),
   ],
 });
