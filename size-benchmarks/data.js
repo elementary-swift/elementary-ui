@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771830023572,
+  "lastUpdate": 1771916183777,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -493,6 +493,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/elementary-swift/elementary-ui/commit/958b2e94660e403d2b474ba4b7a864a4fad04555"
         },
         "date": 1771830023264,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 157.82,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 130.19,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 115.57,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 160.45,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "958b2e94660e403d2b474ba4b7a864a4fad04555",
+          "message": "updated snapshot versions for CI (#64)\n\n* updated snapshots\n\n* Update ci-embedded.yaml",
+          "timestamp": "2026-02-21T16:16:09Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/958b2e94660e403d2b474ba4b7a864a4fad04555"
+        },
+        "date": 1771916183473,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
