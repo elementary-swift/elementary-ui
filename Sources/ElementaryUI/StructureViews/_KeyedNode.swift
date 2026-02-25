@@ -180,8 +180,11 @@ private extension _KeyedNode {
         }
 
         mutating func append(_ key: _ViewKey, atIndex index: Int, value: consuming AnyReconcilable) {
+            // insert in key order
+            // Perform a sorted insert by key
+            // maybe do it backwards?
             let newEntry = Entry(key: key, originalMountIndex: index, value: value)
-            if let insertIndex = firstIndex(withOriginalMountIndexGreaterThan: index) {
+            if let insertIndex = entries.firstIndex(where: { $0.originalMountIndex > index }) {
                 entries.insert(newEntry, at: insertIndex)
             } else {
                 entries.append(newEntry)
@@ -208,43 +211,12 @@ private extension _KeyedNode {
         }
 
         private mutating func shiftEntriesFromIndexUpwards(_ index: Int, by amount: Int) {
-            guard let startIndex = firstIndex(withOriginalMountIndexAtLeast: index) else { return }
-
-            for i in startIndex..<entries.count {
-                entries[i].originalMountIndex += amount
-            }
-        }
-
-        private func firstIndex(withOriginalMountIndexAtLeast target: Int) -> Int? {
-            var low = 0
-            var high = entries.count
-
-            while low < high {
-                let mid = (low + high) >> 1
-                if entries[mid].originalMountIndex < target {
-                    low = mid + 1
-                } else {
-                    high = mid
+            //TODO: span
+            for i in entries.indices {
+                if entries[i].originalMountIndex >= index {
+                    entries[i].originalMountIndex += amount
                 }
             }
-
-            return low < entries.count ? low : nil
-        }
-
-        private func firstIndex(withOriginalMountIndexGreaterThan target: Int) -> Int? {
-            var low = 0
-            var high = entries.count
-
-            while low < high {
-                let mid = (low + high) >> 1
-                if entries[mid].originalMountIndex <= target {
-                    low = mid + 1
-                } else {
-                    high = mid
-                }
-            }
-
-            return low < entries.count ? low : nil
         }
     }
 }
