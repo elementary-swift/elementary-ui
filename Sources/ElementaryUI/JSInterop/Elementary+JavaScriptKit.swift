@@ -186,7 +186,7 @@ final class JSKitDOMInteractor: DOM.Interactor {
             jsCreateElement.callAsFunction(
                 this: jsDocument,
                 arguments: [
-                    staticStrings.get(element).jsValue
+                    staticStrings.getOrAddStaticString(element).jsValue
                 ]
             ).object!
         )
@@ -197,7 +197,7 @@ final class JSKitDOMInteractor: DOM.Interactor {
         _ = jsNodeSetAttribute.callAsFunction(
             this: node.jsObject,
             arguments: [
-                staticStrings.get(name).jsValue,
+                staticStrings.getOrAddStaticString(name).jsValue,
                 value.jsValue,
             ]
         )
@@ -208,7 +208,7 @@ final class JSKitDOMInteractor: DOM.Interactor {
         _ = jsNodeRemoveAttribute.callAsFunction(
             this: node.jsObject,
             arguments: [
-                staticStrings.get(name).jsValue
+                staticStrings.getOrAddStaticString(name).jsValue
             ]
         )
     }
@@ -253,7 +253,7 @@ final class JSKitDOMInteractor: DOM.Interactor {
         _ = jsNodeAddEventListener.callAsFunction(
             this: node.jsObject,
             arguments: [
-                staticStrings.get(event).jsValue,
+                staticStrings.getOrAddStaticString(event).jsValue,
                 sink.jsClosure.jsValue,
             ]
         )
@@ -263,7 +263,7 @@ final class JSKitDOMInteractor: DOM.Interactor {
         _ = jsNodeRemoveEventListener.callAsFunction(
             this: node.jsObject,
             arguments: [
-                staticStrings.get(event).jsValue,
+                staticStrings.getOrAddStaticString(event).jsValue,
                 sink.jsClosure.jsValue,
             ]
         )
