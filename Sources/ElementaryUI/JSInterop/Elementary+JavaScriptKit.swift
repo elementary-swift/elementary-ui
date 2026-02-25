@@ -54,11 +54,27 @@ extension DOM.PropertyValue {
 }
 
 final class JSKitDOMInteractor: DOM.Interactor {
-    private let jsDocument = JSObject.global.document
+    private let jsDocument = JSObject.global.document.object!
     private let jsSetTimeout = JSObject.global.setTimeout.function!
     private let jsRequestAnimationFrame = JSObject.global.requestAnimationFrame.function!
     private let jsQueueMicrotask = JSObject.global.queueMicrotask.function!
     private let jsPerformance = JSObject.global.performance.object!
+    // Cache frequently used JS function lookups once for hot DOM paths.
+    private let jsCreateTextNode = JSObject.global.document.object!.createTextNode.function!
+    private let jsCreateElement = JSObject.global.document.object!.createElement.function!
+    private let jsQuerySelector = JSObject.global.document.object!.querySelector.function!
+    private let jsPerformanceNow = JSObject.global.performance.object!.now.function!
+    private let jsNodeSetAttribute = JSObject.global.Element.prototype.setAttribute.function!
+    private let jsNodeRemoveAttribute = JSObject.global.Element.prototype.removeAttribute.function!
+    private let jsNodeAddEventListener = JSObject.global.EventTarget.prototype.addEventListener.function!
+    private let jsNodeRemoveEventListener = JSObject.global.EventTarget.prototype.removeEventListener.function!
+    private let jsNodeReplaceChildren = JSObject.global.Element.prototype.replaceChildren.function!
+    private let jsNodeInsertBefore = JSObject.global.Node.prototype.insertBefore.function!
+    private let jsNodeAppendChild = JSObject.global.Node.prototype.appendChild.function!
+    private let jsNodeRemoveChild = JSObject.global.Node.prototype.removeChild.function!
+    private let jsNodeGetBoundingClientRect = JSObject.global.Element.prototype.getBoundingClientRect.function!
+
+    private let staticStrings = StaticJSStringCache()
 
     init() {
         #if hasFeature(Embedded)
@@ -162,20 +178,39 @@ final class JSKitDOMInteractor: DOM.Interactor {
     }
 
     func createText(_ text: String) -> DOM.Node {
-        .init(jsDocument.createTextNode(text).object!)
+        .init(jsCreateTextNode.callAsFunction(this: jsDocument, arguments: [text.jsValue]).object!)
     }
 
     func createElement(_ element: String) -> DOM.Node {
-        .init(jsDocument.createElement(element).object!)
+        DOM.Node(
+            jsCreateElement.callAsFunction(
+                this: jsDocument,
+                arguments: [
+                    staticStrings.getOrAddStaticString(element).jsValue
+                ]
+            ).object!
+        )
     }
 
     // Low-level DOM-like operations used by protocol extensions
     func setAttribute(_ node: DOM.Node, name: String, value: String?) {
-        _ = node.jsObject.setAttribute!(name.jsValue, value.jsValue)
+        _ = jsNodeSetAttribute.callAsFunction(
+            this: node.jsObject,
+            arguments: [
+                staticStrings.getOrAddStaticString(name).jsValue,
+                value.jsValue,
+            ]
+        )
     }
 
     func removeAttribute(_ node: DOM.Node, name: String) {
-        _ = node.jsObject.removeAttribute!(name)
+
+        _ = jsNodeRemoveAttribute.callAsFunction(
+            this: node.jsObject,
+            arguments: [
+                staticStrings.getOrAddStaticString(name).jsValue
+            ]
+        )
     }
 
     func animateElement(_ element: DOM.Node, _ effect: DOM.Animation.KeyframeEffect, onFinish: @escaping () -> Void) -> DOM.Animation {
@@ -215,11 +250,23 @@ final class JSKitDOMInteractor: DOM.Interactor {
     }
 
     func addEventListener(_ node: DOM.Node, event: String, sink: DOM.EventSink) {
-        _ = node.jsObject.addEventListener!(event.jsValue, sink.jsClosure.jsValue)
+        _ = jsNodeAddEventListener.callAsFunction(
+            this: node.jsObject,
+            arguments: [
+                staticStrings.getOrAddStaticString(event).jsValue,
+                sink.jsClosure.jsValue,
+            ]
+        )
     }
 
     func removeEventListener(_ node: DOM.Node, event: String, sink: DOM.EventSink) {
-        _ = node.jsObject.removeEventListener!(event.jsValue, sink.jsClosure.jsValue)
+        _ = jsNodeRemoveEventListener.callAsFunction(
+            this: node.jsObject,
+            arguments: [
+                staticStrings.getOrAddStaticString(event).jsValue,
+                sink.jsClosure.jsValue,
+            ]
+        )
     }
 
     func patchText(_ node: DOM.Node, with text: String) {
@@ -228,8 +275,7 @@ final class JSKitDOMInteractor: DOM.Interactor {
 
     func replaceChildren(_ children: [DOM.Node], in parent: DOM.Node) {
         logTrace("setting \(children.count) children in \(parent)")
-        let function = parent.jsObject.replaceChildren.function!
-        function.callAsFunction(
+        jsNodeReplaceChildren.callAsFunction(
             this: parent.jsObject,
             arguments: children.map { $0.jsObject.jsValue }
         )
@@ -237,18 +283,18 @@ final class JSKitDOMInteractor: DOM.Interactor {
 
     func insertChild(_ child: DOM.Node, before sibling: DOM.Node?, in parent: DOM.Node) {
         if let s = sibling {
-            _ = parent.jsObject.insertBefore!(child.jsObject.jsValue, s.jsObject.jsValue)
+            _ = jsNodeInsertBefore.callAsFunction(this: parent.jsObject, arguments: [child.jsObject.jsValue, s.jsObject.jsValue])
         } else {
-            _ = parent.jsObject.appendChild!(child.jsObject.jsValue)
+            _ = jsNodeAppendChild.callAsFunction(this: parent.jsObject, arguments: [child.jsObject.jsValue])
         }
     }
 
     func removeChild(_ child: DOM.Node, from parent: DOM.Node) {
-        _ = parent.jsObject.removeChild!(child.jsObject.jsValue)
+        _ = jsNodeRemoveChild.callAsFunction(this: parent.jsObject, arguments: [child.jsObject.jsValue])
     }
 
     func getBoundingClientRect(_ node: DOM.Node) -> DOM.Rect {
-        let rect = node.jsObject.getBoundingClientRect!()
+        let rect = jsNodeGetBoundingClientRect.callAsFunction(this: node.jsObject)
         return DOM.Rect(
             x: rect.x.number ?? 0,
             y: rect.y.number ?? 0,
@@ -294,7 +340,7 @@ final class JSKitDOMInteractor: DOM.Interactor {
     }
 
     func getCurrentTime() -> Double {
-        jsPerformance.now!().number! / 1000
+        jsPerformanceNow.callAsFunction(this: jsPerformance).number! / 1000
     }
 
     func getScrollOffset() -> (x: Double, y: Double) {
@@ -306,7 +352,7 @@ final class JSKitDOMInteractor: DOM.Interactor {
     }
 
     func querySelector(_ selector: String) -> DOM.Node? {
-        guard let element = jsDocument.querySelector(selector).object else {
+        guard let element = jsQuerySelector.callAsFunction(this: jsDocument, arguments: [selector.jsValue]).object else {
             return nil
         }
         return DOM.Node(element)

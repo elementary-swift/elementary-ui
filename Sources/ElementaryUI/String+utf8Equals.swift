@@ -1,14 +1,16 @@
+import Reactivity
+
 extension String {
     @inline(__always)
     @inlinable
     func utf8Equals(_ other: borrowing String) -> Bool {
-        utf8.elementsEqual(other.utf8)
+        self._utf8Equals(other)
     }
 
     @inlinable
     @inline(__always)
     static func utf8Equals(_ lhs: borrowing String, _ rhs: borrowing String) -> Bool {
-        lhs.utf8.elementsEqual(rhs.utf8)
+        lhs.utf8Equals(rhs)
     }
 }
 

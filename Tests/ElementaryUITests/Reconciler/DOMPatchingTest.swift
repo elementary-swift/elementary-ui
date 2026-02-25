@@ -221,6 +221,24 @@ struct DOMPatchingTests {
     }
 
     @Test
+    func patchesKeyedEmptyList() {
+        let state = StringListState(["A", "B", "C"])
+        let ops = patchOps {
+            ForEach(state.items, key: \.self) { item in
+                item
+            }
+        } toggle: {
+            state.items.removeAll()
+        }
+
+        #expect(
+            ops == [
+                .setChildren(parent: "<>", children: [])
+            ]
+        )
+    }
+
+    @Test
     func patchesListReorderingWithRemovalsAndAdditions() {
         let state = StringListState(["A", "B", "C"])
         let ops = patchOps {
