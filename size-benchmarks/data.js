@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772022994059,
+  "lastUpdate": 1772057059647,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -685,6 +685,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 164.59,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0f7333688a534273a8c9221ef9b398c0913cbe5d",
+          "message": "fix `_ViewKey` hash implementation (#79)\n\n* fix _ViewKey hash implementation\n\n* explicit equating",
+          "timestamp": "2026-02-25T23:01:15+01:00",
+          "tree_id": "8ffbdf002cc439090988a529e1fbed10d3e8f605",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/0f7333688a534273a8c9221ef9b398c0913cbe5d"
+        },
+        "date": 1772057058645,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 164.28,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 135.95,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 120.31,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 164.81,
             "unit": "kB"
           }
         ]
