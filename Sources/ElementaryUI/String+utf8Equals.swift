@@ -1,18 +1,10 @@
+import Reactivity
+
 extension String {
     @inline(__always)
     @inlinable
     func utf8Equals(_ other: borrowing String) -> Bool {
-        let lSpan = self.utf8.span
-        let rSpan = other.utf8.span
-
-        guard lSpan.count == rSpan.count else { return false }
-        guard !lSpan.isIdentical(to: rSpan) else { return true }
-
-        for i in 0..<lSpan.count {
-            guard lSpan[unchecked: i] == rSpan[unchecked: i] else { return false }
-        }
-
-        return true
+        self._utf8Equals(other)
     }
 
     @inlinable

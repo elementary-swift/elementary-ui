@@ -325,16 +325,14 @@ function extractRelevantEvents(entries, startLogicEvent) {
 
 function computeDurationFromTrace(traceEvents, startLogicEvent = START_LOGIC_EVENT) {
   const events = extractRelevantEvents(traceEvents, startLogicEvent).sort((a, b) => a.end - b.end);
-  const mousedowns = events.filter((e) => e.type === "mousedown");
-  if (mousedowns.length > 1) {
-    throw new Error("at most one mousedown event is expected");
-  }
 
   const clicks = events.filter((e) => e.type === "startLogicEvent");
-  if (clicks.length !== 1) {
-    throw new Error("exactly one click event is expected");
+  if (clicks.length === 0) {
+    throw new Error("at least one click event is expected");
   }
-  const click = clicks[0];
+  // Some traces can include multiple click dispatches for one automated action.
+  // Use the latest one as the benchmark start marker.
+  const click = clicks.at(-1);
   const pid = click.pid;
 
   const eventsDuringBenchmark = events.filter((e) => e.ts > click.end || e.type === "click");

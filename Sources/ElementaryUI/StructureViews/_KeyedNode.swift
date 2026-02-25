@@ -210,14 +210,8 @@ private extension _KeyedNode {
         private mutating func shiftEntriesFromIndexUpwards(_ index: Int, by amount: Int) {
             guard let startIndex = firstIndex(withOriginalMountIndexAtLeast: index) else { return }
 
-            // Mutate a contiguous suffix in place using MutableSpan.
-            do {
-                var span = entries.mutableSpan
-                var i = startIndex
-                while i < span.count {
-                    span[i].originalMountIndex += amount
-                    i += 1
-                }
+            for i in startIndex..<entries.count {
+                entries[i].originalMountIndex += amount
             }
         }
 
