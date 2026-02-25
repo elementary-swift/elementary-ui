@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772002710208,
+  "lastUpdate": 1772014992984,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -597,6 +597,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 160.44,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "23cefe0134a84ec8e8d296dcdbb356af288ccb86",
+          "message": "improved performance for strings and JS-interop (#77)\n\n* cached JavaScriptKit functions\n\n* added static string cache\n\n* keyed node micro-optimization\n\n* clear list fast-pass\n\n* faster utf8 byte compare\n\n* Update vite.config.ts\n\n* faster utf8 string comparison\n\n* undo keyed node optimization\n\n* added basic test coverage for StaticJSStringCache",
+          "timestamp": "2026-02-25T11:20:40+01:00",
+          "tree_id": "7fac3b2c9d2cb0b06f0e566b4f321e12859b27bb",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/23cefe0134a84ec8e8d296dcdbb356af288ccb86"
+        },
+        "date": 1772014992663,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 164.29,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 135.95,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 120.12,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 164.58,
             "unit": "kB"
           }
         ]
