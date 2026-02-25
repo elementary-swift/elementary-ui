@@ -11,11 +11,22 @@ public struct _ViewKey: Equatable, Hashable, CustomStringConvertible {
         self._value = HashableUTF8View(value)
     }
 
+    @inlinable
     public init<T: LosslessStringConvertible>(_ value: T) {
         self._value = HashableUTF8View(value.description)
     }
 
     public var description: String {
         _value.stringValue
+    }
+
+    @inlinable
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs._value == rhs._value
+    }
+
+    @inlinable
+    public func hash(into hasher: inout Hasher) {
+        _value.hash(into: &hasher)
     }
 }
