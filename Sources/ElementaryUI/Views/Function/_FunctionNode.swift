@@ -42,8 +42,7 @@ where Value: __FunctionView, ChildNode: _Reconcilable, ChildNode == Value.Body._
 
         logTrace("added function \(identifier)")
 
-        // we need to break here for scoped reactivity tracking
-        tx.addFunction(asFunctionNode)
+        runFunction(tx: &tx)
     }
 
     func patch(_ value: consuming Value, tx: inout _TransactionContext) {
