@@ -1,9 +1,11 @@
 import Reactivity
 
 // Type-erased node reference
-enum DOM {
+@_spi(Benchmarking)
+public enum DOM {
     // TODO: remove anyobject and make reconcier runs generic over this
-    protocol Interactor: AnyObject {
+    @_spi(Benchmarking)
+    public protocol Interactor: AnyObject {
 
         func makeEventSink(_ handler: @escaping (String, Event) -> Void) -> EventSink
 

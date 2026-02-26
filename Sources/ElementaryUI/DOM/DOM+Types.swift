@@ -1,37 +1,49 @@
 extension DOM {
-    struct Node: Hashable {
+    @_spi(Benchmarking)
+    public struct Node: Hashable {
         private let id: ObjectIdentifier
-        let ref: AnyObject
+        public let ref: AnyObject
 
-        init<T: AnyObject>(ref: T) {
+        public init<T: AnyObject>(ref: T) {
             self.ref = ref
             self.id = ObjectIdentifier(ref)
         }
 
-        func hash(into hasher: inout Hasher) {
+        public func hash(into hasher: inout Hasher) {
             hasher.combine(id)
         }
 
-        static func == (lhs: Node, rhs: Node) -> Bool {
+        public static func == (lhs: Node, rhs: Node) -> Bool {
             lhs.id == rhs.id
         }
     }
 
-    struct Event {
+    @_spi(Benchmarking)
+    public struct Event {
         let ref: AnyObject
+
+        init(ref: AnyObject) {
+            self.ref = ref
+        }
     }
 
-    struct EventSink {
+    @_spi(Benchmarking)
+    public struct EventSink {
         let ref: AnyObject
+
+        public init(ref: AnyObject) {
+            self.ref = ref
+        }
     }
 
-    struct Rect: Equatable {
+    @_spi(Benchmarking)
+    public struct Rect: Equatable {
         var x: Double
         var y: Double
         var width: Double
         var height: Double
 
-        init(x: Double, y: Double, width: Double, height: Double) {
+        public init(x: Double, y: Double, width: Double, height: Double) {
             self.x = x
             self.y = y
             self.width = width
@@ -39,7 +51,8 @@ extension DOM {
         }
     }
 
-    enum PropertyValue {
+    @_spi(Benchmarking)
+    public enum PropertyValue {
         case string(String)
         case number(Double)
         case boolean(Bool)
@@ -48,11 +61,12 @@ extension DOM {
         case undefined
     }
 
-    struct PropertyAccessor {
+    @_spi(Benchmarking)
+    public struct PropertyAccessor {
         let _get: () -> PropertyValue?
         let _set: (PropertyValue) -> Void
 
-        init(
+        public init(
             get: @escaping () -> PropertyValue?,
             set: @escaping (PropertyValue) -> Void
         ) {
@@ -69,11 +83,12 @@ extension DOM {
         }
     }
 
-    struct StyleAccessor {
+    @_spi(Benchmarking)
+    public struct StyleAccessor {
         let _get: () -> String
         let _set: (String) -> Void
 
-        init(
+        public init(
             get: @escaping () -> String,
             set: @escaping (String) -> Void
         ) {
@@ -90,10 +105,11 @@ extension DOM {
         }
     }
 
-    struct ComputedStyleAccessor {
+    @_spi(Benchmarking)
+    public struct ComputedStyleAccessor {
         let _get: (String) -> String
 
-        init(
+        public init(
             get: @escaping (String) -> String
         ) {
             self._get = get

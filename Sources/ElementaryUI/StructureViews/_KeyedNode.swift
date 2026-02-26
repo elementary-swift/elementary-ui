@@ -12,18 +12,11 @@ public final class _KeyedNode {
     }
 
     convenience init(_ value: some Sequence<(key: _ViewKey, node: some _Reconcilable)>, context: borrowing _ViewContext) {
-        var keys = [_ViewKey]()
-        var children = [AnyReconcilable?]()
-
-        keys.reserveCapacity(value.underestimatedCount)
-        children.reserveCapacity(value.underestimatedCount)
-
-        for entry in value {
-            keys.append(entry.key)
-            children.append(AnyReconcilable(entry.node))
-        }
-
-        self.init(keys: keys, children: children, context: context)
+        self.init(
+            keys: value.map { $0.key },
+            children: value.map { AnyReconcilable($0.node) },
+            context: context
+        )
     }
 
     convenience init(key: _ViewKey, child: some _Reconcilable, context: borrowing _ViewContext) {
@@ -49,21 +42,22 @@ public final class _KeyedNode {
         as: Node.Type = Node.self,
         makeOrPatchNode: (Int, inout Node?, borrowing _ViewContext, inout _TransactionContext) -> Void
     ) {
+        // NOTE: we want the fastest possible algorithm here
+        // TODO: clean this up
         guard !newKeys.isEmpty else {
-            // fast-pass for empty key list
-            self.viewContext.parentElement?.reportChangedChildren(.elementMoved, tx: &context)
+            fastRemoveAll(context: &context)
+            return
+        }
 
-            for index in children.indices {
-                guard let node = children[index].take() else {
-                    fatalError("unexpected nil child on collection")
-                }
+        // TODO: clean this up
+        guard !(keys.isEmpty && leavingChildren.entries.isEmpty) else {
+            // fast add-all case
+            keys = Array(newKeys)
+            children = Array(repeating: nil, count: keys.count)
 
-                node.apply(.startRemoval, &context)
-                leavingChildren.append(keys[index], atIndex: index, value: node)
+            for index in keys.indices {
+                makeOrPatchNode(index, &children[unwrapped: index, as: Node.self], self.viewContext, &context)
             }
-
-            keys.removeAll()
-            children.removeAll()
 
             return
         }
@@ -114,6 +108,22 @@ public final class _KeyedNode {
             makeOrPatchNode(index, &children[unwrapped: index, as: Node.self], self.viewContext, &context)
             assert(children[index] != nil, "unexpected nil child on collection")
         }
+    }
+
+    func fastRemoveAll(context: inout _TransactionContext) {
+        self.viewContext.parentElement?.reportChangedChildren(.elementMoved, tx: &context)
+
+        for index in children.indices {
+            guard let node = children[index].take() else {
+                fatalError("unexpected nil child on collection")
+            }
+
+            node.apply(.startRemoval, &context)
+            leavingChildren.append(keys[index], atIndex: index, value: node)
+        }
+
+        keys.removeAll()
+        children.removeAll()
     }
 }
 
