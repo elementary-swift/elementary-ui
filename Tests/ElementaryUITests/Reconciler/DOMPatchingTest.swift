@@ -221,6 +221,24 @@ struct DOMPatchingTests {
     }
 
     @Test
+    func patchesKeyedEmptyList() {
+        let state = StringListState(["A", "B", "C"])
+        let ops = patchOps {
+            ForEach(state.items, key: \.self) { item in
+                item
+            }
+        } toggle: {
+            state.items.removeAll()
+        }
+
+        #expect(
+            ops == [
+                .setChildren(parent: "<>", children: [])
+            ]
+        )
+    }
+
+    @Test
     func patchesListReorderingWithRemovalsAndAdditions() {
         let state = StringListState(["A", "B", "C"])
         let ops = patchOps {
@@ -237,6 +255,31 @@ struct DOMPatchingTests {
                 .addChild(parent: "<>", child: "D"),
                 .addChild(parent: "<>", child: "B", before: "D"),
                 .removeChild(parent: "<>", child: "A"),
+            ]
+        )
+    }
+
+    @Test
+    func patchesForEachClosureReactiveState() {
+        let items = ["A", "B"]
+        nonisolated(unsafe) let state = CounterState()
+
+        let dom = TestDOM()
+        dom.mount {
+            ForEach(items, key: \.self) { item in
+                p(.class(item == items[state.number] ? "selected" : "")) {}
+            }
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        state.number += 1
+        dom.runNextFrame()
+
+        #expect(
+            dom.ops == [
+                .setAttr(node: "<p>", name: "class", value: ""),
+                .setAttr(node: "<p>", name: "class", value: "selected"),
             ]
         )
     }

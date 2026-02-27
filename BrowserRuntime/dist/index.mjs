@@ -681,14 +681,13 @@ function createBridgeJSStubs() {
 		swift_js_throw: unexpectedBjsCall,
 		swift_js_retain: unexpectedBjsCall,
 		swift_js_release: unexpectedBjsCall,
-		swift_js_push_tag: unexpectedBjsCall,
-		swift_js_push_int: unexpectedBjsCall,
+		swift_js_push_i32: unexpectedBjsCall,
 		swift_js_push_f32: unexpectedBjsCall,
 		swift_js_push_f64: unexpectedBjsCall,
 		swift_js_push_string: unexpectedBjsCall,
-		swift_js_pop_param_int32: unexpectedBjsCall,
-		swift_js_pop_param_f32: unexpectedBjsCall,
-		swift_js_pop_param_f64: unexpectedBjsCall,
+		swift_js_pop_i32: unexpectedBjsCall,
+		swift_js_pop_f32: unexpectedBjsCall,
+		swift_js_pop_f64: unexpectedBjsCall,
 		swift_js_return_optional_bool: unexpectedBjsCall,
 		swift_js_return_optional_int: unexpectedBjsCall,
 		swift_js_return_optional_string: unexpectedBjsCall,
@@ -703,7 +702,11 @@ function createBridgeJSStubs() {
 		swift_js_get_optional_float_value: unexpectedBjsCall,
 		swift_js_get_optional_double_presence: unexpectedBjsCall,
 		swift_js_get_optional_double_value: unexpectedBjsCall,
-		swift_js_get_optional_heap_object_pointer: unexpectedBjsCall
+		swift_js_get_optional_heap_object_pointer: unexpectedBjsCall,
+		swift_js_push_pointer: unexpectedBjsCall,
+		swift_js_pop_pointer: unexpectedBjsCall,
+		swift_js_struct_cleanup: unexpectedBjsCall,
+		swift_js_closure_unregister: unexpectedBjsCall
 	};
 }
 
@@ -712,10 +715,11 @@ function createBridgeJSStubs() {
 /**
 * Runs an ElementaryUI application.
 *
-* This function will bootstrap a new JavaScriptKit SwiftRuntime and a WASI shim, and then run the application.
+* This function bootstraps a JavaScriptKit SwiftRuntime and WASI shim,
+* then runs the application by calling Swift's main entry point.
 *
-* @param initializer - The initializer function that taked WebAssembly imports and returns a WebAssembly instance.
-* @returns A promise that resolves when the application is running.
+* @param initializer - A function that receives WebAssembly imports and returns a WebAssembly instance.
+* @returns A promise that resolves when initialization is complete and the Swift application has started.
 */
 async function runApplication(initializer) {
 	const wasi = createDefaultWASI();

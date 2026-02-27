@@ -99,6 +99,8 @@ struct AppView {
         }
 
         div {
+            FilterDemoView()
+            hr()
             AnimationsView()
             hr()
             TextField(value: #Binding(data.name))

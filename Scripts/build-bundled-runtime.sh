@@ -8,7 +8,6 @@ VENDORDIR="$SCRIPT_DIR/../BrowserRuntime/src/vendored/javascriptkit"
 
 cd "$JSKITDIR"
 pnpm install
-pnpm i -D tslib # TODO: remove this once fixed in JavaScriptKit
 pnpm run build
 
 rm -rf "$VENDORDIR"/*

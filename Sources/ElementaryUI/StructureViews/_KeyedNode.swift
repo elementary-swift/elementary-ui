@@ -49,7 +49,25 @@ public final class _KeyedNode {
         as: Node.Type = Node.self,
         makeOrPatchNode: (Int, inout Node?, borrowing _ViewContext, inout _TransactionContext) -> Void
     ) {
-        // TODO: add fast-pass for empty key list
+        guard !newKeys.isEmpty else {
+            // fast-pass for empty key list
+            self.viewContext.parentElement?.reportChangedChildren(.elementMoved, tx: &context)
+
+            for index in children.indices {
+                guard let node = children[index].take() else {
+                    fatalError("unexpected nil child on collection")
+                }
+
+                node.apply(.startRemoval, &context)
+                leavingChildren.append(keys[index], atIndex: index, value: node)
+            }
+
+            keys.removeAll()
+            children.removeAll()
+
+            return
+        }
+
         let diff = newKeys.difference(from: keys).inferringMoves()
         keys = Array(newKeys)
 

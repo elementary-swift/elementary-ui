@@ -19,7 +19,7 @@ package struct HashableUTF8View: Hashable, Sendable {
 
     @inlinable
     package static func == (lhs: HashableUTF8View, rhs: HashableUTF8View) -> Bool {
-        lhs.raw.elementsEqual(rhs.raw)
+        lhs.raw._utf8Equals(rhs.raw)
     }
 
     @inlinable

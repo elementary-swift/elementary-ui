@@ -205,8 +205,8 @@ extension _AttributeModifier {
                 for (newKey, newValue) in newStylePairs {
                     dom.setStyleProperty(
                         node,
-                        name: String(decoding: newKey, as: UTF8.self),
-                        value: String(decoding: newValue, as: UTF8.self)
+                        name: String(Substring(newKey)),
+                        value: String(Substring(newValue))
                     )
                 }
                 return
@@ -235,8 +235,8 @@ extension _AttributeModifier {
                     if !oldPair.value.elementsEqual(newPair.value) {
                         dom.setStyleProperty(
                             node,
-                            name: String(decoding: newPair.key, as: UTF8.self),
-                            value: String(decoding: newPair.value, as: UTF8.self)
+                            name: String(Substring(newPair.key)),
+                            value: String(Substring(newPair.value))
                         )
                     }
                 case (.none, .none):

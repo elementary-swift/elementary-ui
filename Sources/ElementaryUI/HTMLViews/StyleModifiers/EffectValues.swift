@@ -321,3 +321,130 @@ extension CSSHeight: CSSPropertyValue {
         value += other.value
     }
 }
+
+struct CSSFilter: CSSPropertyValue {
+    static var styleKey: String = "filter"
+
+    enum AnyFunction {
+        case blur(Blur)
+        case saturation(Saturation)
+        case brightness(Brightness)
+    }
+
+    var value: [AnyFunction]
+
+    static var none: CSSFilter {
+        CSSFilter()
+    }
+
+    private init() {
+        self.value = []
+    }
+
+    init(_ value: AnyFunction) {
+        self.value = [value]
+    }
+
+    var cssString: String {
+        guard !value.isEmpty else { return "none" }
+        return value.map { $0.cssString }.joined(separator: " ")
+    }
+
+    mutating func combineWith(_ other: consuming CSSFilter) {
+        value.append(contentsOf: other.value)
+    }
+}
+
+extension CSSFilter.AnyFunction {
+    var cssString: String {
+        switch self {
+        case .blur(let blur):
+            "blur(\(blur.radius)px)"
+        case .saturation(let saturation):
+            "saturate(\(saturation.amount))"
+        case .brightness(let brightness):
+            "brightness(\(brightness.amount))"
+        }
+    }
+}
+
+extension CSSFilter {
+    struct Blur: CSSAnimatable {
+        var radius: Double
+
+        init(radius: Double) {
+            self.radius = max(0, radius)
+        }
+
+        var isIdentity: Bool {
+            radius == 0
+        }
+
+        var cssValue: CSSFilter {
+            guard !isIdentity else { return .none }
+            return CSSFilter(.blur(self))
+        }
+
+        init(_animatableVector animatableVector: AnimatableVector) {
+            self.radius = Double(_animatableVector: animatableVector)
+        }
+
+        var animatableVector: AnimatableVector {
+            radius.animatableVector
+        }
+    }
+}
+
+extension CSSFilter {
+    struct Saturation: CSSAnimatable {
+        var amount: Double
+
+        init(amount: Double) {
+            self.amount = max(0, amount)
+        }
+
+        var isIdentity: Bool {
+            amount == 1
+        }
+
+        var cssValue: CSSFilter {
+            guard !isIdentity else { return .none }
+            return CSSFilter(.saturation(self))
+        }
+
+        init(_animatableVector animatableVector: AnimatableVector) {
+            self.amount = Double(_animatableVector: animatableVector)
+        }
+
+        var animatableVector: AnimatableVector {
+            amount.animatableVector
+        }
+    }
+}
+
+extension CSSFilter {
+    struct Brightness: CSSAnimatable {
+        var amount: Double
+
+        init(amount: Double) {
+            self.amount = max(0, amount)
+        }
+
+        var isIdentity: Bool {
+            amount == 1
+        }
+
+        var cssValue: CSSFilter {
+            guard !isIdentity else { return .none }
+            return CSSFilter(.brightness(self))
+        }
+
+        init(_animatableVector animatableVector: AnimatableVector) {
+            self.amount = Double(_animatableVector: animatableVector)
+        }
+
+        var animatableVector: AnimatableVector {
+            amount.animatableVector
+        }
+    }
+}
