@@ -77,7 +77,7 @@ public struct Binding<V> {
                 accessor.value = newValue
             case let .getSet(_, set):
                 #if hasFeature(Embedded) && compiler(<6.3)
-                // FIXME: embedded - create issue and check with main
+                // NOTE: 6.2 embedded hack for type inclusion
                 if __omg_this_was_annoying_I_am_false {
                     _ = AnyValueBox.init(newValue)
                 }

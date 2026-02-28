@@ -1,9 +1,7 @@
 import JavaScriptKit
 
-// NOTE: all of this is because
-// a) Tasks are not yet supported for embedded wasm (so we can't use `.task` with an async sequence)
-// b) Combine obvsiously won't fly
-// ideally, once tasks work in embedded wasm, we can replace this with an AsyncSequence
+// NOTE: all of this is because tasks were not a thing in embedded until recently
+// revisit in 6.3
 
 public protocol EventSource<Event> {
     associatedtype Event

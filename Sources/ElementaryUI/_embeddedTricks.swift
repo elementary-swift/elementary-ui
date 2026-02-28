@@ -1,11 +1,9 @@
-// FIXME: embedded - create issue and check with main
-// we need to force addition of types that are present in unused enum cases -> otherwise it crashes the compiler (6.2 at least)
+// NOTE: In 6.2 we need to force addition of types that are present in unused enum cases -> otherwise it crashes the compiler (6.2 at least)
 #if hasFeature(Embedded) && compiler(<6.3)
 internal var __omg_this_was_annoying_I_am_false: Bool = false
 #endif
 
-// FIXME: embedded - remove once https://github.com/swiftlang/swift/issues/83460 lands
-// also, implementation is AI slop, I would not trust it with anything
+// NOTE: remove once on 6.3
 #if hasFeature(Embedded) && compiler(<6.3)
 @_silgen_name("swift_float32ToString")
 @_noAllocation

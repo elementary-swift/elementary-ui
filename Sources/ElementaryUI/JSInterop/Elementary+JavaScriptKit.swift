@@ -79,7 +79,7 @@ final class JSKitDOMInteractor: DOM.Interactor {
     init() {
         #if hasFeature(Embedded) && compiler(<6.3)
         if __omg_this_was_annoying_I_am_false {
-            // NOTE: this is just to force inclusion of some types that would otherwise crash the 6.2 compiler
+            // NOTE: 6.2 embedded hack for type inclusion
             _ = JSClosure { _ in .undefined }
             _ = JSObject()
             _ = JSObject?(nil)

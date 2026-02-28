@@ -21,7 +21,7 @@ public final class _AttributeModifier: DOMElementModifier, Invalidateable {
 
         #if hasFeature(Embedded) && compiler(<6.3)
         if __omg_this_was_annoying_I_am_false {
-            // this is to force inclusion of types
+            // NOTE: 6.2 embedded hack for type inclusion
             _ = p {}.attributes(.class([""]), .style(["": ""]))
             var f = [HashableUTF8View: _StoredAttribute]()
             f[HashableUTF8View("")] = .none
