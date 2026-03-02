@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772057132308,
+  "lastUpdate": 1772437356710,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -610,6 +610,85 @@ window.BENCHMARK_DATA = {
           {
             "name": "09_clear1k_x8",
             "value": 112.04,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.03,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.56,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 3.09,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9bcdd322049e9ab7ebf9753887d4a796e39b390d",
+          "message": "[Swift 6.3] Embedded build without manual type inclusion hacks (#68)\n\n* try without manual type inclusion hacks\n\n* build examples with snapshots\n\n* latest main\n\n* Update ci-embedded.yaml\n\n* Update ci-embedded.yaml\n\n* Update ci-embedded.yaml\n\n* cleaned up comments a bit",
+          "timestamp": "2026-03-02T08:38:35+01:00",
+          "tree_id": "3101cc99aa59ab9a7107a0fd165a5ca9233c687d",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/9bcdd322049e9ab7ebf9753887d4a796e39b390d"
+        },
+        "date": 1772437356414,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 250.61,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 430.33,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 251.65,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 29.33,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 69.16,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 50.31,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 268.02,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 130.32,
             "unit": "ms"
           },
           {
