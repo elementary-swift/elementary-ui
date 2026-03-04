@@ -21,15 +21,14 @@ export interface JSPerformance {
     now(): number;
 }
 export interface JSNode {
-    textContent: string | null;
+    textContent: string;
 }
 export interface JSElement {
     setAttribute(name: string, value: string): void;
     removeAttribute(name: string): void;
     appendChild(child: JSNode): void;
     removeChild(child: JSNode): void;
-    insertBefore(newChild: JSNode, refChild: JSNode | null): void;
-    replaceChildren(children: JSNode[]): void;
+    insertBefore(newChild: JSNode, refChild: JSNode): void;
     getBoundingClientRect(): JSDOMRect;
     addEventListener(type: string, listener: any): void;
     removeEventListener(type: string, listener: any): void;
@@ -37,7 +36,6 @@ export interface JSElement {
     blur(): void;
     animate(keyframes: any, options: any): JSAnimation;
     readonly style: JSCSSStyleDeclaration;
-    textContent: string | null;
     readonly offsetParent: JSElement;
 }
 export interface JSCSSStyleDeclaration {
@@ -58,7 +56,7 @@ export interface JSAnimation {
     cancel(): void;
     readonly effect: JSAnimationEffect;
     currentTime: number;
-    onfinish: any | null;
+    onfinish: any;
 }
 export interface JSAnimationEffect {
     setKeyframes(keyframes: any): void;
@@ -90,7 +88,7 @@ export interface JSMouseEvent {
     readonly shiftKey: boolean;
 }
 export interface JSInputEvent {
-    readonly data: string | null;
+    readonly data: string;
     readonly target: any;
 }
 export type Exports = {

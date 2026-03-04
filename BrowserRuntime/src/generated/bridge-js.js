@@ -263,53 +263,58 @@ export async function createInstantiator(options, swift) {
                     return 0
                 }
             }
-            BrowserInterop["bjs_JSDocument_createElement"] = function bjs_JSDocument_createElement(self, tagName) {
+            BrowserInterop["bjs_JSDocument_createElement"] = function bjs_JSDocument_createElement(self, tagNameBytes, tagNameCount) {
                 try {
-                    const tagNameObject = swift.memory.getObject(tagName);
-                    swift.memory.release(tagName);
-                    let ret = swift.memory.getObject(self).createElement(tagNameObject);
+                    const bytesView = new Uint8Array(memory.buffer, tagNameBytes, tagNameCount);
+                    const bytesToDecode = (typeof SharedArrayBuffer !== "undefined" && bytesView.buffer instanceof SharedArrayBuffer) ? bytesView.slice() : bytesView;
+                    const string = textDecoder.decode(bytesToDecode);
+                    let ret = swift.memory.getObject(self).createElement(string);
                     return swift.memory.retain(ret);
                 } catch (error) {
                     setException(error);
                     return 0
                 }
             }
-            BrowserInterop["bjs_JSDocument_createTextNode"] = function bjs_JSDocument_createTextNode(self, text) {
+            BrowserInterop["bjs_JSDocument_createTextNode"] = function bjs_JSDocument_createTextNode(self, textBytes, textCount) {
                 try {
-                    const textObject = swift.memory.getObject(text);
-                    swift.memory.release(text);
-                    let ret = swift.memory.getObject(self).createTextNode(textObject);
+                    const bytesView = new Uint8Array(memory.buffer, textBytes, textCount);
+                    const bytesToDecode = (typeof SharedArrayBuffer !== "undefined" && bytesView.buffer instanceof SharedArrayBuffer) ? bytesView.slice() : bytesView;
+                    const string = textDecoder.decode(bytesToDecode);
+                    let ret = swift.memory.getObject(self).createTextNode(string);
                     return swift.memory.retain(ret);
                 } catch (error) {
                     setException(error);
                     return 0
                 }
             }
-            BrowserInterop["bjs_JSDocument_querySelector"] = function bjs_JSDocument_querySelector(self, selector) {
+            BrowserInterop["bjs_JSDocument_querySelector"] = function bjs_JSDocument_querySelector(self, selectorBytes, selectorCount) {
                 try {
-                    const selectorObject = swift.memory.getObject(selector);
-                    swift.memory.release(selector);
-                    let ret = swift.memory.getObject(self).querySelector(selectorObject);
+                    const bytesView = new Uint8Array(memory.buffer, selectorBytes, selectorCount);
+                    const bytesToDecode = (typeof SharedArrayBuffer !== "undefined" && bytesView.buffer instanceof SharedArrayBuffer) ? bytesView.slice() : bytesView;
+                    const string = textDecoder.decode(bytesToDecode);
+                    let ret = swift.memory.getObject(self).querySelector(string);
                     return swift.memory.retain(ret);
                 } catch (error) {
                     setException(error);
                     return 0
                 }
             }
-            BrowserInterop["bjs_JSDocument_addEventListener"] = function bjs_JSDocument_addEventListener(self, type, listener) {
+            BrowserInterop["bjs_JSDocument_addEventListener"] = function bjs_JSDocument_addEventListener(self, typeBytes, typeCount, listener) {
                 try {
-                    const typeObject = swift.memory.getObject(type);
-                    swift.memory.release(type);
-                    swift.memory.getObject(self).addEventListener(typeObject, swift.memory.getObject(listener));
+                    const bytesView = new Uint8Array(memory.buffer, typeBytes, typeCount);
+                    const bytesToDecode = (typeof SharedArrayBuffer !== "undefined" && bytesView.buffer instanceof SharedArrayBuffer) ? bytesView.slice() : bytesView;
+                    const string = textDecoder.decode(bytesToDecode);
+                    swift.memory.getObject(self).addEventListener(string, swift.memory.getObject(listener));
                 } catch (error) {
                     setException(error);
                 }
             }
-            BrowserInterop["bjs_JSDocument_removeEventListener"] = function bjs_JSDocument_removeEventListener(self, type, listener) {
+            BrowserInterop["bjs_JSDocument_removeEventListener"] = function bjs_JSDocument_removeEventListener(self, typeBytes, typeCount, listener) {
                 try {
-                    const typeObject = swift.memory.getObject(type);
-                    swift.memory.release(type);
-                    swift.memory.getObject(self).removeEventListener(typeObject, swift.memory.getObject(listener));
+                    const bytesView = new Uint8Array(memory.buffer, typeBytes, typeCount);
+                    const bytesToDecode = (typeof SharedArrayBuffer !== "undefined" && bytesView.buffer instanceof SharedArrayBuffer) ? bytesView.slice() : bytesView;
+                    const string = textDecoder.decode(bytesToDecode);
+                    swift.memory.getObject(self).removeEventListener(string, swift.memory.getObject(listener));
                 } catch (error) {
                     setException(error);
                 }
@@ -350,26 +355,12 @@ export async function createInstantiator(options, swift) {
                     return 0
                 }
             }
-            BrowserInterop["bjs_JSNode_textContent_get"] = function bjs_JSNode_textContent_get(self) {
+            BrowserInterop["bjs_JSNode_textContent_set"] = function bjs_JSNode_textContent_set(self, newValueBytes, newValueCount) {
                 try {
-                    let ret = swift.memory.getObject(self).textContent;
-                    const isSome = ret != null;
-                    tmpRetString = isSome ? ret : null;
-                } catch (error) {
-                    setException(error);
-                }
-            }
-            BrowserInterop["bjs_JSNode_textContent_set"] = function bjs_JSNode_textContent_set(self, newValueIsSome, newValueObjectId) {
-                try {
-                    let optResult;
-                    if (newValueIsSome) {
-                        const newValueObjectIdObject = swift.memory.getObject(newValueObjectId);
-                        swift.memory.release(newValueObjectId);
-                        optResult = newValueObjectIdObject;
-                    } else {
-                        optResult = null;
-                    }
-                    swift.memory.getObject(self).textContent = optResult;
+                    const bytesView = new Uint8Array(memory.buffer, newValueBytes, newValueCount);
+                    const bytesToDecode = (typeof SharedArrayBuffer !== "undefined" && bytesView.buffer instanceof SharedArrayBuffer) ? bytesView.slice() : bytesView;
+                    const string = textDecoder.decode(bytesToDecode);
+                    swift.memory.getObject(self).textContent = string;
                 } catch (error) {
                     setException(error);
                 }
@@ -383,15 +374,6 @@ export async function createInstantiator(options, swift) {
                     return 0
                 }
             }
-            BrowserInterop["bjs_JSElement_textContent_get"] = function bjs_JSElement_textContent_get(self) {
-                try {
-                    let ret = swift.memory.getObject(self).textContent;
-                    const isSome = ret != null;
-                    tmpRetString = isSome ? ret : null;
-                } catch (error) {
-                    setException(error);
-                }
-            }
             BrowserInterop["bjs_JSElement_offsetParent_get"] = function bjs_JSElement_offsetParent_get(self) {
                 try {
                     let ret = swift.memory.getObject(self).offsetParent;
@@ -401,37 +383,25 @@ export async function createInstantiator(options, swift) {
                     return 0
                 }
             }
-            BrowserInterop["bjs_JSElement_textContent_set"] = function bjs_JSElement_textContent_set(self, newValueIsSome, newValueObjectId) {
+            BrowserInterop["bjs_JSElement_setAttribute"] = function bjs_JSElement_setAttribute(self, nameBytes, nameCount, valueBytes, valueCount) {
                 try {
-                    let optResult;
-                    if (newValueIsSome) {
-                        const newValueObjectIdObject = swift.memory.getObject(newValueObjectId);
-                        swift.memory.release(newValueObjectId);
-                        optResult = newValueObjectIdObject;
-                    } else {
-                        optResult = null;
-                    }
-                    swift.memory.getObject(self).textContent = optResult;
+                    const bytesView = new Uint8Array(memory.buffer, nameBytes, nameCount);
+                    const bytesToDecode = (typeof SharedArrayBuffer !== "undefined" && bytesView.buffer instanceof SharedArrayBuffer) ? bytesView.slice() : bytesView;
+                    const string = textDecoder.decode(bytesToDecode);
+                    const bytesView1 = new Uint8Array(memory.buffer, valueBytes, valueCount);
+                    const bytesToDecode1 = (typeof SharedArrayBuffer !== "undefined" && bytesView1.buffer instanceof SharedArrayBuffer) ? bytesView1.slice() : bytesView1;
+                    const string1 = textDecoder.decode(bytesToDecode1);
+                    swift.memory.getObject(self).setAttribute(string, string1);
                 } catch (error) {
                     setException(error);
                 }
             }
-            BrowserInterop["bjs_JSElement_setAttribute"] = function bjs_JSElement_setAttribute(self, name, value) {
+            BrowserInterop["bjs_JSElement_removeAttribute"] = function bjs_JSElement_removeAttribute(self, nameBytes, nameCount) {
                 try {
-                    const nameObject = swift.memory.getObject(name);
-                    swift.memory.release(name);
-                    const valueObject = swift.memory.getObject(value);
-                    swift.memory.release(value);
-                    swift.memory.getObject(self).setAttribute(nameObject, valueObject);
-                } catch (error) {
-                    setException(error);
-                }
-            }
-            BrowserInterop["bjs_JSElement_removeAttribute"] = function bjs_JSElement_removeAttribute(self, name) {
-                try {
-                    const nameObject = swift.memory.getObject(name);
-                    swift.memory.release(name);
-                    swift.memory.getObject(self).removeAttribute(nameObject);
+                    const bytesView = new Uint8Array(memory.buffer, nameBytes, nameCount);
+                    const bytesToDecode = (typeof SharedArrayBuffer !== "undefined" && bytesView.buffer instanceof SharedArrayBuffer) ? bytesView.slice() : bytesView;
+                    const string = textDecoder.decode(bytesToDecode);
+                    swift.memory.getObject(self).removeAttribute(string);
                 } catch (error) {
                     setException(error);
                 }
@@ -450,25 +420,9 @@ export async function createInstantiator(options, swift) {
                     setException(error);
                 }
             }
-            BrowserInterop["bjs_JSElement_insertBefore"] = function bjs_JSElement_insertBefore(self, newChild, refChildIsSome, refChildObjectId) {
+            BrowserInterop["bjs_JSElement_insertBefore"] = function bjs_JSElement_insertBefore(self, newChild, refChild) {
                 try {
-                    swift.memory.getObject(self).insertBefore(swift.memory.getObject(newChild), refChildIsSome ? swift.memory.getObject(refChildObjectId) : null);
-                } catch (error) {
-                    setException(error);
-                }
-            }
-            BrowserInterop["bjs_JSElement_replaceChildren"] = function bjs_JSElement_replaceChildren(self) {
-                try {
-                    const arrayLen = i32Stack.pop();
-                    const arrayResult = [];
-                    for (let i = 0; i < arrayLen; i++) {
-                        const objId = i32Stack.pop();
-                        const obj = swift.memory.getObject(objId);
-                        swift.memory.release(objId);
-                        arrayResult.push(obj);
-                    }
-                    arrayResult.reverse();
-                    swift.memory.getObject(self).replaceChildren(arrayResult);
+                    swift.memory.getObject(self).insertBefore(swift.memory.getObject(newChild), swift.memory.getObject(refChild));
                 } catch (error) {
                     setException(error);
                 }
@@ -482,20 +436,22 @@ export async function createInstantiator(options, swift) {
                     return 0
                 }
             }
-            BrowserInterop["bjs_JSElement_addEventListener"] = function bjs_JSElement_addEventListener(self, type, listener) {
+            BrowserInterop["bjs_JSElement_addEventListener"] = function bjs_JSElement_addEventListener(self, typeBytes, typeCount, listener) {
                 try {
-                    const typeObject = swift.memory.getObject(type);
-                    swift.memory.release(type);
-                    swift.memory.getObject(self).addEventListener(typeObject, swift.memory.getObject(listener));
+                    const bytesView = new Uint8Array(memory.buffer, typeBytes, typeCount);
+                    const bytesToDecode = (typeof SharedArrayBuffer !== "undefined" && bytesView.buffer instanceof SharedArrayBuffer) ? bytesView.slice() : bytesView;
+                    const string = textDecoder.decode(bytesToDecode);
+                    swift.memory.getObject(self).addEventListener(string, swift.memory.getObject(listener));
                 } catch (error) {
                     setException(error);
                 }
             }
-            BrowserInterop["bjs_JSElement_removeEventListener"] = function bjs_JSElement_removeEventListener(self, type, listener) {
+            BrowserInterop["bjs_JSElement_removeEventListener"] = function bjs_JSElement_removeEventListener(self, typeBytes, typeCount, listener) {
                 try {
-                    const typeObject = swift.memory.getObject(type);
-                    swift.memory.release(type);
-                    swift.memory.getObject(self).removeEventListener(typeObject, swift.memory.getObject(listener));
+                    const bytesView = new Uint8Array(memory.buffer, typeBytes, typeCount);
+                    const bytesToDecode = (typeof SharedArrayBuffer !== "undefined" && bytesView.buffer instanceof SharedArrayBuffer) ? bytesView.slice() : bytesView;
+                    const string = textDecoder.decode(bytesToDecode);
+                    swift.memory.getObject(self).removeEventListener(string, swift.memory.getObject(listener));
                 } catch (error) {
                     setException(error);
                 }
@@ -523,33 +479,37 @@ export async function createInstantiator(options, swift) {
                     return 0
                 }
             }
-            BrowserInterop["bjs_JSCSSStyleDeclaration_getPropertyValue"] = function bjs_JSCSSStyleDeclaration_getPropertyValue(self, name) {
+            BrowserInterop["bjs_JSCSSStyleDeclaration_getPropertyValue"] = function bjs_JSCSSStyleDeclaration_getPropertyValue(self, nameBytes, nameCount) {
                 try {
-                    const nameObject = swift.memory.getObject(name);
-                    swift.memory.release(name);
-                    let ret = swift.memory.getObject(self).getPropertyValue(nameObject);
+                    const bytesView = new Uint8Array(memory.buffer, nameBytes, nameCount);
+                    const bytesToDecode = (typeof SharedArrayBuffer !== "undefined" && bytesView.buffer instanceof SharedArrayBuffer) ? bytesView.slice() : bytesView;
+                    const string = textDecoder.decode(bytesToDecode);
+                    let ret = swift.memory.getObject(self).getPropertyValue(string);
                     tmpRetBytes = textEncoder.encode(ret);
                     return tmpRetBytes.length;
                 } catch (error) {
                     setException(error);
                 }
             }
-            BrowserInterop["bjs_JSCSSStyleDeclaration_setProperty"] = function bjs_JSCSSStyleDeclaration_setProperty(self, name, value) {
+            BrowserInterop["bjs_JSCSSStyleDeclaration_setProperty"] = function bjs_JSCSSStyleDeclaration_setProperty(self, nameBytes, nameCount, valueBytes, valueCount) {
                 try {
-                    const nameObject = swift.memory.getObject(name);
-                    swift.memory.release(name);
-                    const valueObject = swift.memory.getObject(value);
-                    swift.memory.release(value);
-                    swift.memory.getObject(self).setProperty(nameObject, valueObject);
+                    const bytesView = new Uint8Array(memory.buffer, nameBytes, nameCount);
+                    const bytesToDecode = (typeof SharedArrayBuffer !== "undefined" && bytesView.buffer instanceof SharedArrayBuffer) ? bytesView.slice() : bytesView;
+                    const string = textDecoder.decode(bytesToDecode);
+                    const bytesView1 = new Uint8Array(memory.buffer, valueBytes, valueCount);
+                    const bytesToDecode1 = (typeof SharedArrayBuffer !== "undefined" && bytesView1.buffer instanceof SharedArrayBuffer) ? bytesView1.slice() : bytesView1;
+                    const string1 = textDecoder.decode(bytesToDecode1);
+                    swift.memory.getObject(self).setProperty(string, string1);
                 } catch (error) {
                     setException(error);
                 }
             }
-            BrowserInterop["bjs_JSCSSStyleDeclaration_removeProperty"] = function bjs_JSCSSStyleDeclaration_removeProperty(self, name) {
+            BrowserInterop["bjs_JSCSSStyleDeclaration_removeProperty"] = function bjs_JSCSSStyleDeclaration_removeProperty(self, nameBytes, nameCount) {
                 try {
-                    const nameObject = swift.memory.getObject(name);
-                    swift.memory.release(name);
-                    swift.memory.getObject(self).removeProperty(nameObject);
+                    const bytesView = new Uint8Array(memory.buffer, nameBytes, nameCount);
+                    const bytesToDecode = (typeof SharedArrayBuffer !== "undefined" && bytesView.buffer instanceof SharedArrayBuffer) ? bytesView.slice() : bytesView;
+                    const string = textDecoder.decode(bytesToDecode);
+                    swift.memory.getObject(self).removeProperty(string);
                 } catch (error) {
                     setException(error);
                 }
@@ -606,9 +566,9 @@ export async function createInstantiator(options, swift) {
                     setException(error);
                 }
             }
-            BrowserInterop["bjs_JSAnimation_onfinish_set"] = function bjs_JSAnimation_onfinish_set(self, newValueIsSome, newValueObjectId) {
+            BrowserInterop["bjs_JSAnimation_onfinish_set"] = function bjs_JSAnimation_onfinish_set(self, newValue) {
                 try {
-                    swift.memory.getObject(self).onfinish = newValueIsSome ? swift.memory.getObject(newValueObjectId) : null;
+                    swift.memory.getObject(self).onfinish = swift.memory.getObject(newValue);
                 } catch (error) {
                     setException(error);
                 }
@@ -829,8 +789,8 @@ export async function createInstantiator(options, swift) {
             BrowserInterop["bjs_JSInputEvent_data_get"] = function bjs_JSInputEvent_data_get(self) {
                 try {
                     let ret = swift.memory.getObject(self).data;
-                    const isSome = ret != null;
-                    tmpRetString = isSome ? ret : null;
+                    tmpRetBytes = textEncoder.encode(ret);
+                    return tmpRetBytes.length;
                 } catch (error) {
                     setException(error);
                 }

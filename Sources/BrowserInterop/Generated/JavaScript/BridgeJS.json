@@ -210,19 +210,7 @@
           },
           {
             "getters" : [
-              {
-                "name" : "textContent",
-                "type" : {
-                  "nullable" : {
-                    "_0" : {
-                      "string" : {
 
-                      }
-                    },
-                    "_1" : "null"
-                  }
-                }
-              }
             ],
             "jsName" : "Node",
             "methods" : [
@@ -234,13 +222,8 @@
                 "functionName" : "textContent_set",
                 "name" : "textContent",
                 "type" : {
-                  "nullable" : {
-                    "_0" : {
-                      "string" : {
+                  "string" : {
 
-                      }
-                    },
-                    "_1" : "null"
                   }
                 }
               }
@@ -256,19 +239,6 @@
                 "type" : {
                   "jsObject" : {
                     "_0" : "JSCSSStyleDeclaration"
-                  }
-                }
-              },
-              {
-                "name" : "textContent",
-                "type" : {
-                  "nullable" : {
-                    "_0" : {
-                      "string" : {
-
-                      }
-                    },
-                    "_1" : "null"
                   }
                 }
               },
@@ -377,35 +347,8 @@
                   {
                     "name" : "refChild",
                     "type" : {
-                      "nullable" : {
-                        "_0" : {
-                          "jsObject" : {
-                            "_0" : "JSNode"
-                          }
-                        },
-                        "_1" : "null"
-                      }
-                    }
-                  }
-                ],
-                "returnType" : {
-                  "void" : {
-
-                  }
-                }
-              },
-              {
-                "name" : "replaceChildren",
-                "parameters" : [
-                  {
-                    "name" : "children",
-                    "type" : {
-                      "array" : {
-                        "_0" : {
-                          "jsObject" : {
-                            "_0" : "JSNode"
-                          }
-                        }
+                      "jsObject" : {
+                        "_0" : "JSNode"
                       }
                     }
                   }
@@ -530,20 +473,7 @@
             ],
             "name" : "JSElement",
             "setters" : [
-              {
-                "functionName" : "textContent_set",
-                "name" : "textContent",
-                "type" : {
-                  "nullable" : {
-                    "_0" : {
-                      "string" : {
 
-                      }
-                    },
-                    "_1" : "null"
-                  }
-                }
-              }
             ],
             "staticMethods" : [
 
@@ -746,13 +676,8 @@
                 "functionName" : "onfinish_set",
                 "name" : "onfinish",
                 "type" : {
-                  "nullable" : {
-                    "_0" : {
-                      "jsObject" : {
+                  "jsObject" : {
 
-                      }
-                    },
-                    "_1" : "null"
                   }
                 }
               }
@@ -1021,13 +946,8 @@
               {
                 "name" : "data",
                 "type" : {
-                  "nullable" : {
-                    "_0" : {
-                      "string" : {
+                  "string" : {
 
-                      }
-                    },
-                    "_1" : "null"
                   }
                 }
               },
