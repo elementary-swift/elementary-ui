@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772520323988,
+  "lastUpdate": 1772606530555,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -1025,6 +1025,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 164.82,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "9bcdd322049e9ab7ebf9753887d4a796e39b390d",
+          "message": "[Swift 6.3] Embedded build without manual type inclusion hacks (#68)\n\n* try without manual type inclusion hacks\n\n* build examples with snapshots\n\n* latest main\n\n* Update ci-embedded.yaml\n\n* Update ci-embedded.yaml\n\n* Update ci-embedded.yaml\n\n* cleaned up comments a bit",
+          "timestamp": "2026-03-02T07:38:35Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/9bcdd322049e9ab7ebf9753887d4a796e39b390d"
+        },
+        "date": 1772606529640,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 164.28,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 135.95,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 120.32,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 164.81,
             "unit": "kB"
           }
         ]
