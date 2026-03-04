@@ -1,4 +1,4 @@
-import JavaScriptKit
+@_spi(BridgeJS) import JavaScriptKit
 
 @JSClass(jsName: "Event")
 public struct JSEvent {
@@ -33,6 +33,9 @@ public struct JSMouseEvent {
 
 @JSClass(jsName: "InputEvent")
 public struct JSInputEvent {
-    @JSGetter public var data: String?
+    //FIXME: EMBEDDED - String? is not supported with BridgeJS
+    // https://github.com/swiftwasm/JavaScriptKit/issues/689
+    //@JSGetter public var data: String?
+    @JSGetter public var data: String
     @JSGetter public var target: JSObject
 }

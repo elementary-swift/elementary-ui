@@ -24,21 +24,18 @@ public struct JSPerformance {
 
 @JSClass(jsName: "Node")
 public struct JSNode {
-    @JSGetter public var textContent: String?
-    @JSSetter public func setTextContent(_ value: String?) throws(JSException)
+    @JSSetter public func setTextContent(_ value: String) throws(JSException)
 }
 
 @JSClass(jsName: "Element")
 public struct JSElement {
     @JSGetter public var style: JSCSSStyleDeclaration
-    @JSGetter public var textContent: String?
-    @JSSetter public func setTextContent(_ value: String?) throws(JSException)
     @JSGetter public var offsetParent: JSElement
     @JSFunction public func setAttribute(_ name: String, _ value: String) throws(JSException)
     @JSFunction public func removeAttribute(_ name: String) throws(JSException)
     @JSFunction public func appendChild(_ child: JSNode) throws(JSException)
     @JSFunction public func removeChild(_ child: JSNode) throws(JSException)
-    @JSFunction public func insertBefore(_ newChild: JSNode, _ refChild: JSNode?) throws(JSException)
+    @JSFunction public func insertBefore(_ newChild: JSNode, _ refChild: JSNode) throws(JSException)
     //@JSFunction public func replaceChildren(_ children: JSNode) throws(JSException)
     @JSFunction public func getBoundingClientRect() throws(JSException) -> JSDOMRect
     @JSFunction public func addEventListener(_ type: String, _ listener: JSObject) throws(JSException)
@@ -71,7 +68,7 @@ public struct JSAnimation {
     @JSFunction public func pause() throws(JSException)
     @JSFunction public func play() throws(JSException)
     @JSFunction public func cancel() throws(JSException)
-    @JSSetter public func setOnfinish(_ callback: JSObject?) throws(JSException)
+    @JSSetter public func setOnfinish(_ callback: JSObject) throws(JSException)
 }
 
 @JSClass(jsName: "AnimationEffect")

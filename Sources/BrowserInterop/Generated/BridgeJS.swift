@@ -8,39 +8,27 @@
 @_spi(BridgeJS) import JavaScriptKit
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "invoke_js_callback_BrowserInterop_14BrowserInteropSd_y")
-private func invoke_js_callback_BrowserInterop_14BrowserInteropSd_y_extern(_ callback: Int32, _ param0: Float64)
+@_extern(wasm, module: "bjs", name: "invoke_js_callback_BrowserInterop_14BrowserInteropSd_y")
+fileprivate func invoke_js_callback_BrowserInterop_14BrowserInteropSd_y_extern(_ callback: Int32, _ param0: Float64) -> Void
 #else
-private func invoke_js_callback_BrowserInterop_14BrowserInteropSd_y_extern(_ callback: Int32, _ param0: Float64) {
+fileprivate func invoke_js_callback_BrowserInterop_14BrowserInteropSd_y_extern(_ callback: Int32, _ param0: Float64) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func invoke_js_callback_BrowserInterop_14BrowserInteropSd_y(_ callback: Int32, _ param0: Float64) {
-    invoke_js_callback_BrowserInterop_14BrowserInteropSd_y_extern(callback, param0)
+@inline(never) fileprivate func invoke_js_callback_BrowserInterop_14BrowserInteropSd_y(_ callback: Int32, _ param0: Float64) -> Void {
+    return invoke_js_callback_BrowserInterop_14BrowserInteropSd_y_extern(callback, param0)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "make_swift_closure_BrowserInterop_14BrowserInteropSd_y")
-private func make_swift_closure_BrowserInterop_14BrowserInteropSd_y_extern(
-    _ boxPtr: UnsafeMutableRawPointer,
-    _ file: UnsafePointer<UInt8>,
-    _ line: UInt32
-) -> Int32
+@_extern(wasm, module: "bjs", name: "make_swift_closure_BrowserInterop_14BrowserInteropSd_y")
+fileprivate func make_swift_closure_BrowserInterop_14BrowserInteropSd_y_extern(_ boxPtr: UnsafeMutableRawPointer, _ file: UnsafePointer<UInt8>, _ line: UInt32) -> Int32
 #else
-private func make_swift_closure_BrowserInterop_14BrowserInteropSd_y_extern(
-    _ boxPtr: UnsafeMutableRawPointer,
-    _ file: UnsafePointer<UInt8>,
-    _ line: UInt32
-) -> Int32 {
+fileprivate func make_swift_closure_BrowserInterop_14BrowserInteropSd_y_extern(_ boxPtr: UnsafeMutableRawPointer, _ file: UnsafePointer<UInt8>, _ line: UInt32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func make_swift_closure_BrowserInterop_14BrowserInteropSd_y(
-    _ boxPtr: UnsafeMutableRawPointer,
-    _ file: UnsafePointer<UInt8>,
-    _ line: UInt32
-) -> Int32 {
-    make_swift_closure_BrowserInterop_14BrowserInteropSd_y_extern(boxPtr, file, line)
+@inline(never) fileprivate func make_swift_closure_BrowserInterop_14BrowserInteropSd_y(_ boxPtr: UnsafeMutableRawPointer, _ file: UnsafePointer<UInt8>, _ line: UInt32) -> Int32 {
+    return make_swift_closure_BrowserInterop_14BrowserInteropSd_y_extern(boxPtr, file, line)
 }
 
 private enum _BJS_Closure_14BrowserInteropSd_y {
@@ -71,7 +59,7 @@ extension JSTypedClosure where Signature == (Double) -> Void {
 
 @_expose(wasm, "invoke_swift_closure_BrowserInterop_14BrowserInteropSd_y")
 @_cdecl("invoke_swift_closure_BrowserInterop_14BrowserInteropSd_y")
-public func _invoke_swift_closure_BrowserInterop_14BrowserInteropSd_y(_ boxPtr: UnsafeMutableRawPointer, _ param0: Float64) {
+public func _invoke_swift_closure_BrowserInterop_14BrowserInteropSd_y(_ boxPtr: UnsafeMutableRawPointer, _ param0: Float64) -> Void {
     #if arch(wasm32)
     let closure = Unmanaged<_BridgeJSTypedClosureBox<(Double) -> Void>>.fromOpaque(boxPtr).takeUnretainedValue().closure
     closure(Double.bridgeJSLiftParameter(param0))
@@ -81,39 +69,27 @@ public func _invoke_swift_closure_BrowserInterop_14BrowserInteropSd_y(_ boxPtr: 
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "invoke_js_callback_BrowserInterop_14BrowserInteropy_y")
-private func invoke_js_callback_BrowserInterop_14BrowserInteropy_y_extern(_ callback: Int32)
+@_extern(wasm, module: "bjs", name: "invoke_js_callback_BrowserInterop_14BrowserInteropy_y")
+fileprivate func invoke_js_callback_BrowserInterop_14BrowserInteropy_y_extern(_ callback: Int32) -> Void
 #else
-private func invoke_js_callback_BrowserInterop_14BrowserInteropy_y_extern(_ callback: Int32) {
+fileprivate func invoke_js_callback_BrowserInterop_14BrowserInteropy_y_extern(_ callback: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func invoke_js_callback_BrowserInterop_14BrowserInteropy_y(_ callback: Int32) {
-    invoke_js_callback_BrowserInterop_14BrowserInteropy_y_extern(callback)
+@inline(never) fileprivate func invoke_js_callback_BrowserInterop_14BrowserInteropy_y(_ callback: Int32) -> Void {
+    return invoke_js_callback_BrowserInterop_14BrowserInteropy_y_extern(callback)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "make_swift_closure_BrowserInterop_14BrowserInteropy_y")
-private func make_swift_closure_BrowserInterop_14BrowserInteropy_y_extern(
-    _ boxPtr: UnsafeMutableRawPointer,
-    _ file: UnsafePointer<UInt8>,
-    _ line: UInt32
-) -> Int32
+@_extern(wasm, module: "bjs", name: "make_swift_closure_BrowserInterop_14BrowserInteropy_y")
+fileprivate func make_swift_closure_BrowserInterop_14BrowserInteropy_y_extern(_ boxPtr: UnsafeMutableRawPointer, _ file: UnsafePointer<UInt8>, _ line: UInt32) -> Int32
 #else
-private func make_swift_closure_BrowserInterop_14BrowserInteropy_y_extern(
-    _ boxPtr: UnsafeMutableRawPointer,
-    _ file: UnsafePointer<UInt8>,
-    _ line: UInt32
-) -> Int32 {
+fileprivate func make_swift_closure_BrowserInterop_14BrowserInteropy_y_extern(_ boxPtr: UnsafeMutableRawPointer, _ file: UnsafePointer<UInt8>, _ line: UInt32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func make_swift_closure_BrowserInterop_14BrowserInteropy_y(
-    _ boxPtr: UnsafeMutableRawPointer,
-    _ file: UnsafePointer<UInt8>,
-    _ line: UInt32
-) -> Int32 {
-    make_swift_closure_BrowserInterop_14BrowserInteropy_y_extern(boxPtr, file, line)
+@inline(never) fileprivate func make_swift_closure_BrowserInterop_14BrowserInteropy_y(_ boxPtr: UnsafeMutableRawPointer, _ file: UnsafePointer<UInt8>, _ line: UInt32) -> Int32 {
+    return make_swift_closure_BrowserInterop_14BrowserInteropy_y_extern(boxPtr, file, line)
 }
 
 private enum _BJS_Closure_14BrowserInteropy_y {
@@ -143,7 +119,7 @@ extension JSTypedClosure where Signature == () -> Void {
 
 @_expose(wasm, "invoke_swift_closure_BrowserInterop_14BrowserInteropy_y")
 @_cdecl("invoke_swift_closure_BrowserInterop_14BrowserInteropy_y")
-public func _invoke_swift_closure_BrowserInterop_14BrowserInteropy_y(_ boxPtr: UnsafeMutableRawPointer) {
+public func _invoke_swift_closure_BrowserInterop_14BrowserInteropy_y(_ boxPtr: UnsafeMutableRawPointer) -> Void {
     #if arch(wasm32)
     let closure = Unmanaged<_BridgeJSTypedClosureBox<() -> Void>>.fromOpaque(boxPtr).takeUnretainedValue().closure
     closure()
@@ -153,75 +129,75 @@ public func _invoke_swift_closure_BrowserInterop_14BrowserInteropy_y(_ boxPtr: U
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSDocument_body_get")
-private func bjs_JSDocument_body_get_extern(_ self: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_body_get")
+fileprivate func bjs_JSDocument_body_get_extern(_ self: Int32) -> Int32
 #else
-private func bjs_JSDocument_body_get_extern(_ self: Int32) -> Int32 {
+fileprivate func bjs_JSDocument_body_get_extern(_ self: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSDocument_body_get(_ self: Int32) -> Int32 {
-    bjs_JSDocument_body_get_extern(self)
+@inline(never) fileprivate func bjs_JSDocument_body_get(_ self: Int32) -> Int32 {
+    return bjs_JSDocument_body_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSDocument_createElement")
-private func bjs_JSDocument_createElement_extern(_ self: Int32, _ tagName: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_createElement")
+fileprivate func bjs_JSDocument_createElement_extern(_ self: Int32, _ tagNameBytes: Int32, _ tagNameLength: Int32) -> Int32
 #else
-private func bjs_JSDocument_createElement_extern(_ self: Int32, _ tagName: Int32) -> Int32 {
+fileprivate func bjs_JSDocument_createElement_extern(_ self: Int32, _ tagNameBytes: Int32, _ tagNameLength: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSDocument_createElement(_ self: Int32, _ tagName: Int32) -> Int32 {
-    bjs_JSDocument_createElement_extern(self, tagName)
+@inline(never) fileprivate func bjs_JSDocument_createElement(_ self: Int32, _ tagNameBytes: Int32, _ tagNameLength: Int32) -> Int32 {
+    return bjs_JSDocument_createElement_extern(self, tagNameBytes, tagNameLength)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSDocument_createTextNode")
-private func bjs_JSDocument_createTextNode_extern(_ self: Int32, _ text: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_createTextNode")
+fileprivate func bjs_JSDocument_createTextNode_extern(_ self: Int32, _ textBytes: Int32, _ textLength: Int32) -> Int32
 #else
-private func bjs_JSDocument_createTextNode_extern(_ self: Int32, _ text: Int32) -> Int32 {
+fileprivate func bjs_JSDocument_createTextNode_extern(_ self: Int32, _ textBytes: Int32, _ textLength: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSDocument_createTextNode(_ self: Int32, _ text: Int32) -> Int32 {
-    bjs_JSDocument_createTextNode_extern(self, text)
+@inline(never) fileprivate func bjs_JSDocument_createTextNode(_ self: Int32, _ textBytes: Int32, _ textLength: Int32) -> Int32 {
+    return bjs_JSDocument_createTextNode_extern(self, textBytes, textLength)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSDocument_querySelector")
-private func bjs_JSDocument_querySelector_extern(_ self: Int32, _ selector: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_querySelector")
+fileprivate func bjs_JSDocument_querySelector_extern(_ self: Int32, _ selectorBytes: Int32, _ selectorLength: Int32) -> Int32
 #else
-private func bjs_JSDocument_querySelector_extern(_ self: Int32, _ selector: Int32) -> Int32 {
+fileprivate func bjs_JSDocument_querySelector_extern(_ self: Int32, _ selectorBytes: Int32, _ selectorLength: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSDocument_querySelector(_ self: Int32, _ selector: Int32) -> Int32 {
-    bjs_JSDocument_querySelector_extern(self, selector)
+@inline(never) fileprivate func bjs_JSDocument_querySelector(_ self: Int32, _ selectorBytes: Int32, _ selectorLength: Int32) -> Int32 {
+    return bjs_JSDocument_querySelector_extern(self, selectorBytes, selectorLength)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSDocument_addEventListener")
-private func bjs_JSDocument_addEventListener_extern(_ self: Int32, _ type: Int32, _ listener: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_addEventListener")
+fileprivate func bjs_JSDocument_addEventListener_extern(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void
 #else
-private func bjs_JSDocument_addEventListener_extern(_ self: Int32, _ type: Int32, _ listener: Int32) {
+fileprivate func bjs_JSDocument_addEventListener_extern(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSDocument_addEventListener(_ self: Int32, _ type: Int32, _ listener: Int32) {
-    bjs_JSDocument_addEventListener_extern(self, type, listener)
+@inline(never) fileprivate func bjs_JSDocument_addEventListener(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void {
+    return bjs_JSDocument_addEventListener_extern(self, typeBytes, typeLength, listener)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSDocument_removeEventListener")
-private func bjs_JSDocument_removeEventListener_extern(_ self: Int32, _ type: Int32, _ listener: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_removeEventListener")
+fileprivate func bjs_JSDocument_removeEventListener_extern(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void
 #else
-private func bjs_JSDocument_removeEventListener_extern(_ self: Int32, _ type: Int32, _ listener: Int32) {
+fileprivate func bjs_JSDocument_removeEventListener_extern(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSDocument_removeEventListener(_ self: Int32, _ type: Int32, _ listener: Int32) {
-    bjs_JSDocument_removeEventListener_extern(self, type, listener)
+@inline(never) fileprivate func bjs_JSDocument_removeEventListener(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void {
+    return bjs_JSDocument_removeEventListener_extern(self, typeBytes, typeLength, listener)
 }
 
 func _$JSDocument_body_get(_ self: JSObject) throws(JSException) -> JSElement {
@@ -235,8 +211,9 @@ func _$JSDocument_body_get(_ self: JSObject) throws(JSException) -> JSElement {
 
 func _$JSDocument_createElement(_ self: JSObject, _ tagName: String) throws(JSException) -> JSElement {
     let selfValue = self.bridgeJSLowerParameter()
-    let tagNameValue = tagName.bridgeJSLowerParameter()
-    let ret = bjs_JSDocument_createElement(selfValue, tagNameValue)
+    let ret = _swift_js_with_borrowed_utf8(tagName) { tagNameBytes, tagNameLength in
+        bjs_JSDocument_createElement(selfValue, tagNameBytes, tagNameLength)
+    }
     if let error = _swift_js_take_exception() {
         throw error
     }
@@ -245,8 +222,9 @@ func _$JSDocument_createElement(_ self: JSObject, _ tagName: String) throws(JSEx
 
 func _$JSDocument_createTextNode(_ self: JSObject, _ text: String) throws(JSException) -> JSNode {
     let selfValue = self.bridgeJSLowerParameter()
-    let textValue = text.bridgeJSLowerParameter()
-    let ret = bjs_JSDocument_createTextNode(selfValue, textValue)
+    let ret = _swift_js_with_borrowed_utf8(text) { textBytes, textLength in
+        bjs_JSDocument_createTextNode(selfValue, textBytes, textLength)
+    }
     if let error = _swift_js_take_exception() {
         throw error
     }
@@ -255,68 +233,71 @@ func _$JSDocument_createTextNode(_ self: JSObject, _ text: String) throws(JSExce
 
 func _$JSDocument_querySelector(_ self: JSObject, _ selector: String) throws(JSException) -> JSElement {
     let selfValue = self.bridgeJSLowerParameter()
-    let selectorValue = selector.bridgeJSLowerParameter()
-    let ret = bjs_JSDocument_querySelector(selfValue, selectorValue)
+    let ret = _swift_js_with_borrowed_utf8(selector) { selectorBytes, selectorLength in
+        bjs_JSDocument_querySelector(selfValue, selectorBytes, selectorLength)
+    }
     if let error = _swift_js_take_exception() {
         throw error
     }
     return JSElement.bridgeJSLiftReturn(ret)
 }
 
-func _$JSDocument_addEventListener(_ self: JSObject, _ type: String, _ listener: JSObject) throws(JSException) {
+func _$JSDocument_addEventListener(_ self: JSObject, _ type: String, _ listener: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    let typeValue = type.bridgeJSLowerParameter()
     let listenerValue = listener.bridgeJSLowerParameter()
-    bjs_JSDocument_addEventListener(selfValue, typeValue, listenerValue)
+    _swift_js_with_borrowed_utf8(type) { typeBytes, typeLength in
+        bjs_JSDocument_addEventListener(selfValue, typeBytes, typeLength, listenerValue)
+    }
     if let error = _swift_js_take_exception() {
         throw error
     }
 }
 
-func _$JSDocument_removeEventListener(_ self: JSObject, _ type: String, _ listener: JSObject) throws(JSException) {
+func _$JSDocument_removeEventListener(_ self: JSObject, _ type: String, _ listener: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    let typeValue = type.bridgeJSLowerParameter()
     let listenerValue = listener.bridgeJSLowerParameter()
-    bjs_JSDocument_removeEventListener(selfValue, typeValue, listenerValue)
+    _swift_js_with_borrowed_utf8(type) { typeBytes, typeLength in
+        bjs_JSDocument_removeEventListener(selfValue, typeBytes, typeLength, listenerValue)
+    }
     if let error = _swift_js_take_exception() {
         throw error
     }
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSWindow_scrollX_get")
-private func bjs_JSWindow_scrollX_get_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSWindow_scrollX_get")
+fileprivate func bjs_JSWindow_scrollX_get_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSWindow_scrollX_get_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSWindow_scrollX_get_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSWindow_scrollX_get(_ self: Int32) -> Float64 {
-    bjs_JSWindow_scrollX_get_extern(self)
+@inline(never) fileprivate func bjs_JSWindow_scrollX_get(_ self: Int32) -> Float64 {
+    return bjs_JSWindow_scrollX_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSWindow_scrollY_get")
-private func bjs_JSWindow_scrollY_get_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSWindow_scrollY_get")
+fileprivate func bjs_JSWindow_scrollY_get_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSWindow_scrollY_get_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSWindow_scrollY_get_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSWindow_scrollY_get(_ self: Int32) -> Float64 {
-    bjs_JSWindow_scrollY_get_extern(self)
+@inline(never) fileprivate func bjs_JSWindow_scrollY_get(_ self: Int32) -> Float64 {
+    return bjs_JSWindow_scrollY_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSWindow_getComputedStyle")
-private func bjs_JSWindow_getComputedStyle_extern(_ self: Int32, _ element: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSWindow_getComputedStyle")
+fileprivate func bjs_JSWindow_getComputedStyle_extern(_ self: Int32, _ element: Int32) -> Int32
 #else
-private func bjs_JSWindow_getComputedStyle_extern(_ self: Int32, _ element: Int32) -> Int32 {
+fileprivate func bjs_JSWindow_getComputedStyle_extern(_ self: Int32, _ element: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSWindow_getComputedStyle(_ self: Int32, _ element: Int32) -> Int32 {
-    bjs_JSWindow_getComputedStyle_extern(self, element)
+@inline(never) fileprivate func bjs_JSWindow_getComputedStyle(_ self: Int32, _ element: Int32) -> Int32 {
+    return bjs_JSWindow_getComputedStyle_extern(self, element)
 }
 
 func _$JSWindow_scrollX_get(_ self: JSObject) throws(JSException) -> Double {
@@ -348,15 +329,15 @@ func _$JSWindow_getComputedStyle(_ self: JSObject, _ element: JSElement) throws(
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSPerformance_now")
-private func bjs_JSPerformance_now_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSPerformance_now")
+fileprivate func bjs_JSPerformance_now_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSPerformance_now_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSPerformance_now_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSPerformance_now(_ self: Int32) -> Float64 {
-    bjs_JSPerformance_now_extern(self)
+@inline(never) fileprivate func bjs_JSPerformance_now(_ self: Int32) -> Float64 {
+    return bjs_JSPerformance_now_extern(self)
 }
 
 func _$JSPerformance_now(_ self: JSObject) throws(JSException) -> Double {
@@ -369,237 +350,181 @@ func _$JSPerformance_now(_ self: JSObject) throws(JSException) -> Double {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSNode_textContent_get")
-private func bjs_JSNode_textContent_get_extern(_ self: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSNode_textContent_set")
+fileprivate func bjs_JSNode_textContent_set_extern(_ self: Int32, _ newValueBytes: Int32, _ newValueLength: Int32) -> Void
 #else
-private func bjs_JSNode_textContent_get_extern(_ self: Int32) {
+fileprivate func bjs_JSNode_textContent_set_extern(_ self: Int32, _ newValueBytes: Int32, _ newValueLength: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSNode_textContent_get(_ self: Int32) {
-    bjs_JSNode_textContent_get_extern(self)
+@inline(never) fileprivate func bjs_JSNode_textContent_set(_ self: Int32, _ newValueBytes: Int32, _ newValueLength: Int32) -> Void {
+    return bjs_JSNode_textContent_set_extern(self, newValueBytes, newValueLength)
 }
 
-#if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSNode_textContent_set")
-private func bjs_JSNode_textContent_set_extern(_ self: Int32, _ newValueIsSome: Int32, _ newValueValue: Int32)
-#else
-private func bjs_JSNode_textContent_set_extern(_ self: Int32, _ newValueIsSome: Int32, _ newValueValue: Int32) {
-    fatalError("Only available on WebAssembly")
-}
-#endif
-private func bjs_JSNode_textContent_set(_ self: Int32, _ newValueIsSome: Int32, _ newValueValue: Int32) {
-    bjs_JSNode_textContent_set_extern(self, newValueIsSome, newValueValue)
-}
-
-func _$JSNode_textContent_get(_ self: JSObject) throws(JSException) -> String? {
+func _$JSNode_textContent_set(_ self: JSObject, _ newValue: String) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    bjs_JSNode_textContent_get(selfValue)
-    if let error = _swift_js_take_exception() {
-        throw error
+    _swift_js_with_borrowed_utf8(newValue) { newValueBytes, newValueLength in
+        bjs_JSNode_textContent_set(selfValue, newValueBytes, newValueLength)
     }
-    return Optional<String>.bridgeJSLiftReturnFromSideChannel()
-}
-
-func _$JSNode_textContent_set(_ self: JSObject, _ newValue: String?) throws(JSException) {
-    let selfValue = self.bridgeJSLowerParameter()
-    let (newValueIsSome, newValueValue) = newValue.bridgeJSLowerParameter()
-    bjs_JSNode_textContent_set(selfValue, newValueIsSome, newValueValue)
     if let error = _swift_js_take_exception() {
         throw error
     }
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSElement_style_get")
-private func bjs_JSElement_style_get_extern(_ self: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_style_get")
+fileprivate func bjs_JSElement_style_get_extern(_ self: Int32) -> Int32
 #else
-private func bjs_JSElement_style_get_extern(_ self: Int32) -> Int32 {
+fileprivate func bjs_JSElement_style_get_extern(_ self: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSElement_style_get(_ self: Int32) -> Int32 {
-    bjs_JSElement_style_get_extern(self)
+@inline(never) fileprivate func bjs_JSElement_style_get(_ self: Int32) -> Int32 {
+    return bjs_JSElement_style_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSElement_textContent_get")
-private func bjs_JSElement_textContent_get_extern(_ self: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_offsetParent_get")
+fileprivate func bjs_JSElement_offsetParent_get_extern(_ self: Int32) -> Int32
 #else
-private func bjs_JSElement_textContent_get_extern(_ self: Int32) {
+fileprivate func bjs_JSElement_offsetParent_get_extern(_ self: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSElement_textContent_get(_ self: Int32) {
-    bjs_JSElement_textContent_get_extern(self)
+@inline(never) fileprivate func bjs_JSElement_offsetParent_get(_ self: Int32) -> Int32 {
+    return bjs_JSElement_offsetParent_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSElement_offsetParent_get")
-private func bjs_JSElement_offsetParent_get_extern(_ self: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_setAttribute")
+fileprivate func bjs_JSElement_setAttribute_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32, _ valueBytes: Int32, _ valueLength: Int32) -> Void
 #else
-private func bjs_JSElement_offsetParent_get_extern(_ self: Int32) -> Int32 {
+fileprivate func bjs_JSElement_setAttribute_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32, _ valueBytes: Int32, _ valueLength: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSElement_offsetParent_get(_ self: Int32) -> Int32 {
-    bjs_JSElement_offsetParent_get_extern(self)
+@inline(never) fileprivate func bjs_JSElement_setAttribute(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32, _ valueBytes: Int32, _ valueLength: Int32) -> Void {
+    return bjs_JSElement_setAttribute_extern(self, nameBytes, nameLength, valueBytes, valueLength)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSElement_textContent_set")
-private func bjs_JSElement_textContent_set_extern(_ self: Int32, _ newValueIsSome: Int32, _ newValueValue: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_removeAttribute")
+fileprivate func bjs_JSElement_removeAttribute_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void
 #else
-private func bjs_JSElement_textContent_set_extern(_ self: Int32, _ newValueIsSome: Int32, _ newValueValue: Int32) {
+fileprivate func bjs_JSElement_removeAttribute_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSElement_textContent_set(_ self: Int32, _ newValueIsSome: Int32, _ newValueValue: Int32) {
-    bjs_JSElement_textContent_set_extern(self, newValueIsSome, newValueValue)
+@inline(never) fileprivate func bjs_JSElement_removeAttribute(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void {
+    return bjs_JSElement_removeAttribute_extern(self, nameBytes, nameLength)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSElement_setAttribute")
-private func bjs_JSElement_setAttribute_extern(_ self: Int32, _ name: Int32, _ value: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_appendChild")
+fileprivate func bjs_JSElement_appendChild_extern(_ self: Int32, _ child: Int32) -> Void
 #else
-private func bjs_JSElement_setAttribute_extern(_ self: Int32, _ name: Int32, _ value: Int32) {
+fileprivate func bjs_JSElement_appendChild_extern(_ self: Int32, _ child: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSElement_setAttribute(_ self: Int32, _ name: Int32, _ value: Int32) {
-    bjs_JSElement_setAttribute_extern(self, name, value)
+@inline(never) fileprivate func bjs_JSElement_appendChild(_ self: Int32, _ child: Int32) -> Void {
+    return bjs_JSElement_appendChild_extern(self, child)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSElement_removeAttribute")
-private func bjs_JSElement_removeAttribute_extern(_ self: Int32, _ name: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_removeChild")
+fileprivate func bjs_JSElement_removeChild_extern(_ self: Int32, _ child: Int32) -> Void
 #else
-private func bjs_JSElement_removeAttribute_extern(_ self: Int32, _ name: Int32) {
+fileprivate func bjs_JSElement_removeChild_extern(_ self: Int32, _ child: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSElement_removeAttribute(_ self: Int32, _ name: Int32) {
-    bjs_JSElement_removeAttribute_extern(self, name)
+@inline(never) fileprivate func bjs_JSElement_removeChild(_ self: Int32, _ child: Int32) -> Void {
+    return bjs_JSElement_removeChild_extern(self, child)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSElement_appendChild")
-private func bjs_JSElement_appendChild_extern(_ self: Int32, _ child: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_insertBefore")
+fileprivate func bjs_JSElement_insertBefore_extern(_ self: Int32, _ newChild: Int32, _ refChild: Int32) -> Void
 #else
-private func bjs_JSElement_appendChild_extern(_ self: Int32, _ child: Int32) {
+fileprivate func bjs_JSElement_insertBefore_extern(_ self: Int32, _ newChild: Int32, _ refChild: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSElement_appendChild(_ self: Int32, _ child: Int32) {
-    bjs_JSElement_appendChild_extern(self, child)
+@inline(never) fileprivate func bjs_JSElement_insertBefore(_ self: Int32, _ newChild: Int32, _ refChild: Int32) -> Void {
+    return bjs_JSElement_insertBefore_extern(self, newChild, refChild)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSElement_removeChild")
-private func bjs_JSElement_removeChild_extern(_ self: Int32, _ child: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_getBoundingClientRect")
+fileprivate func bjs_JSElement_getBoundingClientRect_extern(_ self: Int32) -> Int32
 #else
-private func bjs_JSElement_removeChild_extern(_ self: Int32, _ child: Int32) {
+fileprivate func bjs_JSElement_getBoundingClientRect_extern(_ self: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSElement_removeChild(_ self: Int32, _ child: Int32) {
-    bjs_JSElement_removeChild_extern(self, child)
+@inline(never) fileprivate func bjs_JSElement_getBoundingClientRect(_ self: Int32) -> Int32 {
+    return bjs_JSElement_getBoundingClientRect_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSElement_insertBefore")
-private func bjs_JSElement_insertBefore_extern(_ self: Int32, _ newChild: Int32, _ refChildIsSome: Int32, _ refChildValue: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_addEventListener")
+fileprivate func bjs_JSElement_addEventListener_extern(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void
 #else
-private func bjs_JSElement_insertBefore_extern(_ self: Int32, _ newChild: Int32, _ refChildIsSome: Int32, _ refChildValue: Int32) {
+fileprivate func bjs_JSElement_addEventListener_extern(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSElement_insertBefore(_ self: Int32, _ newChild: Int32, _ refChildIsSome: Int32, _ refChildValue: Int32) {
-    bjs_JSElement_insertBefore_extern(self, newChild, refChildIsSome, refChildValue)
+@inline(never) fileprivate func bjs_JSElement_addEventListener(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void {
+    return bjs_JSElement_addEventListener_extern(self, typeBytes, typeLength, listener)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSElement_replaceChildren")
-private func bjs_JSElement_replaceChildren_extern(_ self: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_removeEventListener")
+fileprivate func bjs_JSElement_removeEventListener_extern(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void
 #else
-private func bjs_JSElement_replaceChildren_extern(_ self: Int32) {
+fileprivate func bjs_JSElement_removeEventListener_extern(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSElement_replaceChildren(_ self: Int32) {
-    bjs_JSElement_replaceChildren_extern(self)
+@inline(never) fileprivate func bjs_JSElement_removeEventListener(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void {
+    return bjs_JSElement_removeEventListener_extern(self, typeBytes, typeLength, listener)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSElement_getBoundingClientRect")
-private func bjs_JSElement_getBoundingClientRect_extern(_ self: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_focus")
+fileprivate func bjs_JSElement_focus_extern(_ self: Int32) -> Void
 #else
-private func bjs_JSElement_getBoundingClientRect_extern(_ self: Int32) -> Int32 {
+fileprivate func bjs_JSElement_focus_extern(_ self: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSElement_getBoundingClientRect(_ self: Int32) -> Int32 {
-    bjs_JSElement_getBoundingClientRect_extern(self)
+@inline(never) fileprivate func bjs_JSElement_focus(_ self: Int32) -> Void {
+    return bjs_JSElement_focus_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSElement_addEventListener")
-private func bjs_JSElement_addEventListener_extern(_ self: Int32, _ type: Int32, _ listener: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_blur")
+fileprivate func bjs_JSElement_blur_extern(_ self: Int32) -> Void
 #else
-private func bjs_JSElement_addEventListener_extern(_ self: Int32, _ type: Int32, _ listener: Int32) {
+fileprivate func bjs_JSElement_blur_extern(_ self: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSElement_addEventListener(_ self: Int32, _ type: Int32, _ listener: Int32) {
-    bjs_JSElement_addEventListener_extern(self, type, listener)
+@inline(never) fileprivate func bjs_JSElement_blur(_ self: Int32) -> Void {
+    return bjs_JSElement_blur_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSElement_removeEventListener")
-private func bjs_JSElement_removeEventListener_extern(_ self: Int32, _ type: Int32, _ listener: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_animate")
+fileprivate func bjs_JSElement_animate_extern(_ self: Int32, _ keyframes: Int32, _ options: Int32) -> Int32
 #else
-private func bjs_JSElement_removeEventListener_extern(_ self: Int32, _ type: Int32, _ listener: Int32) {
+fileprivate func bjs_JSElement_animate_extern(_ self: Int32, _ keyframes: Int32, _ options: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSElement_removeEventListener(_ self: Int32, _ type: Int32, _ listener: Int32) {
-    bjs_JSElement_removeEventListener_extern(self, type, listener)
-}
-
-#if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSElement_focus")
-private func bjs_JSElement_focus_extern(_ self: Int32)
-#else
-private func bjs_JSElement_focus_extern(_ self: Int32) {
-    fatalError("Only available on WebAssembly")
-}
-#endif
-private func bjs_JSElement_focus(_ self: Int32) {
-    bjs_JSElement_focus_extern(self)
-}
-
-#if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSElement_blur")
-private func bjs_JSElement_blur_extern(_ self: Int32)
-#else
-private func bjs_JSElement_blur_extern(_ self: Int32) {
-    fatalError("Only available on WebAssembly")
-}
-#endif
-private func bjs_JSElement_blur(_ self: Int32) {
-    bjs_JSElement_blur_extern(self)
-}
-
-#if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSElement_animate")
-private func bjs_JSElement_animate_extern(_ self: Int32, _ keyframes: Int32, _ options: Int32) -> Int32
-#else
-private func bjs_JSElement_animate_extern(_ self: Int32, _ keyframes: Int32, _ options: Int32) -> Int32 {
-    fatalError("Only available on WebAssembly")
-}
-#endif
-private func bjs_JSElement_animate(_ self: Int32, _ keyframes: Int32, _ options: Int32) -> Int32 {
-    bjs_JSElement_animate_extern(self, keyframes, options)
+@inline(never) fileprivate func bjs_JSElement_animate(_ self: Int32, _ keyframes: Int32, _ options: Int32) -> Int32 {
+    return bjs_JSElement_animate_extern(self, keyframes, options)
 }
 
 func _$JSElement_style_get(_ self: JSObject) throws(JSException) -> JSCSSStyleDeclaration {
@@ -611,15 +536,6 @@ func _$JSElement_style_get(_ self: JSObject) throws(JSException) -> JSCSSStyleDe
     return JSCSSStyleDeclaration.bridgeJSLiftReturn(ret)
 }
 
-func _$JSElement_textContent_get(_ self: JSObject) throws(JSException) -> String? {
-    let selfValue = self.bridgeJSLowerParameter()
-    bjs_JSElement_textContent_get(selfValue)
-    if let error = _swift_js_take_exception() {
-        throw error
-    }
-    return Optional<String>.bridgeJSLiftReturnFromSideChannel()
-}
-
 func _$JSElement_offsetParent_get(_ self: JSObject) throws(JSException) -> JSElement {
     let selfValue = self.bridgeJSLowerParameter()
     let ret = bjs_JSElement_offsetParent_get(selfValue)
@@ -629,35 +545,29 @@ func _$JSElement_offsetParent_get(_ self: JSObject) throws(JSException) -> JSEle
     return JSElement.bridgeJSLiftReturn(ret)
 }
 
-func _$JSElement_textContent_set(_ self: JSObject, _ newValue: String?) throws(JSException) {
+func _$JSElement_setAttribute(_ self: JSObject, _ name: String, _ value: String) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    let (newValueIsSome, newValueValue) = newValue.bridgeJSLowerParameter()
-    bjs_JSElement_textContent_set(selfValue, newValueIsSome, newValueValue)
+    _swift_js_with_borrowed_utf8(name) { nameBytes, nameLength in
+        _swift_js_with_borrowed_utf8(value) { valueBytes, valueLength in
+            bjs_JSElement_setAttribute(selfValue, nameBytes, nameLength, valueBytes, valueLength)
+        }
+    }
     if let error = _swift_js_take_exception() {
         throw error
     }
 }
 
-func _$JSElement_setAttribute(_ self: JSObject, _ name: String, _ value: String) throws(JSException) {
+func _$JSElement_removeAttribute(_ self: JSObject, _ name: String) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    let nameValue = name.bridgeJSLowerParameter()
-    let valueValue = value.bridgeJSLowerParameter()
-    bjs_JSElement_setAttribute(selfValue, nameValue, valueValue)
+    _swift_js_with_borrowed_utf8(name) { nameBytes, nameLength in
+        bjs_JSElement_removeAttribute(selfValue, nameBytes, nameLength)
+    }
     if let error = _swift_js_take_exception() {
         throw error
     }
 }
 
-func _$JSElement_removeAttribute(_ self: JSObject, _ name: String) throws(JSException) {
-    let selfValue = self.bridgeJSLowerParameter()
-    let nameValue = name.bridgeJSLowerParameter()
-    bjs_JSElement_removeAttribute(selfValue, nameValue)
-    if let error = _swift_js_take_exception() {
-        throw error
-    }
-}
-
-func _$JSElement_appendChild(_ self: JSObject, _ child: JSNode) throws(JSException) {
+func _$JSElement_appendChild(_ self: JSObject, _ child: JSNode) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
     let childValue = child.bridgeJSLowerParameter()
     bjs_JSElement_appendChild(selfValue, childValue)
@@ -666,7 +576,7 @@ func _$JSElement_appendChild(_ self: JSObject, _ child: JSNode) throws(JSExcepti
     }
 }
 
-func _$JSElement_removeChild(_ self: JSObject, _ child: JSNode) throws(JSException) {
+func _$JSElement_removeChild(_ self: JSObject, _ child: JSNode) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
     let childValue = child.bridgeJSLowerParameter()
     bjs_JSElement_removeChild(selfValue, childValue)
@@ -675,20 +585,11 @@ func _$JSElement_removeChild(_ self: JSObject, _ child: JSNode) throws(JSExcepti
     }
 }
 
-func _$JSElement_insertBefore(_ self: JSObject, _ newChild: JSNode, _ refChild: JSNode?) throws(JSException) {
+func _$JSElement_insertBefore(_ self: JSObject, _ newChild: JSNode, _ refChild: JSNode) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
     let newChildValue = newChild.bridgeJSLowerParameter()
-    let (refChildIsSome, refChildValue) = refChild.bridgeJSLowerParameter()
-    bjs_JSElement_insertBefore(selfValue, newChildValue, refChildIsSome, refChildValue)
-    if let error = _swift_js_take_exception() {
-        throw error
-    }
-}
-
-func _$JSElement_replaceChildren(_ self: JSObject, _ children: [JSNode]) throws(JSException) {
-    let selfValue = self.bridgeJSLowerParameter()
-    let _ = children.bridgeJSLowerParameter()
-    bjs_JSElement_replaceChildren(selfValue)
+    let refChildValue = refChild.bridgeJSLowerParameter()
+    bjs_JSElement_insertBefore(selfValue, newChildValue, refChildValue)
     if let error = _swift_js_take_exception() {
         throw error
     }
@@ -703,27 +604,29 @@ func _$JSElement_getBoundingClientRect(_ self: JSObject) throws(JSException) -> 
     return JSDOMRect.bridgeJSLiftReturn(ret)
 }
 
-func _$JSElement_addEventListener(_ self: JSObject, _ type: String, _ listener: JSObject) throws(JSException) {
+func _$JSElement_addEventListener(_ self: JSObject, _ type: String, _ listener: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    let typeValue = type.bridgeJSLowerParameter()
     let listenerValue = listener.bridgeJSLowerParameter()
-    bjs_JSElement_addEventListener(selfValue, typeValue, listenerValue)
+    _swift_js_with_borrowed_utf8(type) { typeBytes, typeLength in
+        bjs_JSElement_addEventListener(selfValue, typeBytes, typeLength, listenerValue)
+    }
     if let error = _swift_js_take_exception() {
         throw error
     }
 }
 
-func _$JSElement_removeEventListener(_ self: JSObject, _ type: String, _ listener: JSObject) throws(JSException) {
+func _$JSElement_removeEventListener(_ self: JSObject, _ type: String, _ listener: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    let typeValue = type.bridgeJSLowerParameter()
     let listenerValue = listener.bridgeJSLowerParameter()
-    bjs_JSElement_removeEventListener(selfValue, typeValue, listenerValue)
+    _swift_js_with_borrowed_utf8(type) { typeBytes, typeLength in
+        bjs_JSElement_removeEventListener(selfValue, typeBytes, typeLength, listenerValue)
+    }
     if let error = _swift_js_take_exception() {
         throw error
     }
 }
 
-func _$JSElement_focus(_ self: JSObject) throws(JSException) {
+func _$JSElement_focus(_ self: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
     bjs_JSElement_focus(selfValue)
     if let error = _swift_js_take_exception() {
@@ -731,7 +634,7 @@ func _$JSElement_focus(_ self: JSObject) throws(JSException) {
     }
 }
 
-func _$JSElement_blur(_ self: JSObject) throws(JSException) {
+func _$JSElement_blur(_ self: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
     bjs_JSElement_blur(selfValue)
     if let error = _swift_js_take_exception() {
@@ -751,116 +654,120 @@ func _$JSElement_animate(_ self: JSObject, _ keyframes: JSObject, _ options: JSO
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSCSSStyleDeclaration_getPropertyValue")
-private func bjs_JSCSSStyleDeclaration_getPropertyValue_extern(_ self: Int32, _ name: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSCSSStyleDeclaration_getPropertyValue")
+fileprivate func bjs_JSCSSStyleDeclaration_getPropertyValue_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Int32
 #else
-private func bjs_JSCSSStyleDeclaration_getPropertyValue_extern(_ self: Int32, _ name: Int32) -> Int32 {
+fileprivate func bjs_JSCSSStyleDeclaration_getPropertyValue_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSCSSStyleDeclaration_getPropertyValue(_ self: Int32, _ name: Int32) -> Int32 {
-    bjs_JSCSSStyleDeclaration_getPropertyValue_extern(self, name)
+@inline(never) fileprivate func bjs_JSCSSStyleDeclaration_getPropertyValue(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Int32 {
+    return bjs_JSCSSStyleDeclaration_getPropertyValue_extern(self, nameBytes, nameLength)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSCSSStyleDeclaration_setProperty")
-private func bjs_JSCSSStyleDeclaration_setProperty_extern(_ self: Int32, _ name: Int32, _ value: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSCSSStyleDeclaration_setProperty")
+fileprivate func bjs_JSCSSStyleDeclaration_setProperty_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32, _ valueBytes: Int32, _ valueLength: Int32) -> Void
 #else
-private func bjs_JSCSSStyleDeclaration_setProperty_extern(_ self: Int32, _ name: Int32, _ value: Int32) {
+fileprivate func bjs_JSCSSStyleDeclaration_setProperty_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32, _ valueBytes: Int32, _ valueLength: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSCSSStyleDeclaration_setProperty(_ self: Int32, _ name: Int32, _ value: Int32) {
-    bjs_JSCSSStyleDeclaration_setProperty_extern(self, name, value)
+@inline(never) fileprivate func bjs_JSCSSStyleDeclaration_setProperty(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32, _ valueBytes: Int32, _ valueLength: Int32) -> Void {
+    return bjs_JSCSSStyleDeclaration_setProperty_extern(self, nameBytes, nameLength, valueBytes, valueLength)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSCSSStyleDeclaration_removeProperty")
-private func bjs_JSCSSStyleDeclaration_removeProperty_extern(_ self: Int32, _ name: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSCSSStyleDeclaration_removeProperty")
+fileprivate func bjs_JSCSSStyleDeclaration_removeProperty_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void
 #else
-private func bjs_JSCSSStyleDeclaration_removeProperty_extern(_ self: Int32, _ name: Int32) {
+fileprivate func bjs_JSCSSStyleDeclaration_removeProperty_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSCSSStyleDeclaration_removeProperty(_ self: Int32, _ name: Int32) {
-    bjs_JSCSSStyleDeclaration_removeProperty_extern(self, name)
+@inline(never) fileprivate func bjs_JSCSSStyleDeclaration_removeProperty(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void {
+    return bjs_JSCSSStyleDeclaration_removeProperty_extern(self, nameBytes, nameLength)
 }
 
 func _$JSCSSStyleDeclaration_getPropertyValue(_ self: JSObject, _ name: String) throws(JSException) -> String {
     let selfValue = self.bridgeJSLowerParameter()
-    let nameValue = name.bridgeJSLowerParameter()
-    let ret = bjs_JSCSSStyleDeclaration_getPropertyValue(selfValue, nameValue)
+    let ret = _swift_js_with_borrowed_utf8(name) { nameBytes, nameLength in
+        bjs_JSCSSStyleDeclaration_getPropertyValue(selfValue, nameBytes, nameLength)
+    }
     if let error = _swift_js_take_exception() {
         throw error
     }
     return String.bridgeJSLiftReturn(ret)
 }
 
-func _$JSCSSStyleDeclaration_setProperty(_ self: JSObject, _ name: String, _ value: String) throws(JSException) {
+func _$JSCSSStyleDeclaration_setProperty(_ self: JSObject, _ name: String, _ value: String) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    let nameValue = name.bridgeJSLowerParameter()
-    let valueValue = value.bridgeJSLowerParameter()
-    bjs_JSCSSStyleDeclaration_setProperty(selfValue, nameValue, valueValue)
+    _swift_js_with_borrowed_utf8(name) { nameBytes, nameLength in
+        _swift_js_with_borrowed_utf8(value) { valueBytes, valueLength in
+            bjs_JSCSSStyleDeclaration_setProperty(selfValue, nameBytes, nameLength, valueBytes, valueLength)
+        }
+    }
     if let error = _swift_js_take_exception() {
         throw error
     }
 }
 
-func _$JSCSSStyleDeclaration_removeProperty(_ self: JSObject, _ name: String) throws(JSException) {
+func _$JSCSSStyleDeclaration_removeProperty(_ self: JSObject, _ name: String) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    let nameValue = name.bridgeJSLowerParameter()
-    bjs_JSCSSStyleDeclaration_removeProperty(selfValue, nameValue)
+    _swift_js_with_borrowed_utf8(name) { nameBytes, nameLength in
+        bjs_JSCSSStyleDeclaration_removeProperty(selfValue, nameBytes, nameLength)
+    }
     if let error = _swift_js_take_exception() {
         throw error
     }
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSDOMRect_x_get")
-private func bjs_JSDOMRect_x_get_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDOMRect_x_get")
+fileprivate func bjs_JSDOMRect_x_get_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSDOMRect_x_get_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSDOMRect_x_get_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSDOMRect_x_get(_ self: Int32) -> Float64 {
-    bjs_JSDOMRect_x_get_extern(self)
+@inline(never) fileprivate func bjs_JSDOMRect_x_get(_ self: Int32) -> Float64 {
+    return bjs_JSDOMRect_x_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSDOMRect_y_get")
-private func bjs_JSDOMRect_y_get_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDOMRect_y_get")
+fileprivate func bjs_JSDOMRect_y_get_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSDOMRect_y_get_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSDOMRect_y_get_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSDOMRect_y_get(_ self: Int32) -> Float64 {
-    bjs_JSDOMRect_y_get_extern(self)
+@inline(never) fileprivate func bjs_JSDOMRect_y_get(_ self: Int32) -> Float64 {
+    return bjs_JSDOMRect_y_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSDOMRect_width_get")
-private func bjs_JSDOMRect_width_get_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDOMRect_width_get")
+fileprivate func bjs_JSDOMRect_width_get_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSDOMRect_width_get_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSDOMRect_width_get_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSDOMRect_width_get(_ self: Int32) -> Float64 {
-    bjs_JSDOMRect_width_get_extern(self)
+@inline(never) fileprivate func bjs_JSDOMRect_width_get(_ self: Int32) -> Float64 {
+    return bjs_JSDOMRect_width_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSDOMRect_height_get")
-private func bjs_JSDOMRect_height_get_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDOMRect_height_get")
+fileprivate func bjs_JSDOMRect_height_get_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSDOMRect_height_get_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSDOMRect_height_get_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSDOMRect_height_get(_ self: Int32) -> Float64 {
-    bjs_JSDOMRect_height_get_extern(self)
+@inline(never) fileprivate func bjs_JSDOMRect_height_get(_ self: Int32) -> Float64 {
+    return bjs_JSDOMRect_height_get_extern(self)
 }
 
 func _$JSDOMRect_x_get(_ self: JSObject) throws(JSException) -> Double {
@@ -900,87 +807,87 @@ func _$JSDOMRect_height_get(_ self: JSObject) throws(JSException) -> Double {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSAnimation_effect_get")
-private func bjs_JSAnimation_effect_get_extern(_ self: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimation_effect_get")
+fileprivate func bjs_JSAnimation_effect_get_extern(_ self: Int32) -> Int32
 #else
-private func bjs_JSAnimation_effect_get_extern(_ self: Int32) -> Int32 {
+fileprivate func bjs_JSAnimation_effect_get_extern(_ self: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSAnimation_effect_get(_ self: Int32) -> Int32 {
-    bjs_JSAnimation_effect_get_extern(self)
+@inline(never) fileprivate func bjs_JSAnimation_effect_get(_ self: Int32) -> Int32 {
+    return bjs_JSAnimation_effect_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSAnimation_currentTime_set")
-private func bjs_JSAnimation_currentTime_set_extern(_ self: Int32, _ newValue: Float64)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimation_currentTime_set")
+fileprivate func bjs_JSAnimation_currentTime_set_extern(_ self: Int32, _ newValue: Float64) -> Void
 #else
-private func bjs_JSAnimation_currentTime_set_extern(_ self: Int32, _ newValue: Float64) {
+fileprivate func bjs_JSAnimation_currentTime_set_extern(_ self: Int32, _ newValue: Float64) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSAnimation_currentTime_set(_ self: Int32, _ newValue: Float64) {
-    bjs_JSAnimation_currentTime_set_extern(self, newValue)
+@inline(never) fileprivate func bjs_JSAnimation_currentTime_set(_ self: Int32, _ newValue: Float64) -> Void {
+    return bjs_JSAnimation_currentTime_set_extern(self, newValue)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSAnimation_onfinish_set")
-private func bjs_JSAnimation_onfinish_set_extern(_ self: Int32, _ newValueIsSome: Int32, _ newValueValue: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimation_onfinish_set")
+fileprivate func bjs_JSAnimation_onfinish_set_extern(_ self: Int32, _ newValue: Int32) -> Void
 #else
-private func bjs_JSAnimation_onfinish_set_extern(_ self: Int32, _ newValueIsSome: Int32, _ newValueValue: Int32) {
+fileprivate func bjs_JSAnimation_onfinish_set_extern(_ self: Int32, _ newValue: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSAnimation_onfinish_set(_ self: Int32, _ newValueIsSome: Int32, _ newValueValue: Int32) {
-    bjs_JSAnimation_onfinish_set_extern(self, newValueIsSome, newValueValue)
+@inline(never) fileprivate func bjs_JSAnimation_onfinish_set(_ self: Int32, _ newValue: Int32) -> Void {
+    return bjs_JSAnimation_onfinish_set_extern(self, newValue)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSAnimation_persist")
-private func bjs_JSAnimation_persist_extern(_ self: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimation_persist")
+fileprivate func bjs_JSAnimation_persist_extern(_ self: Int32) -> Void
 #else
-private func bjs_JSAnimation_persist_extern(_ self: Int32) {
+fileprivate func bjs_JSAnimation_persist_extern(_ self: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSAnimation_persist(_ self: Int32) {
-    bjs_JSAnimation_persist_extern(self)
+@inline(never) fileprivate func bjs_JSAnimation_persist(_ self: Int32) -> Void {
+    return bjs_JSAnimation_persist_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSAnimation_pause")
-private func bjs_JSAnimation_pause_extern(_ self: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimation_pause")
+fileprivate func bjs_JSAnimation_pause_extern(_ self: Int32) -> Void
 #else
-private func bjs_JSAnimation_pause_extern(_ self: Int32) {
+fileprivate func bjs_JSAnimation_pause_extern(_ self: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSAnimation_pause(_ self: Int32) {
-    bjs_JSAnimation_pause_extern(self)
+@inline(never) fileprivate func bjs_JSAnimation_pause(_ self: Int32) -> Void {
+    return bjs_JSAnimation_pause_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSAnimation_play")
-private func bjs_JSAnimation_play_extern(_ self: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimation_play")
+fileprivate func bjs_JSAnimation_play_extern(_ self: Int32) -> Void
 #else
-private func bjs_JSAnimation_play_extern(_ self: Int32) {
+fileprivate func bjs_JSAnimation_play_extern(_ self: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSAnimation_play(_ self: Int32) {
-    bjs_JSAnimation_play_extern(self)
+@inline(never) fileprivate func bjs_JSAnimation_play(_ self: Int32) -> Void {
+    return bjs_JSAnimation_play_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSAnimation_cancel")
-private func bjs_JSAnimation_cancel_extern(_ self: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimation_cancel")
+fileprivate func bjs_JSAnimation_cancel_extern(_ self: Int32) -> Void
 #else
-private func bjs_JSAnimation_cancel_extern(_ self: Int32) {
+fileprivate func bjs_JSAnimation_cancel_extern(_ self: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSAnimation_cancel(_ self: Int32) {
-    bjs_JSAnimation_cancel_extern(self)
+@inline(never) fileprivate func bjs_JSAnimation_cancel(_ self: Int32) -> Void {
+    return bjs_JSAnimation_cancel_extern(self)
 }
 
 func _$JSAnimation_effect_get(_ self: JSObject) throws(JSException) -> JSAnimationEffect {
@@ -992,7 +899,7 @@ func _$JSAnimation_effect_get(_ self: JSObject) throws(JSException) -> JSAnimati
     return JSAnimationEffect.bridgeJSLiftReturn(ret)
 }
 
-func _$JSAnimation_currentTime_set(_ self: JSObject, _ newValue: Double) throws(JSException) {
+func _$JSAnimation_currentTime_set(_ self: JSObject, _ newValue: Double) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
     let newValueValue = newValue.bridgeJSLowerParameter()
     bjs_JSAnimation_currentTime_set(selfValue, newValueValue)
@@ -1001,16 +908,16 @@ func _$JSAnimation_currentTime_set(_ self: JSObject, _ newValue: Double) throws(
     }
 }
 
-func _$JSAnimation_onfinish_set(_ self: JSObject, _ newValue: JSObject?) throws(JSException) {
+func _$JSAnimation_onfinish_set(_ self: JSObject, _ newValue: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    let (newValueIsSome, newValueValue) = newValue.bridgeJSLowerParameter()
-    bjs_JSAnimation_onfinish_set(selfValue, newValueIsSome, newValueValue)
+    let newValueValue = newValue.bridgeJSLowerParameter()
+    bjs_JSAnimation_onfinish_set(selfValue, newValueValue)
     if let error = _swift_js_take_exception() {
         throw error
     }
 }
 
-func _$JSAnimation_persist(_ self: JSObject) throws(JSException) {
+func _$JSAnimation_persist(_ self: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
     bjs_JSAnimation_persist(selfValue)
     if let error = _swift_js_take_exception() {
@@ -1018,7 +925,7 @@ func _$JSAnimation_persist(_ self: JSObject) throws(JSException) {
     }
 }
 
-func _$JSAnimation_pause(_ self: JSObject) throws(JSException) {
+func _$JSAnimation_pause(_ self: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
     bjs_JSAnimation_pause(selfValue)
     if let error = _swift_js_take_exception() {
@@ -1026,7 +933,7 @@ func _$JSAnimation_pause(_ self: JSObject) throws(JSException) {
     }
 }
 
-func _$JSAnimation_play(_ self: JSObject) throws(JSException) {
+func _$JSAnimation_play(_ self: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
     bjs_JSAnimation_play(selfValue)
     if let error = _swift_js_take_exception() {
@@ -1034,7 +941,7 @@ func _$JSAnimation_play(_ self: JSObject) throws(JSException) {
     }
 }
 
-func _$JSAnimation_cancel(_ self: JSObject) throws(JSException) {
+func _$JSAnimation_cancel(_ self: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
     bjs_JSAnimation_cancel(selfValue)
     if let error = _swift_js_take_exception() {
@@ -1043,30 +950,30 @@ func _$JSAnimation_cancel(_ self: JSObject) throws(JSException) {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSAnimationEffect_setKeyframes")
-private func bjs_JSAnimationEffect_setKeyframes_extern(_ self: Int32, _ keyframes: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimationEffect_setKeyframes")
+fileprivate func bjs_JSAnimationEffect_setKeyframes_extern(_ self: Int32, _ keyframes: Int32) -> Void
 #else
-private func bjs_JSAnimationEffect_setKeyframes_extern(_ self: Int32, _ keyframes: Int32) {
+fileprivate func bjs_JSAnimationEffect_setKeyframes_extern(_ self: Int32, _ keyframes: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSAnimationEffect_setKeyframes(_ self: Int32, _ keyframes: Int32) {
-    bjs_JSAnimationEffect_setKeyframes_extern(self, keyframes)
+@inline(never) fileprivate func bjs_JSAnimationEffect_setKeyframes(_ self: Int32, _ keyframes: Int32) -> Void {
+    return bjs_JSAnimationEffect_setKeyframes_extern(self, keyframes)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSAnimationEffect_updateTiming")
-private func bjs_JSAnimationEffect_updateTiming_extern(_ self: Int32, _ timing: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimationEffect_updateTiming")
+fileprivate func bjs_JSAnimationEffect_updateTiming_extern(_ self: Int32, _ timing: Int32) -> Void
 #else
-private func bjs_JSAnimationEffect_updateTiming_extern(_ self: Int32, _ timing: Int32) {
+fileprivate func bjs_JSAnimationEffect_updateTiming_extern(_ self: Int32, _ timing: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSAnimationEffect_updateTiming(_ self: Int32, _ timing: Int32) {
-    bjs_JSAnimationEffect_updateTiming_extern(self, timing)
+@inline(never) fileprivate func bjs_JSAnimationEffect_updateTiming(_ self: Int32, _ timing: Int32) -> Void {
+    return bjs_JSAnimationEffect_updateTiming_extern(self, timing)
 }
 
-func _$JSAnimationEffect_setKeyframes(_ self: JSObject, _ keyframes: JSObject) throws(JSException) {
+func _$JSAnimationEffect_setKeyframes(_ self: JSObject, _ keyframes: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
     let keyframesValue = keyframes.bridgeJSLowerParameter()
     bjs_JSAnimationEffect_setKeyframes(selfValue, keyframesValue)
@@ -1075,7 +982,7 @@ func _$JSAnimationEffect_setKeyframes(_ self: JSObject, _ keyframes: JSObject) t
     }
 }
 
-func _$JSAnimationEffect_updateTiming(_ self: JSObject, _ timing: JSObject) throws(JSException) {
+func _$JSAnimationEffect_updateTiming(_ self: JSObject, _ timing: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
     let timingValue = timing.bridgeJSLowerParameter()
     bjs_JSAnimationEffect_updateTiming(selfValue, timingValue)
@@ -1085,27 +992,27 @@ func _$JSAnimationEffect_updateTiming(_ self: JSObject, _ timing: JSObject) thro
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSEvent_type_get")
-private func bjs_JSEvent_type_get_extern(_ self: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSEvent_type_get")
+fileprivate func bjs_JSEvent_type_get_extern(_ self: Int32) -> Int32
 #else
-private func bjs_JSEvent_type_get_extern(_ self: Int32) -> Int32 {
+fileprivate func bjs_JSEvent_type_get_extern(_ self: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSEvent_type_get(_ self: Int32) -> Int32 {
-    bjs_JSEvent_type_get_extern(self)
+@inline(never) fileprivate func bjs_JSEvent_type_get(_ self: Int32) -> Int32 {
+    return bjs_JSEvent_type_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSEvent_target_get")
-private func bjs_JSEvent_target_get_extern(_ self: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSEvent_target_get")
+fileprivate func bjs_JSEvent_target_get_extern(_ self: Int32) -> Int32
 #else
-private func bjs_JSEvent_target_get_extern(_ self: Int32) -> Int32 {
+fileprivate func bjs_JSEvent_target_get_extern(_ self: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSEvent_target_get(_ self: Int32) -> Int32 {
-    bjs_JSEvent_target_get_extern(self)
+@inline(never) fileprivate func bjs_JSEvent_target_get(_ self: Int32) -> Int32 {
+    return bjs_JSEvent_target_get_extern(self)
 }
 
 func _$JSEvent_type_get(_ self: JSObject) throws(JSException) -> String {
@@ -1127,15 +1034,15 @@ func _$JSEvent_target_get(_ self: JSObject) throws(JSException) -> JSObject {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSKeyboardEvent_key_get")
-private func bjs_JSKeyboardEvent_key_get_extern(_ self: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSKeyboardEvent_key_get")
+fileprivate func bjs_JSKeyboardEvent_key_get_extern(_ self: Int32) -> Int32
 #else
-private func bjs_JSKeyboardEvent_key_get_extern(_ self: Int32) -> Int32 {
+fileprivate func bjs_JSKeyboardEvent_key_get_extern(_ self: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSKeyboardEvent_key_get(_ self: Int32) -> Int32 {
-    bjs_JSKeyboardEvent_key_get_extern(self)
+@inline(never) fileprivate func bjs_JSKeyboardEvent_key_get(_ self: Int32) -> Int32 {
+    return bjs_JSKeyboardEvent_key_get_extern(self)
 }
 
 func _$JSKeyboardEvent_key_get(_ self: JSObject) throws(JSException) -> String {
@@ -1148,195 +1055,195 @@ func _$JSKeyboardEvent_key_get(_ self: JSObject) throws(JSException) -> String {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_altKey_get")
-private func bjs_JSMouseEvent_altKey_get_extern(_ self: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_altKey_get")
+fileprivate func bjs_JSMouseEvent_altKey_get_extern(_ self: Int32) -> Int32
 #else
-private func bjs_JSMouseEvent_altKey_get_extern(_ self: Int32) -> Int32 {
+fileprivate func bjs_JSMouseEvent_altKey_get_extern(_ self: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSMouseEvent_altKey_get(_ self: Int32) -> Int32 {
-    bjs_JSMouseEvent_altKey_get_extern(self)
+@inline(never) fileprivate func bjs_JSMouseEvent_altKey_get(_ self: Int32) -> Int32 {
+    return bjs_JSMouseEvent_altKey_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_button_get")
-private func bjs_JSMouseEvent_button_get_extern(_ self: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_button_get")
+fileprivate func bjs_JSMouseEvent_button_get_extern(_ self: Int32) -> Int32
 #else
-private func bjs_JSMouseEvent_button_get_extern(_ self: Int32) -> Int32 {
+fileprivate func bjs_JSMouseEvent_button_get_extern(_ self: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSMouseEvent_button_get(_ self: Int32) -> Int32 {
-    bjs_JSMouseEvent_button_get_extern(self)
+@inline(never) fileprivate func bjs_JSMouseEvent_button_get(_ self: Int32) -> Int32 {
+    return bjs_JSMouseEvent_button_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_buttons_get")
-private func bjs_JSMouseEvent_buttons_get_extern(_ self: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_buttons_get")
+fileprivate func bjs_JSMouseEvent_buttons_get_extern(_ self: Int32) -> Int32
 #else
-private func bjs_JSMouseEvent_buttons_get_extern(_ self: Int32) -> Int32 {
+fileprivate func bjs_JSMouseEvent_buttons_get_extern(_ self: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSMouseEvent_buttons_get(_ self: Int32) -> Int32 {
-    bjs_JSMouseEvent_buttons_get_extern(self)
+@inline(never) fileprivate func bjs_JSMouseEvent_buttons_get(_ self: Int32) -> Int32 {
+    return bjs_JSMouseEvent_buttons_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_clientX_get")
-private func bjs_JSMouseEvent_clientX_get_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_clientX_get")
+fileprivate func bjs_JSMouseEvent_clientX_get_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSMouseEvent_clientX_get_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSMouseEvent_clientX_get_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSMouseEvent_clientX_get(_ self: Int32) -> Float64 {
-    bjs_JSMouseEvent_clientX_get_extern(self)
+@inline(never) fileprivate func bjs_JSMouseEvent_clientX_get(_ self: Int32) -> Float64 {
+    return bjs_JSMouseEvent_clientX_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_clientY_get")
-private func bjs_JSMouseEvent_clientY_get_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_clientY_get")
+fileprivate func bjs_JSMouseEvent_clientY_get_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSMouseEvent_clientY_get_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSMouseEvent_clientY_get_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSMouseEvent_clientY_get(_ self: Int32) -> Float64 {
-    bjs_JSMouseEvent_clientY_get_extern(self)
+@inline(never) fileprivate func bjs_JSMouseEvent_clientY_get(_ self: Int32) -> Float64 {
+    return bjs_JSMouseEvent_clientY_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_ctrlKey_get")
-private func bjs_JSMouseEvent_ctrlKey_get_extern(_ self: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_ctrlKey_get")
+fileprivate func bjs_JSMouseEvent_ctrlKey_get_extern(_ self: Int32) -> Int32
 #else
-private func bjs_JSMouseEvent_ctrlKey_get_extern(_ self: Int32) -> Int32 {
+fileprivate func bjs_JSMouseEvent_ctrlKey_get_extern(_ self: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSMouseEvent_ctrlKey_get(_ self: Int32) -> Int32 {
-    bjs_JSMouseEvent_ctrlKey_get_extern(self)
+@inline(never) fileprivate func bjs_JSMouseEvent_ctrlKey_get(_ self: Int32) -> Int32 {
+    return bjs_JSMouseEvent_ctrlKey_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_metaKey_get")
-private func bjs_JSMouseEvent_metaKey_get_extern(_ self: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_metaKey_get")
+fileprivate func bjs_JSMouseEvent_metaKey_get_extern(_ self: Int32) -> Int32
 #else
-private func bjs_JSMouseEvent_metaKey_get_extern(_ self: Int32) -> Int32 {
+fileprivate func bjs_JSMouseEvent_metaKey_get_extern(_ self: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSMouseEvent_metaKey_get(_ self: Int32) -> Int32 {
-    bjs_JSMouseEvent_metaKey_get_extern(self)
+@inline(never) fileprivate func bjs_JSMouseEvent_metaKey_get(_ self: Int32) -> Int32 {
+    return bjs_JSMouseEvent_metaKey_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_movementX_get")
-private func bjs_JSMouseEvent_movementX_get_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_movementX_get")
+fileprivate func bjs_JSMouseEvent_movementX_get_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSMouseEvent_movementX_get_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSMouseEvent_movementX_get_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSMouseEvent_movementX_get(_ self: Int32) -> Float64 {
-    bjs_JSMouseEvent_movementX_get_extern(self)
+@inline(never) fileprivate func bjs_JSMouseEvent_movementX_get(_ self: Int32) -> Float64 {
+    return bjs_JSMouseEvent_movementX_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_movementY_get")
-private func bjs_JSMouseEvent_movementY_get_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_movementY_get")
+fileprivate func bjs_JSMouseEvent_movementY_get_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSMouseEvent_movementY_get_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSMouseEvent_movementY_get_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSMouseEvent_movementY_get(_ self: Int32) -> Float64 {
-    bjs_JSMouseEvent_movementY_get_extern(self)
+@inline(never) fileprivate func bjs_JSMouseEvent_movementY_get(_ self: Int32) -> Float64 {
+    return bjs_JSMouseEvent_movementY_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_offsetX_get")
-private func bjs_JSMouseEvent_offsetX_get_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_offsetX_get")
+fileprivate func bjs_JSMouseEvent_offsetX_get_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSMouseEvent_offsetX_get_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSMouseEvent_offsetX_get_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSMouseEvent_offsetX_get(_ self: Int32) -> Float64 {
-    bjs_JSMouseEvent_offsetX_get_extern(self)
+@inline(never) fileprivate func bjs_JSMouseEvent_offsetX_get(_ self: Int32) -> Float64 {
+    return bjs_JSMouseEvent_offsetX_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_offsetY_get")
-private func bjs_JSMouseEvent_offsetY_get_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_offsetY_get")
+fileprivate func bjs_JSMouseEvent_offsetY_get_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSMouseEvent_offsetY_get_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSMouseEvent_offsetY_get_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSMouseEvent_offsetY_get(_ self: Int32) -> Float64 {
-    bjs_JSMouseEvent_offsetY_get_extern(self)
+@inline(never) fileprivate func bjs_JSMouseEvent_offsetY_get(_ self: Int32) -> Float64 {
+    return bjs_JSMouseEvent_offsetY_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_pageX_get")
-private func bjs_JSMouseEvent_pageX_get_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_pageX_get")
+fileprivate func bjs_JSMouseEvent_pageX_get_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSMouseEvent_pageX_get_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSMouseEvent_pageX_get_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSMouseEvent_pageX_get(_ self: Int32) -> Float64 {
-    bjs_JSMouseEvent_pageX_get_extern(self)
+@inline(never) fileprivate func bjs_JSMouseEvent_pageX_get(_ self: Int32) -> Float64 {
+    return bjs_JSMouseEvent_pageX_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_pageY_get")
-private func bjs_JSMouseEvent_pageY_get_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_pageY_get")
+fileprivate func bjs_JSMouseEvent_pageY_get_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSMouseEvent_pageY_get_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSMouseEvent_pageY_get_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSMouseEvent_pageY_get(_ self: Int32) -> Float64 {
-    bjs_JSMouseEvent_pageY_get_extern(self)
+@inline(never) fileprivate func bjs_JSMouseEvent_pageY_get(_ self: Int32) -> Float64 {
+    return bjs_JSMouseEvent_pageY_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_screenX_get")
-private func bjs_JSMouseEvent_screenX_get_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_screenX_get")
+fileprivate func bjs_JSMouseEvent_screenX_get_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSMouseEvent_screenX_get_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSMouseEvent_screenX_get_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSMouseEvent_screenX_get(_ self: Int32) -> Float64 {
-    bjs_JSMouseEvent_screenX_get_extern(self)
+@inline(never) fileprivate func bjs_JSMouseEvent_screenX_get(_ self: Int32) -> Float64 {
+    return bjs_JSMouseEvent_screenX_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_screenY_get")
-private func bjs_JSMouseEvent_screenY_get_extern(_ self: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_screenY_get")
+fileprivate func bjs_JSMouseEvent_screenY_get_extern(_ self: Int32) -> Float64
 #else
-private func bjs_JSMouseEvent_screenY_get_extern(_ self: Int32) -> Float64 {
+fileprivate func bjs_JSMouseEvent_screenY_get_extern(_ self: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSMouseEvent_screenY_get(_ self: Int32) -> Float64 {
-    bjs_JSMouseEvent_screenY_get_extern(self)
+@inline(never) fileprivate func bjs_JSMouseEvent_screenY_get(_ self: Int32) -> Float64 {
+    return bjs_JSMouseEvent_screenY_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSMouseEvent_shiftKey_get")
-private func bjs_JSMouseEvent_shiftKey_get_extern(_ self: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMouseEvent_shiftKey_get")
+fileprivate func bjs_JSMouseEvent_shiftKey_get_extern(_ self: Int32) -> Int32
 #else
-private func bjs_JSMouseEvent_shiftKey_get_extern(_ self: Int32) -> Int32 {
+fileprivate func bjs_JSMouseEvent_shiftKey_get_extern(_ self: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSMouseEvent_shiftKey_get(_ self: Int32) -> Int32 {
-    bjs_JSMouseEvent_shiftKey_get_extern(self)
+@inline(never) fileprivate func bjs_JSMouseEvent_shiftKey_get(_ self: Int32) -> Int32 {
+    return bjs_JSMouseEvent_shiftKey_get_extern(self)
 }
 
 func _$JSMouseEvent_altKey_get(_ self: JSObject) throws(JSException) -> Bool {
@@ -1484,36 +1391,36 @@ func _$JSMouseEvent_shiftKey_get(_ self: JSObject) throws(JSException) -> Bool {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSInputEvent_data_get")
-private func bjs_JSInputEvent_data_get_extern(_ self: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSInputEvent_data_get")
+fileprivate func bjs_JSInputEvent_data_get_extern(_ self: Int32) -> Int32
 #else
-private func bjs_JSInputEvent_data_get_extern(_ self: Int32) {
+fileprivate func bjs_JSInputEvent_data_get_extern(_ self: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSInputEvent_data_get(_ self: Int32) {
-    bjs_JSInputEvent_data_get_extern(self)
+@inline(never) fileprivate func bjs_JSInputEvent_data_get(_ self: Int32) -> Int32 {
+    return bjs_JSInputEvent_data_get_extern(self)
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_JSInputEvent_target_get")
-private func bjs_JSInputEvent_target_get_extern(_ self: Int32) -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSInputEvent_target_get")
+fileprivate func bjs_JSInputEvent_target_get_extern(_ self: Int32) -> Int32
 #else
-private func bjs_JSInputEvent_target_get_extern(_ self: Int32) -> Int32 {
+fileprivate func bjs_JSInputEvent_target_get_extern(_ self: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_JSInputEvent_target_get(_ self: Int32) -> Int32 {
-    bjs_JSInputEvent_target_get_extern(self)
+@inline(never) fileprivate func bjs_JSInputEvent_target_get(_ self: Int32) -> Int32 {
+    return bjs_JSInputEvent_target_get_extern(self)
 }
 
-func _$JSInputEvent_data_get(_ self: JSObject) throws(JSException) -> String? {
+func _$JSInputEvent_data_get(_ self: JSObject) throws(JSException) -> String {
     let selfValue = self.bridgeJSLowerParameter()
-    bjs_JSInputEvent_data_get(selfValue)
+    let ret = bjs_JSInputEvent_data_get(selfValue)
     if let error = _swift_js_take_exception() {
         throw error
     }
-    return Optional<String>.bridgeJSLiftReturnFromSideChannel()
+    return String.bridgeJSLiftReturn(ret)
 }
 
 func _$JSInputEvent_target_get(_ self: JSObject) throws(JSException) -> JSObject {
@@ -1526,15 +1433,15 @@ func _$JSInputEvent_target_get(_ self: JSObject) throws(JSException) -> JSObject
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_window_get")
-private func bjs_window_get_extern() -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_window_get")
+fileprivate func bjs_window_get_extern() -> Int32
 #else
-private func bjs_window_get_extern() -> Int32 {
+fileprivate func bjs_window_get_extern() -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_window_get() -> Int32 {
-    bjs_window_get_extern()
+@inline(never) fileprivate func bjs_window_get() -> Int32 {
+    return bjs_window_get_extern()
 }
 
 func _$window_get() throws(JSException) -> JSWindow {
@@ -1546,15 +1453,15 @@ func _$window_get() throws(JSException) -> JSWindow {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_document_get")
-private func bjs_document_get_extern() -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_document_get")
+fileprivate func bjs_document_get_extern() -> Int32
 #else
-private func bjs_document_get_extern() -> Int32 {
+fileprivate func bjs_document_get_extern() -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_document_get() -> Int32 {
-    bjs_document_get_extern()
+@inline(never) fileprivate func bjs_document_get() -> Int32 {
+    return bjs_document_get_extern()
 }
 
 func _$document_get() throws(JSException) -> JSDocument {
@@ -1566,15 +1473,15 @@ func _$document_get() throws(JSException) -> JSDocument {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_performance_get")
-private func bjs_performance_get_extern() -> Int32
+@_extern(wasm, module: "BrowserInterop", name: "bjs_performance_get")
+fileprivate func bjs_performance_get_extern() -> Int32
 #else
-private func bjs_performance_get_extern() -> Int32 {
+fileprivate func bjs_performance_get_extern() -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_performance_get() -> Int32 {
-    bjs_performance_get_extern()
+@inline(never) fileprivate func bjs_performance_get() -> Int32 {
+    return bjs_performance_get_extern()
 }
 
 func _$performance_get() throws(JSException) -> JSPerformance {
@@ -1586,15 +1493,15 @@ func _$performance_get() throws(JSException) -> JSPerformance {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_requestAnimationFrame")
-private func bjs_requestAnimationFrame_extern(_ callback: Int32) -> Float64
+@_extern(wasm, module: "BrowserInterop", name: "bjs_requestAnimationFrame")
+fileprivate func bjs_requestAnimationFrame_extern(_ callback: Int32) -> Float64
 #else
-private func bjs_requestAnimationFrame_extern(_ callback: Int32) -> Float64 {
+fileprivate func bjs_requestAnimationFrame_extern(_ callback: Int32) -> Float64 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_requestAnimationFrame(_ callback: Int32) -> Float64 {
-    bjs_requestAnimationFrame_extern(callback)
+@inline(never) fileprivate func bjs_requestAnimationFrame(_ callback: Int32) -> Float64 {
+    return bjs_requestAnimationFrame_extern(callback)
 }
 
 func _$requestAnimationFrame(_ callback: @escaping (Double) -> Void) throws(JSException) -> Double {
@@ -1610,18 +1517,18 @@ func _$requestAnimationFrame(_ callback: @escaping (Double) -> Void) throws(JSEx
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_cancelAnimationFrame")
-private func bjs_cancelAnimationFrame_extern(_ handle: Float64)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_cancelAnimationFrame")
+fileprivate func bjs_cancelAnimationFrame_extern(_ handle: Float64) -> Void
 #else
-private func bjs_cancelAnimationFrame_extern(_ handle: Float64) {
+fileprivate func bjs_cancelAnimationFrame_extern(_ handle: Float64) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_cancelAnimationFrame(_ handle: Float64) {
-    bjs_cancelAnimationFrame_extern(handle)
+@inline(never) fileprivate func bjs_cancelAnimationFrame(_ handle: Float64) -> Void {
+    return bjs_cancelAnimationFrame_extern(handle)
 }
 
-func _$cancelAnimationFrame(_ handle: Double) throws(JSException) {
+func _$cancelAnimationFrame(_ handle: Double) throws(JSException) -> Void {
     let handleValue = handle.bridgeJSLowerParameter()
     bjs_cancelAnimationFrame(handleValue)
     if let error = _swift_js_take_exception() {
@@ -1630,18 +1537,18 @@ func _$cancelAnimationFrame(_ handle: Double) throws(JSException) {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_queueMicrotask")
-private func bjs_queueMicrotask_extern(_ callback: Int32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_queueMicrotask")
+fileprivate func bjs_queueMicrotask_extern(_ callback: Int32) -> Void
 #else
-private func bjs_queueMicrotask_extern(_ callback: Int32) {
+fileprivate func bjs_queueMicrotask_extern(_ callback: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_queueMicrotask(_ callback: Int32) {
-    bjs_queueMicrotask_extern(callback)
+@inline(never) fileprivate func bjs_queueMicrotask(_ callback: Int32) -> Void {
+    return bjs_queueMicrotask_extern(callback)
 }
 
-func _$queueMicrotask(_ callback: @escaping () -> Void) throws(JSException) {
+func _$queueMicrotask(_ callback: @escaping () -> Void) throws(JSException) -> Void {
     let callback = JSTypedClosure<() -> Void>(callback)
     let callbackFuncRef = callback.bridgeJSLowerParameter()
     withExtendedLifetime((callback)) {
@@ -1653,18 +1560,18 @@ func _$queueMicrotask(_ callback: @escaping () -> Void) throws(JSException) {
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "env", name: "bjs_setTimeout")
-private func bjs_setTimeout_extern(_ callback: Int32, _ timeout: Float64)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_setTimeout")
+fileprivate func bjs_setTimeout_extern(_ callback: Int32, _ timeout: Float64) -> Void
 #else
-private func bjs_setTimeout_extern(_ callback: Int32, _ timeout: Float64) {
+fileprivate func bjs_setTimeout_extern(_ callback: Int32, _ timeout: Float64) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-private func bjs_setTimeout(_ callback: Int32, _ timeout: Float64) {
-    bjs_setTimeout_extern(callback, timeout)
+@inline(never) fileprivate func bjs_setTimeout(_ callback: Int32, _ timeout: Float64) -> Void {
+    return bjs_setTimeout_extern(callback, timeout)
 }
 
-func _$setTimeout(_ callback: @escaping () -> Void, _ timeout: Double) throws(JSException) {
+func _$setTimeout(_ callback: @escaping () -> Void, _ timeout: Double) throws(JSException) -> Void {
     let callback = JSTypedClosure<() -> Void>(callback)
     let callbackFuncRef = callback.bridgeJSLowerParameter()
     let timeoutValue = timeout.bridgeJSLowerParameter()

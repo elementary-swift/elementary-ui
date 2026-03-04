@@ -1,5 +1,5 @@
 import BrowserInterop
-import JavaScriptKit
+@_spi(BridgeJS) import JavaScriptKit
 
 extension DOM.Node {
     init(_ node: JSObject) { self.init(ref: node) }
@@ -193,10 +193,14 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
     }
 
     func insertChild(_ child: DOM.Node, before sibling: DOM.Node?, in parent: DOM.Node) {
-        _ = try? parent.jsElement.insertBefore(
-            child.jsNode,
-            sibling.map({ $0.jsNode })
-        )
+        if let sibling {
+            _ = try? parent.jsElement.insertBefore(
+                child.jsNode,
+                sibling.jsNode
+            )
+        } else {
+            _ = try? parent.jsElement.appendChild(child.jsNode)
+        }
     }
 
     func removeChild(_ child: DOM.Node, from parent: DOM.Node) {

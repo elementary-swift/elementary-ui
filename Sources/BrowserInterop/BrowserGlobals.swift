@@ -1,4 +1,4 @@
-import JavaScriptKit
+@_spi(BridgeJS) import JavaScriptKit
 
 // TODO: rename these or move them into some namespace
 

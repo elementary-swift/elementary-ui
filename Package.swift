@@ -12,7 +12,7 @@ let package = Package(
         .trait(name: "TraceLogs", description: "Enables trace logs for the ElementaryUI internals")
     ],
     dependencies: [
-        .package(url: "https://github.com/swiftwasm/JavaScriptKit", .upToNextMinor(from: "0.46.3")),
+        .package(url: "https://github.com/sliemeobn/JavaScriptKit", branch: "feature/unretained-strings"),
         .package(url: "https://github.com/elementary-swift/elementary", from: "0.6.3"),
         .package(url: "https://github.com/swiftlang/swift-syntax", "600.0.0"..<"603.0.0"),
     ],
