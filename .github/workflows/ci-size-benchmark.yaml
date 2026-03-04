@@ -51,6 +51,7 @@ jobs:
         uses: swift-actions/setup-swift@v3
         with:
           swift-version: ${{ env.SWIFT_VERSION }}
+          skip-verify-signature: true
 
       - name: Install Swift WASM SDK
         run: swift sdk install ${{ env.WASM_SDK_URL }} --checksum ${{ env.WASM_SDK_CHECKSUM }}
