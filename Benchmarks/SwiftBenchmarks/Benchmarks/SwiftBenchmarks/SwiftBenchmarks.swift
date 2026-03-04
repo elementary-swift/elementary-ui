@@ -83,7 +83,7 @@ private func withMountedList(
 let benchmarks = {
     let rowCounts = [10, 1_000]
 
-    rowCounts.forEach { rowCount in
+    for rowCount in rowCounts {
         let deltaCount = max(1, rowCount / 10)
         let emptyRows: [BenchRow] = []
         let baseRows = makeRows(startID: 0, count: rowCount, labelPrefix: "base-\(rowCount)")

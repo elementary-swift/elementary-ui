@@ -1,4 +1,4 @@
-@testable import ElementaryUI
+@testable @_spi(Benchmarking) import ElementaryUI
 
 private extension DOM.Event {
     //init(_ event: TestDOM) { self.init(ref: event) }
