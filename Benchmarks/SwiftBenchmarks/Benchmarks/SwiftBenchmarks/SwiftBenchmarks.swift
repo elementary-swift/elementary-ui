@@ -71,12 +71,12 @@ private func withMountedList(
     store.setRows(initialRows)
     let dom = NoOpInteractor()
     let mounted = Application(BenchAppView().environment(store))._mount(dom: dom, root: dom.rootNode)
-    dom.drain() // flush initial mount before measured work
+    dom.drain()  // flush initial mount before measured work
 
     body(store, dom)
 
     mounted.unmount()
-    dom.drain() // flush queued teardown work so next benchmark starts clean
+    dom.drain()  // flush queued teardown work so next benchmark starts clean
 }
 
 @MainActor

@@ -17,8 +17,8 @@ let package = Package(
             ],
             path: "Benchmarks/SwiftBenchmarks",
             plugins: [
-                .plugin(name: "BenchmarkPlugin", package: "package-benchmark"),
+                .plugin(name: "BenchmarkPlugin", package: "package-benchmark")
             ]
-        ),
+        )
     ]
 )
