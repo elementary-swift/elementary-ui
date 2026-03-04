@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772606530555,
+  "lastUpdate": 1772655306474,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -1067,6 +1067,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 164.81,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "38e1b5735622b899a1ec93a80fff87d946897a19",
+          "message": "added Swift benchmarks (#80)\n\n* run function node inline on makeNode\n\n* WIP: swift benchmarks\n\n* format\n\n* fixes\n\n* gosh darn gpg",
+          "timestamp": "2026-03-04T21:12:00+01:00",
+          "tree_id": "bff7f2b4cf313bccd8dc92639683b12501ac3976",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/38e1b5735622b899a1ec93a80fff87d946897a19"
+        },
+        "date": 1772655306000,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 161.02,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 133.18,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 119.94,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 162.18,
             "unit": "kB"
           }
         ]
