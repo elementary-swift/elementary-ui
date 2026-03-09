@@ -58,9 +58,11 @@ struct BenchLiteAppView {
     @Environment(BenchStore.self) var store: BenchStore
 
     var body: some View {
-        ForEach(store.rows, key: { $0.id }) { _ in
-            EmptyHTML()
-        }
+        ForEach(
+            store.rows,
+            key: { $0.id },
+            content: { _ in EmptyHTML() }
+        )
     }
 }
 
