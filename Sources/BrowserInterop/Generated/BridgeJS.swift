@@ -211,9 +211,11 @@ func _$JSDocument_body_get(_ self: JSObject) throws(JSException) -> JSElement {
 
 func _$JSDocument_createElement(_ self: JSObject, _ tagName: String) throws(JSException) -> JSElement {
     let selfValue = self.bridgeJSLowerParameter()
-    let ret = _swift_js_with_borrowed_utf8(tagName) { tagNameBytes, tagNameLength in
-        bjs_JSDocument_createElement(selfValue, tagNameBytes, tagNameLength)
+    let ret0 = tagName.bridgeJSWithLoweredParameter { (tagNameBytes, tagNameLength) in
+        let ret = bjs_JSDocument_createElement(selfValue, tagNameBytes, tagNameLength)
+        return ret
     }
+    let ret = ret0
     if let error = _swift_js_take_exception() {
         throw error
     }
@@ -222,9 +224,11 @@ func _$JSDocument_createElement(_ self: JSObject, _ tagName: String) throws(JSEx
 
 func _$JSDocument_createTextNode(_ self: JSObject, _ text: String) throws(JSException) -> JSNode {
     let selfValue = self.bridgeJSLowerParameter()
-    let ret = _swift_js_with_borrowed_utf8(text) { textBytes, textLength in
-        bjs_JSDocument_createTextNode(selfValue, textBytes, textLength)
+    let ret0 = text.bridgeJSWithLoweredParameter { (textBytes, textLength) in
+        let ret = bjs_JSDocument_createTextNode(selfValue, textBytes, textLength)
+        return ret
     }
+    let ret = ret0
     if let error = _swift_js_take_exception() {
         throw error
     }
@@ -233,9 +237,11 @@ func _$JSDocument_createTextNode(_ self: JSObject, _ text: String) throws(JSExce
 
 func _$JSDocument_querySelector(_ self: JSObject, _ selector: String) throws(JSException) -> JSElement {
     let selfValue = self.bridgeJSLowerParameter()
-    let ret = _swift_js_with_borrowed_utf8(selector) { selectorBytes, selectorLength in
-        bjs_JSDocument_querySelector(selfValue, selectorBytes, selectorLength)
+    let ret0 = selector.bridgeJSWithLoweredParameter { (selectorBytes, selectorLength) in
+        let ret = bjs_JSDocument_querySelector(selfValue, selectorBytes, selectorLength)
+        return ret
     }
+    let ret = ret0
     if let error = _swift_js_take_exception() {
         throw error
     }
@@ -244,8 +250,8 @@ func _$JSDocument_querySelector(_ self: JSObject, _ selector: String) throws(JSE
 
 func _$JSDocument_addEventListener(_ self: JSObject, _ type: String, _ listener: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    let listenerValue = listener.bridgeJSLowerParameter()
-    _swift_js_with_borrowed_utf8(type) { typeBytes, typeLength in
+    type.bridgeJSWithLoweredParameter { (typeBytes, typeLength) in
+        let listenerValue = listener.bridgeJSLowerParameter()
         bjs_JSDocument_addEventListener(selfValue, typeBytes, typeLength, listenerValue)
     }
     if let error = _swift_js_take_exception() {
@@ -255,8 +261,8 @@ func _$JSDocument_addEventListener(_ self: JSObject, _ type: String, _ listener:
 
 func _$JSDocument_removeEventListener(_ self: JSObject, _ type: String, _ listener: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    let listenerValue = listener.bridgeJSLowerParameter()
-    _swift_js_with_borrowed_utf8(type) { typeBytes, typeLength in
+    type.bridgeJSWithLoweredParameter { (typeBytes, typeLength) in
+        let listenerValue = listener.bridgeJSLowerParameter()
         bjs_JSDocument_removeEventListener(selfValue, typeBytes, typeLength, listenerValue)
     }
     if let error = _swift_js_take_exception() {
@@ -363,7 +369,7 @@ fileprivate func bjs_JSNode_textContent_set_extern(_ self: Int32, _ newValueByte
 
 func _$JSNode_textContent_set(_ self: JSObject, _ newValue: String) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    _swift_js_with_borrowed_utf8(newValue) { newValueBytes, newValueLength in
+    newValue.bridgeJSWithLoweredParameter { (newValueBytes, newValueLength) in
         bjs_JSNode_textContent_set(selfValue, newValueBytes, newValueLength)
     }
     if let error = _swift_js_take_exception() {
@@ -547,8 +553,8 @@ func _$JSElement_offsetParent_get(_ self: JSObject) throws(JSException) -> JSEle
 
 func _$JSElement_setAttribute(_ self: JSObject, _ name: String, _ value: String) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    _swift_js_with_borrowed_utf8(name) { nameBytes, nameLength in
-        _swift_js_with_borrowed_utf8(value) { valueBytes, valueLength in
+    name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
+        value.bridgeJSWithLoweredParameter { (valueBytes, valueLength) in
             bjs_JSElement_setAttribute(selfValue, nameBytes, nameLength, valueBytes, valueLength)
         }
     }
@@ -559,7 +565,7 @@ func _$JSElement_setAttribute(_ self: JSObject, _ name: String, _ value: String)
 
 func _$JSElement_removeAttribute(_ self: JSObject, _ name: String) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    _swift_js_with_borrowed_utf8(name) { nameBytes, nameLength in
+    name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
         bjs_JSElement_removeAttribute(selfValue, nameBytes, nameLength)
     }
     if let error = _swift_js_take_exception() {
@@ -606,8 +612,8 @@ func _$JSElement_getBoundingClientRect(_ self: JSObject) throws(JSException) -> 
 
 func _$JSElement_addEventListener(_ self: JSObject, _ type: String, _ listener: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    let listenerValue = listener.bridgeJSLowerParameter()
-    _swift_js_with_borrowed_utf8(type) { typeBytes, typeLength in
+    type.bridgeJSWithLoweredParameter { (typeBytes, typeLength) in
+        let listenerValue = listener.bridgeJSLowerParameter()
         bjs_JSElement_addEventListener(selfValue, typeBytes, typeLength, listenerValue)
     }
     if let error = _swift_js_take_exception() {
@@ -617,8 +623,8 @@ func _$JSElement_addEventListener(_ self: JSObject, _ type: String, _ listener: 
 
 func _$JSElement_removeEventListener(_ self: JSObject, _ type: String, _ listener: JSObject) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    let listenerValue = listener.bridgeJSLowerParameter()
-    _swift_js_with_borrowed_utf8(type) { typeBytes, typeLength in
+    type.bridgeJSWithLoweredParameter { (typeBytes, typeLength) in
+        let listenerValue = listener.bridgeJSLowerParameter()
         bjs_JSElement_removeEventListener(selfValue, typeBytes, typeLength, listenerValue)
     }
     if let error = _swift_js_take_exception() {
@@ -691,9 +697,11 @@ fileprivate func bjs_JSCSSStyleDeclaration_removeProperty_extern(_ self: Int32, 
 
 func _$JSCSSStyleDeclaration_getPropertyValue(_ self: JSObject, _ name: String) throws(JSException) -> String {
     let selfValue = self.bridgeJSLowerParameter()
-    let ret = _swift_js_with_borrowed_utf8(name) { nameBytes, nameLength in
-        bjs_JSCSSStyleDeclaration_getPropertyValue(selfValue, nameBytes, nameLength)
+    let ret0 = name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
+        let ret = bjs_JSCSSStyleDeclaration_getPropertyValue(selfValue, nameBytes, nameLength)
+        return ret
     }
+    let ret = ret0
     if let error = _swift_js_take_exception() {
         throw error
     }
@@ -702,8 +710,8 @@ func _$JSCSSStyleDeclaration_getPropertyValue(_ self: JSObject, _ name: String) 
 
 func _$JSCSSStyleDeclaration_setProperty(_ self: JSObject, _ name: String, _ value: String) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    _swift_js_with_borrowed_utf8(name) { nameBytes, nameLength in
-        _swift_js_with_borrowed_utf8(value) { valueBytes, valueLength in
+    name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
+        value.bridgeJSWithLoweredParameter { (valueBytes, valueLength) in
             bjs_JSCSSStyleDeclaration_setProperty(selfValue, nameBytes, nameLength, valueBytes, valueLength)
         }
     }
@@ -714,7 +722,7 @@ func _$JSCSSStyleDeclaration_setProperty(_ self: JSObject, _ name: String, _ val
 
 func _$JSCSSStyleDeclaration_removeProperty(_ self: JSObject, _ name: String) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    _swift_js_with_borrowed_utf8(name) { nameBytes, nameLength in
+    name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
         bjs_JSCSSStyleDeclaration_removeProperty(selfValue, nameBytes, nameLength)
     }
     if let error = _swift_js_take_exception() {
