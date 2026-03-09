@@ -53,6 +53,17 @@ struct BenchAppView {
     }
 }
 
+@View
+struct BenchLiteAppView {
+    @Environment(BenchStore.self) var store: BenchStore
+
+    var body: some View {
+        ForEach(store.rows, key: { $0.id }) { _ in
+            EmptyHTML()
+        }
+    }
+}
+
 private func makeRows(startID: Int, count: Int, labelPrefix: String) -> [BenchRow] {
     var rows: [BenchRow] = []
     rows.reserveCapacity(count)
@@ -79,6 +90,23 @@ private func withMountedList(
     dom.drain()  // flush queued teardown work so next benchmark starts clean
 }
 
+@inline(never)
+private func withMountedLiteList(
+    initialRows: [BenchRow],
+    _ body: (BenchStore, NoOpInteractor) -> Void
+) {
+    let store = BenchStore()
+    store.setRows(initialRows)
+    let dom = NoOpInteractor()
+    let mounted = Application(BenchLiteAppView().environment(store))._mount(dom: dom, root: dom.rootNode)
+    dom.drain()  // flush initial mount before measured work
+
+    body(store, dom)
+
+    mounted.unmount()
+    dom.drain()  // flush queued teardown work so next benchmark starts clean
+}
+
 @MainActor
 let benchmarks = {
     let rowCounts = [10, 1_000]
@@ -87,6 +115,11 @@ let benchmarks = {
         let deltaCount = max(1, rowCount / 10)
         let emptyRows: [BenchRow] = []
         let baseRows = makeRows(startID: 0, count: rowCount, labelPrefix: "base-\(rowCount)")
+        let baseRowsCopy = Array(baseRows)
+        let reversedRows = Array(baseRows.reversed())
+        let relabeledRows = baseRows.enumerated().map { index, row in
+            BenchRow(id: row.id, label: "relabeled-\(rowCount)-\(index)")
+        }
         let plusDeltaRows = makeRows(startID: 0, count: rowCount + deltaCount, labelPrefix: "plus-\(rowCount)")
         let addRows = Array(plusDeltaRows.suffix(deltaCount))
 
@@ -187,6 +220,54 @@ let benchmarks = {
                     benchmark.stopMeasurement()
 
                     store.swapRows()
+                    dom.drain()
+                }
+            }
+        }
+
+        Benchmark(
+            "ForEach.runFunction.stableKeys.sameValues",
+            configuration: .init(tags: ["rows": "\(rowCount)"])
+        ) { benchmark in
+            withMountedLiteList(initialRows: baseRows) { store, dom in
+                for _ in benchmark.scaledIterations {
+                    benchmark.startMeasurement()
+                    store.setRows(baseRowsCopy)
+                    dom.drain()
+                    benchmark.stopMeasurement()
+                }
+            }
+        }
+
+        Benchmark(
+            "ForEach.runFunction.stableKeys.relabel",
+            configuration: .init(tags: ["rows": "\(rowCount)"])
+        ) { benchmark in
+            withMountedLiteList(initialRows: baseRows) { store, dom in
+                for _ in benchmark.scaledIterations {
+                    benchmark.startMeasurement()
+                    store.setRows(relabeledRows)
+                    dom.drain()
+                    benchmark.stopMeasurement()
+
+                    store.setRows(baseRows)
+                    dom.drain()
+                }
+            }
+        }
+
+        Benchmark(
+            "ForEach.runFunction.changedKeys.reversed",
+            configuration: .init(tags: ["rows": "\(rowCount)"])
+        ) { benchmark in
+            withMountedLiteList(initialRows: baseRows) { store, dom in
+                for _ in benchmark.scaledIterations {
+                    benchmark.startMeasurement()
+                    store.setRows(reversedRows)
+                    dom.drain()
+                    benchmark.stopMeasurement()
+
+                    store.setRows(baseRows)
                     dom.drain()
                 }
             }

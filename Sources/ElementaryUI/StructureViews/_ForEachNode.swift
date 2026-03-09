@@ -23,7 +23,7 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
         self.depthInTree = context.functionDepth
         self.asFunctionNode = AnyFunctionNode(self)
 
-        tx.addFunction(asFunctionNode)
+        runFunction(tx: &tx)
     }
 
     func patch(
@@ -39,10 +39,20 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
     func runFunction(tx: inout _TransactionContext) {
         self.trackingSession.take()?.cancel()
 
-        let (views, session) = withReactiveTrackingSession {
-            data.map { value in
-                contentBuilder(value)
+        let ((views, keys), session) = withReactiveTrackingSession {
+            var views: [Content] = []
+            var keys: [_ViewKey] = []
+            let estimatedCount = data.underestimatedCount
+            views.reserveCapacity(estimatedCount)
+            keys.reserveCapacity(estimatedCount)
+
+            for value in data {
+                let view = contentBuilder(value)
+                views.append(view)
+                keys.append(view._key)
             }
+
+            return (views, keys)
         } onWillSet: { [scheduler = tx.scheduler, asFunctionNode = asFunctionNode!] in
             scheduler.invalidateFunction(asFunctionNode)
         }
@@ -50,20 +60,20 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
         self.trackingSession = session
 
         if keyedNode == nil {
-            keyedNode = _KeyedNode(
-                views.map { view in
-                    (
-                        key: view._key,
-                        node: Content.Value._makeNode(view._value, context: context, tx: &tx)
-                    )
-                },
-                context: context
-            )
+            var children: [AnyReconcilable?] = []
+            children.reserveCapacity(views.count)
+
+            for view in views {
+                let node = Content.Value._makeNode(view._value, context: context, tx: &tx)
+                children.append(AnyReconcilable(node))
+            }
+
+            keyedNode = _KeyedNode(keys: keys, children: children, context: context)
             return
         }
 
         keyedNode!.patch(
-            views.map { $0._key },
+            keys,
             context: &tx,
             as: Content.Value._MountedNode.self,
         ) { index, node, context, tx in

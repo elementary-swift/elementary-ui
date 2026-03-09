@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.macOS(.v15)],
     dependencies: [
         .package(url: "https://github.com/ordo-one/package-benchmark", from: "1.29.0"),
-        .package(path: "../.."),
+        .package(name: "elementary-ui", path: "../.."),
     ],
     targets: [
         .executableTarget(

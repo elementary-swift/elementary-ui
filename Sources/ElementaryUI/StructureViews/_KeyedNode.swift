@@ -49,10 +49,12 @@ public final class _KeyedNode {
             return
         }
 
+        let newKeysArray = Array(newKeys)
+
         // TODO: clean this up
         guard !(keys.isEmpty && leavingChildren.entries.isEmpty) else {
             // fast add-all case
-            keys = Array(newKeys)
+            keys = newKeysArray
             children = Array(repeating: nil, count: keys.count)
 
             for index in keys.indices {
@@ -62,8 +64,17 @@ public final class _KeyedNode {
             return
         }
 
-        let diff = newKeys.difference(from: keys).inferringMoves()
-        keys = Array(newKeys)
+        if leavingChildren.entries.isEmpty, keys.count == newKeysArray.count, keys.elementsEqual(newKeysArray) {
+            // Common ForEach path: structural identity unchanged.
+            for index in children.indices {
+                makeOrPatchNode(index, &children[unwrapped: index, as: Node.self], self.viewContext, &context)
+                assert(children[index] != nil, "unexpected nil child on collection")
+            }
+            return
+        }
+
+        let diff = newKeysArray.difference(from: keys).inferringMoves()
+        keys = newKeysArray
 
         if !diff.isEmpty {
             var moversCache: [Int: AnyReconcilable] = [:]
