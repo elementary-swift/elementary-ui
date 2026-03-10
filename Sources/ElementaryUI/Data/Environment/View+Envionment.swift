@@ -143,7 +143,7 @@ public struct _EnvironmentView<V, Wrapped: View>: View {
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
         // IMPORTANT: _value does not cause access tracking!
@@ -160,6 +160,6 @@ public struct _EnvironmentView<V, Wrapped: View>: View {
             )
         }
 
-        Wrapped._patchNode(view.wrapped, node: node.child, tx: &tx)
+        Wrapped._patchNode(view.wrapped, node: &node.child, tx: &tx)
     }
 }

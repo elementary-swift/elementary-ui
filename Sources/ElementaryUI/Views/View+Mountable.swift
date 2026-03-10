@@ -68,7 +68,7 @@ public protocol _Mountable {
 
     static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     )
 }
@@ -86,7 +86,7 @@ extension Never: _Mountable {
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {}
 }

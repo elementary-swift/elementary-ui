@@ -22,16 +22,16 @@ struct _TransactionModifierView<Wrapped: View, Value: Equatable>: View {
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
         if node.state.value != view.value {
             node.state.value = view.value
             tx.withModifiedTransaction(view.transactionModifier) { tx in
-                Wrapped._patchNode(view.view, node: node.child, tx: &tx)
+                Wrapped._patchNode(view.view, node: &node.child, tx: &tx)
             }
         } else {
-            Wrapped._patchNode(view.view, node: node.child, tx: &tx)
+            Wrapped._patchNode(view.view, node: &node.child, tx: &tx)
         }
     }
 }

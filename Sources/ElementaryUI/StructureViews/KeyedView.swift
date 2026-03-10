@@ -19,7 +19,7 @@ public struct _KeyedView<Value: View>: View {
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
         node.patch(
@@ -30,7 +30,7 @@ public struct _KeyedView<Value: View>: View {
                 if node == nil {
                     node = Value._makeNode(view.value, context: context, tx: &tx)
                 } else {
-                    Value._patchNode(view.value, node: node!, tx: &tx)
+                    Value._patchNode(view.value, node: &node!, tx: &tx)
                 }
             }
         )

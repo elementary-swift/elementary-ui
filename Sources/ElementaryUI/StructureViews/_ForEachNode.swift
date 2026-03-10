@@ -80,7 +80,7 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
             if node == nil {
                 node = Content.Value._makeNode(views[index]._value, context: context, tx: &tx)
             } else {
-                Content.Value._patchNode(views[index]._value, node: node!, tx: &tx)
+                Content.Value._patchNode(views[index]._value, node: &node!, tx: &tx)
             }
         }
     }

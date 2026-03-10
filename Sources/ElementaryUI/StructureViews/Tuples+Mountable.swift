@@ -15,11 +15,11 @@ extension _HTMLTuple2: _Mountable where V0: _Mountable, V1: _Mountable {
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        V0._patchNode(view.v0, node: node.value.0, tx: &tx)
-        V1._patchNode(view.v1, node: node.value.1, tx: &tx)
+        V0._patchNode(view.v0, node: &node.value.0, tx: &tx)
+        V1._patchNode(view.v1, node: &node.value.1, tx: &tx)
     }
 }
 
@@ -41,12 +41,12 @@ extension _HTMLTuple3: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mou
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        V0._patchNode(view.v0, node: node.value.0, tx: &tx)
-        V1._patchNode(view.v1, node: node.value.1, tx: &tx)
-        V2._patchNode(view.v2, node: node.value.2, tx: &tx)
+        V0._patchNode(view.v0, node: &node.value.0, tx: &tx)
+        V1._patchNode(view.v1, node: &node.value.1, tx: &tx)
+        V2._patchNode(view.v2, node: &node.value.2, tx: &tx)
     }
 }
 
@@ -69,13 +69,13 @@ extension _HTMLTuple4: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mou
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        V0._patchNode(view.v0, node: node.value.0, tx: &tx)
-        V1._patchNode(view.v1, node: node.value.1, tx: &tx)
-        V2._patchNode(view.v2, node: node.value.2, tx: &tx)
-        V3._patchNode(view.v3, node: node.value.3, tx: &tx)
+        V0._patchNode(view.v0, node: &node.value.0, tx: &tx)
+        V1._patchNode(view.v1, node: &node.value.1, tx: &tx)
+        V2._patchNode(view.v2, node: &node.value.2, tx: &tx)
+        V3._patchNode(view.v3, node: &node.value.3, tx: &tx)
     }
 }
 
@@ -99,14 +99,14 @@ extension _HTMLTuple5: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mou
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        V0._patchNode(view.v0, node: node.value.0, tx: &tx)
-        V1._patchNode(view.v1, node: node.value.1, tx: &tx)
-        V2._patchNode(view.v2, node: node.value.2, tx: &tx)
-        V3._patchNode(view.v3, node: node.value.3, tx: &tx)
-        V4._patchNode(view.v4, node: node.value.4, tx: &tx)
+        V0._patchNode(view.v0, node: &node.value.0, tx: &tx)
+        V1._patchNode(view.v1, node: &node.value.1, tx: &tx)
+        V2._patchNode(view.v2, node: &node.value.2, tx: &tx)
+        V3._patchNode(view.v3, node: &node.value.3, tx: &tx)
+        V4._patchNode(view.v4, node: &node.value.4, tx: &tx)
     }
 }
 
@@ -133,15 +133,15 @@ extension _HTMLTuple6: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mou
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        V0._patchNode(view.v0, node: node.value.0, tx: &tx)
-        V1._patchNode(view.v1, node: node.value.1, tx: &tx)
-        V2._patchNode(view.v2, node: node.value.2, tx: &tx)
-        V3._patchNode(view.v3, node: node.value.3, tx: &tx)
-        V4._patchNode(view.v4, node: node.value.4, tx: &tx)
-        V5._patchNode(view.v5, node: node.value.5, tx: &tx)
+        V0._patchNode(view.v0, node: &node.value.0, tx: &tx)
+        V1._patchNode(view.v1, node: &node.value.1, tx: &tx)
+        V2._patchNode(view.v2, node: &node.value.2, tx: &tx)
+        V3._patchNode(view.v3, node: &node.value.3, tx: &tx)
+        V4._patchNode(view.v4, node: &node.value.4, tx: &tx)
+        V5._patchNode(view.v5, node: &node.value.5, tx: &tx)
     }
 }
 
@@ -167,13 +167,14 @@ extension _HTMLTuple: _Mountable where repeat each Child: _Mountable {
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
         // I don't think there is a way to spell this currently without warnings
         for (view, node) in repeat (each view.value, each node.value) {
             //__noop_goshDarnValuePacksAreAnnoyingAF(&view)  // this is to suppress a warning
-            patchNode(view, node: node, tx: &tx)
+            var mutableNode = node
+            patchNode(view, node: &mutableNode, tx: &tx)
         }
 
         // NOTE: this doesn't work because I don't think we can pass a value pack as inout
@@ -201,9 +202,9 @@ private func makeNode<V: _Mountable>(
 
 private func patchNode<V: _Mountable>(
     _ view: consuming V,
-    node: V._MountedNode,
+    node: inout V._MountedNode,
     tx: inout _TransactionContext
 ) {
-    V._patchNode(view, node: node, tx: &tx)
+    V._patchNode(view, node: &node, tx: &tx)
 }
 #endif

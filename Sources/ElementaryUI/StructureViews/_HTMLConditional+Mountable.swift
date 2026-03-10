@@ -17,7 +17,7 @@ extension _HTMLConditional: _Mountable where TrueContent: _Mountable, FalseConte
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
         switch view.value {
@@ -25,13 +25,13 @@ extension _HTMLConditional: _Mountable where TrueContent: _Mountable, FalseConte
             node.patchWithA(
                 tx: &tx,
                 makeNode: { c, tx in TrueContent._makeNode(content, context: c, tx: &tx) },
-                updateNode: { node, tx in TrueContent._patchNode(content, node: node, tx: &tx) }
+                updateNode: { node, tx in TrueContent._patchNode(content, node: &node, tx: &tx) }
             )
         case let .falseContent(content):
             node.patchWithB(
                 tx: &tx,
                 makeNode: { c, tx in FalseContent._makeNode(content, context: c, tx: &tx) },
-                updateNode: { node, tx in FalseContent._patchNode(content, node: node, tx: &tx) }
+                updateNode: { node, tx in FalseContent._patchNode(content, node: &node, tx: &tx) }
             )
         }
     }

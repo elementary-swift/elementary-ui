@@ -12,9 +12,9 @@ extension Group: _Mountable where Content: _Mountable {
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        Content._patchNode(view.content, node: node, tx: &tx)
+        Content._patchNode(view.content, node: &node, tx: &tx)
     }
 }

@@ -26,11 +26,11 @@ struct AnimateContainerLayoutView<Wrapped: View>: View {
 
     static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
         node.state.update(animateContainerSize: view.animateContainerSize)
-        Wrapped._patchNode(view.wrapped, node: node.child, tx: &tx)
+        Wrapped._patchNode(view.wrapped, node: &node.child, tx: &tx)
     }
 }
 

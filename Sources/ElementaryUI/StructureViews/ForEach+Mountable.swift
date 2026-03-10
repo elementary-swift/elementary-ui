@@ -39,7 +39,7 @@ extension ForEach: _Mountable, View where Content: _KeyReadableView, Data: Colle
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
         node.patch(data: view._data, contentBuilder: view._contentBuilder, tx: &tx)

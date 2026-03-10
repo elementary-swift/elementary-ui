@@ -11,7 +11,7 @@ extension HTMLText: _Mountable, View {
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
         node.patch(view.text, context: &tx)

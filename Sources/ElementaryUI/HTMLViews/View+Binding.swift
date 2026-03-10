@@ -116,10 +116,10 @@ struct DOMEffectView<Effect: DOMElementModifier, Wrapped: View>: View {
 
     static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
         node.state.updateValue(view.value, &tx)
-        Wrapped._patchNode(view.wrapped, node: node.child, tx: &tx)
+        Wrapped._patchNode(view.wrapped, node: &node.child, tx: &tx)
     }
 }

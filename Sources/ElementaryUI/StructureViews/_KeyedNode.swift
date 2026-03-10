@@ -1,4 +1,4 @@
-public final class _KeyedNode {
+public struct _KeyedNode {
     private var keys: [_ViewKey]
     private var children: [AnyReconcilable?]
     private var leavingChildren: LeavingChildrenTracker = .init()
@@ -11,7 +11,7 @@ public final class _KeyedNode {
         self.viewContext = copy context
     }
 
-    convenience init(_ value: some Sequence<(key: _ViewKey, node: some _Reconcilable)>, context: borrowing _ViewContext) {
+    init(_ value: some Sequence<(key: _ViewKey, node: some _Reconcilable)>, context: borrowing _ViewContext) {
         self.init(
             keys: value.map { $0.key },
             children: value.map { AnyReconcilable($0.node) },
@@ -19,11 +19,11 @@ public final class _KeyedNode {
         )
     }
 
-    convenience init(key: _ViewKey, child: some _Reconcilable, context: borrowing _ViewContext) {
+    init(key: _ViewKey, child: some _Reconcilable, context: borrowing _ViewContext) {
         self.init(CollectionOfOne((key: key, node: child)), context: context)
     }
 
-    func patch<Node: _Reconcilable>(
+    mutating func patch<Node: _Reconcilable>(
         key: _ViewKey,
         context: inout _TransactionContext,
         as: Node.Type = Node.self,
@@ -36,7 +36,7 @@ public final class _KeyedNode {
         )
     }
 
-    func patch<Node: _Reconcilable>(
+    mutating func patch<Node: _Reconcilable>(
         _ newKeys: some BidirectionalCollection<_ViewKey>,
         context: inout _TransactionContext,
         as: Node.Type = Node.self,
@@ -121,7 +121,7 @@ public final class _KeyedNode {
         }
     }
 
-    func fastRemoveAll(context: inout _TransactionContext) {
+    mutating func fastRemoveAll(context: inout _TransactionContext) {
         self.viewContext.parentElement?.reportChangedChildren(.elementMoved, tx: &context)
 
         for index in children.indices {
@@ -145,7 +145,7 @@ extension _KeyedNode: _Reconcilable {
         }
     }
 
-    public func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
+    public mutating func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
         // the trick here is to efficiently interleave the leaving nodes with the active nodes to match the DOM order
         // the other trick is to stay noncopyable compatible (one fine day we will have lists, associated types and stuff like that)
         // in any case, we need to mutate in place
@@ -171,7 +171,7 @@ extension _KeyedNode: _Reconcilable {
         }
     }
 
-    public func unmount(_ context: inout _CommitContext) {
+    public consuming func unmount(_ context: inout _CommitContext) {
         for index in children.indices {
             children[index]?.unmount(&context)
         }
@@ -185,7 +185,7 @@ extension _KeyedNode: _Reconcilable {
 }
 
 private extension _KeyedNode {
-    struct LeavingChildrenTracker: ~Copyable {
+    struct LeavingChildrenTracker {  //: ~Copyable {
         struct Entry {
             let key: _ViewKey
             var originalMountIndex: Int
@@ -245,10 +245,16 @@ private extension _KeyedNode {
 extension [AnyReconcilable?] {
     subscript<Node: _Reconcilable>(unwrapped index: Index, as type: Node.Type = Node.self) -> Node? {
         get {
-            self[index]?.unwrap(as: Node.self)
+            guard let slot = self[index] else { return nil }
+            var value: Node?
+            slot.modify(as: Node.self) { value = $0 }
+            return value
         }
         _modify {
-            var slot = self[index].take()?.unwrap(as: Node.self)
+            var slot: Node?
+            if let value = self[index].take() {
+                value.modify(as: Node.self) { slot = $0 }
+            }
             yield &slot
             self[index] = slot.map(AnyReconcilable.init)
         }

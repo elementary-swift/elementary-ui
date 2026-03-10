@@ -70,7 +70,7 @@ struct _OnChangeView<Wrapped: View, Value: Equatable>: View {
 
     static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
         node.state.action = view.action
@@ -86,6 +86,6 @@ struct _OnChangeView<Wrapped: View, Value: Equatable>: View {
             }
         }
 
-        Wrapped._patchNode(view.wrapped, node: node.child, tx: &tx)
+        Wrapped._patchNode(view.wrapped, node: &node.child, tx: &tx)
     }
 }

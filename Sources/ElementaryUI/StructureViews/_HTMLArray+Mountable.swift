@@ -19,7 +19,7 @@ extension _HTMLArray: _Mountable, View where Element: View {
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
         // maybe we can optimize this
@@ -34,7 +34,7 @@ extension _HTMLArray: _Mountable, View where Element: View {
                 if node == nil {
                     node = Element._makeNode(view.value[index], context: context, tx: &tx)
                 } else {
-                    Element._patchNode(view.value[index], node: node!, tx: &tx)
+                    Element._patchNode(view.value[index], node: &node!, tx: &tx)
                 }
             }
         )

@@ -19,14 +19,14 @@ extension _AttributedElement: _Mountable, View where Content: _Mountable {
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
         node.state.updateValue(view.attributes, &tx)
 
         Content._patchNode(
             view.content,
-            node: node.child,
+            node: &node.child,
             tx: &tx
         )
     }

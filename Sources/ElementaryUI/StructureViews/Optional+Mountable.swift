@@ -17,7 +17,7 @@ extension Optional: _Mountable where Wrapped: _Mountable {
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
         switch view {
@@ -25,7 +25,7 @@ extension Optional: _Mountable where Wrapped: _Mountable {
             node.patchWithA(
                 tx: &tx,
                 makeNode: { c, tx in Wrapped._makeNode(view, context: c, tx: &tx) },
-                updateNode: { node, tx in Wrapped._patchNode(view, node: node, tx: &tx) }
+                updateNode: { node, tx in Wrapped._patchNode(view, node: &node, tx: &tx) }
             )
         case .none:
             node.patchWithB(
