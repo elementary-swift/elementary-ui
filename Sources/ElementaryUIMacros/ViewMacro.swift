@@ -31,9 +31,10 @@ extension ViewMacro: ExtensionMacro {
         let needsFunctionView = protocols.contains { $0.trimmed.description == "__FunctionView" }
         let needsViewEquatable = protocols.contains { $0.trimmed.description == "__ViewEquatable" }
         let members = declaration.memberBlock.members.compactMap { $0.decl.as(VariableDeclSyntax.self) }
-        let accessControl = declaration.modifiers.first {
+        let access = declaration.modifiers.first {
             $0.detail == nil && 
-            ($0.name == .keyword(.public) || $0.name == .keyword(.private) || $0.name == .keyword(.internal) || $0.name == .keyword(.package) || $0.name == .keyword(.fileprivate))
+            [.keyword(.public), .keyword(.private), .keyword(.internal), .keyword(.package), .keyword(.fileprivate)]
+                .contains($0.name.tokenKind)
         }
 
         // add _StatefulView conformance if any @State member is declared
@@ -52,7 +53,7 @@ extension ViewMacro: ExtensionMacro {
             decls.append(
                 DeclSyntax(
                     """
-                    \(raw: accessControl)static func __applyContext(_ context: borrowing _ViewContext, to view: inout Self) {
+                    \(access)static func __applyContext(_ context: borrowing _ViewContext, to view: inout Self) {
                         \(raw: environmentLoads.map { $0.description }.joined(separator: "\n"))
                     }
                     """
@@ -75,7 +76,7 @@ extension ViewMacro: ExtensionMacro {
                 decls.append(
                     DeclSyntax(
                         """
-                        \(raw: accessControl)static func __initializeState(from view: borrowing Self) -> _ViewStateStorage {
+                        \(access)static func __initializeState(from view: borrowing Self) -> _ViewStateStorage {
                             let storage = _ViewStateStorage()
                             storage.reserveCapacity(\(raw: stateMembers.count))
                             \(raw: initCalls.map { $0.description }.joined(separator: "\n"))
@@ -87,7 +88,7 @@ extension ViewMacro: ExtensionMacro {
                 decls.append(
                     DeclSyntax(
                         """
-                        \(raw: accessControl)static func __restoreState(_ storage: _ViewStateStorage, in view: inout Self) {
+                        \(access)static func __restoreState(_ storage: _ViewStateStorage, in view: inout Self) {
                             \(raw: restoreCalls.map { $0.description }.joined(separator: "\n"))
                         }
                         """
@@ -97,7 +98,7 @@ extension ViewMacro: ExtensionMacro {
                 decls.append(
                     DeclSyntax(
                         """
-                        \(raw: accessControl)typealias __ViewState = Void
+                        \(accessControl)typealias __ViewState = Void
                         """
                     )
                 )
@@ -105,7 +106,7 @@ extension ViewMacro: ExtensionMacro {
 
             let extensionDecl: DeclSyntax = """
                 extension \(raw: type.trimmedDescription): __FunctionView {
-                    //\(raw: accessControl)typealias _MountedNode = _FunctionNode<Self, Self.Content._MountedNode>
+                    //\(access)typealias _MountedNode = _FunctionNode<Self, Self.Content._MountedNode>
                     
                     \(raw: decls.map { $0.description }.joined(separator: "\n"))
                 }
@@ -134,7 +135,7 @@ extension ViewMacro: ExtensionMacro {
                     ExtensionDeclSyntax(
                         """
                         extension \(raw: type.trimmedDescription): __ViewEquatable {
-                            \(raw: accessControl)static func __arePropertiesEqual(a: Self, b: Self) -> Bool {
+                            \(access)static func __arePropertiesEqual(a: Self, b: Self) -> Bool {
                                 return true 
                                 \(raw: propDecls.map { $0.description }.joined(separator: "\n"))
                             }
