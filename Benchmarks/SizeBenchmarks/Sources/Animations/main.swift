@@ -17,7 +17,7 @@ struct AnimationsApp {
         div {
             if isVisible {
                 span { "Hello" }
-                //.transition(.fade, animation: .bouncy)
+                    .transition(.fade, animation: .bouncy)
             }
         }.animateContainerLayout()
 

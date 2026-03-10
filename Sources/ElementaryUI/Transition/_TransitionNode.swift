@@ -1,6 +1,9 @@
 public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
     private var value: _TransitionView<T, V>
-    private var node: T.Body._MountedNode?
+    // NOTE: stored as AnyReconcilable (not T.Body._MountedNode?) to avoid
+    // keeping a potentially struct-typed optional inline in this class, which
+    // causes an Embedded Swift IR field-offset assertion failure.
+    private var node: AnyReconcilable?
 
     private var placeholderView: PlaceholderContentView<T>?
     private var placeholderNode: _PlaceholderNode?
@@ -16,11 +19,11 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
 
         // the idea is that with disablesAnimation set to true, only the top-level transition will be animated after a mount will be animated
         guard let transitionAnimation else {
-            self.node = T.Body._makeNode(
+            self.node = AnyReconcilable(T.Body._makeNode(
                 self.value.transition.body(content: placeholderView!, phase: .identity),
                 context: context,
                 tx: &tx
-            )
+            ))
             return
         }
 
@@ -28,26 +31,27 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
             $0.disablesAnimation = true
             $0.animation = transitionAnimation
         } run: { tx in
-            self.node = T.Body._makeNode(
+            self.node = AnyReconcilable(T.Body._makeNode(
                 self.value.transition.body(content: placeholderView!, phase: .willAppear),
                 context: context,
                 tx: &tx
-            )
+            ))
         }
 
         // Schedule follow-up TX to patch to identity phase (triggers CSS transition)
         tx.scheduler.scheduleUpdate { [self] tx in
-            guard var node = self.node, let placeholderView = self.placeholderView else { return }
+            guard let placeholderView = self.placeholderView else { return }
             tx.withModifiedTransaction {
                 $0.animation = transitionAnimation
             } run: { tx in
-                T.Body._patchNode(
-                    self.value.transition.body(content: placeholderView, phase: .identity),
-                    node: &node,
-                    tx: &tx
-                )
+                self.node?.modify(as: T.Body._MountedNode.self) { node in
+                    T.Body._patchNode(
+                        self.value.transition.body(content: placeholderView, phase: .identity),
+                        node: &node,
+                        tx: &tx
+                    )
+                }
             }
-            self.node = node
         }
     }
 
@@ -95,13 +99,12 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
                 node?.apply(.markAsLeaving, &tx)
 
                 // the patch does not go past the placeholder, so this only animates the transition
-                if var node {
+                node?.modify(as: T.Body._MountedNode.self) { node in
                     T.Body._patchNode(
                         value.transition.body(content: placeholderView, phase: .didDisappear),
                         node: &node,
                         tx: &tx
                     )
-                    self.node = node
                 }
             }
 
@@ -111,22 +114,19 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
                 [scheduler = tx.scheduler, frameTime = currentRemovalAnimationTime] in
                 guard let currentTime = self.currentRemovalAnimationTime, currentTime == frameTime else { return }
                 scheduler.scheduleUpdate { [self] tx in
-                    guard var node = self.node else { return }
-                    node.apply(.startRemoval, &tx)
-                    self.node = node
+                    self.node?.apply(.startRemoval, &tx)
                 }
             }
         case .cancelRemoval:
             currentRemovalAnimationTime = nil
             // TODO: check this, stuff is for sure missing for reversible transitions
             node?.apply(.cancelRemoval, &tx)
-            if var node {
+            node?.modify(as: T.Body._MountedNode.self) { node in
                 T.Body._patchNode(
                     value.transition.body(content: placeholderView, phase: .identity),
                     node: &node,
                     tx: &tx
                 )
-                self.node = node
             }
         case .markAsMoved:
             node?.apply(op, &tx)
