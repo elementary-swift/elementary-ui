@@ -19,11 +19,13 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
 
         // the idea is that with disablesAnimation set to true, only the top-level transition will be animated after a mount will be animated
         guard let transitionAnimation else {
-            self.node = AnyReconcilable(T.Body._makeNode(
-                self.value.transition.body(content: placeholderView!, phase: .identity),
-                context: context,
-                tx: &tx
-            ))
+            self.node = AnyReconcilable(
+                T.Body._makeNode(
+                    self.value.transition.body(content: placeholderView!, phase: .identity),
+                    context: context,
+                    tx: &tx
+                )
+            )
             return
         }
 
@@ -31,11 +33,13 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
             $0.disablesAnimation = true
             $0.animation = transitionAnimation
         } run: { tx in
-            self.node = AnyReconcilable(T.Body._makeNode(
-                self.value.transition.body(content: placeholderView!, phase: .willAppear),
-                context: context,
-                tx: &tx
-            ))
+            self.node = AnyReconcilable(
+                T.Body._makeNode(
+                    self.value.transition.body(content: placeholderView!, phase: .willAppear),
+                    context: context,
+                    tx: &tx
+                )
+            )
         }
 
         // Schedule follow-up TX to patch to identity phase (triggers CSS transition)
