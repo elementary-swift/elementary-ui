@@ -26,6 +26,18 @@ final class BenchStore {
     }
 }
 
+@Reactive
+final class ToggleBenchStore {
+    var flag = false
+    func toggle() { flag.toggle() }
+}
+
+@Reactive
+final class TextBenchStore {
+    var text: String = ""
+    func setText(_ value: String) { text = value }
+}
+
 @View
 struct BenchRowView {
     let row: BenchRow
@@ -63,6 +75,41 @@ struct BenchLiteAppView {
             key: { $0.id },
             content: { _ in EmptyHTML() }
         )
+    }
+}
+
+@View
+struct BenchConditionalView {
+    @Environment(ToggleBenchStore.self) var store: ToggleBenchStore
+
+    var body: some View {
+        if store.flag {
+            p { "true" }
+        } else {
+            a { "false" }
+        }
+    }
+}
+
+@View
+struct BenchTuplePatchView {
+    @Environment(ToggleBenchStore.self) var store: ToggleBenchStore
+
+    var body: some View {
+        div {
+            "left"
+            "\(store.flag)"
+            "right"
+        }
+    }
+}
+
+@View
+struct BenchTextPatchView {
+    @Environment(TextBenchStore.self) var store: TextBenchStore
+
+    var body: some View {
+        HTMLText(store.text)
     }
 }
 
@@ -107,6 +154,57 @@ private func withMountedLiteList(
 
     mounted.unmount()
     dom.drain()  // flush queued teardown work so next benchmark starts clean
+}
+
+@inline(never)
+private func withMountedConditional(
+    initial: Bool,
+    _ body: (ToggleBenchStore, NoOpInteractor) -> Void
+) {
+    let store = ToggleBenchStore()
+    store.flag = initial
+    let dom = NoOpInteractor()
+    let mounted = Application(BenchConditionalView().environment(store))._mount(dom: dom, root: dom.rootNode)
+    dom.drain()
+
+    body(store, dom)
+
+    mounted.unmount()
+    dom.drain()
+}
+
+@inline(never)
+private func withMountedTuplePatch(
+    initial: Bool,
+    _ body: (ToggleBenchStore, NoOpInteractor) -> Void
+) {
+    let store = ToggleBenchStore()
+    store.flag = initial
+    let dom = NoOpInteractor()
+    let mounted = Application(BenchTuplePatchView().environment(store))._mount(dom: dom, root: dom.rootNode)
+    dom.drain()
+
+    body(store, dom)
+
+    mounted.unmount()
+    dom.drain()
+}
+
+@inline(never)
+private func withMountedTextPatch(
+    initial: String,
+    _ body: (TextBenchStore, NoOpInteractor) -> Void
+) {
+    let store = TextBenchStore()
+    store.setText(initial)
+    let dom = NoOpInteractor()
+    let mounted = Application(BenchTextPatchView().environment(store))._mount(dom: dom, root: dom.rootNode)
+    dom.drain()
+
+    body(store, dom)
+
+    mounted.unmount()
+    dom.drain()
 }
 
 @MainActor
@@ -272,6 +370,52 @@ let benchmarks = {
                     store.setRows(baseRows)
                     dom.drain()
                 }
+            }
+        }
+    }
+
+    Benchmark("Conditional.patch.toggle") { benchmark in
+        withMountedConditional(initial: false) { store, dom in
+            for _ in benchmark.scaledIterations {
+                benchmark.startMeasurement()
+                store.toggle()
+                dom.drain()
+                benchmark.stopMeasurement()
+            }
+        }
+    }
+
+    Benchmark("Tuple.patch.middleTextChanged") { benchmark in
+        withMountedTuplePatch(initial: false) { store, dom in
+            for _ in benchmark.scaledIterations {
+                benchmark.startMeasurement()
+                store.toggle()
+                dom.drain()
+                benchmark.stopMeasurement()
+            }
+        }
+    }
+
+    Benchmark("Text.patch.changed") { benchmark in
+        withMountedTextPatch(initial: "A") { store, dom in
+            var toggle = false
+            for _ in benchmark.scaledIterations {
+                benchmark.startMeasurement()
+                store.setText(toggle ? "A" : "B")
+                dom.drain()
+                benchmark.stopMeasurement()
+                toggle.toggle()
+            }
+        }
+    }
+
+    Benchmark("Text.patch.stableValue") { benchmark in
+        withMountedTextPatch(initial: "A") { store, dom in
+            for _ in benchmark.scaledIterations {
+                benchmark.startMeasurement()
+                store.setText("A")
+                dom.drain()
+                benchmark.stopMeasurement()
             }
         }
     }

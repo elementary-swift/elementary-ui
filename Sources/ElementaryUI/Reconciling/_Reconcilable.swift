@@ -1,11 +1,11 @@
 // TODO: either get rid of this procol entirely, or at least move the apply/collectChildren stuff somewhere out of this
-public protocol _Reconcilable: AnyObject {
-    func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext)
+public protocol _Reconcilable {
+    mutating func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext)
 
-    func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext)
+    mutating func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext)
 
     // TODO: should this be destroy?
-    func unmount(_ context: inout _CommitContext)
+    consuming func unmount(_ context: inout _CommitContext)
 }
 
 public enum _ReconcileOp {
@@ -16,32 +16,52 @@ public enum _ReconcileOp {
 }
 
 struct AnyReconcilable {
-    private var node: AnyObject
-    private var _apply: (_ReconcileOp, inout _TransactionContext) -> Void
-    private var _collectChildren: (inout _ContainerLayoutPass, inout _CommitContext) -> Void
-    private var _unmount: (inout _CommitContext) -> Void
+    class _Box {
+        func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext) {}
+        func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {}
+        func unmount(_ context: inout _CommitContext) {}
+    }
+
+    final class _TypedBox<R: _Reconcilable>: _Box {
+        var node: R
+
+        init(_ node: consuming R) { self.node = node }
+
+        override func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext) {
+            node.apply(op, &tx)
+        }
+
+        override func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
+            node.collectChildren(&ops, &context)
+        }
+
+        override func unmount(_ context: inout _CommitContext) {
+            node.unmount(&context)
+        }
+    }
+
+    private var box: _Box
 
     init<R: _Reconcilable>(_ node: R) {
-        self.node = node
-        self._apply = node.apply(_:_:)
-        self._collectChildren = node.collectChildren(_:_:)
-        self._unmount = node.unmount(_:)
+        self.box = _TypedBox(node)
+
     }
 
     // TODO: get rid of all these functions and use environment hooks to participate in whatever each node actually needs
     func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext) {
-        _apply(op, &tx)
+        box.apply(op, &tx)
     }
 
     func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
-        _collectChildren(&ops, &context)
+        box.collectChildren(&ops, &context)
     }
 
     func unmount(_ context: inout _CommitContext) {
-        _unmount(&context)
+        box.unmount(&context)
     }
 
-    func unwrap<R: _Reconcilable>(as: R.Type = R.self) -> R {
-        unsafeDowncast(node, to: R.self)
+    func modify<R: _Reconcilable>(as type: R.Type = R.self, _ body: (inout R) -> Void) {
+        let box = unsafeDowncast(self.box, to: _TypedBox<R>.self)
+        body(&box.node)
     }
 }

@@ -37,16 +37,17 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
 
         // Schedule follow-up TX to patch to identity phase (triggers CSS transition)
         tx.scheduler.scheduleUpdate { [self] tx in
-            guard let node = self.node, let placeholderView = self.placeholderView else { return }
+            guard var node = self.node, let placeholderView = self.placeholderView else { return }
             tx.withModifiedTransaction {
                 $0.animation = transitionAnimation
             } run: { tx in
                 T.Body._patchNode(
                     self.value.transition.body(content: placeholderView, phase: .identity),
-                    node: node,
+                    node: &node,
                     tx: &tx
                 )
             }
+            self.node = node
         }
     }
 
@@ -54,11 +55,15 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
         self.value = view
 
         if let placeholderNode {
-            V._patchNode(self.value.wrapped, node: placeholderNode.node.unwrap(), tx: &context)
+            placeholderNode.node.modify(as: V._MountedNode.self) { node in
+                V._patchNode(self.value.wrapped, node: &node, tx: &context)
+            }
         }
 
         for placeholder in additionalPlaceholderNodes {
-            V._patchNode(self.value.wrapped, node: placeholder.node.unwrap(), tx: &context)
+            placeholder.node.modify(as: V._MountedNode.self) { node in
+                V._patchNode(self.value.wrapped, node: &node, tx: &context)
+            }
         }
     }
 
@@ -90,11 +95,14 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
                 node?.apply(.markAsLeaving, &tx)
 
                 // the patch does not go past the placeholder, so this only animates the transition
-                T.Body._patchNode(
-                    value.transition.body(content: placeholderView, phase: .didDisappear),
-                    node: node!,
-                    tx: &tx
-                )
+                if var node {
+                    T.Body._patchNode(
+                        value.transition.body(content: placeholderView, phase: .didDisappear),
+                        node: &node,
+                        tx: &tx
+                    )
+                    self.node = node
+                }
             }
 
             currentRemovalAnimationTime = tx.currentFrameTime
@@ -103,19 +111,23 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
                 [scheduler = tx.scheduler, frameTime = currentRemovalAnimationTime] in
                 guard let currentTime = self.currentRemovalAnimationTime, currentTime == frameTime else { return }
                 scheduler.scheduleUpdate { [self] tx in
-                    guard let node = self.node else { return }
+                    guard var node = self.node else { return }
                     node.apply(.startRemoval, &tx)
+                    self.node = node
                 }
             }
         case .cancelRemoval:
             currentRemovalAnimationTime = nil
             // TODO: check this, stuff is for sure missing for reversible transitions
             node?.apply(.cancelRemoval, &tx)
-            T.Body._patchNode(
-                value.transition.body(content: placeholderView, phase: .identity),
-                node: node!,
-                tx: &tx
-            )
+            if var node {
+                T.Body._patchNode(
+                    value.transition.body(content: placeholderView, phase: .identity),
+                    node: &node,
+                    tx: &tx
+                )
+                self.node = node
+            }
         case .markAsMoved:
             node?.apply(op, &tx)
         case .markAsLeaving:

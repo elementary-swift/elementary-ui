@@ -24,7 +24,7 @@ extension HTMLElement: _Mountable, View where Content: _Mountable {
 
     public static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
         node.state.updateValue(view._attributes, &tx)
@@ -32,7 +32,7 @@ extension HTMLElement: _Mountable, View where Content: _Mountable {
         node.child.updateChild(&tx, as: Content._MountedNode.self) { child, r in
             Content._patchNode(
                 view.content,
-                node: child,
+                node: &child,
                 tx: &r
             )
         }

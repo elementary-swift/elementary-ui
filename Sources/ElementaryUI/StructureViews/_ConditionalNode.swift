@@ -1,4 +1,4 @@
-public final class _ConditionalNode {
+public struct _ConditionalNode {
     enum State {
         case a(AnyReconcilable)
         case b(AnyReconcilable)
@@ -22,22 +22,25 @@ public final class _ConditionalNode {
         self.context = copy context
     }
 
-    convenience init(a: consuming some _Reconcilable, context: borrowing _ViewContext) {
+    init(a: consuming some _Reconcilable, context: borrowing _ViewContext) {
         self.init(a: AnyReconcilable(a), context: context)
     }
 
-    convenience init(b: consuming some _Reconcilable, context: borrowing _ViewContext) {
+    init(b: consuming some _Reconcilable, context: borrowing _ViewContext) {
         self.init(b: AnyReconcilable(b), context: context)
     }
 
-    func patchWithA<NodeA: _Reconcilable>(
+    mutating func patchWithA<NodeA: _Reconcilable>(
         tx: inout _TransactionContext,
         makeNode: (borrowing _ViewContext, inout _TransactionContext) -> NodeA,
-        updateNode: (NodeA, inout _TransactionContext) -> Void
+        updateNode: (inout NodeA, inout _TransactionContext) -> Void
     ) {
         switch state {
         case .a(let a):
-            updateNode(a.unwrap(), &tx)
+            let a = a
+            a.modify(as: NodeA.self) { node in
+                updateNode(&node, &tx)
+            }
             state = .a(a)
         case .b(let b):
             let a = AnyReconcilable(makeNode(context, &tx))
@@ -45,10 +48,16 @@ public final class _ConditionalNode {
             self.context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
             state = .aWithBLeaving(a, b)
         case .aWithBLeaving(let a, let b):
-            updateNode(a.unwrap(), &tx)
+            let a = a
+            a.modify(as: NodeA.self) { node in
+                updateNode(&node, &tx)
+            }
             state = .aWithBLeaving(a, b)
         case .bWithALeaving(let b, let a):
-            updateNode(a.unwrap(), &tx)
+            let a = a
+            a.modify(as: NodeA.self) { node in
+                updateNode(&node, &tx)
+            }
             a.apply(.cancelRemoval, &tx)
             b.apply(.startRemoval, &tx)
             self.context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
@@ -56,14 +65,17 @@ public final class _ConditionalNode {
         }
     }
 
-    func patchWithB<NodeB: _Reconcilable>(
+    mutating func patchWithB<NodeB: _Reconcilable>(
         tx: inout _TransactionContext,
         makeNode: (borrowing _ViewContext, inout _TransactionContext) -> NodeB,
-        updateNode: (NodeB, inout _TransactionContext) -> Void
+        updateNode: (inout NodeB, inout _TransactionContext) -> Void
     ) {
         switch state {
         case .b(let b):
-            updateNode(b.unwrap(), &tx)
+            let b = b
+            b.modify(as: NodeB.self) { node in
+                updateNode(&node, &tx)
+            }
             state = .b(b)
         case .a(let a):
             let b = AnyReconcilable(makeNode(context, &tx))
@@ -71,10 +83,16 @@ public final class _ConditionalNode {
             self.context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
             state = .bWithALeaving(b, a)
         case .aWithBLeaving(let a, let b):
-            updateNode(b.unwrap(), &tx)
+            let b = b
+            b.modify(as: NodeB.self) { node in
+                updateNode(&node, &tx)
+            }
             state = .bWithALeaving(b, a)
         case .bWithALeaving(let b, let a):
-            updateNode(b.unwrap(), &tx)
+            let b = b
+            b.modify(as: NodeB.self) { node in
+                updateNode(&node, &tx)
+            }
             state = .bWithALeaving(b, a)
         }
     }
@@ -82,7 +100,7 @@ public final class _ConditionalNode {
 }
 
 extension _ConditionalNode: _Reconcilable {
-    public func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
+    public mutating func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
         switch state {
         case .a(let a):
             a.collectChildren(&ops, &context)
@@ -114,7 +132,7 @@ extension _ConditionalNode: _Reconcilable {
         }
     }
 
-    public func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext) {
+    public mutating func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext) {
         switch state {
         case .a(let a):
             a.apply(op, &tx)
@@ -126,7 +144,7 @@ extension _ConditionalNode: _Reconcilable {
         }
     }
 
-    public func unmount(_ context: inout _CommitContext) {
+    public consuming func unmount(_ context: inout _CommitContext) {
         switch state {
         case .a(let a):
             a.unmount(&context)

@@ -69,9 +69,11 @@ public final class _ElementNode: _Reconcilable {
     func updateChild<Node: _Reconcilable>(
         _ context: inout _TransactionContext,
         as: Node.Type = Node.self,
-        block: (_ node: Node, _ context: inout _TransactionContext) -> Void
+        block: (inout Node, inout _TransactionContext) -> Void
     ) {
-        block(self.child.unwrap(), &context)
+        child.modify(as: Node.self) { node in
+            block(&node, &context)
+        }
     }
 
     func reportChangedChildren(_ change: ElementNodeChildrenChange, tx: inout _TransactionContext) {

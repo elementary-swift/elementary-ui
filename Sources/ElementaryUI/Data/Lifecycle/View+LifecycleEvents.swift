@@ -142,7 +142,7 @@ struct _LifecycleEventView<Wrapped: View>: View {
 
     static func _patchNode(
         _ view: consuming Self,
-        node: _MountedNode,
+        node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
         switch view.listener {
@@ -153,6 +153,6 @@ struct _LifecycleEventView<Wrapped: View>: View {
             break
         }
 
-        Wrapped._patchNode(view.wrapped, node: node.child, tx: &tx)
+        Wrapped._patchNode(view.wrapped, node: &node.child, tx: &tx)
     }
 }
