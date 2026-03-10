@@ -33,7 +33,7 @@ extension ViewMacro: ExtensionMacro {
         let members = declaration.memberBlock.members.compactMap { $0.decl.as(VariableDeclSyntax.self) }
         let access = declaration.modifiers.first {
             $0.detail == nil && 
-            [.keyword(.public), .keyword(.private), .keyword(.internal), .keyword(.package), .keyword(.fileprivate)]
+            [.keyword(.public), .keyword(.package)] 
                 .contains($0.name.tokenKind)
         }
 
