@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773078321080,
+  "lastUpdate": 1773125049223,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -1365,6 +1365,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 162.18,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "82ed0c6fade15bdbceaa2948269eca208c61335a",
+          "message": "Performance tweaks in ForEach and _KeyedNode (#81)\n\n* Optimize ForEach keyed updates and add reverse-order benchmark\n\n* linter...",
+          "timestamp": "2026-03-09T17:42:35Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/82ed0c6fade15bdbceaa2948269eca208c61335a"
+        },
+        "date": 1773125048949,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 161.03,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 133.19,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 119.94,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 162.19,
             "unit": "kB"
           }
         ]
