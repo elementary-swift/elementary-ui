@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773216686346,
+  "lastUpdate": 1773219387072,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -1537,6 +1537,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 163.49,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "281c3ce4cd94dd14ac6085adec2fc028e9f5aae8",
+          "message": "unit test and fixes (#84)",
+          "timestamp": "2026-03-11T09:53:36+01:00",
+          "tree_id": "dcdb86c002f807fbd04831ef2fa73a59583a25b5",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/281c3ce4cd94dd14ac6085adec2fc028e9f5aae8"
+        },
+        "date": 1773219386131,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 159.98,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 132.75,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 119.73,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 163.48,
             "unit": "kB"
           }
         ]
