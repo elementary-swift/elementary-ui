@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773172094906,
+  "lastUpdate": 1773211621618,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -1441,6 +1441,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "Counter",
             "value": 132.76,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 119.73,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 163.48,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "61ab123745fdf9e2799ecddcc241c3f36c2401bd",
+          "message": "reduce allocations for mounted nodes (#83)\n\n* support struct nodes\n\n* fix transition node for embedded\n\n* formatting",
+          "timestamp": "2026-03-10T19:45:06Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/61ab123745fdf9e2799ecddcc241c3f36c2401bd"
+        },
+        "date": 1773211620823,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 159.98,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 132.75,
             "unit": "kB"
           },
           {
