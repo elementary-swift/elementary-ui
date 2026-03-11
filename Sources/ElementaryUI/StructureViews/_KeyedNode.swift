@@ -58,7 +58,9 @@ public struct _KeyedNode {
             children = Array(repeating: nil, count: keys.count)
 
             for index in keys.indices {
-                makeOrPatchNode(index, &children[unwrapped: index, as: Node.self], self.viewContext, &context)
+                children.withNode(index: index, as: Node.self) { node in
+                    makeOrPatchNode(index, &node, self.viewContext, &context)
+                }
             }
 
             return
@@ -67,7 +69,9 @@ public struct _KeyedNode {
         if leavingChildren.entries.isEmpty, keys.count == newKeysArray.count, keys.elementsEqual(newKeysArray) {
             // Common ForEach path: structural identity unchanged.
             for index in children.indices {
-                makeOrPatchNode(index, &children[unwrapped: index, as: Node.self], self.viewContext, &context)
+                children.withNode(index: index, as: Node.self) { node in
+                    makeOrPatchNode(index, &node, self.viewContext, &context)
+                }
                 assert(children[index] != nil, "unexpected nil child on collection")
             }
             return
@@ -116,7 +120,9 @@ public struct _KeyedNode {
 
         // run update / patch functions on all nodes
         for index in children.indices {
-            makeOrPatchNode(index, &children[unwrapped: index, as: Node.self], self.viewContext, &context)
+            children.withNode(index: index, as: Node.self) { node in
+                makeOrPatchNode(index, &node, self.viewContext, &context)
+            }
             assert(children[index] != nil, "unexpected nil child on collection")
         }
     }
@@ -243,23 +249,17 @@ private extension _KeyedNode {
 }
 
 extension [AnyReconcilable?] {
-    subscript<Node: _Reconcilable>(unwrapped index: Index, as type: Node.Type = Node.self) -> Node? {
-        get {
-            guard let slot = self[index] else { return nil }
-            var value: Node?
-            slot.modify(as: Node.self) { value = $0 }
-            return value
-        }
-        _modify {
+    mutating func withNode<Node: _Reconcilable>(index: Index, as type: Node.Type = Node.self, body: (inout Node?) -> Void) {
+        if self[index] == nil {
             var slot: Node?
-            if let value = self[index].take() {
-                value.modify(as: Node.self) { slot = $0 }
-            }
-            yield &slot
+            body(&slot)
             self[index] = slot.map(AnyReconcilable.init)
-        }
-        set {
-            self[index] = newValue.map(AnyReconcilable.init)
+        } else {
+            self[index]?.modify(as: Node.self) {
+                var node: Node? = $0
+                body(&node)
+                $0 = node!
+            }
         }
     }
 }
