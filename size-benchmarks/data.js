@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773211621618,
+  "lastUpdate": 1773216686346,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -1493,6 +1493,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 163.48,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "Erikbautista15@gmail.com",
+            "name": "Erik Bautista Santibanez",
+            "username": "erikbdev"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "de42f3c6ecfa2a3c96de1d6e80976cace8611d00",
+          "message": "fix: `@View` macro on public and package types (#82)\n\n* fix: add access control for View macho\n\n* fix: do not show nil if no access scope is set\n\n* fix: build issue with accessControl\n\n* fix: only use public and package keywords\n\n* chore: run swift-format",
+          "timestamp": "2026-03-11T09:08:31+01:00",
+          "tree_id": "7d2030cc2dc37ef04ab856c23181641c788cfbf6",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/de42f3c6ecfa2a3c96de1d6e80976cace8611d00"
+        },
+        "date": 1773216685388,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 159.99,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 132.75,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 119.73,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 163.49,
             "unit": "kB"
           }
         ]
