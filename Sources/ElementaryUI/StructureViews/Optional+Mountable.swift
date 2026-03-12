@@ -9,21 +9,17 @@ extension Optional: _Mountable where Wrapped: _Mountable {
     ) -> _MountedNode {
         switch view {
         case let .some(view):
-            let aRoot = MountRoot.materialized(
-                seedContext: context,
-                ctx: &ctx,
-                create: { context, ctx in
-                    AnyReconcilable(Wrapped._makeNode(view, context: context, ctx: &ctx))
-                }
+            return .init(
+                a: view,
+                context: context,
+                ctx: &ctx
             )
-            return .init(aRoot: aRoot, context: context)
         case .none:
-            let bRoot = MountRoot.materialized(
-                seedContext: context,
-                ctx: &ctx,
-                create: { _, _ in AnyReconcilable(_EmptyNode()) }
+            return .init(
+                b: EmptyHTML(),
+                context: context,
+                ctx: &ctx
             )
-            return .init(bRoot: bRoot, context: context)
         }
     }
 

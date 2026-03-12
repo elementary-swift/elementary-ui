@@ -9,23 +9,17 @@ extension _HTMLConditional: _Mountable where TrueContent: _Mountable, FalseConte
     ) -> _MountedNode {
         switch view.value {
         case let .trueContent(content):
-            let aRoot = MountRoot.materialized(
-                seedContext: context,
-                ctx: &ctx,
-                create: { context, ctx in
-                    AnyReconcilable(TrueContent._makeNode(content, context: context, ctx: &ctx))
-                }
+            return .init(
+                a: content,
+                context: context,
+                ctx: &ctx
             )
-            return .init(aRoot: aRoot, context: context)
         case let .falseContent(content):
-            let bRoot = MountRoot.materialized(
-                seedContext: context,
-                ctx: &ctx,
-                create: { context, ctx in
-                    AnyReconcilable(FalseContent._makeNode(content, context: context, ctx: &ctx))
-                }
+            return .init(
+                b: content,
+                context: context,
+                ctx: &ctx
             )
-            return .init(bRoot: bRoot, context: context)
         }
     }
 

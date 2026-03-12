@@ -11,10 +11,49 @@ public struct _KeyedNode {
         self.viewContext = copy context
     }
 
+    init<Node: _Reconcilable>(
+        keys: [_ViewKey],
+        context: borrowing _ViewContext,
+        ctx: inout _CommitContext,
+        makeNode: (Int, borrowing _ViewContext, inout _CommitContext) -> Node
+    ) {
+        self.keys = keys
+        self.viewContext = copy context
+        self.children = []
+        self.children.reserveCapacity(keys.count)
+
+        let transaction = context.mountRoot.inheritedTransaction()
+        for index in keys.indices {
+            let root = MountRoot(
+                mountedFrom: context,
+                transaction: transaction,
+                ctx: &ctx,
+                create: { context, ctx in
+                    AnyReconcilable(makeNode(index, context, &ctx))
+                }
+            )
+            self.children.append(root)
+        }
+    }
+
+    init<Node: _Reconcilable>(
+        key: _ViewKey,
+        context: borrowing _ViewContext,
+        ctx: inout _CommitContext,
+        makeNode: (borrowing _ViewContext, inout _CommitContext) -> Node
+    ) {
+        self.init(
+            keys: [key],
+            context: context,
+            ctx: &ctx,
+            makeNode: { _, context, ctx in makeNode(context, &ctx) }
+        )
+    }
+
     init(_ value: some Sequence<(key: _ViewKey, node: some _Reconcilable)>, context: borrowing _ViewContext) {
         self.init(
             keys: value.map { $0.key },
-            children: value.map { MountRoot.mounted(AnyReconcilable($0.node)) },
+            children: value.map { MountRoot(mounted: AnyReconcilable($0.node)) },
             context: context
         )
     }
@@ -45,13 +84,15 @@ public struct _KeyedNode {
         makeNode: @escaping (Int, borrowing _ViewContext, inout _CommitContext) -> Node,
         patchNode: (Int, inout Node, inout _TransactionContext) -> Void
     ) {
+        assertNoPendingRoots()
+
         guard !newKeys.isEmpty else {
             fastRemoveAll(context: &context)
             return
         }
 
         let newKeysArray = Array(newKeys)
-        var pendingMaterializations: [MountRoot] = []
+        var pendingMounts: [MountRoot] = []
 
         guard !(keys.isEmpty && leavingChildren.entries.isEmpty) else {
             keys = newKeysArray
@@ -60,8 +101,8 @@ public struct _KeyedNode {
 
             for index in keys.indices {
                 viewContext.parentElement?.reportChangedChildren(.elementAdded, tx: &context)
-                let root = MountRoot.pending(
-                    seedContext: viewContext,
+                let root = MountRoot(
+                    pending: viewContext,
                     transaction: context.transaction,
                     transitionPhase: .willAppear,
                     create: { viewContext, ctx in
@@ -69,28 +110,17 @@ public struct _KeyedNode {
                     }
                 )
                 children.append(root)
-                pendingMaterializations.append(root)
+                pendingMounts.append(root)
             }
 
-            scheduleMaterializationIfNeeded(&pendingMaterializations, context: &context)
+            schedulePendingMountIfNeeded(&pendingMounts, context: &context)
             return
         }
 
         if leavingChildren.entries.isEmpty, keys.count == newKeysArray.count, keys.elementsEqual(newKeysArray) {
             for index in children.indices {
                 let child = children[index]
-
-                if child.isPending {
-                    child.updatePendingCreate(
-                        seedContext: viewContext,
-                        transaction: context.transaction,
-                        create: { viewContext, ctx in
-                            AnyReconcilable(makeNode(index, viewContext, &ctx))
-                        }
-                    )
-                    pendingMaterializations.append(child)
-                    continue
-                }
+                precondition(!child.isPending, "double patch of pending MountRoot in keyed stable-patch path")
 
                 let patched = child.withMountedNode(as: Node.self) { node in
                     patchNode(index, &node, &context)
@@ -98,7 +128,7 @@ public struct _KeyedNode {
                 precondition(patched, "expected mounted child during stable keyed patch")
             }
 
-            scheduleMaterializationIfNeeded(&pendingMaterializations, context: &context)
+            schedulePendingMountIfNeeded(&pendingMounts, context: &context)
             return
         }
 
@@ -132,14 +162,15 @@ public struct _KeyedNode {
                         root = moved
                     } else {
                         viewContext.parentElement?.reportChangedChildren(.elementAdded, tx: &context)
-                        root = MountRoot.pending(
-                            seedContext: viewContext,
+                        root = MountRoot(
+                            pending: viewContext,
                             transaction: context.transaction,
                             transitionPhase: .willAppear,
                             create: { viewContext, ctx in
                                 AnyReconcilable(makeNode(offset, viewContext, &ctx))
                             }
                         )
+                        pendingMounts.append(root)
                     }
 
                     children.insert(root, at: offset)
@@ -152,16 +183,9 @@ public struct _KeyedNode {
 
         for index in children.indices {
             let child = children[index]
-
             if child.isPending {
-                child.updatePendingCreate(
-                    seedContext: viewContext,
-                    transaction: context.transaction,
-                    create: { viewContext, ctx in
-                        AnyReconcilable(makeNode(index, viewContext, &ctx))
-                    }
-                )
-                pendingMaterializations.append(child)
+                // Newly inserted roots in this pass are mounted in commit and
+                // intentionally not patched before mount.
                 continue
             }
 
@@ -171,7 +195,7 @@ public struct _KeyedNode {
             precondition(patched, "expected mounted child during keyed patch")
         }
 
-        scheduleMaterializationIfNeeded(&pendingMaterializations, context: &context)
+        schedulePendingMountIfNeeded(&pendingMounts, context: &context)
     }
 
     mutating func fastRemoveAll(context: inout _TransactionContext) {
@@ -187,19 +211,28 @@ public struct _KeyedNode {
         children.removeAll()
     }
 
-    private mutating func scheduleMaterializationIfNeeded(
-        _ pendingMaterializations: inout [MountRoot],
+    private mutating func schedulePendingMountIfNeeded(
+        _ pendingMounts: inout [MountRoot],
         context: inout _TransactionContext
     ) {
-        guard !pendingMaterializations.isEmpty else { return }
+        guard !pendingMounts.isEmpty else { return }
 
-        let roots = pendingMaterializations
+        let roots = pendingMounts
         context.scheduler.addCommitAction { ctx in
             for root in roots {
-                root.materialize(&ctx)
+                root.mount(&ctx)
             }
         }
-        pendingMaterializations.removeAll(keepingCapacity: true)
+        pendingMounts.removeAll(keepingCapacity: true)
+    }
+
+    private func assertNoPendingRoots() {
+        let hasPendingChildren = children.contains { $0.isPending }
+        let hasPendingLeaving = leavingChildren.entries.contains { $0.value.isPending }
+        precondition(
+            !hasPendingChildren && !hasPendingLeaving,
+            "double patch of pending MountRoot in _KeyedNode"
+        )
     }
 }
 

@@ -10,17 +10,13 @@ public struct _KeyedView<Value: View>: View {
         context: borrowing _ViewContext,
         ctx: inout _CommitContext
     ) -> _MountedNode {
-        let childRoot = MountRoot.materialized(
-            seedContext: context,
+        .init(
+            key: view.key,
+            context: context,
             ctx: &ctx,
-            create: { context, ctx in
-                AnyReconcilable(Value._makeNode(view.value, context: context, ctx: &ctx))
+            makeNode: { context, ctx in
+                Value._makeNode(view.value, context: context, ctx: &ctx)
             }
-        )
-        return .init(
-            keys: [view.key],
-            children: [childRoot],
-            context: context
         )
     }
 

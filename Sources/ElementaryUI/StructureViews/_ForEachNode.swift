@@ -99,22 +99,14 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
 
         self.trackingSession = session
 
-        var children: [MountRoot] = []
-        children.reserveCapacity(views.count)
-
-        for view in views {
-            children.append(
-                .materialized(
-                    seedContext: context,
-                    ctx: &ctx,
-                    create: { context, ctx in
-                        AnyReconcilable(Content.Value._makeNode(view._value, context: context, ctx: &ctx))
-                    }
-                )
-            )
-        }
-
-        keyedNode = _KeyedNode(keys: keys, children: children, context: context)
+        keyedNode = _KeyedNode(
+            keys: keys,
+            context: context,
+            ctx: &ctx,
+            makeNode: { index, context, ctx in
+                Content.Value._makeNode(views[index]._value, context: context, ctx: &ctx)
+            }
+        )
     }
 
     public func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {

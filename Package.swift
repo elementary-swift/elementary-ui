@@ -31,6 +31,7 @@ let package = Package(
                 .enableUpcomingFeature("ExistentialAny"),
                 .enableUpcomingFeature("ConciseMagicFile"),
                 .enableUpcomingFeature("ImplicitOpenExistentials"),
+                .enableExperimentalFeature("Lifetimes"),
             ]
         ),
         .target(

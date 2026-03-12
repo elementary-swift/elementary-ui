@@ -9,33 +9,41 @@ public struct _ConditionalNode {
     private var state: State
     private var context: _ViewContext
 
-    init(aRoot: MountRoot? = nil, bRoot: MountRoot? = nil, context: borrowing _ViewContext) {
-        switch (aRoot, bRoot) {
-        case (let .some(a), nil):
-            self.state = .a(a)
-        case (nil, let .some(b)):
-            self.state = .b(b)
-        default:
-            preconditionFailure("either aRoot or bRoot must be provided")
-        }
-
+    private init(state: State, context: borrowing _ViewContext) {
+        self.state = state
         self.context = copy context
     }
 
-    init(a: consuming AnyReconcilable? = nil, b: consuming AnyReconcilable? = nil, context: borrowing _ViewContext) {
-        self.init(
-            aRoot: a.map { MountRoot.mounted($0) },
-            bRoot: b.map { MountRoot.mounted($0) },
-            context: context
+    init<A: _Mountable>(
+        a view: A,
+        context: borrowing _ViewContext,
+        ctx: inout _CommitContext
+    ) {
+        let root = MountRoot(
+            mountedFrom: context,
+            transaction: context.mountRoot.inheritedTransaction(),
+            ctx: &ctx,
+            create: { context, ctx in
+                AnyReconcilable(A._makeNode(view, context: context, ctx: &ctx))
+            }
         )
+        self.init(state: .a(root), context: context)
     }
 
-    init(a: consuming some _Reconcilable, context: borrowing _ViewContext) {
-        self.init(a: AnyReconcilable(a), context: context)
-    }
-
-    init(b: consuming some _Reconcilable, context: borrowing _ViewContext) {
-        self.init(b: AnyReconcilable(b), context: context)
+    init<B: _Mountable>(
+        b view: B,
+        context: borrowing _ViewContext,
+        ctx: inout _CommitContext
+    ) {
+        let root = MountRoot(
+            mountedFrom: context,
+            transaction: context.mountRoot.inheritedTransaction(),
+            ctx: &ctx,
+            create: { context, ctx in
+                AnyReconcilable(B._makeNode(view, context: context, ctx: &ctx))
+            }
+        )
+        self.init(state: .b(root), context: context)
     }
 
     mutating func patchWithA<NodeA: _Reconcilable>(
@@ -48,14 +56,13 @@ public struct _ConditionalNode {
             patchActiveRoot(
                 a,
                 tx: &tx,
-                makeNode: makeNode,
                 updateNode: updateNode
             )
             state = .a(a)
         case .b(let b):
             context.parentElement?.reportChangedChildren(.elementAdded, tx: &tx)
             let a = makePendingRoot(transaction: tx.transaction, makeNode: makeNode)
-            scheduleMaterialization([a], tx: &tx)
+            schedulePendingMount([a], tx: &tx)
 
             b.apply(.startRemoval, &tx)
             context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
@@ -64,7 +71,6 @@ public struct _ConditionalNode {
             patchActiveRoot(
                 a,
                 tx: &tx,
-                makeNode: makeNode,
                 updateNode: updateNode
             )
             state = .aWithBLeaving(a, b)
@@ -72,7 +78,6 @@ public struct _ConditionalNode {
             patchActiveRoot(
                 a,
                 tx: &tx,
-                makeNode: makeNode,
                 updateNode: updateNode
             )
             a.apply(.cancelRemoval, &tx)
@@ -92,14 +97,13 @@ public struct _ConditionalNode {
             patchActiveRoot(
                 b,
                 tx: &tx,
-                makeNode: makeNode,
                 updateNode: updateNode
             )
             state = .b(b)
         case .a(let a):
             context.parentElement?.reportChangedChildren(.elementAdded, tx: &tx)
             let b = makePendingRoot(transaction: tx.transaction, makeNode: makeNode)
-            scheduleMaterialization([b], tx: &tx)
+            schedulePendingMount([b], tx: &tx)
 
             a.apply(.startRemoval, &tx)
             context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
@@ -108,7 +112,6 @@ public struct _ConditionalNode {
             patchActiveRoot(
                 b,
                 tx: &tx,
-                makeNode: makeNode,
                 updateNode: updateNode
             )
             state = .bWithALeaving(b, a)
@@ -116,7 +119,6 @@ public struct _ConditionalNode {
             patchActiveRoot(
                 b,
                 tx: &tx,
-                makeNode: makeNode,
                 updateNode: updateNode
             )
             state = .bWithALeaving(b, a)
@@ -127,8 +129,8 @@ public struct _ConditionalNode {
         transaction: Transaction,
         makeNode: @escaping (borrowing _ViewContext, inout _CommitContext) -> Node
     ) -> MountRoot {
-        MountRoot.pending(
-            seedContext: context,
+        MountRoot(
+            pending: context,
             transaction: transaction,
             transitionPhase: .willAppear,
             create: { viewContext, ctx in
@@ -140,20 +142,9 @@ public struct _ConditionalNode {
     private mutating func patchActiveRoot<Node: _Reconcilable>(
         _ root: MountRoot,
         tx: inout _TransactionContext,
-        makeNode: @escaping (borrowing _ViewContext, inout _CommitContext) -> Node,
         updateNode: (inout Node, inout _TransactionContext) -> Void
     ) {
-        if root.isPending {
-            root.updatePendingCreate(
-                seedContext: context,
-                transaction: tx.transaction,
-                create: { viewContext, ctx in
-                    AnyReconcilable(makeNode(viewContext, &ctx))
-                }
-            )
-            scheduleMaterialization([root], tx: &tx)
-            return
-        }
+        precondition(!root.isPending, "double patch of pending MountRoot in _ConditionalNode")
 
         let patched = root.withMountedNode(as: Node.self) { node in
             updateNode(&node, &tx)
@@ -161,12 +152,12 @@ public struct _ConditionalNode {
         precondition(patched, "expected mounted conditional branch")
     }
 
-    private func scheduleMaterialization(_ roots: [MountRoot], tx: inout _TransactionContext) {
+    private func schedulePendingMount(_ roots: [MountRoot], tx: inout _TransactionContext) {
         guard !roots.isEmpty else { return }
 
         tx.scheduler.addCommitAction { ctx in
             for root in roots {
-                root.materialize(&ctx)
+                root.mount(&ctx)
             }
         }
     }

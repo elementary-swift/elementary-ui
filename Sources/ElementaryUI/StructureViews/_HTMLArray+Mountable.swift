@@ -7,24 +7,21 @@ extension _HTMLArray: _Mountable, View where Element: View {
         ctx: inout _CommitContext
     ) -> _MountedNode {
         var keys: [_ViewKey] = []
-        var children: [MountRoot] = []
         let estimatedCount = view.value.underestimatedCount
         keys.reserveCapacity(estimatedCount)
-        children.reserveCapacity(estimatedCount)
 
-        for (index, element) in view.value.enumerated() {
+        for (index, _) in view.value.enumerated() {
             keys.append(_ViewKey(String(index)))
-            let root = MountRoot.materialized(
-                seedContext: context,
-                ctx: &ctx,
-                create: { context, ctx in
-                    AnyReconcilable(Element._makeNode(element, context: context, ctx: &ctx))
-                }
-            )
-            children.append(root)
         }
 
-        return _MountedNode(keys: keys, children: children, context: context)
+        return _MountedNode(
+            keys: keys,
+            context: context,
+            ctx: &ctx,
+            makeNode: { index, context, ctx in
+                Element._makeNode(view.value[index], context: context, ctx: &ctx)
+            }
+        )
     }
 
     public static func _patchNode(
