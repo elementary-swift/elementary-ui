@@ -11,7 +11,7 @@ final class EventModifier<Config: _DOMEventHandlerConfig>: DOMElementModifier {
 
     private var value: Value
 
-    init(value: consuming @escaping Value, upstream: borrowing DOMElementModifiers, _ context: inout _TransactionContext) {
+    init(value: consuming @escaping Value, upstream: borrowing DOMElementModifiers) {
         self.value = value
         self.upstream = upstream[EventModifier.key]
     }

@@ -9,7 +9,7 @@ final class BindingModifier<Configuration>: DOMElementModifier, Unmountable wher
     var accessor: DOM.PropertyAccessor?
     var isDirty: Bool = false
 
-    init(value: consuming Value, upstream: borrowing DOMElementModifiers, _ context: inout _TransactionContext) {
+    init(value: consuming Value, upstream: borrowing DOMElementModifiers) {
         self.lastValue = value.wrappedValue
         self.binding = value
     }

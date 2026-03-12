@@ -5,9 +5,9 @@ extension Group: _Mountable where Content: _Mountable {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _CommitContext
     ) -> _MountedNode {
-        Content._makeNode(view.content, context: context, tx: &tx)
+        Content._makeNode(view.content, context: context, ctx: &ctx)
     }
 
     public static func _patchNode(

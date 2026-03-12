@@ -4,7 +4,7 @@ extension EmptyHTML: _Mountable, View {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _CommitContext
     ) -> _MountedNode {
         _EmptyNode()
     }

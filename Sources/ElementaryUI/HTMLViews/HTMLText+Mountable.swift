@@ -4,9 +4,9 @@ extension HTMLText: _Mountable, View {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _CommitContext
     ) -> _MountedNode {
-        _MountedNode(view.text, viewContext: context, context: &tx)
+        _MountedNode(view.text, viewContext: context, context: &ctx)
     }
 
     public static func _patchNode(

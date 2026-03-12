@@ -3,8 +3,8 @@ import ElementaryUI
 struct DeinitSnifferView: View {
     static func _makeNode(
         _ view: consuming DeinitSnifferView,
-        context: consuming _ViewContext,
-        tx: inout _TransactionContext
+        context: borrowing _ViewContext,
+        ctx: inout _CommitContext
     ) -> _MountedNode {
         _MountedNode(callback: view.callback)
     }

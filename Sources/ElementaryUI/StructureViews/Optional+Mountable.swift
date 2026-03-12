@@ -5,13 +5,25 @@ extension Optional: _Mountable where Wrapped: _Mountable {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _CommitContext
     ) -> _MountedNode {
         switch view {
         case let .some(view):
-            return .init(a: Wrapped._makeNode(view, context: context, tx: &tx), context: context)
+            let aRoot = MountRoot.materialized(
+                seedContext: context,
+                ctx: &ctx,
+                create: { context, ctx in
+                    AnyReconcilable(Wrapped._makeNode(view, context: context, ctx: &ctx))
+                }
+            )
+            return .init(aRoot: aRoot, context: context)
         case .none:
-            return .init(b: _EmptyNode(), context: context)
+            let bRoot = MountRoot.materialized(
+                seedContext: context,
+                ctx: &ctx,
+                create: { _, _ in AnyReconcilable(_EmptyNode()) }
+            )
+            return .init(bRoot: bRoot, context: context)
         }
     }
 
@@ -24,7 +36,7 @@ extension Optional: _Mountable where Wrapped: _Mountable {
         case let .some(view):
             node.patchWithA(
                 tx: &tx,
-                makeNode: { c, tx in Wrapped._makeNode(view, context: c, tx: &tx) },
+                makeNode: { c, ctx in Wrapped._makeNode(view, context: c, ctx: &ctx) },
                 updateNode: { node, tx in Wrapped._patchNode(view, node: &node, tx: &tx) }
             )
         case .none:

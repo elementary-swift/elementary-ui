@@ -14,7 +14,7 @@ public final class _AttributeModifier: DOMElementModifier, Invalidateable {
         return combined
     }
 
-    init(value: consuming Value, upstream: borrowing DOMElementModifiers, _ context: inout _TransactionContext) {
+    init(value: consuming Value, upstream: borrowing DOMElementModifiers) {
         self.lastValue = value
         self.upstream = upstream[_AttributeModifier.key]
         self.upstream?.tracker.addDependency(self)

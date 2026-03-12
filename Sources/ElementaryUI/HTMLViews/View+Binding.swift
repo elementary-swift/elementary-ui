@@ -91,9 +91,9 @@ struct DOMEffectView<Effect: DOMElementModifier, Wrapped: View>: View {
     static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _CommitContext
     ) -> _MountedNode {
-        let effect = Effect(value: view.value, upstream: context.modifiers, &tx)
+        let effect = Effect(value: view.value, upstream: context.modifiers)
 
         #if hasFeature(Embedded) && compiler(<6.3)
         if __omg_this_was_annoying_I_am_false {
@@ -111,7 +111,7 @@ struct DOMEffectView<Effect: DOMElementModifier, Wrapped: View>: View {
         var context = copy context
         context.modifiers[Effect.key] = effect
 
-        return .init(state: effect, child: Wrapped._makeNode(view.wrapped, context: context, tx: &tx))
+        return .init(state: effect, child: Wrapped._makeNode(view.wrapped, context: context, ctx: &ctx))
     }
 
     static func _patchNode(

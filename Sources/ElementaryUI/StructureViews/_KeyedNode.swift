@@ -1,10 +1,10 @@
 public struct _KeyedNode {
     private var keys: [_ViewKey]
-    private var children: [AnyReconcilable?]
+    private var children: [MountRoot]
     private var leavingChildren: LeavingChildrenTracker = .init()
     private let viewContext: _ViewContext
 
-    init(keys: [_ViewKey], children: [AnyReconcilable?], context: borrowing _ViewContext) {
+    init(keys: [_ViewKey], children: [MountRoot], context: borrowing _ViewContext) {
         assert(keys.count == children.count)
         self.keys = keys
         self.children = children
@@ -14,7 +14,7 @@ public struct _KeyedNode {
     init(_ value: some Sequence<(key: _ViewKey, node: some _Reconcilable)>, context: borrowing _ViewContext) {
         self.init(
             keys: value.map { $0.key },
-            children: value.map { AnyReconcilable($0.node) },
+            children: value.map { MountRoot.mounted(AnyReconcilable($0.node)) },
             context: context
         )
     }
@@ -27,12 +27,14 @@ public struct _KeyedNode {
         key: _ViewKey,
         context: inout _TransactionContext,
         as: Node.Type = Node.self,
-        makeOrPatchNode: (inout Node?, borrowing _ViewContext, inout _TransactionContext) -> Void
+        makeNode: @escaping (borrowing _ViewContext, inout _CommitContext) -> Node,
+        patchNode: (inout Node, inout _TransactionContext) -> Void
     ) {
         patch(
             CollectionOfOne(key),
             context: &context,
-            makeOrPatchNode: { _, node, context, r in makeOrPatchNode(&node, context, &r) }
+            makeNode: { _, context, ctx in makeNode(context, &ctx) },
+            patchNode: { _, node, tx in patchNode(&node, &tx) }
         )
     }
 
@@ -40,40 +42,63 @@ public struct _KeyedNode {
         _ newKeys: some BidirectionalCollection<_ViewKey>,
         context: inout _TransactionContext,
         as: Node.Type = Node.self,
-        makeOrPatchNode: (Int, inout Node?, borrowing _ViewContext, inout _TransactionContext) -> Void
+        makeNode: @escaping (Int, borrowing _ViewContext, inout _CommitContext) -> Node,
+        patchNode: (Int, inout Node, inout _TransactionContext) -> Void
     ) {
-        // NOTE: we want the fastest possible algorithm here
-        // TODO: clean this up
         guard !newKeys.isEmpty else {
             fastRemoveAll(context: &context)
             return
         }
 
         let newKeysArray = Array(newKeys)
+        var pendingMaterializations: [MountRoot] = []
 
-        // TODO: clean this up
         guard !(keys.isEmpty && leavingChildren.entries.isEmpty) else {
-            // fast add-all case
             keys = newKeysArray
-            children = Array(repeating: nil, count: keys.count)
+            children.removeAll(keepingCapacity: true)
+            children.reserveCapacity(keys.count)
 
             for index in keys.indices {
-                children.withNode(index: index, as: Node.self) { node in
-                    makeOrPatchNode(index, &node, self.viewContext, &context)
-                }
+                viewContext.parentElement?.reportChangedChildren(.elementAdded, tx: &context)
+                let root = MountRoot.pending(
+                    seedContext: viewContext,
+                    transaction: context.transaction,
+                    transitionPhase: .willAppear,
+                    create: { viewContext, ctx in
+                        AnyReconcilable(makeNode(index, viewContext, &ctx))
+                    }
+                )
+                children.append(root)
+                pendingMaterializations.append(root)
             }
 
+            scheduleMaterializationIfNeeded(&pendingMaterializations, context: &context)
             return
         }
 
         if leavingChildren.entries.isEmpty, keys.count == newKeysArray.count, keys.elementsEqual(newKeysArray) {
-            // Common ForEach path: structural identity unchanged.
             for index in children.indices {
-                children.withNode(index: index, as: Node.self) { node in
-                    makeOrPatchNode(index, &node, self.viewContext, &context)
+                let child = children[index]
+
+                if child.isPending {
+                    child.updatePendingCreate(
+                        seedContext: viewContext,
+                        transaction: context.transaction,
+                        create: { viewContext, ctx in
+                            AnyReconcilable(makeNode(index, viewContext, &ctx))
+                        }
+                    )
+                    pendingMaterializations.append(child)
+                    continue
                 }
-                assert(children[index] != nil, "unexpected nil child on collection")
+
+                let patched = child.withMountedNode(as: Node.self) { node in
+                    patchNode(index, &node, &context)
+                }
+                precondition(patched, "expected mounted child during stable keyed patch")
             }
+
+            scheduleMaterializationIfNeeded(&pendingMaterializations, context: &context)
             return
         }
 
@@ -81,93 +106,122 @@ public struct _KeyedNode {
         keys = newKeysArray
 
         if !diff.isEmpty {
-            var moversCache: [Int: AnyReconcilable] = [:]
-
-            // is there a way to completely do this in-place?
-            // is there a way to do this more sub-rangy?
-            // anyway, this way the "move" case is a bit worse, but the rest is in place
+            var moversCache: [Int: MountRoot] = [:]
 
             for change in diff {
                 switch change {
                 case let .remove(offset, element: key, associatedWith: movedTo):
-                    guard let node = children.remove(at: offset) else {
-                        fatalError("unexpected nil child on collection")
-                    }
+                    let root = children.remove(at: offset)
 
                     if movedTo != nil {
-                        node.apply(.markAsMoved, &context)
-                        moversCache[offset] = consume node
+                        root.apply(.markAsMoved, &context)
+                        moversCache[offset] = root
                     } else {
-                        node.apply(.startRemoval, &context)
-                        self.viewContext.parentElement?.reportChangedChildren(.elementMoved, tx: &context)
-                        leavingChildren.append(key, atIndex: offset, value: node)
+                        root.apply(.startRemoval, &context)
+                        viewContext.parentElement?.reportChangedChildren(.elementMoved, tx: &context)
+                        leavingChildren.append(key, atIndex: offset, value: root)
                     }
                 case let .insert(offset, element: key, associatedWith: movedFrom):
-                    var node: AnyReconcilable? = nil
+                    let root: MountRoot
 
                     if let movedFrom {
                         logTrace("move \(key) from \(movedFrom) to \(offset)")
-                        node = moversCache.removeValue(forKey: movedFrom)
-                        precondition(node != nil, "mover not found in cache")
+                        guard let moved = moversCache.removeValue(forKey: movedFrom) else {
+                            preconditionFailure("mover not found in cache")
+                        }
+                        root = moved
+                    } else {
+                        viewContext.parentElement?.reportChangedChildren(.elementAdded, tx: &context)
+                        root = MountRoot.pending(
+                            seedContext: viewContext,
+                            transaction: context.transaction,
+                            transitionPhase: .willAppear,
+                            create: { viewContext, ctx in
+                                AnyReconcilable(makeNode(offset, viewContext, &ctx))
+                            }
+                        )
                     }
 
-                    children.insert(node, at: offset)
+                    children.insert(root, at: offset)
                     leavingChildren.reflectInsertionAt(offset)
                 }
             }
+
             precondition(moversCache.isEmpty, "mover cache is not empty")
         }
 
-        // run update / patch functions on all nodes
         for index in children.indices {
-            children.withNode(index: index, as: Node.self) { node in
-                makeOrPatchNode(index, &node, self.viewContext, &context)
+            let child = children[index]
+
+            if child.isPending {
+                child.updatePendingCreate(
+                    seedContext: viewContext,
+                    transaction: context.transaction,
+                    create: { viewContext, ctx in
+                        AnyReconcilable(makeNode(index, viewContext, &ctx))
+                    }
+                )
+                pendingMaterializations.append(child)
+                continue
             }
-            assert(children[index] != nil, "unexpected nil child on collection")
+
+            let patched = child.withMountedNode(as: Node.self) { node in
+                patchNode(index, &node, &context)
+            }
+            precondition(patched, "expected mounted child during keyed patch")
         }
+
+        scheduleMaterializationIfNeeded(&pendingMaterializations, context: &context)
     }
 
     mutating func fastRemoveAll(context: inout _TransactionContext) {
-        self.viewContext.parentElement?.reportChangedChildren(.elementMoved, tx: &context)
+        viewContext.parentElement?.reportChangedChildren(.elementMoved, tx: &context)
 
         for index in children.indices {
-            guard let node = children[index].take() else {
-                fatalError("unexpected nil child on collection")
-            }
-
-            node.apply(.startRemoval, &context)
-            leavingChildren.append(keys[index], atIndex: index, value: node)
+            let root = children[index]
+            root.apply(.startRemoval, &context)
+            leavingChildren.append(keys[index], atIndex: index, value: root)
         }
 
         keys.removeAll()
         children.removeAll()
     }
+
+    private mutating func scheduleMaterializationIfNeeded(
+        _ pendingMaterializations: inout [MountRoot],
+        context: inout _TransactionContext
+    ) {
+        guard !pendingMaterializations.isEmpty else { return }
+
+        let roots = pendingMaterializations
+        context.scheduler.addCommitAction { ctx in
+            for root in roots {
+                root.materialize(&ctx)
+            }
+        }
+        pendingMaterializations.removeAll(keepingCapacity: true)
+    }
 }
 
 extension _KeyedNode: _Reconcilable {
     public func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext) {
-        for index in children.indices {
-            children[index]?.apply(op, &tx)
+        for child in children {
+            child.apply(op, &tx)
         }
     }
 
     public mutating func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
-        // the trick here is to efficiently interleave the leaving nodes with the active nodes to match the DOM order
-        // the other trick is to stay noncopyable compatible (one fine day we will have lists, associated types and stuff like that)
-        // in any case, we need to mutate in place
         var lIndex = 0
         var nextInsertionPoint = leavingChildren.insertionIndex(for: 0)
 
         for cIndex in children.indices {
-            precondition(children[cIndex] != nil, "unexpected nil child on collection")
-
             if nextInsertionPoint == cIndex {
                 let removed = leavingChildren.commitAndCheckRemoval(at: lIndex, ops: &ops, context: &context)
                 if !removed { lIndex += 1 }
                 nextInsertionPoint = leavingChildren.insertionIndex(for: lIndex)
             }
 
-            children[cIndex]!.collectChildren(&ops, &context)
+            children[cIndex].collectChildren(&ops, &context)
         }
 
         while nextInsertionPoint != nil {
@@ -178,11 +232,11 @@ extension _KeyedNode: _Reconcilable {
     }
 
     public consuming func unmount(_ context: inout _CommitContext) {
-        for index in children.indices {
-            children[index]?.unmount(&context)
+        for child in children {
+            child.unmount(&context)
         }
-
         children.removeAll()
+
         for entry in leavingChildren.entries {
             entry.value.unmount(&context)
         }
@@ -191,25 +245,21 @@ extension _KeyedNode: _Reconcilable {
 }
 
 private extension _KeyedNode {
-    struct LeavingChildrenTracker {  //: ~Copyable {
+    struct LeavingChildrenTracker {
         struct Entry {
             let key: _ViewKey
             var originalMountIndex: Int
-            var value: AnyReconcilable
+            var value: MountRoot
         }
 
         var entries: [Entry] = []
 
         func insertionIndex(for index: Int) -> Int? {
             guard index < entries.count else { return nil }
-
             return entries[index].originalMountIndex
         }
 
-        mutating func append(_ key: _ViewKey, atIndex index: Int, value: consuming AnyReconcilable) {
-            // insert in key order
-            // Perform a sorted insert by key
-            // maybe do it backwards?
+        mutating func append(_ key: _ViewKey, atIndex index: Int, value: MountRoot) {
             let newEntry = Entry(key: key, originalMountIndex: index, value: value)
             if let insertIndex = entries.firstIndex(where: { $0.originalMountIndex > index }) {
                 entries.insert(newEntry, at: insertIndex)
@@ -222,7 +272,11 @@ private extension _KeyedNode {
             shiftEntriesFromIndexUpwards(index, by: 1)
         }
 
-        mutating func commitAndCheckRemoval(at index: Int, ops: inout _ContainerLayoutPass, context: inout _CommitContext) -> Bool {
+        mutating func commitAndCheckRemoval(
+            at index: Int,
+            ops: inout _ContainerLayoutPass,
+            context: inout _CommitContext
+        ) -> Bool {
             let isRemovalCommitted = ops.withRemovalTracking { ops in
                 entries[index].value.collectChildren(&ops, &context)
             }
@@ -238,27 +292,8 @@ private extension _KeyedNode {
         }
 
         private mutating func shiftEntriesFromIndexUpwards(_ index: Int, by amount: Int) {
-            //TODO: span
-            for i in entries.indices {
-                if entries[i].originalMountIndex >= index {
-                    entries[i].originalMountIndex += amount
-                }
-            }
-        }
-    }
-}
-
-extension [AnyReconcilable?] {
-    mutating func withNode<Node: _Reconcilable>(index: Index, as type: Node.Type = Node.self, body: (inout Node?) -> Void) {
-        if self[index] == nil {
-            var slot: Node?
-            body(&slot)
-            self[index] = slot.map(AnyReconcilable.init)
-        } else {
-            self[index]?.modify(as: Node.self) {
-                var node: Node? = $0
-                body(&node)
-                $0 = node!
+            for i in entries.indices where entries[i].originalMountIndex >= index {
+                entries[i].originalMountIndex += amount
             }
         }
     }

@@ -14,9 +14,9 @@
 /// }
 /// ```
 public struct PlaceholderContentView<Value>: View {
-    private var makeNodeFn: (borrowing _ViewContext, inout _TransactionContext) -> _PlaceholderNode
+    private var makeNodeFn: (borrowing _ViewContext, inout _CommitContext) -> _PlaceholderNode
 
-    init(makeNodeFn: @escaping (borrowing _ViewContext, inout _TransactionContext) -> _PlaceholderNode) {
+    init(makeNodeFn: @escaping (borrowing _ViewContext, inout _CommitContext) -> _PlaceholderNode) {
         self.makeNodeFn = makeNodeFn
     }
 }
@@ -27,9 +27,9 @@ extension PlaceholderContentView: _Mountable {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _CommitContext
     ) -> _MountedNode {
-        view.makeNodeFn(context, &tx)
+        view.makeNodeFn(context, &ctx)
     }
 
     public static func _patchNode(

@@ -132,13 +132,13 @@ public struct _EnvironmentView<V, Wrapped: View>: View {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _CommitContext
     ) -> _MountedNode {
         var context = copy context
         let box = EnvironmentValues._Box<V>(view.value)
         context.environment.boxes[view.key.propertyID] = box
 
-        return .init(state: box, child: Wrapped._makeNode(view.wrapped, context: context, tx: &tx))
+        return .init(state: box, child: Wrapped._makeNode(view.wrapped, context: context, ctx: &ctx))
     }
 
     public static func _patchNode(

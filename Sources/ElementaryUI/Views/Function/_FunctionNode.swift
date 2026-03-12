@@ -25,7 +25,7 @@ where Value: __FunctionView, ChildNode: _Reconcilable, ChildNode == Value.Body._
     init(
         value: consuming Value,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _CommitContext
     ) {
         self.depthInTree = context.functionDepth
 
@@ -34,7 +34,7 @@ where Value: __FunctionView, ChildNode: _Reconcilable, ChildNode == Value.Body._
         Value.__applyContext(context, to: &value)
         Value.__restoreState(state!, in: &value)
 
-        self.value = value
+        self.value = copy value
         self.context = copy context
         self.context!.functionDepth += 1
 
@@ -42,7 +42,15 @@ where Value: __FunctionView, ChildNode: _Reconcilable, ChildNode == Value.Body._
 
         logTrace("added function \(identifier)")
 
-        runFunction(tx: &tx)
+        let (newContent, session) = withReactiveTrackingSession {
+            value.body
+        } onWillSet: { [scheduler = ctx.scheduler, asFunctionNode = asFunctionNode!] in
+            scheduler.invalidateFunction(asFunctionNode)
+        }
+
+        self.trackingSession = session
+        self.child = Value.Body._makeNode(newContent, context: self.context!, ctx: &ctx)
+        self.value = value
     }
 
     func patch(_ value: consuming Value, tx: inout _TransactionContext) {
@@ -105,11 +113,8 @@ where Value: __FunctionView, ChildNode: _Reconcilable, ChildNode == Value.Body._
 
         self.trackingSession = session
 
-        if child == nil {
-            self.child = Value.Body._makeNode(newContent, context: context!, tx: &tx)
-        } else {
-            Value.Body._patchNode(newContent, node: &child!, tx: &tx)
-        }
+        precondition(child != nil, "function child is missing during transaction update")
+        Value.Body._patchNode(newContent, node: &child!, tx: &tx)
     }
 }
 

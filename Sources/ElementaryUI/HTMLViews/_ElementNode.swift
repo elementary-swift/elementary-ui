@@ -18,39 +18,37 @@ public final class _ElementNode: _Reconcilable {
     init(
         tag: String,
         viewContext: borrowing _ViewContext,
-        tx: inout _TransactionContext,
-        makeChild: (borrowing _ViewContext, inout _TransactionContext) -> AnyReconcilable
+        ctx: inout _CommitContext,
+        makeChild: (borrowing _ViewContext, inout _CommitContext) -> AnyReconcilable
     ) {
         precondition(viewContext.parentElement != nil, "parent element must be set")
         self.parentNode = viewContext.parentElement
         self.identifier = "\(tag):\(ObjectIdentifier(self))"
 
         logTrace("created element \(identifier) in \(viewContext.parentElement!.identifier)")
-        viewContext.parentElement!.reportChangedChildren(.elementAdded, tx: &tx)
+        viewContext.parentElement!.reportChangedChildren(.elementAdded, ctx: &ctx)
 
         var viewContext = copy viewContext
         viewContext.parentElement = self
         let modifiers = viewContext.takeModifiers()
         self.layoutObservers = viewContext.takeLayoutObservers()
 
-        tx.scheduler.addCommitAction { [self] context in
-            precondition(self.domNode == nil, "element already has a DOM node")
-            let ref = context.dom.createElement(tag)
-            self.domNode = ManagedDOMReference(reference: ref, status: .added)
+        precondition(self.domNode == nil, "element already has a DOM node")
+        let ref = ctx.dom.createElement(tag)
+        self.domNode = ManagedDOMReference(reference: ref, status: .added)
 
-            self.mountedModifieres = modifiers.reversed().map {
-                $0.mount(ref, &context)
-            }
+        self.mountedModifieres = modifiers.reversed().map {
+            $0.mount(ref, &ctx)
         }
 
-        self.child = makeChild(viewContext, &tx)
+        self.child = makeChild(viewContext, &ctx)
     }
 
     init(
         root: DOM.Node,
         viewContext: consuming _ViewContext,
-        tx: inout _TransactionContext,
-        makeChild: (borrowing _ViewContext, inout _TransactionContext) -> AnyReconcilable
+        ctx: inout _CommitContext,
+        makeChild: (borrowing _ViewContext, inout _CommitContext) -> AnyReconcilable
     ) {
         self.domNode = .init(reference: root, status: .unchanged)
         self.identifier = "\("_root_"):\(ObjectIdentifier(self))"
@@ -63,7 +61,7 @@ public final class _ElementNode: _Reconcilable {
             self.layoutObservers = layoutObservers
         }
 
-        self.child = makeChild(viewContext, &tx)
+        self.child = makeChild(viewContext, &ctx)
     }
 
     func updateChild<Node: _Reconcilable>(
@@ -102,6 +100,13 @@ public final class _ElementNode: _Reconcilable {
             }
         default:
             break
+        }
+    }
+
+    func reportChangedChildren(_ change: ElementNodeChildrenChange, ctx: inout _CommitContext) {
+        if change.requiresChildrenUpdate, !childrenLayoutStatus.isDirty {
+            childrenLayoutStatus.isDirty = true
+            ctx.scheduler.addPlacementAction(performLayout(_:))
         }
     }
 

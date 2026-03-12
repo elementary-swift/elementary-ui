@@ -4,9 +4,9 @@ extension HTMLVoidElement: _Mountable, View {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _CommitContext
     ) -> _MountedNode {
-        let attributeModifier = _AttributeModifier(value: view._attributes, upstream: context.modifiers, &tx)
+        let attributeModifier = _AttributeModifier(value: view._attributes, upstream: context.modifiers)
 
         var context = copy context
         context.modifiers[_AttributeModifier.key] = attributeModifier
@@ -16,7 +16,7 @@ extension HTMLVoidElement: _Mountable, View {
             child: _ElementNode(
                 tag: self.Tag.name,
                 viewContext: context,
-                tx: &tx,
+                ctx: &ctx,
                 makeChild: { _, _ in AnyReconcilable(_EmptyNode()) }
             )
         )

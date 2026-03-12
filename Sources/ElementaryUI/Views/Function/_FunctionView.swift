@@ -17,12 +17,12 @@ public extension __FunctionView {
     static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _CommitContext
     ) -> _MountedNode {
         .init(
             value: view,
             context: context,
-            tx: &tx
+            ctx: &ctx
         )
     }
 

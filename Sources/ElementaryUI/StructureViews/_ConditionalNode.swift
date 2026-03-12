@@ -1,25 +1,33 @@
 public struct _ConditionalNode {
     enum State {
-        case a(AnyReconcilable)
-        case b(AnyReconcilable)
-        case aWithBLeaving(AnyReconcilable, AnyReconcilable)
-        case bWithALeaving(AnyReconcilable, AnyReconcilable)
+        case a(MountRoot)
+        case b(MountRoot)
+        case aWithBLeaving(MountRoot, MountRoot)
+        case bWithALeaving(MountRoot, MountRoot)
     }
 
     private var state: State
     private var context: _ViewContext
 
-    init(a: consuming AnyReconcilable? = nil, b: consuming AnyReconcilable? = nil, context: borrowing _ViewContext) {
-        switch (a, b) {
+    init(aRoot: MountRoot? = nil, bRoot: MountRoot? = nil, context: borrowing _ViewContext) {
+        switch (aRoot, bRoot) {
         case (let .some(a), nil):
             self.state = .a(a)
         case (nil, let .some(b)):
             self.state = .b(b)
         default:
-            preconditionFailure("either a or b must be provided")
+            preconditionFailure("either aRoot or bRoot must be provided")
         }
 
         self.context = copy context
+    }
+
+    init(a: consuming AnyReconcilable? = nil, b: consuming AnyReconcilable? = nil, context: borrowing _ViewContext) {
+        self.init(
+            aRoot: a.map { MountRoot.mounted($0) },
+            bRoot: b.map { MountRoot.mounted($0) },
+            context: context
+        )
     }
 
     init(a: consuming some _Reconcilable, context: borrowing _ViewContext) {
@@ -32,71 +40,136 @@ public struct _ConditionalNode {
 
     mutating func patchWithA<NodeA: _Reconcilable>(
         tx: inout _TransactionContext,
-        makeNode: (borrowing _ViewContext, inout _TransactionContext) -> NodeA,
+        makeNode: @escaping (borrowing _ViewContext, inout _CommitContext) -> NodeA,
         updateNode: (inout NodeA, inout _TransactionContext) -> Void
     ) {
         switch state {
         case .a(let a):
-            let a = a
-            a.modify(as: NodeA.self) { node in
-                updateNode(&node, &tx)
-            }
+            patchActiveRoot(
+                a,
+                tx: &tx,
+                makeNode: makeNode,
+                updateNode: updateNode
+            )
             state = .a(a)
         case .b(let b):
-            let a = AnyReconcilable(makeNode(context, &tx))
+            context.parentElement?.reportChangedChildren(.elementAdded, tx: &tx)
+            let a = makePendingRoot(transaction: tx.transaction, makeNode: makeNode)
+            scheduleMaterialization([a], tx: &tx)
+
             b.apply(.startRemoval, &tx)
-            self.context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
+            context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
             state = .aWithBLeaving(a, b)
         case .aWithBLeaving(let a, let b):
-            let a = a
-            a.modify(as: NodeA.self) { node in
-                updateNode(&node, &tx)
-            }
+            patchActiveRoot(
+                a,
+                tx: &tx,
+                makeNode: makeNode,
+                updateNode: updateNode
+            )
             state = .aWithBLeaving(a, b)
         case .bWithALeaving(let b, let a):
-            let a = a
-            a.modify(as: NodeA.self) { node in
-                updateNode(&node, &tx)
-            }
+            patchActiveRoot(
+                a,
+                tx: &tx,
+                makeNode: makeNode,
+                updateNode: updateNode
+            )
             a.apply(.cancelRemoval, &tx)
             b.apply(.startRemoval, &tx)
-            self.context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
+            context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
             state = .aWithBLeaving(a, b)
         }
     }
 
     mutating func patchWithB<NodeB: _Reconcilable>(
         tx: inout _TransactionContext,
-        makeNode: (borrowing _ViewContext, inout _TransactionContext) -> NodeB,
+        makeNode: @escaping (borrowing _ViewContext, inout _CommitContext) -> NodeB,
         updateNode: (inout NodeB, inout _TransactionContext) -> Void
     ) {
         switch state {
         case .b(let b):
-            let b = b
-            b.modify(as: NodeB.self) { node in
-                updateNode(&node, &tx)
-            }
+            patchActiveRoot(
+                b,
+                tx: &tx,
+                makeNode: makeNode,
+                updateNode: updateNode
+            )
             state = .b(b)
         case .a(let a):
-            let b = AnyReconcilable(makeNode(context, &tx))
+            context.parentElement?.reportChangedChildren(.elementAdded, tx: &tx)
+            let b = makePendingRoot(transaction: tx.transaction, makeNode: makeNode)
+            scheduleMaterialization([b], tx: &tx)
+
             a.apply(.startRemoval, &tx)
-            self.context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
+            context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
             state = .bWithALeaving(b, a)
         case .aWithBLeaving(let a, let b):
-            let b = b
-            b.modify(as: NodeB.self) { node in
-                updateNode(&node, &tx)
-            }
+            patchActiveRoot(
+                b,
+                tx: &tx,
+                makeNode: makeNode,
+                updateNode: updateNode
+            )
             state = .bWithALeaving(b, a)
         case .bWithALeaving(let b, let a):
-            let b = b
-            b.modify(as: NodeB.self) { node in
-                updateNode(&node, &tx)
-            }
+            patchActiveRoot(
+                b,
+                tx: &tx,
+                makeNode: makeNode,
+                updateNode: updateNode
+            )
             state = .bWithALeaving(b, a)
         }
     }
 
+    private mutating func makePendingRoot<Node: _Reconcilable>(
+        transaction: Transaction,
+        makeNode: @escaping (borrowing _ViewContext, inout _CommitContext) -> Node
+    ) -> MountRoot {
+        MountRoot.pending(
+            seedContext: context,
+            transaction: transaction,
+            transitionPhase: .willAppear,
+            create: { viewContext, ctx in
+                AnyReconcilable(makeNode(viewContext, &ctx))
+            }
+        )
+    }
+
+    private mutating func patchActiveRoot<Node: _Reconcilable>(
+        _ root: MountRoot,
+        tx: inout _TransactionContext,
+        makeNode: @escaping (borrowing _ViewContext, inout _CommitContext) -> Node,
+        updateNode: (inout Node, inout _TransactionContext) -> Void
+    ) {
+        if root.isPending {
+            root.updatePendingCreate(
+                seedContext: context,
+                transaction: tx.transaction,
+                create: { viewContext, ctx in
+                    AnyReconcilable(makeNode(viewContext, &ctx))
+                }
+            )
+            scheduleMaterialization([root], tx: &tx)
+            return
+        }
+
+        let patched = root.withMountedNode(as: Node.self) { node in
+            updateNode(&node, &tx)
+        }
+        precondition(patched, "expected mounted conditional branch")
+    }
+
+    private func scheduleMaterialization(_ roots: [MountRoot], tx: inout _TransactionContext) {
+        guard !roots.isEmpty else { return }
+
+        tx.scheduler.addCommitAction { ctx in
+            for root in roots {
+                root.materialize(&ctx)
+            }
+        }
+    }
 }
 
 extension _ConditionalNode: _Reconcilable {
@@ -118,7 +191,6 @@ extension _ConditionalNode: _Reconcilable {
                 state = .a(a)
             }
         case .bWithALeaving(let b, let a):
-            // NOTE: ordering of a before b is important because we don't want to track moves here
             let isRemovalCompleted = ops.withRemovalTracking { ops in
                 a.collectChildren(&ops, &context)
             }

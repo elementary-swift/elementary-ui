@@ -63,7 +63,7 @@ public protocol _Mountable {
     static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _CommitContext
     ) -> _MountedNode
 
     static func _patchNode(
@@ -79,7 +79,7 @@ extension Never: _Mountable {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _CommitContext
     ) -> _MountedNode {
         fatalError("This should never be called")
     }

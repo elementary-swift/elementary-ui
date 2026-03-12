@@ -4,18 +4,13 @@ public final class _TextNode: _Reconcilable {
     var isDirty: Bool = false
     var parentElement: _ElementNode?
 
-    init(_ newValue: String, viewContext: borrowing _ViewContext, context: inout _TransactionContext) {
+    init(_ newValue: String, viewContext: borrowing _ViewContext, context: inout _CommitContext) {
         self.value = newValue
         self.domNode = nil
         self.parentElement = viewContext.parentElement
 
-        self.parentElement?.reportChangedChildren(.elementAdded, tx: &context)
-
-        isDirty = true
-        context.scheduler.addCommitAction { [self] context in
-            self.domNode = ManagedDOMReference(reference: context.dom.createText(newValue), status: .added)
-            self.isDirty = false
-        }
+        self.parentElement?.reportChangedChildren(.elementAdded, ctx: &context)
+        self.domNode = ManagedDOMReference(reference: context.dom.createText(newValue), status: .added)
     }
 
     func patch(_ newValue: String, context: inout _TransactionContext) {

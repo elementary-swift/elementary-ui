@@ -18,21 +18,26 @@ final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
             tx.withModifiedTransaction {
                 $0.disablesAnimation = true
             } run: { tx in
-                self.rootNode =
-                    _ElementNode(
-                        root: domRoot,
-                        viewContext: _ViewContext(),
-                        tx: &tx,
-                        makeChild: { [rootView] viewContext, tx in
-                            AnyReconcilable(
-                                RootView._makeNode(
-                                    rootView,
-                                    context: viewContext,
-                                    tx: &tx
+                var rootViewContext = _ViewContext()
+                rootViewContext.mountRoot = MountRoot.from(tx.transaction)
+
+                tx.scheduler.addCommitAction { [self, rootView, rootViewContext] ctx in
+                    self.rootNode =
+                        _ElementNode(
+                            root: domRoot,
+                            viewContext: rootViewContext,
+                            ctx: &ctx,
+                            makeChild: { [rootView] viewContext, ctx in
+                                AnyReconcilable(
+                                    RootView._makeNode(
+                                        rootView,
+                                        context: viewContext,
+                                        ctx: &ctx
+                                    )
                                 )
-                            )
-                        }
-                    )
+                            }
+                        )
+                }
             }
         }
     }

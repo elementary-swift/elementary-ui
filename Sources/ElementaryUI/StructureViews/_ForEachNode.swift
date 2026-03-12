@@ -15,7 +15,7 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
         data: consuming Data,
         contentBuilder: @escaping @Sendable (Data.Element) -> Content,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _CommitContext
     ) {
         self.data = data
         self.contentBuilder = contentBuilder
@@ -23,7 +23,7 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
         self.depthInTree = context.functionDepth
         self.asFunctionNode = AnyFunctionNode(self)
 
-        runFunction(tx: &tx)
+        runFunctionInitial(ctx: &ctx)
     }
 
     func patch(
@@ -60,29 +60,61 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
         self.trackingSession = session
 
         if keyedNode == nil {
-            var children: [AnyReconcilable?] = []
-            children.reserveCapacity(views.count)
-
-            for view in views {
-                let node = Content.Value._makeNode(view._value, context: context, tx: &tx)
-                children.append(AnyReconcilable(node))
-            }
-
-            keyedNode = _KeyedNode(keys: keys, children: children, context: context)
-            return
+            keyedNode = _KeyedNode(keys: [], children: [], context: context)
         }
 
         keyedNode!.patch(
             keys,
             context: &tx,
             as: Content.Value._MountedNode.self,
-        ) { index, node, context, tx in
-            if node == nil {
-                node = Content.Value._makeNode(views[index]._value, context: context, tx: &tx)
-            } else {
-                Content.Value._patchNode(views[index]._value, node: &node!, tx: &tx)
+            makeNode: { index, context, ctx in
+                Content.Value._makeNode(views[index]._value, context: context, ctx: &ctx)
+            },
+            patchNode: { index, node, tx in
+                Content.Value._patchNode(views[index]._value, node: &node, tx: &tx)
             }
+        )
+    }
+
+    private func runFunctionInitial(ctx: inout _CommitContext) {
+        self.trackingSession.take()?.cancel()
+
+        let ((views, keys), session) = withReactiveTrackingSession {
+            var views: [Content] = []
+            var keys: [_ViewKey] = []
+            let estimatedCount = data.underestimatedCount
+            views.reserveCapacity(estimatedCount)
+            keys.reserveCapacity(estimatedCount)
+
+            for value in data {
+                let view = contentBuilder(value)
+                views.append(view)
+                keys.append(view._key)
+            }
+
+            return (views, keys)
+        } onWillSet: { [scheduler = ctx.scheduler, asFunctionNode = asFunctionNode!] in
+            scheduler.invalidateFunction(asFunctionNode)
         }
+
+        self.trackingSession = session
+
+        var children: [MountRoot] = []
+        children.reserveCapacity(views.count)
+
+        for view in views {
+            children.append(
+                .materialized(
+                    seedContext: context,
+                    ctx: &ctx,
+                    create: { context, ctx in
+                        AnyReconcilable(Content.Value._makeNode(view._value, context: context, ctx: &ctx))
+                    }
+                )
+            )
+        }
+
+        keyedNode = _KeyedNode(keys: keys, children: children, context: context)
     }
 
     public func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {

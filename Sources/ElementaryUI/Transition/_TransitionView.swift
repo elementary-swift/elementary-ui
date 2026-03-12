@@ -15,9 +15,9 @@ public struct _TransitionView<T: Transition, V: View>: View {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _CommitContext
     ) -> _MountedNode {
-        .init(view: view, context: context, tx: &tx)
+        .init(view: view, context: context, ctx: &ctx)
     }
 
     public static func _patchNode(
@@ -25,6 +25,6 @@ public struct _TransitionView<T: Transition, V: View>: View {
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        node.update(view: view, context: &tx)
+        node.patchWrappedContent(view, tx: &tx)
     }
 }

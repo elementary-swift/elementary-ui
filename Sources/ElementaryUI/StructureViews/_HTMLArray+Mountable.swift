@@ -4,17 +4,27 @@ extension _HTMLArray: _Mountable, View where Element: View {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _CommitContext
     ) -> _MountedNode {
-        _MountedNode(
-            view.value.enumerated().map { (index, element) in
-                (
-                    key: _ViewKey(String(index)),
-                    node: Element._makeNode(element, context: context, tx: &tx)
-                )
-            },
-            context: context
-        )
+        var keys: [_ViewKey] = []
+        var children: [MountRoot] = []
+        let estimatedCount = view.value.underestimatedCount
+        keys.reserveCapacity(estimatedCount)
+        children.reserveCapacity(estimatedCount)
+
+        for (index, element) in view.value.enumerated() {
+            keys.append(_ViewKey(String(index)))
+            let root = MountRoot.materialized(
+                seedContext: context,
+                ctx: &ctx,
+                create: { context, ctx in
+                    AnyReconcilable(Element._makeNode(element, context: context, ctx: &ctx))
+                }
+            )
+            children.append(root)
+        }
+
+        return _MountedNode(keys: keys, children: children, context: context)
     }
 
     public static func _patchNode(
@@ -30,12 +40,11 @@ extension _HTMLArray: _Mountable, View where Element: View {
             indexes,
             context: &tx,
             as: Element._MountedNode.self,
-            makeOrPatchNode: { index, node, context, tx in
-                if node == nil {
-                    node = Element._makeNode(view.value[index], context: context, tx: &tx)
-                } else {
-                    Element._patchNode(view.value[index], node: &node!, tx: &tx)
-                }
+            makeNode: { index, context, ctx in
+                Element._makeNode(view.value[index], context: context, ctx: &ctx)
+            },
+            patchNode: { index, node, tx in
+                Element._patchNode(view.value[index], node: &node, tx: &tx)
             }
         )
 
