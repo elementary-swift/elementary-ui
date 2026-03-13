@@ -4,9 +4,10 @@ struct DeinitSnifferView: View {
     static func _makeNode(
         _ view: consuming DeinitSnifferView,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
-        _MountedNode(callback: view.callback)
+        _ = context
+        return _MountedNode(callback: view.callback)
     }
 
     static func _patchNode(
@@ -18,10 +19,6 @@ struct DeinitSnifferView: View {
     }
 
     class _MountedNode: _Reconcilable {
-        func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext) {}
-
-        func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {}
-
         func unmount(_ context: inout _CommitContext) {
             print("sniffer unmount")
         }

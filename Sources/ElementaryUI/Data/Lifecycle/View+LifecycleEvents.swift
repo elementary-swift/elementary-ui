@@ -131,7 +131,7 @@ struct _LifecycleEventView<Wrapped: View>: View {
     static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         let state = LifecycleState(hook: view.listener, scheduler: ctx.scheduler)
         let child = Wrapped._makeNode(view.wrapped, context: context, ctx: &ctx)

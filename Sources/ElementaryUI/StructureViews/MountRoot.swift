@@ -1,10 +1,16 @@
 final class MountRoot {
+    private struct MountedState {
+        var node: AnyReconcilable?
+        var layoutNodes: [LayoutNode]
+        var status: LayoutPass.Entry.Status
+    }
+
     private enum State {
         case pending(
             seedContext: _ViewContext,
-            create: (borrowing _ViewContext, inout _CommitContext) -> AnyReconcilable
+            create: (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
         )
-        case mounted(AnyReconcilable?)
+        case mounted(MountedState)
         case unmounted
     }
 
@@ -14,24 +20,18 @@ final class MountRoot {
         let isStillMounted: () -> Bool
     }
 
-    nonisolated(unsafe) private static var nextTransitionClaimID: UInt64 = 0
-
     private var state: State
 
     private var transitionSignal: TransitionPhase?
     var transactionAnimation: Animation?
     var transactionDisablesAnimation: Bool
-    private var transitionParticipantClaimID: UInt64?
-    private var transitionParticipant: TransitionParticipant?
-    private var pendingEnterAnimation: Animation?
-    private var removalToken: Double?
 
     init(
         mounted node: consuming AnyReconcilable? = nil,
         transaction: Transaction? = nil,
         transitionPhase: TransitionPhase? = nil
     ) {
-        self.state = .mounted(node)
+        self.state = .mounted(.init(node: node, layoutNodes: [], status: .unchanged))
         self.transitionSignal = transitionPhase
         self.transactionAnimation = transaction?.animation
         self.transactionDisablesAnimation = transaction?.disablesAnimation ?? false
@@ -41,7 +41,7 @@ final class MountRoot {
         pending seedContext: borrowing _ViewContext,
         transaction: Transaction,
         transitionPhase: TransitionPhase? = nil,
-        create: @escaping (borrowing _ViewContext, inout _CommitContext) -> AnyReconcilable
+        create: @escaping (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
     ) {
         self.state = .pending(seedContext: copy seedContext, create: create)
         self.transitionSignal = transitionPhase
@@ -53,17 +53,23 @@ final class MountRoot {
         mountedFrom seedContext: borrowing _ViewContext,
         transaction: Transaction,
         transitionPhase: TransitionPhase? = nil,
-        ctx: inout _CommitContext,
-        create: (borrowing _ViewContext, inout _CommitContext) -> AnyReconcilable
+        ctx: inout _MountContext,
+        create: (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
     ) {
-        self.state = .mounted(nil)
+        self.state = .mounted(.init(node: nil, layoutNodes: [], status: .unchanged))
         self.transitionSignal = transitionPhase
         self.transactionAnimation = transaction.animation
         self.transactionDisablesAnimation = transaction.disablesAnimation
 
         var childContext = copy seedContext
         childContext.mountRoot = self
-        self.state = .mounted(create(childContext, &ctx))
+        let (node, layoutNodes) = ctx.withCommitContext { commit in
+            var childMount = _MountContext(ctx: commit)
+            let node = create(childContext, &childMount)
+            let layoutNodes = childMount.takeLayoutNodes()
+            return (node, layoutNodes)
+        }
+        self.state = .mounted(.init(node: node, layoutNodes: layoutNodes, status: .unchanged))
     }
 
     func inheritedTransaction() -> Transaction {
@@ -83,107 +89,108 @@ final class MountRoot {
         var childContext = seedContext
         childContext.mountRoot = self
 
-        state = .mounted(create(childContext, &ctx))
+        var mountContext = _MountContext(ctx: ctx)
+        let node = create(childContext, &mountContext)
+        let layoutNodes = mountContext.takeLayoutNodes()
+        state = .mounted(.init(node: node, layoutNodes: layoutNodes, status: .added))
     }
+
+    // MARK: - Transition compatibility (temporary no-op ownership)
 
     func consumeTransitionPhase(defaultAnimation: Animation?) -> TransitionPhase {
+        _ = defaultAnimation
         let signal = transitionSignal
         transitionSignal = nil
-
-        guard signal == .willAppear else { return signal ?? .identity }
-        guard let animation = effectiveAnimation(defaultAnimation: defaultAnimation) else {
-            return .identity
-        }
-
-        pendingEnterAnimation = animation
-        return .willAppear
+        return signal ?? .identity
     }
 
-    func reserveTransitionParticipant() -> UInt64? {
-        guard transitionParticipant == nil, transitionParticipantClaimID == nil else { return nil }
-        MountRoot.nextTransitionClaimID &+= 1
-        let claimID = MountRoot.nextTransitionClaimID
-        transitionParticipantClaimID = claimID
-        return claimID
-    }
+    func reserveTransitionParticipant() -> UInt64? { nil }
 
     func registerTransitionParticipant(
         claimID: UInt64,
         defaultAnimation: Animation?,
         patchPhase: @escaping (TransitionPhase, inout _TransactionContext) -> Void,
         isStillMounted: @escaping () -> Bool,
-        ctx: inout _CommitContext
+        ctx _: inout _MountContext
     ) {
-        guard transitionParticipant == nil, transitionParticipantClaimID == claimID else { return }
-        transitionParticipantClaimID = nil
-        transitionParticipant = .init(
-            patchPhase: patchPhase,
-            defaultAnimation: defaultAnimation,
-            isStillMounted: isStillMounted
-        )
-
-        guard let enterAnimation = pendingEnterAnimation else { return }
-        pendingEnterAnimation = nil
-
-        ctx.scheduler.scheduleUpdate { tx in
-            guard let participant = self.transitionParticipant, participant.isStillMounted() else { return }
-            tx.withModifiedTransaction(
-                {
-                    $0.animation = enterAnimation
-                },
-                run: { tx in
-                    participant.patchPhase(.identity, &tx)
-                }
-            )
-        }
+        _ = claimID
+        _ = defaultAnimation
+        _ = patchPhase
+        _ = isStillMounted
     }
 
-    func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext) {
+    // MARK: - Structure lifecycle
+
+    func startRemoval(_ tx: inout _TransactionContext, handle: LayoutContainer.Handle?) {
         switch state {
         case .pending:
-            applyPending(op)
-            return
+            state = .unmounted
         case .unmounted:
-            return
-        case .mounted:
             break
-        }
-
-        switch op {
-        case .startRemoval:
-            startRemoval(&tx)
-        case .cancelRemoval:
-            cancelRemoval(&tx)
-        case .markAsMoved, .markAsLeaving:
-            mountedNode?.apply(op, &tx)
+        case .mounted(var mounted):
+            mounted.status = .removed
+            for element in mountedElementReferences(mounted.layoutNodes) {
+                handle?.reportLeavingElement(element, &tx)
+            }
+            state = .mounted(mounted)
         }
     }
 
-    func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
+    func cancelRemoval(_ tx: inout _TransactionContext, handle: LayoutContainer.Handle?) {
+        guard case .mounted(var mounted) = state else { return }
+        if mounted.status == .removed {
+            mounted.status = .moved
+            for element in mountedElementReferences(mounted.layoutNodes) {
+                handle?.reportReenteringElement(element, &tx)
+            }
+            state = .mounted(mounted)
+        }
+    }
+
+    func markMoved(_ tx: inout _TransactionContext) {
+        guard case .mounted(var mounted) = state else { return }
+        mounted.status = .moved
+        state = .mounted(mounted)
+    }
+
+    func collect(into ops: inout LayoutPass, _ context: inout _CommitContext) {
         switch state {
-        case .mounted(let node):
-            guard let node else { return }
-            node.collectChildren(&ops, &context)
-        case .pending:
-            preconditionFailure("pending MountRoot reached collectChildren")
         case .unmounted:
             return
+        case .pending:
+            mount(&context)
+            collect(into: &ops, &context)
+        case .mounted(var mounted):
+            let startIndex = ops.entries.count
+            for node in mounted.layoutNodes {
+                node.collect(into: &ops, context: &context)
+            }
+
+            if mounted.status != .unchanged {
+                for index in startIndex..<ops.entries.count {
+                    let entry = ops.entries[index]
+                    ops.entries[index] = .init(kind: mounted.status, reference: entry.reference, type: entry.type)
+                }
+                ops.recomputeBatchFlags()
+
+                if mounted.status == .added || mounted.status == .moved {
+                    mounted.status = .unchanged
+                }
+
+                state = .mounted(mounted)
+            }
         }
     }
 
     func unmount(_ context: inout _CommitContext) {
         switch state {
-        case .mounted(let node):
-            node?.unmount(&context)
+        case .mounted(let mounted):
+            mounted.node?.unmount(&context)
         case .pending, .unmounted:
             break
         }
 
         state = .unmounted
-        transitionParticipantClaimID = nil
-        transitionParticipant = nil
-        pendingEnterAnimation = nil
-        removalToken = nil
     }
 
     @discardableResult
@@ -191,104 +198,22 @@ final class MountRoot {
         as type: Node.Type = Node.self,
         _ body: (inout Node) -> Void
     ) -> Bool {
-        guard case .mounted(let node) = state, let node else { return false }
+        _ = type
+        guard case .mounted(let mounted) = state, let node = mounted.node else { return false }
         node.modify(as: Node.self, body)
         return true
     }
 
-    private func applyPending(_ op: _ReconcileOp) {
-        switch op {
-        case .startRemoval:
-            state = .unmounted
-            transitionParticipantClaimID = nil
-        case .cancelRemoval, .markAsMoved, .markAsLeaving:
-            assertionFailure("apply(\(op)) on pending MountRoot")
-        }
-    }
-
-    private func startRemoval(_ tx: inout _TransactionContext) {
-        guard let participant = transitionParticipant, participant.isStillMounted() else {
-            mountedNode?.apply(.startRemoval, &tx)
-            return
-        }
-
-        guard
-            let transitionAnimation = effectiveAnimation(
-                defaultAnimation: participant.defaultAnimation,
-                transaction: tx.transaction
-            )
-        else {
-            mountedNode?.apply(.startRemoval, &tx)
-            return
-        }
-
-        tx.withModifiedTransaction(
-            {
-                $0.animation = transitionAnimation
-            },
-            run: { tx in
-                mountedNode?.apply(.markAsLeaving, &tx)
-                participant.patchPhase(.didDisappear, &tx)
-            }
-        )
-
-        removalToken = tx.currentFrameTime
-        tx.transaction.addAnimationCompletion(criteria: .removed) { [scheduler = tx.scheduler, frameTime = removalToken] in
-            guard self.removalToken == frameTime else { return }
-            scheduler.scheduleUpdate { tx in
-                self.mountedNode?.apply(.startRemoval, &tx)
+    private func mountedElementReferences(_ layoutNodes: [LayoutNode]) -> [DOM.Node] {
+        var elements: [DOM.Node] = []
+        for node in layoutNodes {
+            switch node {
+            case .elementNode(let ref):
+                elements.append(ref)
+            case .textNode, .dynamicNode:
+                break
             }
         }
+        return elements
     }
-
-    private func cancelRemoval(_ tx: inout _TransactionContext) {
-        removalToken = nil
-        mountedNode?.apply(.cancelRemoval, &tx)
-
-        guard let participant = transitionParticipant, participant.isStillMounted() else { return }
-        participant.patchPhase(.identity, &tx)
-    }
-
-    private var mountedNode: AnyReconcilable? {
-        guard case .mounted(let node) = state else { return nil }
-        return node
-    }
-
-    private func effectiveAnimation(defaultAnimation: Animation?, transaction: Transaction? = nil) -> Animation? {
-        let disablesAnimation = transaction?.disablesAnimation ?? transactionDisablesAnimation
-        guard !disablesAnimation else { return nil }
-
-        return transaction?.animation ?? transactionAnimation ?? defaultAnimation
-    }
-}
-
-final class _MountRootList {
-    var entries: [_MountRootEntry]
-
-    init() {
-        self.entries = []
-    }
-}
-
-struct _MountRootEntry {
-    var nodeContainer: NodeContainer
-}
-
-enum MountedNode {
-    case mountRoot(_MountRootList)
-    case domNode(DOM.Node)
-}
-
-struct NodeContainer {
-    enum Entry {
-        case staticNode(DOM.Node)
-        case dynamicNode(any DynamicNode)
-    }
-
-    let nodes: [Entry]
-}
-
-protocol DynamicNode {
-    var count: Int { get }
-    func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext)
 }

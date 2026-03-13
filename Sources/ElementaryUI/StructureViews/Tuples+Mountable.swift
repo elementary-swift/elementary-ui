@@ -5,7 +5,7 @@ extension _HTMLTuple2: _Mountable where V0: _Mountable, V1: _Mountable {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         _MountedNode(
             V0._makeNode(view.v0, context: context, ctx: &ctx),
@@ -30,7 +30,7 @@ extension _HTMLTuple3: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mou
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         _MountedNode(
             V0._makeNode(view.v0, context: context, ctx: &ctx),
@@ -57,7 +57,7 @@ extension _HTMLTuple4: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mou
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         _MountedNode(
             V0._makeNode(view.v0, context: context, ctx: &ctx),
@@ -86,7 +86,7 @@ extension _HTMLTuple5: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mou
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         _MountedNode(
             V0._makeNode(view.v0, context: context, ctx: &ctx),
@@ -119,7 +119,7 @@ extension _HTMLTuple6: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mou
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         _MountedNode(
             V0._makeNode(view.v0, context: context, ctx: &ctx),
@@ -154,7 +154,7 @@ extension _HTMLTuple: _Mountable where repeat each Child: _Mountable {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         _MountedNode(
             repeat makeNode(
@@ -195,7 +195,7 @@ private func __noop_goshDarnValuePacksAreAnnoyingAF(_ v: inout some _Mountable) 
 private func makeNode<V: _Mountable>(
     _ view: consuming V,
     context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
 ) -> V._MountedNode {
     V._makeNode(view, context: context, ctx: &ctx)
 }

@@ -8,7 +8,7 @@ struct AnimateContainerLayoutView<Wrapped: View>: View {
     static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
 
         let observer = FLIPLayoutObserver(

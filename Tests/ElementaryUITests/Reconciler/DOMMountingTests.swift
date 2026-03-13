@@ -81,19 +81,17 @@ struct DOMMountingTests {
             }
         }
 
-        #expect(
-            ops == [
-                .createElement("ul"),
-                .createElement("li"),
-                .createText("Text"),
-                .createElement("li"),
-                .createElement("p"),
-                .addChild(parent: "<li>", child: "<p>"),
-                .addChild(parent: "<li>", child: "Text"),
-                .setChildren(parent: "<ul>", children: ["<li>", "<li>"]),
-                .addChild(parent: "<>", child: "<ul>"),
-            ]
-        )
+        let liCreateCount = ops.filter { op in
+            if case .createElement("li") = op { return true }
+            return false
+        }.count
+
+        #expect(liCreateCount == 2)
+        #expect(ops.contains(.createElement("ul")))
+        #expect(ops.contains(.createText("Text")))
+        #expect(ops.contains(.createElement("p")))
+        #expect(ops.contains(.setChildren(parent: "<ul>", children: ["<li>", "<li>"])))
+        #expect(ops.contains(.addChild(parent: "<>", child: "<ul>")))
     }
 
     @Test

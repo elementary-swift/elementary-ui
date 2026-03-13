@@ -1,12 +1,12 @@
 // TODO: rethink this whole API - maybe once usage of async is clearer
 // TODO: main-actor stuff very unclear at the moment, ideally not needed at all
 final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
-    private var rootNode: _ElementNode?
+    private var rootChild: AnyReconcilable?
+    private var rootContainer: LayoutContainer?
     private var scheduler: Scheduler
 
     init(dom: DOMInteractor) {
         self.scheduler = Scheduler(dom: dom)
-        self.rootNode = nil
     }
 
     // generic initializers must be convenience on final classes for embedded
@@ -22,41 +22,42 @@ final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
                 rootViewContext.mountRoot = MountRoot(mounted: nil, transaction: tx.transaction)
 
                 tx.scheduler.addCommitAction { [self, rootView, rootViewContext] ctx in
-                    self.rootNode =
-                        _ElementNode(
-                            root: domRoot,
-                            viewContext: rootViewContext,
-                            ctx: &ctx,
-                            makeChild: { [rootView] viewContext, ctx in
-                                AnyReconcilable(
-                                    RootView._makeNode(
-                                        rootView,
-                                        context: viewContext,
-                                        ctx: &ctx
-                                    )
-                                )
-                            }
-                        )
+                    var mountContext = _MountContext(ctx: ctx)
+                    let child = AnyReconcilable(
+                        RootView._makeNode(rootView, context: rootViewContext, ctx: &mountContext)
+                    )
+                    let layoutNodes = mountContext.takeLayoutNodes()
+
+                    let container = LayoutContainer(
+                        domNode: domRoot,
+                        scheduler: ctx.scheduler,
+                        layoutNodes: layoutNodes,
+                        layoutObservers: []
+                    )
+                    container.mountInitial(&ctx)
+
+                    self.rootChild = child
+                    self.rootContainer = container
                 }
             }
         }
     }
 
     func unmount() {
-        guard let rootNode else { return }
+        guard let rootChild, let rootContainer else { return }
 
-        scheduler.scheduleUpdate { [rootNode] tx in
+        scheduler.scheduleUpdate { [rootChild, rootContainer] tx in
             tx.withModifiedTransaction {
                 $0.disablesAnimation = true
             } run: { tx in
                 tx.scheduler.addPlacementAction { ctx in
-                    rootNode.unmount(&ctx)
+                    rootContainer.removeAllChildren(&ctx)
+                    rootChild.unmount(&ctx)
                 }
-
-                rootNode.child.apply(.startRemoval, &tx)
             }
         }
 
-        self.rootNode = nil
+        self.rootChild = nil
+        self.rootContainer = nil
     }
 }

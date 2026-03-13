@@ -10,7 +10,7 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
     // a transition can theoretically duplicate the content node, but it will be rare
     private var additionalPlaceholderNodes: [_PlaceholderNode] = []
 
-    init(view: consuming _TransitionView<T, V>, context: borrowing _ViewContext, ctx: inout _CommitContext) {
+    init(view: consuming _TransitionView<T, V>, context: borrowing _ViewContext, ctx: inout _MountContext) {
         let view = view
         let defaultAnimation = view.animation
         self.value = view
@@ -65,7 +65,7 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
     func makeInitialNode(
         for phase: TransitionPhase,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> AnyReconcilable {
         AnyReconcilable(
             T.Body._makeNode(
@@ -76,7 +76,7 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
         )
     }
 
-    private func makePlaceholderNode(context: borrowing _ViewContext, ctx: inout _CommitContext) -> _PlaceholderNode {
+    private func makePlaceholderNode(context: borrowing _ViewContext, ctx: inout _MountContext) -> _PlaceholderNode {
         let node = _PlaceholderNode(node: AnyReconcilable(V._makeNode(value.wrapped, context: context, ctx: &ctx)))
         if placeholderNode == nil {
             placeholderNode = node
@@ -84,14 +84,6 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
             additionalPlaceholderNodes.append(node)
         }
         return node
-    }
-
-    public func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext) {
-        node?.apply(op, &tx)
-    }
-
-    public func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
-        node?.collectChildren(&ops, &context)
     }
 
     public func unmount(_ context: inout _CommitContext) {

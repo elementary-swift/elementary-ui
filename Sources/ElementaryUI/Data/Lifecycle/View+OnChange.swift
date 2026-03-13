@@ -52,7 +52,7 @@ struct _OnChangeView<Wrapped: View, Value: Equatable>: View {
     static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         let state = State(value: view.value, action: view.action)
         let child = Wrapped._makeNode(view.wrapped, context: context, ctx: &ctx)

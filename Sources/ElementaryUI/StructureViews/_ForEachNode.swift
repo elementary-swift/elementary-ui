@@ -15,7 +15,7 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
         data: consuming Data,
         contentBuilder: @escaping @Sendable (Data.Element) -> Content,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) {
         self.data = data
         self.contentBuilder = contentBuilder
@@ -67,8 +67,8 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
             keys,
             context: &tx,
             as: Content.Value._MountedNode.self,
-            makeNode: { index, context, ctx in
-                Content.Value._makeNode(views[index]._value, context: context, ctx: &ctx)
+            makeNode: { index, context, mountCtx in
+                Content.Value._makeNode(views[index]._value, context: context, ctx: &mountCtx)
             },
             patchNode: { index, node, tx in
                 Content.Value._patchNode(views[index]._value, node: &node, tx: &tx)
@@ -76,7 +76,7 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
         )
     }
 
-    private func runFunctionInitial(ctx: inout _CommitContext) {
+    private func runFunctionInitial(ctx: inout _MountContext) {
         self.trackingSession.take()?.cancel()
 
         let ((views, keys), session) = withReactiveTrackingSession {
@@ -103,18 +103,10 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
             keys: keys,
             context: context,
             ctx: &ctx,
-            makeNode: { index, context, ctx in
-                Content.Value._makeNode(views[index]._value, context: context, ctx: &ctx)
+            makeNode: { index, context, mountCtx in
+                AnyReconcilable(Content.Value._makeNode(views[index]._value, context: context, ctx: &mountCtx))
             }
         )
-    }
-
-    public func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
-        keyedNode?.collectChildren(&ops, &context)
-    }
-
-    public func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext) {
-        keyedNode?.apply(op, &tx)
     }
 
     public func unmount(_ context: inout _CommitContext) {

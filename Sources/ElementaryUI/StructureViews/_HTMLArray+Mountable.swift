@@ -4,7 +4,7 @@ extension _HTMLArray: _Mountable, View where Element: View {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         var keys: [_ViewKey] = []
         let estimatedCount = view.value.underestimatedCount
@@ -19,7 +19,7 @@ extension _HTMLArray: _Mountable, View where Element: View {
             context: context,
             ctx: &ctx,
             makeNode: { index, context, ctx in
-                Element._makeNode(view.value[index], context: context, ctx: &ctx)
+                AnyReconcilable(Element._makeNode(view.value[index], context: context, ctx: &ctx))
             }
         )
     }

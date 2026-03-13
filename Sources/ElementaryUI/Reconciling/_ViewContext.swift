@@ -6,7 +6,6 @@ public struct _ViewContext {
     var modifiers: DOMElementModifiers = .init()
     var layoutObservers: DOMLayoutObservers = .init()
     var functionDepth: Int = 0
-    var parentElement: _ElementNode?
     var mountRoot: MountRoot = .init(mounted: nil)
 
     mutating func takeModifiers() -> [any DOMElementModifier] {

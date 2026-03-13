@@ -132,7 +132,7 @@ public struct _EnvironmentView<V, Wrapped: View>: View {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         var context = copy context
         let box = EnvironmentValues._Box<V>(view.value)

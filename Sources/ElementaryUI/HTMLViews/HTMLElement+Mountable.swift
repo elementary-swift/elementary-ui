@@ -1,10 +1,10 @@
 extension HTMLElement: _Mountable, View where Content: _Mountable {
-    public typealias _MountedNode = _StatefulNode<_AttributeModifier, _ElementNode>
+    public typealias _MountedNode = _StatefulNode<_AttributeModifier, _ElementNode<Content._MountedNode>>
 
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         let attributeModifier = _AttributeModifier(value: view._attributes, upstream: context.modifiers)
 
@@ -17,7 +17,7 @@ extension HTMLElement: _Mountable, View where Content: _Mountable {
                 tag: self.Tag.name,
                 viewContext: context,
                 ctx: &ctx,
-                makeChild: { viewContext, c in AnyReconcilable(Content._makeNode(view.content, context: viewContext, ctx: &c)) }
+                makeChild: { viewContext, c in Content._makeNode(view.content, context: viewContext, ctx: &c) }
             )
         )
     }
@@ -29,7 +29,7 @@ extension HTMLElement: _Mountable, View where Content: _Mountable {
     ) {
         node.state.updateValue(view._attributes, &tx)
 
-        node.child.updateChild(&tx, as: Content._MountedNode.self) { child, r in
+        node.child.updateChild(&tx) { child, r in
             Content._patchNode(
                 view.content,
                 node: &child,

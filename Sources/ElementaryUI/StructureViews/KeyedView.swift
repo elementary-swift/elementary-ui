@@ -8,14 +8,14 @@ public struct _KeyedView<Value: View>: View {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         .init(
             key: view.key,
             context: context,
             ctx: &ctx,
             makeNode: { context, ctx in
-                Value._makeNode(view.value, context: context, ctx: &ctx)
+                AnyReconcilable(Value._makeNode(view.value, context: context, ctx: &ctx))
             }
         )
     }

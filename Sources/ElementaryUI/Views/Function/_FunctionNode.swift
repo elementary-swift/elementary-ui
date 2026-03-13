@@ -25,7 +25,7 @@ where Value: __FunctionView, ChildNode: _Reconcilable, ChildNode == Value.Body._
     init(
         value: consuming Value,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) {
         self.depthInTree = context.functionDepth
 
@@ -119,15 +119,6 @@ where Value: __FunctionView, ChildNode: _Reconcilable, ChildNode == Value.Body._
 }
 
 extension _FunctionNode: _Reconcilable {
-
-    public func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
-        child?.collectChildren(&ops, &context)
-    }
-
-    public func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext) {
-        child?.apply(op, &tx)
-    }
-
     public consuming func unmount(_ context: inout _CommitContext) {
         self.trackingSession.take()?.cancel()
 

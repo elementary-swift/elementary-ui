@@ -1,4 +1,4 @@
-public struct _ConditionalNode {
+public final class _ConditionalNode: _Reconcilable, DynamicNode {
     enum State {
         case a(MountRoot)
         case b(MountRoot)
@@ -8,138 +8,99 @@ public struct _ConditionalNode {
 
     private var state: State
     private var context: _ViewContext
+    private var containerHandle: LayoutContainer.Handle?
 
-    private init(state: State, context: borrowing _ViewContext) {
+    var count: Int {
+        switch state {
+        case .a, .b:
+            1
+        case .aWithBLeaving, .bWithALeaving:
+            2
+        }
+    }
+
+    init(state: State, context: borrowing _ViewContext, ctx: inout _MountContext) {
         self.state = state
         self.context = copy context
+        ctx.appendDynamicNode(self)
     }
 
-    init<A: _Mountable>(
-        a view: A,
-        context: borrowing _ViewContext,
-        ctx: inout _CommitContext
-    ) {
-        let root = MountRoot(
-            mountedFrom: context,
-            transaction: context.mountRoot.inheritedTransaction(),
-            ctx: &ctx,
-            create: { context, ctx in
-                AnyReconcilable(A._makeNode(view, context: context, ctx: &ctx))
-            }
-        )
-        self.init(state: .a(root), context: context)
-    }
-
-    init<B: _Mountable>(
-        b view: B,
-        context: borrowing _ViewContext,
-        ctx: inout _CommitContext
-    ) {
-        let root = MountRoot(
-            mountedFrom: context,
-            transaction: context.mountRoot.inheritedTransaction(),
-            ctx: &ctx,
-            create: { context, ctx in
-                AnyReconcilable(B._makeNode(view, context: context, ctx: &ctx))
-            }
-        )
-        self.init(state: .b(root), context: context)
-    }
-
-    mutating func patchWithA<NodeA: _Reconcilable>(
+    final func patchWithA<NodeA: _Reconcilable>(
         tx: inout _TransactionContext,
-        makeNode: @escaping (borrowing _ViewContext, inout _CommitContext) -> NodeA,
+        makeNode: @escaping (borrowing _ViewContext, inout _MountContext) -> NodeA,
         updateNode: (inout NodeA, inout _TransactionContext) -> Void
     ) {
+        var didStructureChange = false
+
         switch state {
         case .a(let a):
-            patchActiveRoot(
-                a,
-                tx: &tx,
-                updateNode: updateNode
-            )
+            patchActiveRoot(a, tx: &tx, updateNode: updateNode)
             state = .a(a)
         case .b(let b):
-            context.parentElement?.reportChangedChildren(.elementAdded, tx: &tx)
             let a = makePendingRoot(transaction: tx.transaction, makeNode: makeNode)
-            schedulePendingMount([a], tx: &tx)
-
-            b.apply(.startRemoval, &tx)
-            context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
+            b.startRemoval(&tx, handle: containerHandle)
             state = .aWithBLeaving(a, b)
+            didStructureChange = true
         case .aWithBLeaving(let a, let b):
-            patchActiveRoot(
-                a,
-                tx: &tx,
-                updateNode: updateNode
-            )
+            patchActiveRoot(a, tx: &tx, updateNode: updateNode)
             state = .aWithBLeaving(a, b)
         case .bWithALeaving(let b, let a):
-            patchActiveRoot(
-                a,
-                tx: &tx,
-                updateNode: updateNode
-            )
-            a.apply(.cancelRemoval, &tx)
-            b.apply(.startRemoval, &tx)
-            context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
+            patchActiveRoot(a, tx: &tx, updateNode: updateNode)
+            a.cancelRemoval(&tx, handle: containerHandle)
+            b.startRemoval(&tx, handle: containerHandle)
             state = .aWithBLeaving(a, b)
+            didStructureChange = true
+        }
+
+        if didStructureChange {
+            containerHandle?.reportLayoutChange(&tx)
         }
     }
 
-    mutating func patchWithB<NodeB: _Reconcilable>(
+    final func patchWithB<NodeB: _Reconcilable>(
         tx: inout _TransactionContext,
-        makeNode: @escaping (borrowing _ViewContext, inout _CommitContext) -> NodeB,
+        makeNode: @escaping (borrowing _ViewContext, inout _MountContext) -> NodeB,
         updateNode: (inout NodeB, inout _TransactionContext) -> Void
     ) {
+        var didStructureChange = false
+
         switch state {
         case .b(let b):
-            patchActiveRoot(
-                b,
-                tx: &tx,
-                updateNode: updateNode
-            )
+            patchActiveRoot(b, tx: &tx, updateNode: updateNode)
             state = .b(b)
         case .a(let a):
-            context.parentElement?.reportChangedChildren(.elementAdded, tx: &tx)
             let b = makePendingRoot(transaction: tx.transaction, makeNode: makeNode)
-            schedulePendingMount([b], tx: &tx)
-
-            a.apply(.startRemoval, &tx)
-            context.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
+            a.startRemoval(&tx, handle: containerHandle)
             state = .bWithALeaving(b, a)
+            didStructureChange = true
         case .aWithBLeaving(let a, let b):
-            patchActiveRoot(
-                b,
-                tx: &tx,
-                updateNode: updateNode
-            )
+            patchActiveRoot(b, tx: &tx, updateNode: updateNode)
             state = .bWithALeaving(b, a)
         case .bWithALeaving(let b, let a):
-            patchActiveRoot(
-                b,
-                tx: &tx,
-                updateNode: updateNode
-            )
+            patchActiveRoot(b, tx: &tx, updateNode: updateNode)
             state = .bWithALeaving(b, a)
+        }
+
+        if didStructureChange {
+            containerHandle?.reportLayoutChange(&tx)
         }
     }
 
-    private mutating func makePendingRoot<Node: _Reconcilable>(
+    private final func makePendingRoot<Node: _Reconcilable>(
         transaction: Transaction,
-        makeNode: @escaping (borrowing _ViewContext, inout _CommitContext) -> Node
+        makeNode: @escaping (borrowing _ViewContext, inout _MountContext) -> Node
     ) -> MountRoot {
         MountRoot(
             pending: context,
             transaction: transaction,
             transitionPhase: .willAppear,
-            create: { viewContext, ctx in
-                AnyReconcilable(makeNode(viewContext, &ctx))
+            create: { viewContext, mountCtx in
+                AnyReconcilable(makeNode(viewContext, &mountCtx))
             }
         )
     }
 
-    private mutating func patchActiveRoot<Node: _Reconcilable>(
+    private final func patchActiveRoot<Node: _Reconcilable>(
         _ root: MountRoot,
         tx: inout _TransactionContext,
         updateNode: (inout Node, inout _TransactionContext) -> Void
@@ -152,29 +113,21 @@ public struct _ConditionalNode {
         precondition(patched, "expected mounted conditional branch")
     }
 
-    private func schedulePendingMount(_ roots: [MountRoot], tx: inout _TransactionContext) {
-        guard !roots.isEmpty else { return }
-
-        tx.scheduler.addCommitAction { ctx in
-            for root in roots {
-                root.mount(&ctx)
-            }
+    func collect(into ops: inout LayoutPass, context: inout _CommitContext) {
+        if containerHandle == nil {
+            containerHandle = ops.containerHandle
         }
-    }
-}
 
-extension _ConditionalNode: _Reconcilable {
-    public mutating func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
         switch state {
         case .a(let a):
-            a.collectChildren(&ops, &context)
+            a.collect(into: &ops, &context)
         case .b(let b):
-            b.collectChildren(&ops, &context)
+            b.collect(into: &ops, &context)
         case .aWithBLeaving(let a, let b):
-            a.collectChildren(&ops, &context)
+            a.collect(into: &ops, &context)
 
             let isRemovalCompleted = ops.withRemovalTracking { ops in
-                b.collectChildren(&ops, &context)
+                b.collect(into: &ops, &context)
             }
 
             if isRemovalCompleted {
@@ -183,10 +136,10 @@ extension _ConditionalNode: _Reconcilable {
             }
         case .bWithALeaving(let b, let a):
             let isRemovalCompleted = ops.withRemovalTracking { ops in
-                a.collectChildren(&ops, &context)
+                a.collect(into: &ops, &context)
             }
 
-            b.collectChildren(&ops, &context)
+            b.collect(into: &ops, &context)
 
             if isRemovalCompleted {
                 a.unmount(&context)
@@ -195,19 +148,7 @@ extension _ConditionalNode: _Reconcilable {
         }
     }
 
-    public mutating func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext) {
-        switch state {
-        case .a(let a):
-            a.apply(op, &tx)
-        case .b(let b):
-            b.apply(op, &tx)
-        case .aWithBLeaving(let a, let b), .bWithALeaving(let b, let a):
-            a.apply(op, &tx)
-            b.apply(op, &tx)
-        }
-    }
-
-    public consuming func unmount(_ context: inout _CommitContext) {
+    public func unmount(_ context: inout _CommitContext) {
         switch state {
         case .a(let a):
             a.unmount(&context)
@@ -217,20 +158,5 @@ extension _ConditionalNode: _Reconcilable {
             a.unmount(&context)
             b.unmount(&context)
         }
-    }
-}
-
-extension _ContainerLayoutPass {
-    mutating func withRemovalTracking(_ block: (inout Self) -> Void) -> Bool {
-        let index = entries.count
-        block(&self)
-        var isRemoved = true
-        for entry in entries[index..<entries.count] {
-            if entry.kind != .removed {
-                isRemoved = false
-                break
-            }
-        }
-        return isRemoved
     }
 }

@@ -15,7 +15,7 @@ public struct _TransitionView<T: Transition, V: View>: View {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         .init(view: view, context: context, ctx: &ctx)
     }

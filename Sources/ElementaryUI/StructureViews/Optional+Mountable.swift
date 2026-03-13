@@ -5,21 +5,30 @@ extension Optional: _Mountable where Wrapped: _Mountable {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
+        let transaction = context.mountRoot.inheritedTransaction()
         switch view {
         case let .some(view):
-            return .init(
-                a: view,
-                context: context,
-                ctx: &ctx
+            let root = MountRoot(
+                mountedFrom: context,
+                transaction: transaction,
+                ctx: &ctx,
+                create: { c, mountCtx in
+                    AnyReconcilable(Wrapped._makeNode(view, context: c, ctx: &mountCtx))
+                }
             )
+            return .init(state: .a(root), context: context, ctx: &ctx)
         case .none:
-            return .init(
-                b: EmptyHTML(),
-                context: context,
-                ctx: &ctx
+            let root = MountRoot(
+                mountedFrom: context,
+                transaction: transaction,
+                ctx: &ctx,
+                create: { c, mountCtx in
+                    AnyReconcilable(EmptyHTML._makeNode(EmptyHTML(), context: c, ctx: &mountCtx))
+                }
             )
+            return .init(state: .b(root), context: context, ctx: &ctx)
         }
     }
 

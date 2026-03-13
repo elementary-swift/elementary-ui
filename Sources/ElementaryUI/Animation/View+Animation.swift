@@ -14,7 +14,7 @@ struct _TransactionModifierView<Wrapped: View, Value: Equatable>: View {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        ctx: inout _CommitContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         let node = Wrapped._makeNode(view.view, context: context, ctx: &ctx)
         return .init(state: .init(value: view.value), child: node)

@@ -32,7 +32,7 @@ final class FLIPLayoutObserver: DOMLayoutObserver {
         }
     }
 
-    func didLayoutChildren(parent: DOM.Node, entries: [_ContainerLayoutPass.Entry], context: inout _CommitContext) {
+    func didLayoutChildren(parent: DOM.Node, entries: [LayoutPass.Entry], context: inout _CommitContext) {
         childNodes.removeAll(keepingCapacity: true)
         childNodes.reserveCapacity(entries.count)
 
