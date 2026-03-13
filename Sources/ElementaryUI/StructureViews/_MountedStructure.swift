@@ -1,6 +1,103 @@
-protocol DynamicNode: AnyObject {
-    var count: Int { get }
-    func collect(into pass: inout LayoutPass, context: inout _CommitContext)
+final class MountRootContainer {
+    var activeRoots: [MountRoot]
+    var leavingTracker: LeavingTracker
+    var containerHandle: LayoutContainer.Handle?
+
+    init(roots: [MountRoot]) {
+        self.activeRoots = roots
+        self.leavingTracker = LeavingTracker()
+    }
+
+    func register(into ctx: inout _MountContext) {
+        ctx.appendContainer(self)
+    }
+
+    func collect(into ops: inout LayoutPass, context: inout _CommitContext) {
+        if containerHandle == nil { containerHandle = ops.containerHandle }
+
+        var lIndex = 0
+        var nextInsertionPoint = leavingTracker.insertionIndex(for: 0)
+
+        for cIndex in activeRoots.indices {
+            if nextInsertionPoint == cIndex {
+                let removed = leavingTracker.commitAndCheckRemoval(at: lIndex, ops: &ops, context: &context)
+                if !removed { lIndex += 1 }
+                nextInsertionPoint = leavingTracker.insertionIndex(for: lIndex)
+            }
+            activeRoots[cIndex].collect(into: &ops, &context)
+        }
+
+        while nextInsertionPoint != nil {
+            let removed = leavingTracker.commitAndCheckRemoval(at: lIndex, ops: &ops, context: &context)
+            if !removed { lIndex += 1 }
+            nextInsertionPoint = leavingTracker.insertionIndex(for: lIndex)
+        }
+    }
+
+    func unmount(_ context: inout _CommitContext) {
+        for root in activeRoots { root.unmount(&context) }
+        for entry in leavingTracker.entries { entry.value.unmount(&context) }
+        activeRoots.removeAll()
+        leavingTracker.entries.removeAll()
+    }
+
+    func reportLayoutChange(_ tx: inout _TransactionContext) {
+        containerHandle?.reportLayoutChange(&tx)
+    }
+}
+
+extension MountRootContainer {
+    struct LeavingTracker {
+        struct Entry {
+            var originalMountIndex: Int
+            var value: MountRoot
+        }
+
+        var entries: [Entry] = []
+
+        func insertionIndex(for index: Int) -> Int? {
+            guard index < entries.count else { return nil }
+            return entries[index].originalMountIndex
+        }
+
+        mutating func insert(_ root: MountRoot, atOriginalIndex index: Int) {
+            let newEntry = Entry(originalMountIndex: index, value: root)
+            if let insertIndex = entries.firstIndex(where: { $0.originalMountIndex > index }) {
+                entries.insert(newEntry, at: insertIndex)
+            } else {
+                entries.append(newEntry)
+            }
+        }
+
+        mutating func reflectInsertionAt(_ index: Int) {
+            shiftFromIndexUpwards(index, by: 1)
+        }
+
+        mutating func shiftFromIndexUpwards(_ index: Int, by amount: Int) {
+            for i in entries.indices where entries[i].originalMountIndex >= index {
+                entries[i].originalMountIndex += amount
+            }
+        }
+
+        mutating func commitAndCheckRemoval(
+            at index: Int,
+            ops: inout LayoutPass,
+            context: inout _CommitContext
+        ) -> Bool {
+            let isRemovalCommitted = ops.withRemovalTracking { ops in
+                entries[index].value.collect(into: &ops, &context)
+            }
+
+            if isRemovalCommitted {
+                let entry = entries.remove(at: index)
+                shiftFromIndexUpwards(entry.originalMountIndex, by: -1)
+                entry.value.unmount(&context)
+                return true
+            } else {
+                return false
+            }
+        }
+    }
 }
 
 final class LayoutContainer {
@@ -136,7 +233,7 @@ final class LayoutContainer {
 enum LayoutNode {
     case elementNode(DOM.Node)
     case textNode(DOM.Node)
-    case dynamicNode(any DynamicNode)
+    case container(MountRootContainer)
 
     func collect(into ops: inout LayoutPass, context: inout _CommitContext) {
         switch self {
@@ -144,8 +241,8 @@ enum LayoutNode {
             ops.append(.init(kind: .unchanged, reference: node, type: .element))
         case .textNode(let node):
             ops.append(.init(kind: .unchanged, reference: node, type: .text))
-        case .dynamicNode(let node):
-            node.collect(into: &ops, context: &context)
+        case .container(let container):
+            container.collect(into: &ops, context: &context)
         }
     }
 
@@ -153,7 +250,7 @@ enum LayoutNode {
         switch self {
         case .elementNode, .textNode:
             true
-        case .dynamicNode:
+        case .container:
             false
         }
     }

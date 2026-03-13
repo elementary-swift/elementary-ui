@@ -1,19 +1,13 @@
-public final class _KeyedNode: _Reconcilable, DynamicNode {
-    private var keys: [_ViewKey]
-    private var children: [MountRoot]
-    private var leavingChildren: LeavingChildrenTracker = .init()
-    private let viewContext: _ViewContext
-    private var containerHandle: LayoutContainer.Handle?
-
-    var count: Int {
-        children.count + leavingChildren.entries.count
-    }
+public struct _KeyedNode: _Reconcilable {
+    var keys: [_ViewKey]
+    let viewContext: _ViewContext
+    let container: MountRootContainer
 
     init(keys: [_ViewKey], children: [MountRoot], context: borrowing _ViewContext) {
         assert(keys.count == children.count)
         self.keys = keys
-        self.children = children
         self.viewContext = copy context
+        self.container = MountRootContainer(roots: children)
     }
 
     init(
@@ -24,8 +18,8 @@ public final class _KeyedNode: _Reconcilable, DynamicNode {
     ) {
         self.keys = keys
         self.viewContext = copy context
-        self.children = []
-        self.children.reserveCapacity(keys.count)
+        self.container = MountRootContainer(roots: [])
+        container.activeRoots.reserveCapacity(keys.count)
 
         let transaction = context.mountRoot.inheritedTransaction()
         for index in keys.indices {
@@ -33,17 +27,15 @@ public final class _KeyedNode: _Reconcilable, DynamicNode {
                 mountedFrom: context,
                 transaction: transaction,
                 ctx: &ctx,
-                create: { context, mountCtx in
-                    makeNode(index, context, &mountCtx)
-                }
+                create: { context, mountCtx in makeNode(index, context, &mountCtx) }
             )
-            self.children.append(root)
+            container.activeRoots.append(root)
         }
 
-        ctx.appendDynamicNode(self)
+        container.register(into: &ctx)
     }
 
-    convenience init(
+    init(
         key: _ViewKey,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
@@ -57,7 +49,7 @@ public final class _KeyedNode: _Reconcilable, DynamicNode {
         )
     }
 
-    convenience init(_ value: some Sequence<(key: _ViewKey, node: some _Reconcilable)>, context: borrowing _ViewContext) {
+    init(_ value: some Sequence<(key: _ViewKey, node: some _Reconcilable)>, context: borrowing _ViewContext) {
         self.init(
             keys: value.map { $0.key },
             children: value.map { MountRoot(mounted: AnyReconcilable($0.node)) },
@@ -65,11 +57,11 @@ public final class _KeyedNode: _Reconcilable, DynamicNode {
         )
     }
 
-    convenience init(key: _ViewKey, child: some _Reconcilable, context: borrowing _ViewContext) {
+    init(key: _ViewKey, child: some _Reconcilable, context: borrowing _ViewContext) {
         self.init(CollectionOfOne((key: key, node: child)), context: context)
     }
 
-    final func patch<Node: _Reconcilable>(
+    mutating func patch<Node: _Reconcilable>(
         key: _ViewKey,
         context: inout _TransactionContext,
         as: Node.Type = Node.self,
@@ -84,7 +76,7 @@ public final class _KeyedNode: _Reconcilable, DynamicNode {
         )
     }
 
-    final func patch<Node: _Reconcilable>(
+    mutating func patch<Node: _Reconcilable>(
         _ newKeys: some BidirectionalCollection<_ViewKey>,
         context: inout _TransactionContext,
         as type: Node.Type = Node.self,
@@ -96,17 +88,17 @@ public final class _KeyedNode: _Reconcilable, DynamicNode {
 
         guard !newKeys.isEmpty else {
             fastRemoveAll(context: &context)
-            containerHandle?.reportLayoutChange(&context)
+            container.reportLayoutChange(&context)
             return
         }
 
         let newKeysArray = Array(newKeys)
         var didStructureChange = false
 
-        guard !(keys.isEmpty && leavingChildren.entries.isEmpty) else {
+        guard !(keys.isEmpty && container.leavingTracker.entries.isEmpty) else {
             keys = newKeysArray
-            children.removeAll(keepingCapacity: true)
-            children.reserveCapacity(keys.count)
+            container.activeRoots.removeAll(keepingCapacity: true)
+            container.activeRoots.reserveCapacity(keys.count)
 
             for index in keys.indices {
                 let root = MountRoot(
@@ -117,24 +109,21 @@ public final class _KeyedNode: _Reconcilable, DynamicNode {
                         AnyReconcilable(makeNode(index, viewContext, &mountCtx))
                     }
                 )
-                children.append(root)
+                container.activeRoots.append(root)
             }
 
-            didStructureChange = !children.isEmpty
+            didStructureChange = !container.activeRoots.isEmpty
             if didStructureChange {
-                containerHandle?.reportLayoutChange(&context)
+                container.reportLayoutChange(&context)
             }
             return
         }
 
-        if leavingChildren.entries.isEmpty, keys.count == newKeysArray.count, keys.elementsEqual(newKeysArray) {
-            for index in children.indices {
-                let child = children[index]
+        if container.leavingTracker.entries.isEmpty, keys.count == newKeysArray.count, keys.elementsEqual(newKeysArray) {
+            for index in container.activeRoots.indices {
+                let child = container.activeRoots[index]
                 precondition(!child.isPending, "double patch of pending MountRoot in keyed stable-patch path")
-
-                let patched = child.withMountedNode(as: Node.self) { node in
-                    patchNode(index, &node, &context)
-                }
+                let patched = child.withMountedNode(as: Node.self) { node in patchNode(index, &node, &context) }
                 precondition(patched, "expected mounted child during stable keyed patch")
             }
             return
@@ -149,14 +138,15 @@ public final class _KeyedNode: _Reconcilable, DynamicNode {
             for change in diff {
                 switch change {
                 case let .remove(offset, element: key, associatedWith: movedTo):
-                    let root = children.remove(at: offset)
+                    let root = container.activeRoots.remove(at: offset)
 
                     if movedTo != nil {
                         root.markMoved(&context)
                         moversCache[offset] = root
                     } else {
-                        root.startRemoval(&context, handle: containerHandle)
-                        leavingChildren.append(key, atIndex: offset, value: root)
+                        root.startRemoval(&context, handle: container.containerHandle)
+                        container.leavingTracker.insert(root, atOriginalIndex: offset)
+                        _ = key
                     }
                     didStructureChange = true
                 case let .insert(offset, element: key, associatedWith: movedFrom):
@@ -179,8 +169,8 @@ public final class _KeyedNode: _Reconcilable, DynamicNode {
                         )
                     }
 
-                    children.insert(root, at: offset)
-                    leavingChildren.reflectInsertionAt(offset)
+                    container.activeRoots.insert(root, at: offset)
+                    container.leavingTracker.reflectInsertionAt(offset)
                     didStructureChange = true
                 }
             }
@@ -188,132 +178,38 @@ public final class _KeyedNode: _Reconcilable, DynamicNode {
             precondition(moversCache.isEmpty, "mover cache is not empty")
         }
 
-        for index in children.indices {
-            let child = children[index]
-            if child.isPending {
-                continue
-            }
-
-            let patched = child.withMountedNode(as: Node.self) { node in
-                patchNode(index, &node, &context)
-            }
+        for index in container.activeRoots.indices {
+            let child = container.activeRoots[index]
+            if child.isPending { continue }
+            let patched = child.withMountedNode(as: Node.self) { node in patchNode(index, &node, &context) }
             precondition(patched, "expected mounted child during keyed patch")
         }
 
         if didStructureChange {
-            containerHandle?.reportLayoutChange(&context)
+            container.reportLayoutChange(&context)
         }
     }
 
-    func fastRemoveAll(context: inout _TransactionContext) {
-        for index in children.indices {
-            let root = children[index]
-            root.startRemoval(&context, handle: containerHandle)
-            leavingChildren.append(keys[index], atIndex: index, value: root)
+    mutating func fastRemoveAll(context: inout _TransactionContext) {
+        for index in container.activeRoots.indices {
+            let root = container.activeRoots[index]
+            root.startRemoval(&context, handle: container.containerHandle)
+            container.leavingTracker.insert(root, atOriginalIndex: index)
         }
-
         keys.removeAll()
-        children.removeAll()
+        container.activeRoots.removeAll()
     }
 
     private func assertNoPendingRoots() {
-        let hasPendingChildren = children.contains { $0.isPending }
-        let hasPendingLeaving = leavingChildren.entries.contains { $0.value.isPending }
+        let hasPendingChildren = container.activeRoots.contains { $0.isPending }
+        let hasPendingLeaving = container.leavingTracker.entries.contains { $0.value.isPending }
         precondition(
             !hasPendingChildren && !hasPendingLeaving,
             "double patch of pending MountRoot in _KeyedNode"
         )
     }
 
-    func collect(into ops: inout LayoutPass, context: inout _CommitContext) {
-        if containerHandle == nil {
-            containerHandle = ops.containerHandle
-        }
-
-        var lIndex = 0
-        var nextInsertionPoint = leavingChildren.insertionIndex(for: 0)
-
-        for cIndex in children.indices {
-            if nextInsertionPoint == cIndex {
-                let removed = leavingChildren.commitAndCheckRemoval(at: lIndex, ops: &ops, context: &context)
-                if !removed { lIndex += 1 }
-                nextInsertionPoint = leavingChildren.insertionIndex(for: lIndex)
-            }
-
-            children[cIndex].collect(into: &ops, &context)
-        }
-
-        while nextInsertionPoint != nil {
-            let removed = leavingChildren.commitAndCheckRemoval(at: lIndex, ops: &ops, context: &context)
-            if !removed { lIndex += 1 }
-            nextInsertionPoint = leavingChildren.insertionIndex(for: lIndex)
-        }
-    }
-
-    public func unmount(_ context: inout _CommitContext) {
-        for child in children {
-            child.unmount(&context)
-        }
-        children.removeAll()
-
-        for entry in leavingChildren.entries {
-            entry.value.unmount(&context)
-        }
-        leavingChildren.entries.removeAll()
-    }
-}
-
-private extension _KeyedNode {
-    struct LeavingChildrenTracker {
-        struct Entry {
-            let key: _ViewKey
-            var originalMountIndex: Int
-            var value: MountRoot
-        }
-
-        var entries: [Entry] = []
-
-        func insertionIndex(for index: Int) -> Int? {
-            guard index < entries.count else { return nil }
-            return entries[index].originalMountIndex
-        }
-
-        mutating func append(_ key: _ViewKey, atIndex index: Int, value: MountRoot) {
-            let newEntry = Entry(key: key, originalMountIndex: index, value: value)
-            if let insertIndex = entries.firstIndex(where: { $0.originalMountIndex > index }) {
-                entries.insert(newEntry, at: insertIndex)
-            } else {
-                entries.append(newEntry)
-            }
-        }
-
-        mutating func reflectInsertionAt(_ index: Int) {
-            shiftEntriesFromIndexUpwards(index, by: 1)
-        }
-
-        mutating func commitAndCheckRemoval(
-            at index: Int,
-            ops: inout LayoutPass,
-            context: inout _CommitContext
-        ) -> Bool {
-            let isRemovalCommitted = ops.withRemovalTracking { ops in
-                entries[index].value.collect(into: &ops, &context)
-            }
-
-            if isRemovalCommitted {
-                let entry = entries.remove(at: index)
-                shiftEntriesFromIndexUpwards(entry.originalMountIndex, by: -1)
-                entry.value.unmount(&context)
-                return true
-            } else {
-                return false
-            }
-        }
-
-        private mutating func shiftEntriesFromIndexUpwards(_ index: Int, by amount: Int) {
-            for i in entries.indices where entries[i].originalMountIndex >= index {
-                entries[i].originalMountIndex += amount
-            }
-        }
+    public consuming func unmount(_ context: inout _CommitContext) {
+        container.unmount(&context)
     }
 }

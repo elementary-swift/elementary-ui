@@ -18,7 +18,7 @@ extension Optional: _Mountable where Wrapped: _Mountable {
                     AnyReconcilable(Wrapped._makeNode(view, context: c, ctx: &mountCtx))
                 }
             )
-            return .init(state: .a(root), context: context, ctx: &ctx)
+            return .init(isA: true, root: root, context: context, ctx: &ctx)
         case .none:
             let root = MountRoot(
                 mountedFrom: context,
@@ -28,7 +28,7 @@ extension Optional: _Mountable where Wrapped: _Mountable {
                     AnyReconcilable(EmptyHTML._makeNode(EmptyHTML(), context: c, ctx: &mountCtx))
                 }
             )
-            return .init(state: .b(root), context: context, ctx: &ctx)
+            return .init(isA: false, root: root, context: context, ctx: &ctx)
         }
     }
 

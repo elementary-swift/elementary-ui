@@ -209,7 +209,7 @@ final class MountRoot {
             switch node {
             case .elementNode(let ref):
                 elements.append(ref)
-            case .textNode, .dynamicNode:
+            case .textNode, .container:
                 break
             }
         }

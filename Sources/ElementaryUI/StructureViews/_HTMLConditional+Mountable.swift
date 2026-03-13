@@ -18,7 +18,7 @@ extension _HTMLConditional: _Mountable where TrueContent: _Mountable, FalseConte
                     AnyReconcilable(TrueContent._makeNode(content, context: c, ctx: &mountCtx))
                 }
             )
-            return .init(state: .a(root), context: context, ctx: &ctx)
+            return .init(isA: true, root: root, context: context, ctx: &ctx)
         case let .falseContent(content):
             let root = MountRoot(
                 mountedFrom: context,
@@ -28,7 +28,7 @@ extension _HTMLConditional: _Mountable where TrueContent: _Mountable, FalseConte
                     AnyReconcilable(FalseContent._makeNode(content, context: c, ctx: &mountCtx))
                 }
             )
-            return .init(state: .b(root), context: context, ctx: &ctx)
+            return .init(isA: false, root: root, context: context, ctx: &ctx)
         }
     }
 

@@ -26,8 +26,8 @@ public struct _MountContext: ~Copyable {
         appendLayoutNode(.textNode(node))
     }
 
-    mutating func appendDynamicNode(_ node: any DynamicNode) {
-        appendLayoutNode(.dynamicNode(node))
+    mutating func appendContainer(_ container: MountRootContainer) {
+        appendLayoutNode(.container(container))
     }
 
     func withChildContext<R>(_ body: (consuming _MountContext) -> R) -> R {
@@ -73,7 +73,7 @@ private extension LayoutNode {
     var staticDOMNode: DOM.Node {
         switch self {
         case .elementNode(let node), .textNode(let node): node
-        case .dynamicNode: fatalError("dynamic node in static node list")
+        case .container: fatalError("dynamic container in static node list")
         }
     }
 }
