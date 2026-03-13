@@ -16,11 +16,11 @@ final class OpacityModifier: DOMElementModifier {
         self.value.updateValue(value, &context)
     }
 
-    func mount(_ node: DOM.Node, _ context: inout _CommitContext) -> AnyUnmountable {
+    func mount(_ node: DOM.Node, _ context: inout _MountContext) -> AnyUnmountable {
         AnyUnmountable(MountedStyleModifier(node, makeLayers(&context), &context))
     }
 
-    private func makeLayers(_ context: inout _CommitContext) -> [CSSValueSource<CSSOpacity>.Instance] {
+    private func makeLayers(_ context: inout _MountContext) -> [CSSValueSource<CSSOpacity>.Instance] {
         if var layers = upstream.map({ $0.makeLayers(&context) }) {
             layers.append(value.makeInstance())
             return layers

@@ -25,11 +25,11 @@ final class TransformModifier: DOMElementModifier {
         }
     }
 
-    func mount(_ node: DOM.Node, _ context: inout _CommitContext) -> AnyUnmountable {
+    func mount(_ node: DOM.Node, _ context: inout _MountContext) -> AnyUnmountable {
         AnyUnmountable(MountedStyleModifier(node, makeLayers(&context), &context))
     }
 
-    private func makeLayers(_ context: inout _CommitContext) -> [AnyCSSAnimatedValueInstance<CSSTransform>] {
+    private func makeLayers(_ context: inout _MountContext) -> [AnyCSSAnimatedValueInstance<CSSTransform>] {
         if var layers = upstream.map({ $0.makeLayers(&context) }) {
             layers.append(AnyCSSAnimatedValueInstance(value.makeInstance()))
             return layers

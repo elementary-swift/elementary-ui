@@ -43,10 +43,14 @@ final class BindingModifier<Configuration>: DOMElementModifier, Unmountable wher
         isDirty = false
     }
 
-    func mount(_ node: DOM.Node, _ context: inout _CommitContext) -> AnyUnmountable {
+    func mount(_ node: DOM.Node, _ context: inout _MountContext) -> AnyUnmountable {
         if mountedNode != nil {
             assertionFailure("Binding effect can only be mounted on a single element")
-            self.unmount(&context)
+            if let sink = self.sink, let node = self.mountedNode {
+                context.dom.removeEventListener(node, event: Configuration.eventName, sink: sink)
+                self.mountedNode = nil
+                self.sink = nil
+            }
         }
 
         self.mountedNode = node

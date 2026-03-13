@@ -63,10 +63,9 @@ final class MountRoot {
 
         var childContext = copy seedContext
         childContext.mountRoot = self
-        let (node, layoutNodes) = ctx.withCommitContext { commit in
-            var childMount = _MountContext(ctx: commit)
-            let node = create(childContext, &childMount)
-            let layoutNodes = childMount.takeLayoutNodes()
+        let (node, layoutNodes) = ctx.withChildContext { (ctx: consuming _MountContext) in
+            let node = create(childContext, &ctx)
+            let layoutNodes = ctx.takeLayoutNodes()
             return (node, layoutNodes)
         }
         self.state = .mounted(.init(node: node, layoutNodes: layoutNodes, status: .unchanged))

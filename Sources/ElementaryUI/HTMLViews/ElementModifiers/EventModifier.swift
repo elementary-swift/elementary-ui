@@ -20,7 +20,7 @@ final class EventModifier<Config: _DOMEventHandlerConfig>: DOMElementModifier {
         self.value = value
     }
 
-    func mount(_ node: DOM.Node, _ context: inout _CommitContext) -> AnyUnmountable {
+    func mount(_ node: DOM.Node, _ context: inout _MountContext) -> AnyUnmountable {
         logTrace("mounting event modifier")
         return AnyUnmountable(MountedInstance(node, self, &context))
     }
@@ -45,7 +45,7 @@ extension EventModifier {
 
         var isDirty: Bool = false
 
-        init(_ node: DOM.Node, _ modifier: EventModifier, _ context: inout _CommitContext) {
+        init(_ node: DOM.Node, _ modifier: EventModifier, _ context: inout _MountContext) {
             self.node = node
             self.modifier = modifier
 

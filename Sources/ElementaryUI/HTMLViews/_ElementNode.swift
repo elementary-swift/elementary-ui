@@ -14,12 +14,11 @@ public struct _ElementNode<Child: _Reconcilable>: _Reconcilable {
         let modifiers = childContext.takeModifiers()
         let layoutObservers = childContext.takeLayoutObservers()
 
-        self.mountedModifiers =
-            ctx.withCommitContext { commit in
-                modifiers.reversed().map { modifier in
-                    modifier.mount(domNode, &commit)
-                }
-            }
+        var mountedModifiers: [AnyUnmountable] = []
+        for modifier in modifiers.reversed() {
+            mountedModifiers.append(modifier.mount(domNode, &ctx))
+        }
+        self.mountedModifiers = mountedModifiers
 
         ctx.appendStaticElement(domNode)
 

@@ -34,16 +34,6 @@ public struct _MountContext: ~Copyable {
         body(_MountContext(scheduler: scheduler, dom: dom))
     }
 
-    // TODO: get rid of this...
-    mutating func withCommitContext<R>(_ body: (inout _CommitContext) -> R) -> R {
-        var context = _CommitContext(
-            dom: dom,
-            scheduler: scheduler,
-            currentFrameTime: currentFrameTime
-        )
-        return body(&context)
-    }
-
     private mutating func appendLayoutNode(_ node: LayoutNode) {
         isStatic = isStatic && node.isStatic
         layoutNodes.append(node)

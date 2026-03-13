@@ -98,13 +98,14 @@ struct DOMEffectView<Effect: DOMElementModifier, Wrapped: View>: View {
         #if hasFeature(Embedded) && compiler(<6.3)
         if __omg_this_was_annoying_I_am_false {
             // NOTE: 6.2 embedded hack for type inclusion
-            var context = _CommitContext(
+            let commitContext = _CommitContext(
                 dom: JSKitDOMInteractor(),
                 scheduler: Scheduler(dom: JSKitDOMInteractor()),
                 currentFrameTime: 0
             )
             // force inclusion of types used in mount
-            _ = effect.mount(.init(.init()), &context)
+            var mountContext = _MountContext(ctx: commitContext)
+            _ = effect.mount(.init(.init()), &mountContext)
         }
         #endif
 

@@ -25,11 +25,11 @@ final class FilterModifier: DOMElementModifier {
         }
     }
 
-    func mount(_ node: DOM.Node, _ context: inout _CommitContext) -> AnyUnmountable {
+    func mount(_ node: DOM.Node, _ context: inout _MountContext) -> AnyUnmountable {
         AnyUnmountable(MountedStyleModifier(node, makeLayers(&context), &context))
     }
 
-    private func makeLayers(_ context: inout _CommitContext) -> [AnyCSSAnimatedValueInstance<CSSFilter>] {
+    private func makeLayers(_ context: inout _MountContext) -> [AnyCSSAnimatedValueInstance<CSSFilter>] {
         if var layers = upstream.map({ $0.makeLayers(&context) }) {
             layers.append(AnyCSSAnimatedValueInstance(value.makeInstance()))
             return layers
