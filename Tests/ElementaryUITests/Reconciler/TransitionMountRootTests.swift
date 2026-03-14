@@ -6,7 +6,7 @@ import Testing
 @Suite(.serialized)
 struct TransitionMountRootTests {
     @Test
-    func firstTransitionConsumesMountRootTransitionPhase() {
+    func topLevelTransitionReceivesEnterSignal() {
         let animation = Animation.linear(duration: 0.35)
         let state = VisibilityState()
         let recorder = TransitionPhaseRecorder()
@@ -29,7 +29,35 @@ struct TransitionMountRootTests {
     }
 
     @Test
-    func nestedTransitionsOnlyFirstConsumesSignal() {
+    func siblingTopLevelTransitionsAllReceiveEnterSignal() {
+        let state = VisibilityState()
+        let firstRecorder = TransitionPhaseRecorder()
+        let secondRecorder = TransitionPhaseRecorder()
+        let dom = TestDOM()
+
+        dom.mount {
+            Group {
+                if state.value {
+                    p {}.transition(RecordingFadeTransition(recorder: firstRecorder))
+                    span {}.transition(RecordingFadeTransition(recorder: secondRecorder))
+                }
+            }
+        }
+        dom.runNextFrame()
+        #expect(firstRecorder.phases.isEmpty)
+        #expect(secondRecorder.phases.isEmpty)
+
+        withAnimation(.linear(duration: 0.35)) {
+            state.value = true
+        }
+        dom.runNextFrame()
+
+        #expect(firstRecorder.phases.contains(.willAppear))
+        #expect(secondRecorder.phases.contains(.willAppear))
+    }
+
+    @Test
+    func nestedTransitionsOnlyOuterRegistersWithMountRoot() {
         let animation = Animation.linear(duration: 0.35)
         let state = VisibilityState()
         let outerRecorder = TransitionPhaseRecorder()
@@ -79,7 +107,6 @@ struct TransitionMountRootTests {
 
     @Test
     func conditionalFlipKeepsRemovalCancelRemovalSemantics() {
-        let animation = Animation.linear(duration: 0.35)
         let state = VisibilityState(true)
         let recorder = TransitionPhaseRecorder()
         let dom = TestDOM()
@@ -87,7 +114,7 @@ struct TransitionMountRootTests {
         dom.mount {
             Group {
                 if state.value {
-                    p {}.transition(RecordingFadeTransition(recorder: recorder), animation: animation)
+                    p {}.transition(RecordingFadeTransition(recorder: recorder))
                 }
             }
         }
@@ -101,12 +128,38 @@ struct TransitionMountRootTests {
 
         dom.clearOps()
         let previousCount = recorder.phases.count
-        state.value = true
+        withAnimation(.linear(duration: 0.35)) {
+            state.value = true
+        }
         dom.runNextFrame()
 
         let newPhases = Array(recorder.phases.dropFirst(previousCount))
         #expect(newPhases.contains(.willAppear))
         #expect(dom.ops.contains(.createElement("p")))
+    }
+
+    @Test
+    func animateContainerLayoutRemovalPathDoesNotCrash() {
+        let state = VisibilityState(true)
+        let dom = TestDOM()
+
+        dom.mount {
+            div {
+                Group {
+                    if state.value {
+                        p {}.transition(.fade)
+                    }
+                }
+            }
+            .animateContainerLayout()
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        state.value = false
+        dom.runNextFrame()
+
+        #expect(dom.ops.contains(.removeChild(parent: "<div>", child: "<p>")))
     }
 
     @Test

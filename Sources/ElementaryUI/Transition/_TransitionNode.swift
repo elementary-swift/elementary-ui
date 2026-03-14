@@ -12,27 +12,19 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
 
     init(view: consuming _TransitionView<T, V>, context: borrowing _ViewContext, ctx: inout _MountContext) {
         let view = view
-        let defaultAnimation = view.animation
         self.value = view
         self.placeholderView = PlaceholderContentView<T>(makeNodeFn: self.makePlaceholderNode)
 
-        let participantClaimID = context.mountRoot.reserveTransitionParticipant()
-        let initialPhase = context.mountRoot.consumeTransitionPhase(defaultAnimation: defaultAnimation)
-        self.node = makeInitialNode(for: initialPhase, context: context, ctx: &ctx)
-
-        if let participantClaimID {
-            context.mountRoot.registerTransitionParticipant(
-                claimID: participantClaimID,
-                defaultAnimation: defaultAnimation,
-                patchPhase: { phase, tx in
-                    self.patchTransitionPhase(phase, tx: &tx)
-                },
-                isStillMounted: {
-                    return self.node != nil
-                },
-                ctx: &ctx
-            )
+        let initialPhase: TransitionPhase
+        if ctx.transitionDepth == 0, let sink = ctx.transitionRegistrationSink {
+            initialPhase = sink.register(self)
+        } else {
+            initialPhase = .identity
         }
+
+        ctx.transitionDepth += 1
+        self.node = makeInitialNode(for: initialPhase, context: context, ctx: &ctx)
+        ctx.transitionDepth -= 1
     }
 
     func patchWrappedContent(_ view: consuming _TransitionView<T, V>, tx: inout _TransactionContext) {
@@ -92,5 +84,19 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
         node = nil
         placeholderNode = nil
         additionalPlaceholderNodes.removeAll()
+    }
+}
+
+extension _TransitionNode: MountRootTransitionParticipant {
+    var mountRootDefaultAnimation: Animation? {
+        value.animation
+    }
+
+    var mountRootIsMounted: Bool {
+        node != nil
+    }
+
+    func mountRootPatchTransitionPhase(_ phase: TransitionPhase, tx: inout _TransactionContext) {
+        patchTransitionPhase(phase, tx: &tx)
     }
 }

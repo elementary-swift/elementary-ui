@@ -1,15 +1,11 @@
 final class MountRootContainer {
     var activeRoots: [MountRoot]
-    var leavingTracker: LeavingTracker
+    private var leavingTracker: LeavingTracker
     var containerHandle: LayoutContainer.Handle?
 
     init(roots: [MountRoot]) {
         self.activeRoots = roots
         self.leavingTracker = LeavingTracker()
-    }
-
-    func register(into ctx: inout _MountContext) {
-        ctx.appendContainer(self)
     }
 
     func collect(into ops: inout LayoutPass, context: inout _CommitContext) {
@@ -35,14 +31,107 @@ final class MountRootContainer {
     }
 
     func unmount(_ context: inout _CommitContext) {
-        for root in activeRoots { root.unmount(&context) }
-        for entry in leavingTracker.entries { entry.value.unmount(&context) }
+        for i in activeRoots.indices { activeRoots[i].unmount(&context) }
+        for i in leavingTracker.entries.indices { leavingTracker.entries[i].value.unmount(&context) }
         activeRoots.removeAll()
         leavingTracker.entries.removeAll()
     }
 
     func reportLayoutChange(_ tx: inout _TransactionContext) {
         containerHandle?.reportLayoutChange(&tx)
+    }
+
+    var hasLeavingRoots: Bool {
+        !leavingTracker.entries.isEmpty
+    }
+
+    func makeEagerRoot(
+        context: borrowing _ViewContext,
+        transaction: Transaction,
+        ctx: inout _MountContext,
+        create: (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
+    ) -> MountRoot {
+        MountRoot(eager: context, transaction: transaction, ctx: &ctx, create: create)
+    }
+
+    private func addLeaving(_ root: MountRoot, atOriginalIndex: Int) {
+        leavingTracker.insert(root, atOriginalIndex: atOriginalIndex)
+    }
+
+    /// Creates a pending `MountRoot` that captures tx animation hints for enter orchestration.
+    func makePendingEnteringRoot(
+        context: borrowing _ViewContext,
+        transaction: Transaction,
+        create: @escaping (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
+    ) -> MountRoot {
+        MountRoot(pending: context, transaction: transaction, create: create)
+    }
+
+    /// Removes an active root and tracks it in leaving order.
+    func removeActiveRoot(
+        at index: Int,
+        originalIndex: Int? = nil,
+        tx: inout _TransactionContext
+    ) {
+        let originalIndex = originalIndex ?? index
+        reportLayoutChange(&tx)
+        var root = activeRoots.remove(at: index)
+        root.startRemoval(&tx, handle: containerHandle)
+        addLeaving(root, atOriginalIndex: originalIndex)
+    }
+
+    /// Moves all active roots into leaving state and clears active roots.
+    func removeAllActiveToLeaving(tx: inout _TransactionContext) {
+        guard !activeRoots.isEmpty else { return }
+        reportLayoutChange(&tx)
+        for index in activeRoots.indices {
+            var leaving = activeRoots[index]
+            leaving.startRemoval(&tx, handle: containerHandle)
+            addLeaving(leaving, atOriginalIndex: index)
+        }
+        activeRoots.removeAll()
+    }
+
+    /// Inserts an active root and updates leaving insertion offsets.
+    func insertActiveRoot(_ root: MountRoot, at index: Int) {
+        activeRoots.insert(root, at: index)
+        leavingTracker.reflectInsertionAt(index)
+    }
+
+    /// Replaces an active root with an entering root while moving the previous active root to leaving state.
+    func replaceActiveRoot(
+        at activeIndex: Int,
+        with enteringRoot: MountRoot,
+        removedOriginalIndex: Int,
+        tx: inout _TransactionContext
+    ) {
+        reportLayoutChange(&tx)
+        var leaving = activeRoots[activeIndex]
+        leaving.startRemoval(&tx, handle: containerHandle)
+        addLeaving(leaving, atOriginalIndex: removedOriginalIndex)
+        activeRoots[activeIndex] = enteringRoot
+    }
+
+    /// Restores a leaving root back to active and moves the current active root to leaving.
+    func restoreLeavingRootToActive(
+        leavingIndex: Int,
+        activeIndex: Int,
+        activeOriginalIndex: Int,
+        tx: inout _TransactionContext
+    ) {
+        reportLayoutChange(&tx)
+        var root = leavingTracker.entries.remove(at: leavingIndex).value
+        root.cancelRemoval(&tx, handle: containerHandle)
+        var leaving = activeRoots[activeIndex]
+        leaving.startRemoval(&tx, handle: containerHandle)
+        addLeaving(leaving, atOriginalIndex: activeOriginalIndex)
+        activeRoots[activeIndex] = root
+    }
+
+    func hasPendingRoots() -> Bool {
+        let hasPendingChildren = activeRoots.contains { $0.isPending }
+        let hasPendingLeaving = leavingTracker.entries.contains { $0.value.isPending }
+        return hasPendingChildren || hasPendingLeaving
     }
 }
 
@@ -84,18 +173,12 @@ extension MountRootContainer {
             ops: inout LayoutPass,
             context: inout _CommitContext
         ) -> Bool {
-            let isRemovalCommitted = ops.withRemovalTracking { ops in
-                entries[index].value.collect(into: &ops, &context)
-            }
-
-            if isRemovalCommitted {
-                let entry = entries.remove(at: index)
-                shiftFromIndexUpwards(entry.originalMountIndex, by: -1)
-                entry.value.unmount(&context)
-                return true
-            } else {
-                return false
-            }
+            entries[index].value.collect(into: &ops, &context)
+            guard entries[index].value.isFullyRemoved else { return false }
+            var entry = entries.remove(at: index)
+            shiftFromIndexUpwards(entry.originalMountIndex, by: -1)
+            entry.value.unmount(&context)
+            return true
         }
     }
 }
@@ -285,17 +368,6 @@ struct LayoutPass: ~Copyable {
             isAllAdditions = isAllAdditions && entry.kind == .added
             isAllRemovals = isAllRemovals && entry.kind == .removed
         }
-    }
-
-    mutating func withRemovalTracking(_ block: (inout Self) -> Void) -> Bool {
-        let index = entries.count
-        block(&self)
-        var isRemoved = true
-        for entry in entries[index..<entries.count] where entry.kind != .removed {
-            isRemoved = false
-            break
-        }
-        return isRemoved
     }
 
     struct Entry {

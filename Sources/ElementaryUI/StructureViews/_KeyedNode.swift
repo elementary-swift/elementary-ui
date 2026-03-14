@@ -21,10 +21,10 @@ public struct _KeyedNode: _Reconcilable {
         self.container = MountRootContainer(roots: [])
         container.activeRoots.reserveCapacity(keys.count)
 
-        let transaction = context.mountRoot.inheritedTransaction()
+        let transaction = ctx.inheritedTransaction
         for index in keys.indices {
-            let root = MountRoot(
-                mountedFrom: context,
+            let root = container.makeEagerRoot(
+                context: context,
                 transaction: transaction,
                 ctx: &ctx,
                 create: { context, mountCtx in makeNode(index, context, &mountCtx) }
@@ -32,7 +32,7 @@ public struct _KeyedNode: _Reconcilable {
             container.activeRoots.append(root)
         }
 
-        container.register(into: &ctx)
+        ctx.appendContainer(container)
     }
 
     init(
@@ -88,23 +88,22 @@ public struct _KeyedNode: _Reconcilable {
 
         guard !newKeys.isEmpty else {
             fastRemoveAll(context: &context)
-            container.reportLayoutChange(&context)
             return
         }
 
         let newKeysArray = Array(newKeys)
         var didStructureChange = false
+        var didScheduleLayoutChange = false
 
-        guard !(keys.isEmpty && container.leavingTracker.entries.isEmpty) else {
+        guard !(keys.isEmpty && !container.hasLeavingRoots) else {
             keys = newKeysArray
             container.activeRoots.removeAll(keepingCapacity: true)
             container.activeRoots.reserveCapacity(keys.count)
 
             for index in keys.indices {
-                let root = MountRoot(
-                    pending: viewContext,
+                let root = container.makePendingEnteringRoot(
+                    context: viewContext,
                     transaction: context.transaction,
-                    transitionPhase: .willAppear,
                     create: { viewContext, mountCtx in
                         AnyReconcilable(makeNode(index, viewContext, &mountCtx))
                     }
@@ -114,12 +113,15 @@ public struct _KeyedNode: _Reconcilable {
 
             didStructureChange = !container.activeRoots.isEmpty
             if didStructureChange {
-                container.reportLayoutChange(&context)
+                if !didScheduleLayoutChange {
+                    container.reportLayoutChange(&context)
+                    didScheduleLayoutChange = true
+                }
             }
             return
         }
 
-        if container.leavingTracker.entries.isEmpty, keys.count == newKeysArray.count, keys.elementsEqual(newKeysArray) {
+        if !container.hasLeavingRoots, keys.count == newKeysArray.count, keys.elementsEqual(newKeysArray) {
             for index in container.activeRoots.indices {
                 let child = container.activeRoots[index]
                 precondition(!child.isPending, "double patch of pending MountRoot in keyed stable-patch path")
@@ -138,14 +140,13 @@ public struct _KeyedNode: _Reconcilable {
             for change in diff {
                 switch change {
                 case let .remove(offset, element: key, associatedWith: movedTo):
-                    let root = container.activeRoots.remove(at: offset)
-
                     if movedTo != nil {
+                        var root = container.activeRoots.remove(at: offset)
                         root.markMoved(&context)
                         moversCache[offset] = root
                     } else {
-                        root.startRemoval(&context, handle: container.containerHandle)
-                        container.leavingTracker.insert(root, atOriginalIndex: offset)
+                        container.removeActiveRoot(at: offset, tx: &context)
+                        didScheduleLayoutChange = true
                         _ = key
                     }
                     didStructureChange = true
@@ -159,18 +160,16 @@ public struct _KeyedNode: _Reconcilable {
                         }
                         root = moved
                     } else {
-                        root = MountRoot(
-                            pending: viewContext,
+                        root = container.makePendingEnteringRoot(
+                            context: viewContext,
                             transaction: context.transaction,
-                            transitionPhase: .willAppear,
                             create: { viewContext, mountCtx in
                                 AnyReconcilable(makeNode(offset, viewContext, &mountCtx))
                             }
                         )
                     }
 
-                    container.activeRoots.insert(root, at: offset)
-                    container.leavingTracker.reflectInsertionAt(offset)
+                    container.insertActiveRoot(root, at: offset)
                     didStructureChange = true
                 }
             }
@@ -186,27 +185,20 @@ public struct _KeyedNode: _Reconcilable {
         }
 
         if didStructureChange {
-            container.reportLayoutChange(&context)
+            if !didScheduleLayoutChange {
+                container.reportLayoutChange(&context)
+            }
         }
     }
 
     mutating func fastRemoveAll(context: inout _TransactionContext) {
-        for index in container.activeRoots.indices {
-            let root = container.activeRoots[index]
-            root.startRemoval(&context, handle: container.containerHandle)
-            container.leavingTracker.insert(root, atOriginalIndex: index)
-        }
+        guard !container.activeRoots.isEmpty else { return }
+        container.removeAllActiveToLeaving(tx: &context)
         keys.removeAll()
-        container.activeRoots.removeAll()
     }
 
     private func assertNoPendingRoots() {
-        let hasPendingChildren = container.activeRoots.contains { $0.isPending }
-        let hasPendingLeaving = container.leavingTracker.entries.contains { $0.value.isPending }
-        precondition(
-            !hasPendingChildren && !hasPendingLeaving,
-            "double patch of pending MountRoot in _KeyedNode"
-        )
+        precondition(!container.hasPendingRoots(), "double patch of pending MountRoot in _KeyedNode")
     }
 
     public consuming func unmount(_ context: inout _CommitContext) {

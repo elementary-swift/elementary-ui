@@ -18,8 +18,7 @@ final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
             tx.withModifiedTransaction {
                 $0.disablesAnimation = true
             } run: { tx in
-                var rootViewContext = _ViewContext()
-                rootViewContext.mountRoot = MountRoot(mounted: nil, transaction: tx.transaction)
+                let rootViewContext = _ViewContext()
 
                 tx.scheduler.addCommitAction { [self, rootView, rootViewContext] ctx in
                     var mountContext = _MountContext(ctx: ctx)

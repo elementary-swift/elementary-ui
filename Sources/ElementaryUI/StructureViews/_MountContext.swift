@@ -6,6 +6,12 @@ public struct _MountContext: ~Copyable {
     let dom: any DOM.Interactor
     let currentFrameTime: Double  //TODO: remove
 
+    var inheritedTransaction: Transaction = Transaction()
+    /// Registration endpoint for transition participants in the currently mounting root.
+    var transitionRegistrationSink: MountRootTransitionRegistrationSink? = nil
+    /// Transition wrapper depth within the current root. Top-level transitions are depth 0.
+    var transitionDepth: Int = 0
+
     private init(scheduler: Scheduler, dom: any DOM.Interactor) {
         self.scheduler = scheduler
         self.dom = dom
@@ -31,7 +37,11 @@ public struct _MountContext: ~Copyable {
     }
 
     func withChildContext<R>(_ body: (consuming _MountContext) -> R) -> R {
-        body(_MountContext(scheduler: scheduler, dom: dom))
+        var child = _MountContext(scheduler: scheduler, dom: dom)
+        child.transitionRegistrationSink = transitionRegistrationSink
+        child.transitionDepth = transitionDepth
+        // inheritedTransaction is intentionally NOT propagated — it is root-scoped only
+        return body(child)
     }
 
     private mutating func appendLayoutNode(_ node: LayoutNode) {

@@ -7,28 +7,25 @@ extension _HTMLConditional: _Mountable where TrueContent: _Mountable, FalseConte
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) -> _MountedNode {
-        let transaction = context.mountRoot.inheritedTransaction()
         switch view.value {
         case let .trueContent(content):
-            let root = MountRoot(
-                mountedFrom: context,
-                transaction: transaction,
+            return .init(
+                isA: true,
+                context: context,
                 ctx: &ctx,
-                create: { c, mountCtx in
-                    AnyReconcilable(TrueContent._makeNode(content, context: c, ctx: &mountCtx))
+                makeActive: { c, mountCtx in
+                    TrueContent._makeNode(content, context: c, ctx: &mountCtx)
                 }
             )
-            return .init(isA: true, root: root, context: context, ctx: &ctx)
         case let .falseContent(content):
-            let root = MountRoot(
-                mountedFrom: context,
-                transaction: transaction,
+            return .init(
+                isA: false,
+                context: context,
                 ctx: &ctx,
-                create: { c, mountCtx in
-                    AnyReconcilable(FalseContent._makeNode(content, context: c, ctx: &mountCtx))
+                makeActive: { c, mountCtx in
+                    FalseContent._makeNode(content, context: c, ctx: &mountCtx)
                 }
             )
-            return .init(isA: false, root: root, context: context, ctx: &ctx)
         }
     }
 
