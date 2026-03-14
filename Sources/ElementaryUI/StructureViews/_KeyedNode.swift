@@ -1,10 +1,6 @@
 public struct _KeyedNode: _Reconcilable {
     let container: MountRootContainer
 
-    init(context: borrowing _ViewContext) {
-        self.container = MountRootContainer(context: context)
-    }
-
     init<Node: _Reconcilable>(
         keys: [_ViewKey],
         context: borrowing _ViewContext,
@@ -12,11 +8,7 @@ public struct _KeyedNode: _Reconcilable {
         makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> Node
     ) {
         self.container = MountRootContainer(context: context)
-        for index in keys.indices {
-            container.createInline(key: keys[index], ctx: &ctx) { context, mountCtx in
-                makeNode(index, context, &mountCtx)
-            }
-        }
+        container.mount(keys: keys, ctx: &ctx, makeNode: makeNode)
         ctx.appendContainer(container)
     }
 
@@ -32,17 +24,6 @@ public struct _KeyedNode: _Reconcilable {
             ctx: &ctx,
             makeNode: { _, context, ctx in makeNode(context, &ctx) }
         )
-    }
-
-    init(_ value: some Sequence<(key: _ViewKey, node: some _Reconcilable)>, context: borrowing _ViewContext) {
-        self.container = MountRootContainer(context: context)
-        for (key, node) in value {
-            container.appendMounted(key: key, node: AnyReconcilable(node))
-        }
-    }
-
-    init(key: _ViewKey, child: some _Reconcilable, context: borrowing _ViewContext) {
-        self.init(CollectionOfOne((key: key, node: child)), context: context)
     }
 
     mutating func patch<Node: _Reconcilable>(

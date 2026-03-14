@@ -43,31 +43,48 @@ final class MountRootContainer {
         containerHandle?.reportLayoutChange(&tx)
     }
 
-    var hasLeavingRoots: Bool {
-        slots.contains { $0.state == .leaving }
-    }
-
-    func appendMounted(key: _ViewKey, node: consuming AnyReconcilable) {
-        precondition(slotIndex(for: key) == nil, "duplicate key in MountRootContainer")
-        slots.append(.init(key: key, state: .active, root: MountRoot(mounted: node)))
-    }
-
-    func createInline<Node: _Reconcilable>(
+    func mount<Node: _Reconcilable>(
         key: _ViewKey,
         ctx: inout _MountContext,
         makeNode: (borrowing _ViewContext, inout _MountContext) -> Node
     ) {
-        precondition(slotIndex(for: key) == nil, "duplicate key in MountRootContainer")
-        slots.append(makeInlineSlot(key: key, ctx: &ctx, makeNode: makeNode))
+        mount(
+            keys: CollectionOfOne(key),
+            ctx: &ctx,
+            makeNode: { _, context, mountCtx in
+                makeNode(context, &mountCtx)
+            }
+        )
     }
 
-    func createScheduled<Node: _Reconcilable>(
-        key: _ViewKey,
-        transaction: Transaction,
-        makeNode: @escaping (borrowing _ViewContext, inout _MountContext) -> Node
+    func mount<Node: _Reconcilable>(
+        keys: some Collection<_ViewKey>,
+        ctx: inout _MountContext,
+        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> Node
     ) {
-        precondition(slotIndex(for: key) == nil, "duplicate key in MountRootContainer")
-        slots.append(makeScheduledSlot(key: key, transaction: transaction, makeNode: makeNode))
+        precondition(slots.isEmpty, "mount called on non-empty MountRootContainer")
+        guard !keys.isEmpty else { return }
+
+        var mountedSlots: [Slot] = []
+        mountedSlots.reserveCapacity(keys.underestimatedCount)
+        var seen: Set<_ViewKey> = []
+        seen.reserveCapacity(keys.underestimatedCount)
+
+        var index = 0
+        for key in keys {
+            precondition(seen.insert(key).inserted, "duplicate key in mount: \(key)")
+            mountedSlots.append(
+                makeMountSlot(
+                    key: key,
+                    ctx: &ctx,
+                    makeNode: { context, mountCtx in
+                        makeNode(index, context, &mountCtx)
+                    }
+                )
+            )
+            index += 1
+        }
+        slots = mountedSlots
     }
 
     func patch<Node: _Reconcilable>(
@@ -125,7 +142,7 @@ final class MountRootContainer {
                         if leavingIndex < insertionIndex { insertionIndex -= 1 }
                         slot = revived
                     } else {
-                        slot = makeScheduledSlot(
+                        slot = makePatchSlot(
                             key: key,
                             transaction: tx.transaction,
                             makeNode: { context, mountCtx in
@@ -142,8 +159,14 @@ final class MountRootContainer {
             precondition(moversCache.isEmpty, "mover cache is not empty")
         }
 
+        var activeSlotIndicesByKey: [_ViewKey: Int] = [:]
+        activeSlotIndicesByKey.reserveCapacity(newKeysArray.count)
+        for index in slots.indices where slots[index].state == .active {
+            activeSlotIndicesByKey[slots[index].key] = index
+        }
+
         for index in newKeysArray.indices {
-            guard let slotIndex = activeSlotIndex(for: newKeysArray[index]) else {
+            guard let slotIndex = activeSlotIndicesByKey[newKeysArray[index]] else {
                 preconditionFailure("missing active key after patch diff: \(newKeysArray[index])")
             }
             if slots[slotIndex].root.isPending { continue }
@@ -188,16 +211,8 @@ final class MountRootContainer {
         return slots.count
     }
 
-    private func activeSlotIndex(for key: _ViewKey) -> Int? {
-        slots.firstIndex { $0.key == key && $0.state == .active }
-    }
-
     private func leavingSlotIndex(for key: _ViewKey) -> Int? {
         slots.firstIndex { $0.key == key && $0.state == .leaving }
-    }
-
-    private func slotIndex(for key: _ViewKey) -> Int? {
-        slots.firstIndex { $0.key == key }
     }
 
     private func assertNoPendingRoots() {
@@ -215,7 +230,7 @@ final class MountRootContainer {
         }
     }
 
-    private func makeInlineSlot<Node: _Reconcilable>(
+    private func makeMountSlot<Node: _Reconcilable>(
         key: _ViewKey,
         ctx: inout _MountContext,
         makeNode: (borrowing _ViewContext, inout _MountContext) -> Node
@@ -230,7 +245,7 @@ final class MountRootContainer {
         return .init(key: key, state: .active, root: root)
     }
 
-    private func makeScheduledSlot<Node: _Reconcilable>(
+    private func makePatchSlot<Node: _Reconcilable>(
         key: _ViewKey,
         transaction: Transaction,
         makeNode: @escaping (borrowing _ViewContext, inout _MountContext) -> Node

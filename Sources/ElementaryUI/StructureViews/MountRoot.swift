@@ -208,11 +208,6 @@ struct MountRoot {
 
     // MARK: - Initializers
 
-    init(mounted node: consuming AnyReconcilable? = nil, transaction: Transaction? = nil) {
-        self.state = .mounted(.init(node: node, layoutNodes: [], status: .unchanged))
-        self.transitionCoordinator = .init(transaction: transaction, enteringPending: false)
-    }
-
     init(
         pending seedContext: borrowing _ViewContext,
         transaction: Transaction,

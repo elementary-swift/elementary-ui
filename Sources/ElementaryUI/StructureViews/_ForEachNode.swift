@@ -4,7 +4,7 @@ public final class _ForEachNode<Data, Content>: _Reconcilable
 where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
     private var data: Data
     private var contentBuilder: @Sendable (Data.Element) -> Content
-    private var keyedNode: _KeyedNode?
+    private let container: MountRootContainer
     private var context: _ViewContext
     private var trackingSession: TrackingSession? = nil
 
@@ -19,11 +19,13 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
     ) {
         self.data = data
         self.contentBuilder = contentBuilder
+        self.container = MountRootContainer(context: context)
         self.context = copy context
         self.depthInTree = context.functionDepth
         self.asFunctionNode = AnyFunctionNode(self)
 
         runFunctionInitial(ctx: &ctx)
+        ctx.appendContainer(container)
     }
 
     func patch(
@@ -59,14 +61,9 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
 
         self.trackingSession = session
 
-        if keyedNode == nil {
-            keyedNode = _KeyedNode(context: context)
-        }
-
-        keyedNode!.patch(
-            keys,
-            context: &tx,
-            as: Content.Value._MountedNode.self,
+        container.patch(
+            keys: keys,
+            tx: &tx,
             makeNode: { index, context, mountCtx in
                 Content.Value._makeNode(views[index]._value, context: context, ctx: &mountCtx)
             },
@@ -99,9 +96,8 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
 
         self.trackingSession = session
 
-        keyedNode = _KeyedNode(
+        container.mount(
             keys: keys,
-            context: context,
             ctx: &ctx,
             makeNode: { index, context, mountCtx in
                 Content.Value._makeNode(views[index]._value, context: context, ctx: &mountCtx)
@@ -111,8 +107,7 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
 
     public func unmount(_ context: inout _CommitContext) {
         self.trackingSession.take()?.cancel()
-        let node = keyedNode.take()
-        node?.unmount(&context)
+        container.unmount(&context)
     }
 }
 

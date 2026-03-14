@@ -12,7 +12,7 @@ public struct _ConditionalNode: _Reconcilable {
     ) {
         self.container = MountRootContainer(context: context)
         let initialKey = isA ? keyA : keyB
-        container.createInline(key: initialKey, ctx: &ctx, makeNode: makeActive)
+        container.mount(key: initialKey, ctx: &ctx, makeNode: makeActive)
         ctx.appendContainer(container)
     }
 
