@@ -1,32 +1,45 @@
 import Reactivity
 
 public struct _ViewKey: Equatable, Hashable, CustomStringConvertible {
-
-    // NOTE: this was an enum once, but maybe we don't need this? in any case, let's keep the option for mutiple values here open
     @usableFromInline
-    let _value: HashableUTF8View
+    enum Storage: Equatable, Hashable {
+        case text(HashableUTF8View)
+        case number(Int)
+    }
+
+    @usableFromInline
+    let storage: Storage
 
     @inlinable
     public init(_ value: String) {
-        self._value = HashableUTF8View(value)
+        self.storage = .text(HashableUTF8View(value))
+    }
+
+    @inlinable
+    public init(_ value: Int) {
+        self.storage = .number(value)
     }
 
     @inlinable
     public init<T: LosslessStringConvertible>(_ value: T) {
-        self._value = HashableUTF8View(value.description)
+        // Keep compatibility for existing call-sites while keeping strict typed equality.
+        self.storage = .text(HashableUTF8View(value.description))
     }
 
     public var description: String {
-        _value.stringValue
+        switch storage {
+        case .text(let text): text.stringValue
+        case .number(let number): String(number)
+        }
     }
 
     @inlinable
     public static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs._value == rhs._value
+        lhs.storage == rhs.storage
     }
 
     @inlinable
     public func hash(into hasher: inout Hasher) {
-        _value.hash(into: &hasher)
+        storage.hash(into: &hasher)
     }
 }

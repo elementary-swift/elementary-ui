@@ -231,6 +231,23 @@ struct DOMMountingTests {
             ]
         )
     }
+
+    @Test
+    func mountsDistinctTypedKeysForSameRenderedValue() {
+        let ops = mountOps {
+            Group {
+                p { "string" }.key("1")
+                p { "number" }.key(1)
+            }
+        }
+
+        let createdPCount = ops.filter { op in
+            if case .createElement("p") = op { return true }
+            return false
+        }.count
+
+        #expect(createdPCount == 2)
+    }
 }
 
 @View

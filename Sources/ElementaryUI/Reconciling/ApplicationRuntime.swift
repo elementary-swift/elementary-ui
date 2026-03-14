@@ -19,9 +19,10 @@ final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
                 $0.disablesAnimation = true
             } run: { tx in
                 let rootViewContext = _ViewContext()
+                let mountTransaction = tx.transaction
 
                 tx.scheduler.addCommitAction { [self, rootView, rootViewContext] ctx in
-                    var mountContext = _MountContext(ctx: ctx)
+                    var mountContext = _MountContext(ctx: ctx, transaction: mountTransaction)
                     let child = AnyReconcilable(
                         RootView._makeNode(rootView, context: rootViewContext, ctx: &mountContext)
                     )

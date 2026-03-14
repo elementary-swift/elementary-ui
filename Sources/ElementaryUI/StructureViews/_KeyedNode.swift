@@ -1,45 +1,30 @@
 public struct _KeyedNode: _Reconcilable {
-    var keys: [_ViewKey]
-    let viewContext: _ViewContext
     let container: MountRootContainer
 
-    init(keys: [_ViewKey], children: [MountRoot], context: borrowing _ViewContext) {
-        assert(keys.count == children.count)
-        self.keys = keys
-        self.viewContext = copy context
-        self.container = MountRootContainer(roots: children)
+    init(context: borrowing _ViewContext) {
+        self.container = MountRootContainer(context: context)
     }
 
-    init(
+    init<Node: _Reconcilable>(
         keys: [_ViewKey],
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
-        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
+        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> Node
     ) {
-        self.keys = keys
-        self.viewContext = copy context
-        self.container = MountRootContainer(roots: [])
-        container.activeRoots.reserveCapacity(keys.count)
-
-        let transaction = ctx.inheritedTransaction
+        self.container = MountRootContainer(context: context)
         for index in keys.indices {
-            let root = container.makeEagerRoot(
-                context: context,
-                transaction: transaction,
-                ctx: &ctx,
-                create: { context, mountCtx in makeNode(index, context, &mountCtx) }
-            )
-            container.activeRoots.append(root)
+            container.createInline(key: keys[index], ctx: &ctx) { context, mountCtx in
+                makeNode(index, context, &mountCtx)
+            }
         }
-
         ctx.appendContainer(container)
     }
 
-    init(
+    init<Node: _Reconcilable>(
         key: _ViewKey,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
-        makeNode: (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
+        makeNode: (borrowing _ViewContext, inout _MountContext) -> Node
     ) {
         self.init(
             keys: [key],
@@ -50,11 +35,10 @@ public struct _KeyedNode: _Reconcilable {
     }
 
     init(_ value: some Sequence<(key: _ViewKey, node: some _Reconcilable)>, context: borrowing _ViewContext) {
-        self.init(
-            keys: value.map { $0.key },
-            children: value.map { MountRoot(mounted: AnyReconcilable($0.node)) },
-            context: context
-        )
+        self.container = MountRootContainer(context: context)
+        for (key, node) in value {
+            container.appendMounted(key: key, node: AnyReconcilable(node))
+        }
     }
 
     init(key: _ViewKey, child: some _Reconcilable, context: borrowing _ViewContext) {
@@ -84,121 +68,12 @@ public struct _KeyedNode: _Reconcilable {
         patchNode: (Int, inout Node, inout _TransactionContext) -> Void
     ) {
         _ = type
-        assertNoPendingRoots()
-
-        guard !newKeys.isEmpty else {
-            fastRemoveAll(context: &context)
-            return
-        }
-
-        let newKeysArray = Array(newKeys)
-        var didStructureChange = false
-        var didScheduleLayoutChange = false
-
-        guard !(keys.isEmpty && !container.hasLeavingRoots) else {
-            keys = newKeysArray
-            container.activeRoots.removeAll(keepingCapacity: true)
-            container.activeRoots.reserveCapacity(keys.count)
-
-            for index in keys.indices {
-                let root = container.makePendingEnteringRoot(
-                    context: viewContext,
-                    transaction: context.transaction,
-                    create: { viewContext, mountCtx in
-                        AnyReconcilable(makeNode(index, viewContext, &mountCtx))
-                    }
-                )
-                container.activeRoots.append(root)
-            }
-
-            didStructureChange = !container.activeRoots.isEmpty
-            if didStructureChange {
-                if !didScheduleLayoutChange {
-                    container.reportLayoutChange(&context)
-                    didScheduleLayoutChange = true
-                }
-            }
-            return
-        }
-
-        if !container.hasLeavingRoots, keys.count == newKeysArray.count, keys.elementsEqual(newKeysArray) {
-            for index in container.activeRoots.indices {
-                let child = container.activeRoots[index]
-                precondition(!child.isPending, "double patch of pending MountRoot in keyed stable-patch path")
-                let patched = child.withMountedNode(as: Node.self) { node in patchNode(index, &node, &context) }
-                precondition(patched, "expected mounted child during stable keyed patch")
-            }
-            return
-        }
-
-        let diff = newKeysArray.difference(from: keys).inferringMoves()
-        keys = newKeysArray
-
-        if !diff.isEmpty {
-            var moversCache: [Int: MountRoot] = [:]
-
-            for change in diff {
-                switch change {
-                case let .remove(offset, element: key, associatedWith: movedTo):
-                    if movedTo != nil {
-                        var root = container.activeRoots.remove(at: offset)
-                        root.markMoved(&context)
-                        moversCache[offset] = root
-                    } else {
-                        container.removeActiveRoot(at: offset, tx: &context)
-                        didScheduleLayoutChange = true
-                        _ = key
-                    }
-                    didStructureChange = true
-                case let .insert(offset, element: key, associatedWith: movedFrom):
-                    let root: MountRoot
-
-                    if let movedFrom {
-                        logTrace("move \(key) from \(movedFrom) to \(offset)")
-                        guard let moved = moversCache.removeValue(forKey: movedFrom) else {
-                            preconditionFailure("mover not found in cache")
-                        }
-                        root = moved
-                    } else {
-                        root = container.makePendingEnteringRoot(
-                            context: viewContext,
-                            transaction: context.transaction,
-                            create: { viewContext, mountCtx in
-                                AnyReconcilable(makeNode(offset, viewContext, &mountCtx))
-                            }
-                        )
-                    }
-
-                    container.insertActiveRoot(root, at: offset)
-                    didStructureChange = true
-                }
-            }
-
-            precondition(moversCache.isEmpty, "mover cache is not empty")
-        }
-
-        for index in container.activeRoots.indices {
-            let child = container.activeRoots[index]
-            if child.isPending { continue }
-            let patched = child.withMountedNode(as: Node.self) { node in patchNode(index, &node, &context) }
-            precondition(patched, "expected mounted child during keyed patch")
-        }
-
-        if didStructureChange {
-            if !didScheduleLayoutChange {
-                container.reportLayoutChange(&context)
-            }
-        }
-    }
-
-    mutating func fastRemoveAll(context: inout _TransactionContext) {
-        guard !container.activeRoots.isEmpty else { return }
-        container.removeAllActiveToLeaving(tx: &context)
-        keys.removeAll()
-    }
-
-    private func assertNoPendingRoots() {
-        precondition(!container.hasPendingRoots(), "double patch of pending MountRoot in _KeyedNode")
+        container.patch(
+            keys: newKeys,
+            tx: &context,
+            makeNode: makeNode,
+            patchNode: patchNode
+        )
     }
 
     public consuming func unmount(_ context: inout _CommitContext) {

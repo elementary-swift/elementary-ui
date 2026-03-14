@@ -103,8 +103,8 @@ struct DOMPatchingTests {
         #expect(
             ops == [
                 .createElement("a"),
-                .addChild(parent: "<>", child: "<a>", before: "<img>"),
                 .removeChild(parent: "<>", child: "<p>"),
+                .addChild(parent: "<>", child: "<a>", before: "<img>"),
             ]
         )
     }
@@ -134,8 +134,8 @@ struct DOMPatchingTests {
         #expect(
             dom.ops == [
                 .createElement("br"),
-                .addChild(parent: "<div>", child: "<br>"),
                 .removeChild(parent: "<div>", child: "<a>"),
+                .addChild(parent: "<div>", child: "<br>"),
             ]
         )
     }

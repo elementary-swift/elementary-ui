@@ -17,12 +17,10 @@ final class MountRootTransitionCoordinator {
 
     private(set) var activeRemovalToken: UInt64?
     private(set) var enteringPending: Bool
-    private let transactionAnimation: Animation?
-    private let transactionDisablesAnimation: Bool
+    private let capturedTransaction: Transaction?
 
     init(transaction: Transaction?, enteringPending: Bool) {
-        self.transactionAnimation = transaction?.animation
-        self.transactionDisablesAnimation = transaction?.disablesAnimation ?? false
+        self.capturedTransaction = transaction
         self.enteringPending = enteringPending
     }
 
@@ -30,10 +28,8 @@ final class MountRootTransitionCoordinator {
         activeRemovalToken != nil
     }
 
-    func inheritedTransaction() -> Transaction {
-        var transaction = Transaction(animation: transactionAnimation)
-        transaction.disablesAnimation = transactionDisablesAnimation
-        return transaction
+    func mountTransaction() -> Transaction {
+        capturedTransaction ?? Transaction()
     }
 
     func makeRegistrationSink() -> MountRootTransitionRegistrationSink {
@@ -69,16 +65,19 @@ final class MountRootTransitionCoordinator {
         activeRemovalToken = token
         pendingExitCompletions = 0
         deferredRemovalReady = false
+        let scheduler = tx.scheduler
 
         for participant in live {
             let animation = effectiveAnimation(for: participant, transaction: tx.transaction)
             if let animation {
                 pendingExitCompletions += 1
-                let exitTx = Transaction(animation: animation)
-                exitTx.addAnimationCompletion { [coordinator = self, scheduler = tx.scheduler, handle] in
-                    coordinator.notifyExitAnimationCompleted(token: token, scheduler: scheduler, handle: handle)
-                }
-                tx.withModifiedTransaction({ $0 = exitTx }) { tx in
+                tx.withModifiedTransaction({
+                    $0.animation = animation
+                    $0.disablesAnimation = false
+                    $0.addAnimationCompletion { [coordinator = self, scheduler, handle] in
+                        coordinator.notifyExitAnimationCompleted(token: token, scheduler: scheduler, handle: handle)
+                    }
+                }) { tx in
                     participant.mountRootPatchTransitionPhase(.didDisappear, tx: &tx)
                 }
             } else {
@@ -149,11 +148,14 @@ final class MountRootTransitionCoordinator {
             return transaction.animation ?? participant.mountRootDefaultAnimation
         }
 
-        if transactionDisablesAnimation {
-            return nil
+        if let capturedTransaction {
+            if capturedTransaction.disablesAnimation {
+                return nil
+            }
+            return capturedTransaction.animation ?? participant.mountRootDefaultAnimation
         }
 
-        return transactionAnimation ?? participant.mountRootDefaultAnimation
+        return participant.mountRootDefaultAnimation
     }
 
     private func notifyExitAnimationCompleted(
@@ -222,21 +224,16 @@ struct MountRoot {
 
     init(
         eager seedContext: borrowing _ViewContext,
-        transaction: Transaction,
         ctx: inout _MountContext,
         create: (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
     ) {
-        self.transitionCoordinator = .init(transaction: transaction, enteringPending: false)
+        self.transitionCoordinator = .init(transaction: ctx.transaction, enteringPending: false)
         self.state = .mounted(.init(node: nil, layoutNodes: [], status: .unchanged))
 
         let context = copy seedContext
         let registrationSink = transitionCoordinator.makeRegistrationSink()
-        let inheritedTransaction = transitionCoordinator.inheritedTransaction()
         let (node, layoutNodes) = ctx.withChildContext { (childCtx: consuming _MountContext) in
-            var childCtx = childCtx
-            childCtx.inheritedTransaction = inheritedTransaction
-            childCtx.transitionRegistrationSink = registrationSink
-            childCtx.transitionDepth = 0
+            childCtx.configureMountRootTransition(sink: registrationSink)
             let node = create(context, &childCtx)
             let layoutNodes = childCtx.takeLayoutNodes()
             return (node, layoutNodes)
@@ -254,10 +251,8 @@ struct MountRoot {
     mutating func mount(_ ctx: inout _CommitContext) {
         guard case let .pending(seedContext, create) = state else { return }
 
-        var mountContext = _MountContext(ctx: ctx)
-        mountContext.inheritedTransaction = transitionCoordinator.inheritedTransaction()
-        mountContext.transitionRegistrationSink = transitionCoordinator.makeRegistrationSink()
-        mountContext.transitionDepth = 0
+        var mountContext = _MountContext(ctx: ctx, transaction: transitionCoordinator.mountTransaction())
+        mountContext.configureMountRootTransition(sink: transitionCoordinator.makeRegistrationSink())
         let node = create(seedContext, &mountContext)
         let layoutNodes = mountContext.takeLayoutNodes()
         state = .mounted(.init(node: node, layoutNodes: layoutNodes, status: .added))

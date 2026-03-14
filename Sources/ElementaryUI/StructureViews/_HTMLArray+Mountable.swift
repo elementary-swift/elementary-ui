@@ -11,7 +11,7 @@ extension _HTMLArray: _Mountable, View where Element: View {
         keys.reserveCapacity(estimatedCount)
 
         for (index, _) in view.value.enumerated() {
-            keys.append(_ViewKey(String(index)))
+            keys.append(_ViewKey(index))
         }
 
         return _MountedNode(
@@ -19,7 +19,7 @@ extension _HTMLArray: _Mountable, View where Element: View {
             context: context,
             ctx: &ctx,
             makeNode: { index, context, ctx in
-                AnyReconcilable(Element._makeNode(view.value[index], context: context, ctx: &ctx))
+                Element._makeNode(view.value[index], context: context, ctx: &ctx)
             }
         )
     }
@@ -31,7 +31,7 @@ extension _HTMLArray: _Mountable, View where Element: View {
     ) {
         // maybe we can optimize this
         // NOTE: written with cast for this https://github.com/swiftlang/swift/issues/83895
-        let indexes = view.value.indices.map { _ViewKey(String($0 as Int)) }
+        let indexes = view.value.indices.map { _ViewKey($0 as Int) }
 
         node.patch(
             indexes,

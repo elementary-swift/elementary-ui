@@ -104,7 +104,7 @@ struct DOMEffectView<Effect: DOMElementModifier, Wrapped: View>: View {
                 currentFrameTime: 0
             )
             // force inclusion of types used in mount
-            var mountContext = _MountContext(ctx: commitContext)
+            var mountContext = _MountContext(ctx: commitContext, transaction: Transaction())
             _ = effect.mount(.init(.init()), &mountContext)
         }
         #endif

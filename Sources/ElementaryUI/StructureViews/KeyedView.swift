@@ -15,7 +15,7 @@ public struct _KeyedView<Value: View>: View {
             context: context,
             ctx: &ctx,
             makeNode: { context, ctx in
-                AnyReconcilable(Value._makeNode(view.value, context: context, ctx: &ctx))
+                Value._makeNode(view.value, context: context, ctx: &ctx)
             }
         )
     }

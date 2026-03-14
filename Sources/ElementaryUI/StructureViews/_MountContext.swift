@@ -6,22 +6,29 @@ public struct _MountContext: ~Copyable {
     let dom: any DOM.Interactor
     let currentFrameTime: Double  //TODO: remove
 
-    var inheritedTransaction: Transaction = Transaction()
+    let transaction: Transaction
     /// Registration endpoint for transition participants in the currently mounting root.
     var transitionRegistrationSink: MountRootTransitionRegistrationSink? = nil
     /// Transition wrapper depth within the current root. Top-level transitions are depth 0.
     var transitionDepth: Int = 0
 
-    private init(scheduler: Scheduler, dom: any DOM.Interactor) {
+    private init(
+        scheduler: Scheduler,
+        dom: any DOM.Interactor,
+        currentFrameTime: Double,
+        transaction: Transaction
+    ) {
         self.scheduler = scheduler
         self.dom = dom
-        self.currentFrameTime = 0
+        self.currentFrameTime = currentFrameTime
+        self.transaction = transaction
     }
 
-    init(ctx: borrowing _CommitContext) {
+    init(ctx: borrowing _CommitContext, transaction: Transaction) {
         self.scheduler = ctx.scheduler
         self.dom = ctx.dom
         self.currentFrameTime = ctx.currentFrameTime
+        self.transaction = transaction
     }
 
     mutating func appendStaticElement(_ node: DOM.Node) {
@@ -37,11 +44,21 @@ public struct _MountContext: ~Copyable {
     }
 
     func withChildContext<R>(_ body: (consuming _MountContext) -> R) -> R {
-        var child = _MountContext(scheduler: scheduler, dom: dom)
-        child.transitionRegistrationSink = transitionRegistrationSink
-        child.transitionDepth = transitionDepth
-        // inheritedTransaction is intentionally NOT propagated — it is root-scoped only
+        // Mount-root tracking is root-scoped and must not flow to nested child contexts.
+        let child = _MountContext(
+            scheduler: scheduler,
+            dom: dom,
+            currentFrameTime: currentFrameTime,
+            transaction: transaction
+        )
         return body(child)
+    }
+
+    mutating func configureMountRootTransition(
+        sink: MountRootTransitionRegistrationSink?
+    ) {
+        transitionRegistrationSink = sink
+        transitionDepth = 0
     }
 
     private mutating func appendLayoutNode(_ node: LayoutNode) {

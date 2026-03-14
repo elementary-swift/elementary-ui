@@ -60,7 +60,7 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
         self.trackingSession = session
 
         if keyedNode == nil {
-            keyedNode = _KeyedNode(keys: [], children: [], context: context)
+            keyedNode = _KeyedNode(context: context)
         }
 
         keyedNode!.patch(
@@ -104,7 +104,7 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
             context: context,
             ctx: &ctx,
             makeNode: { index, context, mountCtx in
-                AnyReconcilable(Content.Value._makeNode(views[index]._value, context: context, ctx: &mountCtx))
+                Content.Value._makeNode(views[index]._value, context: context, ctx: &mountCtx)
             }
         )
     }

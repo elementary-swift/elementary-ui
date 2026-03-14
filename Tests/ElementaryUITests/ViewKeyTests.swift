@@ -24,4 +24,21 @@ struct ViewKeyTests {
         let view = _ViewKey(s)
         #expect(view.description == s)
     }
+
+    @Test
+    func strictTypedEqualityForTextAndNumber() {
+        #expect(_ViewKey("1") != _ViewKey(1))
+        #expect(_ViewKey(1) == _ViewKey(1))
+    }
+
+    @Test
+    func hashDistinguishesTextAndNumberRepresentations() {
+        let keys: Set<_ViewKey> = [_ViewKey("1"), _ViewKey(1), _ViewKey(2), _ViewKey("2")]
+        #expect(keys.count == 4)
+    }
+
+    @Test
+    func numericDescriptionUsesNumberStringValue() {
+        #expect(_ViewKey(42).description == "42")
+    }
 }
