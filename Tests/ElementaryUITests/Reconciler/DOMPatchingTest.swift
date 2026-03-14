@@ -77,8 +77,8 @@ struct DOMPatchingTests {
         #expect(
             ops == [
                 .createElement("p"),
-                .removeChild(parent: "<div>", child: "<a>"),
                 .addChild(parent: "<div>", child: "<p>"),
+                .removeChild(parent: "<div>", child: "<a>"),
             ]
         )
     }
@@ -103,8 +103,8 @@ struct DOMPatchingTests {
         #expect(
             ops == [
                 .createElement("a"),
-                .removeChild(parent: "<>", child: "<p>"),
                 .addChild(parent: "<>", child: "<a>", before: "<img>"),
+                .removeChild(parent: "<>", child: "<p>"),
             ]
         )
     }
@@ -134,8 +134,8 @@ struct DOMPatchingTests {
         #expect(
             dom.ops == [
                 .createElement("br"),
-                .removeChild(parent: "<div>", child: "<a>"),
                 .addChild(parent: "<div>", child: "<br>"),
+                .removeChild(parent: "<div>", child: "<a>"),
             ]
         )
     }
@@ -196,6 +196,7 @@ struct DOMPatchingTests {
             ops == [
                 .createText("D"),
                 .addChild(parent: "<>", child: "D", before: "C"),
+                .addChild(parent: "<>", child: "B", before: "D"),
                 .removeChild(parent: "<>", child: "A"),
             ]
         )
@@ -215,7 +216,7 @@ struct DOMPatchingTests {
         #expect(
             ops == [
                 .addChild(parent: "<>", child: "A"),
-                .addChild(parent: "<>", child: "B", before: "A"),
+                .addChild(parent: "<>", child: "C", before: "B"),
             ]
         )
     }
@@ -253,7 +254,7 @@ struct DOMPatchingTests {
             ops == [
                 .createText("D"),
                 .addChild(parent: "<>", child: "D"),
-                .addChild(parent: "<>", child: "B", before: "D"),
+                .addChild(parent: "<>", child: "C", before: "B"),
                 .removeChild(parent: "<>", child: "A"),
             ]
         )

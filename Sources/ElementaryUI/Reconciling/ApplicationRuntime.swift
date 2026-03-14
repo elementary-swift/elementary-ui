@@ -22,11 +22,13 @@ final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
                 let mountTransaction = tx.transaction
 
                 tx.scheduler.addCommitAction { [self, rootView, rootViewContext] ctx in
-                    var mountContext = _MountContext(ctx: ctx, transaction: mountTransaction)
-                    let child = AnyReconcilable(
-                        RootView._makeNode(rootView, context: rootViewContext, ctx: &mountContext)
-                    )
-                    let layoutNodes = mountContext.takeLayoutNodes()
+                    let (child, layoutNodes) = ctx.withMountContext(transaction: mountTransaction) { (ctx: consuming _MountContext) in
+                        let child = AnyReconcilable(
+                            RootView._makeNode(rootView, context: rootViewContext, ctx: &ctx)
+                        )
+                        let layoutNodes = ctx.takeLayoutNodes()
+                        return (child, layoutNodes)
+                    }
 
                     let container = LayoutContainer(
                         domNode: domRoot,

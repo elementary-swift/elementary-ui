@@ -122,7 +122,11 @@ struct TransitionMountRootTests {
         recorder.reset()
 
         dom.clearOps()
-        state.value = false
+        var noAnimationTx = Transaction(animation: nil)
+        noAnimationTx.disablesAnimation = true
+        withTransaction(noAnimationTx) {
+            state.value = false
+        }
         dom.runNextFrame()
         #expect(dom.ops.contains(.removeChild(parent: "<>", child: "<p>")))
 
@@ -187,6 +191,34 @@ struct TransitionMountRootTests {
         #expect(
             dom.ops.contains(.setChildren(parent: "<>", children: ["<p>", "<p>", "<p>"]))
         )
+    }
+
+    @Test
+    func keyedReinsertRevivesLeavingRootWithoutRecreate() {
+        let state = StringItemsState(["A"])
+        let dom = TestDOM()
+
+        dom.mount {
+            ForEach(state.items, key: \.self) { item in
+                p { item }.transition(.fade)
+            }
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        withAnimation(.linear(duration: 0.35)) {
+            state.items = []
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        withAnimation(.linear(duration: 0.35)) {
+            state.items = ["A"]
+        }
+        dom.runNextFrame()
+
+        #expect(!dom.ops.contains(.createElement("p")))
+        #expect(!dom.ops.contains(.createText("A")))
     }
 
     // @Test

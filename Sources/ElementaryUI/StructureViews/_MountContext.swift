@@ -4,7 +4,7 @@ public struct _MountContext: ~Copyable {
 
     let scheduler: Scheduler
     let dom: any DOM.Interactor
-    let currentFrameTime: Double  //TODO: remove
+    let currentFrameTime: Double
 
     let transaction: Transaction
     /// Registration endpoint for transition participants in the currently mounting root.
@@ -12,22 +12,15 @@ public struct _MountContext: ~Copyable {
     /// Transition wrapper depth within the current root. Top-level transitions are depth 0.
     var transitionDepth: Int = 0
 
-    private init(
-        scheduler: Scheduler,
+    fileprivate init(
         dom: any DOM.Interactor,
+        scheduler: Scheduler,
         currentFrameTime: Double,
         transaction: Transaction
     ) {
-        self.scheduler = scheduler
         self.dom = dom
+        self.scheduler = scheduler
         self.currentFrameTime = currentFrameTime
-        self.transaction = transaction
-    }
-
-    init(ctx: borrowing _CommitContext, transaction: Transaction) {
-        self.scheduler = ctx.scheduler
-        self.dom = ctx.dom
-        self.currentFrameTime = ctx.currentFrameTime
         self.transaction = transaction
     }
 
@@ -46,12 +39,21 @@ public struct _MountContext: ~Copyable {
     func withChildContext<R>(_ body: (consuming _MountContext) -> R) -> R {
         // Mount-root tracking is root-scoped and must not flow to nested child contexts.
         let child = _MountContext(
-            scheduler: scheduler,
             dom: dom,
+            scheduler: scheduler,
             currentFrameTime: currentFrameTime,
             transaction: transaction
         )
         return body(child)
+    }
+
+    func withCommitContext<R>(_ body: (inout _CommitContext) -> R) -> R {
+        var commitContext = _CommitContext(
+            dom: dom,
+            scheduler: scheduler,
+            currentFrameTime: currentFrameTime
+        )
+        return body(&commitContext)
     }
 
     mutating func configureMountRootTransition(
@@ -89,8 +91,9 @@ extension _MountContext {
                 layoutNodes: layoutNodes,
                 layoutObservers: observers
             )
-            var commit = _CommitContext(dom: dom, scheduler: scheduler, currentFrameTime: currentFrameTime)
-            container.mountInitial(&commit)
+            withCommitContext { commit in
+                container.mountInitial(&commit)
+            }
             return container
         }
     }
@@ -102,5 +105,21 @@ private extension LayoutNode {
         case .elementNode(let node), .textNode(let node): node
         case .container: fatalError("dynamic container in static node list")
         }
+    }
+}
+
+extension _CommitContext {
+    func withMountContext<R>(
+        transaction: Transaction,
+        _ body: (consuming _MountContext) -> R
+    ) -> R {
+        body(
+            _MountContext(
+                dom: dom,
+                scheduler: scheduler,
+                currentFrameTime: currentFrameTime,
+                transaction: transaction
+            )
+        )
     }
 }

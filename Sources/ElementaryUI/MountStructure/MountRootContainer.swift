@@ -1,33 +1,34 @@
 final class MountRootContainer {
-    private enum SlotState {
-        case active
-        case leaving
+    private struct ActiveInfo {
+        var root: MountRoot
+        var sourceIndex: Int
+        var oldActiveOffset: Int
     }
 
-    private struct Slot {
+    private struct LeavingAnchor {
         var key: _ViewKey
-        var state: SlotState
-        var root: MountRoot
+        var sourceIndex: Int
+        var anchorActiveOffset: Int
     }
 
     private let viewContext: _ViewContext
-    private var slots: [Slot]
+    private var roots: [MountRoot]
     var containerHandle: LayoutContainer.Handle?
 
     init(context: borrowing _ViewContext) {
         self.viewContext = copy context
-        self.slots = []
+        self.roots = []
     }
 
     func collect(into ops: inout LayoutPass, context: inout _CommitContext) {
         if containerHandle == nil { containerHandle = ops.containerHandle }
-        var index = 0
-        while index < slots.count {
-            slots[index].root.collect(into: &ops, &context)
 
-            if slots[index].state == .leaving, slots[index].root.isFullyRemoved {
-                var slot = slots.remove(at: index)
-                slot.root.unmount(&context)
+        var index = 0
+        while index < roots.count {
+            let shouldPrune = roots[index].collectAndMaybePrune(into: &ops, context: &context)
+            if shouldPrune {
+                var root = roots.remove(at: index)
+                root.unmount(&context)
                 continue
             }
             index += 1
@@ -35,8 +36,8 @@ final class MountRootContainer {
     }
 
     func unmount(_ context: inout _CommitContext) {
-        for i in slots.indices { slots[i].root.unmount(&context) }
-        slots.removeAll()
+        for i in roots.indices { roots[i].unmount(&context) }
+        roots.removeAll()
     }
 
     func reportLayoutChange(_ tx: inout _TransactionContext) {
@@ -62,19 +63,19 @@ final class MountRootContainer {
         ctx: inout _MountContext,
         makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> Node
     ) {
-        precondition(slots.isEmpty, "mount called on non-empty MountRootContainer")
+        precondition(roots.isEmpty, "mount called on non-empty MountRootContainer")
         guard !keys.isEmpty else { return }
 
-        var mountedSlots: [Slot] = []
-        mountedSlots.reserveCapacity(keys.underestimatedCount)
+        var mountedRoots: [MountRoot] = []
+        mountedRoots.reserveCapacity(keys.underestimatedCount)
         var seen: Set<_ViewKey> = []
         seen.reserveCapacity(keys.underestimatedCount)
 
         var index = 0
         for key in keys {
             precondition(seen.insert(key).inserted, "duplicate key in mount: \(key)")
-            mountedSlots.append(
-                makeMountSlot(
+            mountedRoots.append(
+                makeMountRoot(
                     key: key,
                     ctx: &ctx,
                     makeNode: { context, mountCtx in
@@ -84,7 +85,7 @@ final class MountRootContainer {
             )
             index += 1
         }
-        slots = mountedSlots
+        roots = mountedRoots
     }
 
     func patch<Node: _Reconcilable>(
@@ -94,83 +95,139 @@ final class MountRootContainer {
         patchNode: (Int, inout Node, inout _TransactionContext) -> Void
     ) {
         assertNoPendingRoots()
-        let newKeysArray = Array(newKeys)
-        assertNoDuplicateKeys(newKeysArray)
 
-        let oldActiveKeys = activeKeys()
+        let newKeysArray = Array(newKeys)
+        let newKeyToIndex = makeKeyIndexMap(newKeysArray)
+
         var didStructureChange = false
         var didReportLayoutChange = false
 
-        if !oldActiveKeys.isEmpty || !newKeysArray.isEmpty {
-            let diff = newKeysArray.difference(from: oldActiveKeys).inferringMoves()
-            var moversCache: [Int: Slot] = [:]
+        func reportLayoutChangeIfNeeded(
+            _ tx: inout _TransactionContext,
+            _ didReportLayoutChange: inout Bool
+        ) {
+            if !didReportLayoutChange {
+                reportLayoutChange(&tx)
+                didReportLayoutChange = true
+            }
+        }
 
-            for change in diff {
-                switch change {
-                case let .remove(offset, _, associatedWith: movedTo):
-                    let slotIndex = slotIndex(forActiveOffset: offset)
-                    if movedTo != nil {
-                        var slot = slots.remove(at: slotIndex)
-                        slot.root.markMoved(&tx)
-                        moversCache[offset] = slot
-                    } else {
-                        if !didReportLayoutChange {
-                            reportLayoutChange(&tx)
-                            didReportLayoutChange = true
-                        }
-                        slots[slotIndex].state = .leaving
-                        slots[slotIndex].root.startRemoval(&tx, handle: containerHandle)
-                    }
-                    didStructureChange = true
-                case let .insert(offset, key, associatedWith: movedFrom):
-                    var insertionIndex = slotInsertionIndex(forActiveOffset: offset)
-                    let slot: Slot
+        var activeByKey: [_ViewKey: ActiveInfo] = [:]
+        activeByKey.reserveCapacity(roots.count)
+        var leavingByKey: [_ViewKey: MountRoot] = [:]
+        leavingByKey.reserveCapacity(roots.count)
+        var leavingAnchors: [LeavingAnchor] = []
+        leavingAnchors.reserveCapacity(roots.count)
 
-                    if let movedFrom {
-                        guard let moved = moversCache.removeValue(forKey: movedFrom) else {
-                            preconditionFailure("mover not found in cache")
-                        }
-                        slot = moved
-                    } else if let leavingIndex = leavingSlotIndex(for: key) {
-                        if !didReportLayoutChange {
-                            reportLayoutChange(&tx)
-                            didReportLayoutChange = true
-                        }
-                        var revived = slots.remove(at: leavingIndex)
-                        revived.state = .active
-                        revived.root.cancelRemoval(&tx, handle: containerHandle)
-                        if leavingIndex < insertionIndex { insertionIndex -= 1 }
-                        slot = revived
-                    } else {
-                        slot = makePatchSlot(
-                            key: key,
-                            transaction: tx.transaction,
-                            makeNode: { context, mountCtx in
-                                makeNode(offset, context, &mountCtx)
-                            }
-                        )
-                    }
+        var activeOffset = 0
+        for (sourceIndex, root) in roots.enumerated() {
+            if root.isActive {
+                precondition(activeByKey[root.key] == nil, "duplicate active key in roots: \(root.key)")
+                activeByKey[root.key] = .init(
+                    root: root,
+                    sourceIndex: sourceIndex,
+                    oldActiveOffset: activeOffset
+                )
+                activeOffset += 1
+            } else {
+                precondition(leavingByKey[root.key] == nil, "duplicate leaving key in roots: \(root.key)")
+                leavingByKey[root.key] = root
+                leavingAnchors.append(
+                    .init(
+                        key: root.key,
+                        sourceIndex: sourceIndex,
+                        anchorActiveOffset: activeOffset
+                    )
+                )
+            }
+        }
 
-                    slots.insert(slot, at: insertionIndex)
+        let activeKeysSnapshot = Array(activeByKey.keys)
+        for key in activeKeysSnapshot where newKeyToIndex[key] == nil {
+            guard var removed = activeByKey.removeValue(forKey: key) else {
+                preconditionFailure("missing active key during removal: \(key)")
+            }
+            reportLayoutChangeIfNeeded(&tx, &didReportLayoutChange)
+            removed.root.beginLeaving(&tx, handle: containerHandle)
+            leavingByKey[key] = removed.root
+            leavingAnchors.append(
+                .init(
+                    key: key,
+                    sourceIndex: removed.sourceIndex,
+                    anchorActiveOffset: removed.oldActiveOffset
+                )
+            )
+            didStructureChange = true
+        }
+
+        var targetActiveRoots: [MountRoot] = []
+        targetActiveRoots.reserveCapacity(newKeysArray.count)
+
+        for (newActiveOffset, key) in newKeysArray.enumerated() {
+            if var reusedActive = activeByKey.removeValue(forKey: key) {
+                if reusedActive.oldActiveOffset != newActiveOffset {
+                    reusedActive.root.markMoved(&tx)
                     didStructureChange = true
                 }
+                targetActiveRoots.append(reusedActive.root)
+            } else if var revived = leavingByKey.removeValue(forKey: key) {
+                reportLayoutChangeIfNeeded(&tx, &didReportLayoutChange)
+                revived.reviveFromLeaving(&tx, handle: containerHandle)
+                targetActiveRoots.append(revived)
+                didStructureChange = true
+            } else {
+                targetActiveRoots.append(
+                    makePatchRoot(
+                        key: key,
+                        transaction: tx.transaction,
+                        makeNode: { context, mountCtx in
+                            makeNode(newActiveOffset, context, &mountCtx)
+                        }
+                    )
+                )
+                didStructureChange = true
             }
-
-            precondition(moversCache.isEmpty, "mover cache is not empty")
         }
 
-        var activeSlotIndicesByKey: [_ViewKey: Int] = [:]
-        activeSlotIndicesByKey.reserveCapacity(newKeysArray.count)
-        for index in slots.indices where slots[index].state == .active {
-            activeSlotIndicesByKey[slots[index].key] = index
+        precondition(activeByKey.isEmpty, "active roots left after reconcile")
+
+        leavingAnchors.sort { lhs, rhs in
+            lhs.sourceIndex < rhs.sourceIndex
         }
 
-        for index in newKeysArray.indices {
-            guard let slotIndex = activeSlotIndicesByKey[newKeysArray[index]] else {
-                preconditionFailure("missing active key after patch diff: \(newKeysArray[index])")
+        var leavingByOffset: [Int: [MountRoot]] = [:]
+        leavingByOffset.reserveCapacity(leavingAnchors.count)
+        for anchor in leavingAnchors {
+            guard let root = leavingByKey[anchor.key] else { continue }
+            let boundedOffset = min(anchor.anchorActiveOffset, targetActiveRoots.count)
+            leavingByOffset[boundedOffset, default: []].append(root)
+        }
+
+        var rebuiltRoots: [MountRoot] = []
+        rebuiltRoots.reserveCapacity(targetActiveRoots.count + leavingByKey.count)
+        for activeIndex in 0...targetActiveRoots.count {
+            if let leavingRoots = leavingByOffset[activeIndex] {
+                rebuiltRoots.append(contentsOf: leavingRoots)
             }
-            if slots[slotIndex].root.isPending { continue }
-            let patched = slots[slotIndex].root.withMountedNode(as: Node.self) { node in
+            if activeIndex < targetActiveRoots.count {
+                rebuiltRoots.append(targetActiveRoots[activeIndex])
+            }
+        }
+        roots = rebuiltRoots
+
+        var activeRootIndicesByKey: [_ViewKey: Int] = [:]
+        activeRootIndicesByKey.reserveCapacity(newKeysArray.count)
+        for index in roots.indices where roots[index].isActive {
+            precondition(activeRootIndicesByKey[roots[index].key] == nil, "duplicate active key after rebuild")
+            activeRootIndicesByKey[roots[index].key] = index
+        }
+
+        for (index, key) in newKeysArray.enumerated() {
+            guard let rootIndex = activeRootIndicesByKey[key] else {
+                preconditionFailure("missing active key after reconcile: \(key)")
+            }
+            if roots[rootIndex].isPending { continue }
+            let patched = roots[rootIndex].patchMounted(as: Node.self) { node in
                 patchNode(index, &node, &tx)
             }
             precondition(patched, "expected mounted child during keyed patch")
@@ -181,82 +238,50 @@ final class MountRootContainer {
         }
     }
 
-    private func activeKeys() -> [_ViewKey] {
-        var keys: [_ViewKey] = []
-        keys.reserveCapacity(slots.count)
-        for slot in slots where slot.state == .active {
-            keys.append(slot.key)
-        }
-        return keys
-    }
-
-    private func slotIndex(forActiveOffset activeOffset: Int) -> Int {
-        var activeCount = 0
-        for index in slots.indices where slots[index].state == .active {
-            if activeCount == activeOffset { return index }
-            activeCount += 1
-        }
-        preconditionFailure("active offset out of range: \(activeOffset)")
-    }
-
-    private func slotInsertionIndex(forActiveOffset activeOffset: Int) -> Int {
-        var activeCount = 0
-        for index in slots.indices {
-            if activeCount == activeOffset { return index }
-            if slots[index].state == .active {
-                activeCount += 1
-            }
-        }
-        precondition(activeCount == activeOffset, "active insertion offset out of range: \(activeOffset)")
-        return slots.count
-    }
-
-    private func leavingSlotIndex(for key: _ViewKey) -> Int? {
-        slots.firstIndex { $0.key == key && $0.state == .leaving }
-    }
-
     private func assertNoPendingRoots() {
         precondition(
-            !slots.contains(where: { $0.root.isPending }),
+            !roots.contains(where: \.isPending),
             "double patch of pending MountRoot in MountRootContainer"
         )
     }
 
-    private func assertNoDuplicateKeys(_ keys: [_ViewKey]) {
-        var seen: Set<_ViewKey> = []
-        seen.reserveCapacity(keys.count)
-        for key in keys {
-            precondition(seen.insert(key).inserted, "duplicate key in patch: \(key)")
+    private func makeKeyIndexMap(_ keys: [_ViewKey]) -> [_ViewKey: Int] {
+        var map: [_ViewKey: Int] = [:]
+        map.reserveCapacity(keys.count)
+        for (index, key) in keys.enumerated() {
+            precondition(map[key] == nil, "duplicate key in patch: \(key)")
+            map[key] = index
         }
+        return map
     }
 
-    private func makeMountSlot<Node: _Reconcilable>(
+    private func makeMountRoot<Node: _Reconcilable>(
         key: _ViewKey,
         ctx: inout _MountContext,
         makeNode: (borrowing _ViewContext, inout _MountContext) -> Node
-    ) -> Slot {
-        let root = MountRoot(
+    ) -> MountRoot {
+        MountRoot(
+            key: key,
             eager: viewContext,
             ctx: &ctx,
             create: { context, mountCtx in
                 AnyReconcilable(makeNode(context, &mountCtx))
             }
         )
-        return .init(key: key, state: .active, root: root)
     }
 
-    private func makePatchSlot<Node: _Reconcilable>(
+    private func makePatchRoot<Node: _Reconcilable>(
         key: _ViewKey,
         transaction: Transaction,
         makeNode: @escaping (borrowing _ViewContext, inout _MountContext) -> Node
-    ) -> Slot {
-        let root = MountRoot(
+    ) -> MountRoot {
+        MountRoot(
+            key: key,
             pending: viewContext,
             transaction: transaction,
             create: { context, mountCtx in
                 AnyReconcilable(makeNode(context, &mountCtx))
             }
         )
-        return .init(key: key, state: .active, root: root)
     }
 }
