@@ -68,12 +68,9 @@ final class MountRootContainer {
 
         var mountedRoots: [MountRoot] = []
         mountedRoots.reserveCapacity(keys.underestimatedCount)
-        var seen: Set<_ViewKey> = []
-        seen.reserveCapacity(keys.underestimatedCount)
 
         var index = 0
         for key in keys {
-            precondition(seen.insert(key).inserted, "duplicate key in mount: \(key)")
             mountedRoots.append(
                 makeMountRoot(
                     key: key,

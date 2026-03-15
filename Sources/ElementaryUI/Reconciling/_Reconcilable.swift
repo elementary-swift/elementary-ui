@@ -29,6 +29,7 @@ struct AnyReconcilable {
         box.unmount(&context)
     }
 
+    // TODO: make this mutating to prepare for ~Copyable all the way
     func modify<R: _Reconcilable>(as type: R.Type = R.self, _ body: (inout R) -> Void) {
         let box = unsafeDowncast(self.box, to: _TypedBox<R>.self)
         body(&box.node)

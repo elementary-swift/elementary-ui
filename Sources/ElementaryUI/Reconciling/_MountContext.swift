@@ -1,36 +1,28 @@
 public struct _MountContext: ~Copyable {
-    enum TransitionScope {
-        case root(transaction: Transaction, coordinator: MountRootTransitionCoordinator?)
-        case nonRoot
-    }
-
-    struct MountedOutput {
-        let layoutNodes: [LayoutNode]
-        let transitionCoordinator: MountRootTransitionCoordinator?
-    }
-
     private var layoutNodes: [LayoutNode] = []
     private(set) var isStatic: Bool = true
 
+    private var transitionCoordinator: MountRootTransitionCoordinator?
+    private var isRoot: Bool
+
+    // NOTE: we could use a fancy Inout<_CommitContext> here.. but maybe not worth it
     let scheduler: Scheduler
     let dom: any DOM.Interactor
     let currentFrameTime: Double
     let transaction: Transaction
-
-    private var transitionScope: TransitionScope
 
     fileprivate init(
         dom: any DOM.Interactor,
         scheduler: Scheduler,
         currentFrameTime: Double,
         transaction: Transaction,
-        transitionScope: TransitionScope
+        isRoot: Bool
     ) {
         self.dom = dom
         self.scheduler = scheduler
         self.currentFrameTime = currentFrameTime
         self.transaction = transaction
-        self.transitionScope = transitionScope
+        self.isRoot = isRoot
     }
 
     mutating func appendStaticElement(_ node: DOM.Node) {
@@ -46,15 +38,12 @@ public struct _MountContext: ~Copyable {
     }
 
     mutating func appendTransitionParticipant(_ participant: any MountRootTransitionParticipant) -> TransitionPhase {
-        switch transitionScope {
-        case .root(let transaction, let coordinator):
-            let coordinator = coordinator ?? MountRootTransitionCoordinator(mountTransaction: transaction)
-            let phase = coordinator.register(participant)
-            transitionScope = .root(transaction: transaction, coordinator: coordinator)
-            return phase
-        case .nonRoot:
-            return .identity
-        }
+        guard isRoot else { return .identity }
+
+        let coordinator = transitionCoordinator ?? MountRootTransitionCoordinator(mountTransaction: transaction)
+        let phase = coordinator.register(participant)
+        self.transitionCoordinator = coordinator
+        return phase
     }
 
     func withMountRootContext<R>(_ body: (consuming _MountContext) -> R) -> R {
@@ -64,16 +53,16 @@ public struct _MountContext: ~Copyable {
                 scheduler: scheduler,
                 currentFrameTime: currentFrameTime,
                 transaction: transaction,
-                transitionScope: .root(transaction: transaction, coordinator: nil)
+                isRoot: true
             )
         )
     }
 
     mutating func withTransitionBoundary<R>(_ body: (inout _MountContext) -> R) -> R {
-        let previousScope = transitionScope
-        transitionScope = .nonRoot
+        let previousIsRoot = isRoot
+        isRoot = false
         let result = body(&self)
-        transitionScope = previousScope
+        isRoot = previousIsRoot
         return result
     }
 
@@ -84,7 +73,7 @@ public struct _MountContext: ~Copyable {
                 scheduler: scheduler,
                 currentFrameTime: currentFrameTime,
                 transaction: transaction,
-                transitionScope: .nonRoot
+                isRoot: false
             )
         )
     }
@@ -98,29 +87,9 @@ public struct _MountContext: ~Copyable {
         return body(&commitContext)
     }
 
-    consuming func takeLayoutNodes() -> [LayoutNode] {
-        layoutNodes
-    }
-
-    consuming func takeTransitionCoordinatorIfNeeded() -> MountRootTransitionCoordinator? {
-        switch transitionScope {
-        case .root(_, let coordinator):
-            coordinator
-        case .nonRoot:
-            nil
-        }
-    }
-
-    consuming func takeMountedOutput() -> MountedOutput {
-        let transitionCoordinator: MountRootTransitionCoordinator?
-        switch transitionScope {
-        case .root(_, let coordinator):
-            transitionCoordinator = coordinator
-        case .nonRoot:
-            transitionCoordinator = nil
-        }
-
-        return .init(layoutNodes: layoutNodes, transitionCoordinator: transitionCoordinator)
+    // TODO: rename, maybe this guys "creates" the MountRoot?
+    consuming func takeMountedOutput() -> ([LayoutNode], MountRootTransitionCoordinator?) {
+        (layoutNodes, transitionCoordinator)
     }
 
     consuming func mountInDOMNode(_ domNode: DOM.Node, observers: [any DOMLayoutObserver]) -> LayoutContainer? {
@@ -172,7 +141,7 @@ extension _CommitContext {
                 scheduler: scheduler,
                 currentFrameTime: currentFrameTime,
                 transaction: transaction,
-                transitionScope: .root(transaction: transaction, coordinator: nil)
+                isRoot: true
             )
         )
     }

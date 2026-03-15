@@ -1,5 +1,3 @@
-// TODO: rethink this whole API - maybe once usage of async is clearer
-// TODO: main-actor stuff very unclear at the moment, ideally not needed at all
 final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
     private var rootChild: AnyReconcilable?
     private var rootContainer: LayoutContainer?
@@ -26,7 +24,8 @@ final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
                         let child = AnyReconcilable(
                             RootView._makeNode(rootView, context: rootViewContext, ctx: &ctx)
                         )
-                        let layoutNodes = ctx.takeLayoutNodes()
+                        // TODO: clean this up - this should be a mount root contaienrs
+                        let (layoutNodes, _) = ctx.takeMountedOutput()
                         return (child, layoutNodes)
                     }
 

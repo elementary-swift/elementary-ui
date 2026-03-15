@@ -50,14 +50,14 @@ struct MountRoot {
         self.state = .mounted(.init(node: nil, layoutNodes: [], status: .unchanged))
 
         let context = copy seedContext
-        let (node, mountedOutput) = ctx.withMountRootContext { (rootCtx: consuming _MountContext) in
+        let (node, layoutNodes, transitionCoordinator) = ctx.withMountRootContext { (rootCtx: consuming _MountContext) in
             var rootCtx = consume rootCtx
             let node = create(context, &rootCtx)
-            let mountedOutput = rootCtx.takeMountedOutput()
-            return (node, mountedOutput)
+            let (layoutNodes, transitionCoordinator) = rootCtx.takeMountedOutput()
+            return (node, layoutNodes, transitionCoordinator)
         }
-        self.transitionCoordinator = mountedOutput.transitionCoordinator
-        self.state = .mounted(.init(node: node, layoutNodes: mountedOutput.layoutNodes, status: .unchanged))
+        self.transitionCoordinator = transitionCoordinator
+        self.state = .mounted(.init(node: node, layoutNodes: layoutNodes, status: .unchanged))
     }
 
     var isActive: Bool {
@@ -179,14 +179,14 @@ struct MountRoot {
     private mutating func mount(_ ctx: inout _CommitContext) {
         guard case let .pending(seedContext, create) = state else { return }
 
-        let (node, mountedOutput) = ctx.withMountContext(transaction: mountTransaction) { mountCtx in
+        let (node, layoutNodes, transitionCoordinator) = ctx.withMountContext(transaction: mountTransaction) { mountCtx in
             var mountCtx = consume mountCtx
             let node = create(seedContext, &mountCtx)
-            let mountedOutput = mountCtx.takeMountedOutput()
-            return (node, mountedOutput)
+            let (layoutNodes, transitionCoordinator) = mountCtx.takeMountedOutput()
+            return (node, layoutNodes, transitionCoordinator)
         }
-        transitionCoordinator = mountedOutput.transitionCoordinator
-        state = .mounted(.init(node: node, layoutNodes: mountedOutput.layoutNodes, status: .added))
+        self.transitionCoordinator = transitionCoordinator
+        state = .mounted(.init(node: node, layoutNodes: layoutNodes, status: .added))
         pendingPrunedBeforeMount = false
 
         transitionCoordinator?.scheduleEnterIdentityIfNeeded(scheduler: ctx.scheduler)
