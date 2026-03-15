@@ -15,64 +15,55 @@ final class MountContainer {
     private var slots: [Slot]
     var containerHandle: LayoutContainer.Handle?
 
-    init(context: consuming _ViewContext) {
-        self.viewContext = context
-        self.slots = []
-        self.containerHandle = nil
+    private init(context: borrowing _ViewContext, slots: [Slot]) {
+        self.viewContext = copy context
+        self.slots = slots
     }
 
-    init<Node: _Reconcilable>(
+    convenience init<Node: _Reconcilable>(
         mountedKey key: _ViewKey,
-        context: consuming _ViewContext,
+        context: borrowing _ViewContext,
         ctx: inout _MountContext,
         makeNode: (borrowing _ViewContext, inout _MountContext) -> Node
     ) {
-        self.viewContext = context
-        self.slots = []
-        self.containerHandle = nil
-        slots = [
-            Slot.mounted(
-                key: key,
-                index: 0,
-                viewContext: viewContext,
-                ctx: &ctx,
-                makeNode: { _, context, mountCtx in
-                    makeNode(context, &mountCtx)
-                }
-            )
-        ]
+        self.init(
+            context: context,
+            slots: [
+                Slot.mounted(
+                    key: key,
+                    index: 0,
+                    viewContext: context,
+                    ctx: &ctx,
+                    makeNode: { _, context, mountCtx in
+                        makeNode(context, &mountCtx)
+                    }
+                )
+            ]
+        )
     }
 
-    init<Node: _Reconcilable>(
+    convenience init<Node: _Reconcilable>(
         mountedKeys keys: some Collection<_ViewKey>,
-        context: consuming _ViewContext,
+        context: borrowing _ViewContext,
         ctx: inout _MountContext,
         makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> Node
     ) {
-        self.viewContext = context
-        self.slots = []
-        self.containerHandle = nil
         guard !keys.isEmpty else {
+            self.init(context: context, slots: [])
             return
         }
-
-        var mountedSlots: [Slot] = []
-        mountedSlots.reserveCapacity(keys.underestimatedCount)
-
-        var index = 0
-        for key in keys {
-            mountedSlots.append(
+        self.init(
+            context: context,
+            slots: keys.enumerated().map { (index, key) in
                 Slot.mounted(
                     key: key,
                     index: index,
-                    viewContext: viewContext,
+                    viewContext: context,
                     ctx: &ctx,
                     makeNode: makeNode
                 )
-            )
-            index += 1
-        }
-        slots = mountedSlots
+            }
+        )
     }
 
     func collect(into ops: inout LayoutPass, context: inout _CommitContext) {
