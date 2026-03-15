@@ -1,5 +1,5 @@
 public struct _KeyedNode: _Reconcilable {
-    let container: MountRootContainer
+    let container: MountContainer
 
     init<Node: _Reconcilable>(
         keys: [_ViewKey],
@@ -7,8 +7,13 @@ public struct _KeyedNode: _Reconcilable {
         ctx: inout _MountContext,
         makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> Node
     ) {
-        self.container = MountRootContainer(context: context)
-        container.mount(keys: keys, ctx: &ctx, makeNode: makeNode)
+        let containerContext = copy context
+        self.container = MountContainer(
+            mountedKeys: keys,
+            context: consume containerContext,
+            ctx: &ctx,
+            makeNode: makeNode
+        )
         ctx.appendContainer(container)
     }
 
@@ -18,12 +23,14 @@ public struct _KeyedNode: _Reconcilable {
         ctx: inout _MountContext,
         makeNode: (borrowing _ViewContext, inout _MountContext) -> Node
     ) {
-        self.init(
-            keys: [key],
-            context: context,
+        let containerContext = copy context
+        self.container = MountContainer(
+            mountedKey: key,
+            context: consume containerContext,
             ctx: &ctx,
-            makeNode: { _, context, ctx in makeNode(context, &ctx) }
+            makeNode: makeNode
         )
+        ctx.appendContainer(container)
     }
 
     mutating func patch<Node: _Reconcilable>(

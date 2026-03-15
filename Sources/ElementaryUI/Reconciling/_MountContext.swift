@@ -33,7 +33,7 @@ public struct _MountContext: ~Copyable {
         appendLayoutNode(.textNode(node))
     }
 
-    mutating func appendContainer(_ container: MountRootContainer) {
+    mutating func appendContainer(_ container: MountContainer) {
         appendLayoutNode(.container(container))
     }
 
@@ -87,7 +87,7 @@ public struct _MountContext: ~Copyable {
         return body(&commitContext)
     }
 
-    // TODO: rename, maybe this guys "creates" the MountRoot?
+    // TODO: rename
     consuming func takeMountedOutput() -> ([LayoutNode], MountRootTransitionCoordinator?) {
         (layoutNodes, transitionCoordinator)
     }

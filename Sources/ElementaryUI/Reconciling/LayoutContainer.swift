@@ -131,7 +131,7 @@ final class LayoutContainer {
 enum LayoutNode {
     case elementNode(DOM.Node)
     case textNode(DOM.Node)
-    case container(MountRootContainer)
+    case container(MountContainer)
 
     func collect(into ops: inout LayoutPass, context: inout _CommitContext) {
         switch self {

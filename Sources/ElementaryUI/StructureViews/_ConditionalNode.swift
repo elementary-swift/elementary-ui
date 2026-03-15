@@ -2,7 +2,7 @@ private let keyA = _ViewKey(0)
 private let keyB = _ViewKey(1)
 
 public struct _ConditionalNode: _Reconcilable {
-    let container: MountRootContainer
+    let container: MountContainer
 
     init<Node: _Reconcilable>(
         isA: Bool,
@@ -10,9 +10,14 @@ public struct _ConditionalNode: _Reconcilable {
         ctx: inout _MountContext,
         makeActive: (borrowing _ViewContext, inout _MountContext) -> Node
     ) {
-        self.container = MountRootContainer(context: context)
         let initialKey = isA ? keyA : keyB
-        container.mount(key: initialKey, ctx: &ctx, makeNode: makeActive)
+        let containerContext = copy context
+        self.container = MountContainer(
+            mountedKey: initialKey,
+            context: consume containerContext,
+            ctx: &ctx,
+            makeNode: makeActive
+        )
         ctx.appendContainer(container)
     }
 

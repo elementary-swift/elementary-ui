@@ -222,6 +222,27 @@ struct DOMPatchingTests {
     }
 
     @Test
+    func updatesPendingKeyedInsertionWithLatestPatchBeforeCommit() {
+        let state = KeyedItemState()
+        let dom = TestDOM()
+
+        dom.mount {
+            ForEach(state.items, key: \.id) { item in
+                p { item.value }
+            }
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        state.items = [.init(id: 1, value: "A")]
+        state.items = [.init(id: 1, value: "B")]
+        dom.runNextFrame()
+
+        #expect(!dom.ops.contains(.createText("A")))
+        #expect(dom.ops.contains(.createText("B")))
+    }
+
+    @Test
     func patchesKeyedEmptyList() {
         let state = StringListState(["A", "B", "C"])
         let ops = patchOps {
@@ -258,6 +279,25 @@ struct DOMPatchingTests {
                 .removeChild(parent: "<>", child: "A"),
             ]
         )
+    }
+
+    @Test
+    func duplicateKeysAreUndefinedButDoNotTrap() {
+        let state = StringListState(["A", "B"])
+        let dom = TestDOM()
+
+        dom.mount {
+            ForEach(state.items, key: { _ in 0 }) { item in
+                p { item }
+            }
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        state.items = ["X", "Y", "Z"]
+        dom.runNextFrame()
+
+        #expect(!dom.ops.isEmpty)
     }
 
     @Test
@@ -425,6 +465,20 @@ private class StringListState {
     var items: [String]
 
     init(_ items: [String] = []) {
+        self.items = items
+    }
+}
+
+private struct KeyedItem {
+    let id: Int
+    let value: String
+}
+
+@Reactive
+private class KeyedItemState {
+    var items: [KeyedItem]
+
+    init(_ items: [KeyedItem] = []) {
         self.items = items
     }
 }

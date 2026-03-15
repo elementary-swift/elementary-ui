@@ -129,6 +129,7 @@ extension _FunctionNode: _Reconcilable {
         self.state = nil
         self.value = nil
         self.context = nil
+        self.asFunctionNode = nil
     }
 }
 
