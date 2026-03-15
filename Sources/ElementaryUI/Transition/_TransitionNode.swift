@@ -15,16 +15,10 @@ public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
         self.value = view
         self.placeholderView = PlaceholderContentView<T>(makeNodeFn: self.makePlaceholderNode)
 
-        let initialPhase: TransitionPhase
-        if ctx.transitionDepth == 0, let sink = ctx.transitionRegistrationSink {
-            initialPhase = sink.register(self)
-        } else {
-            initialPhase = .identity
+        let initialPhase = ctx.appendTransitionParticipant(self)
+        self.node = ctx.withTransitionBoundary { childCtx in
+            makeInitialNode(for: initialPhase, context: context, ctx: &childCtx)
         }
-
-        ctx.transitionDepth += 1
-        self.node = makeInitialNode(for: initialPhase, context: context, ctx: &ctx)
-        ctx.transitionDepth -= 1
     }
 
     func patchWrappedContent(_ view: consuming _TransitionView<T, V>, tx: inout _TransactionContext) {

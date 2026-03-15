@@ -23,7 +23,8 @@ struct MountRoot {
 
     private var state: PayloadState
     private var pendingPrunedBeforeMount: Bool = false
-    private let transitionCoordinator: MountRootTransitionCoordinator
+    private var transitionCoordinator: MountRootTransitionCoordinator? = nil
+    private let mountTransaction: Transaction
 
     init(
         key: _ViewKey,
@@ -33,8 +34,8 @@ struct MountRoot {
     ) {
         self.key = key
         self.placementRole = .active
+        self.mountTransaction = transaction
         self.state = .pending(seedContext: copy seedContext, create: create)
-        self.transitionCoordinator = .init(transaction: transaction, enteringPending: true)
     }
 
     init(
@@ -45,18 +46,18 @@ struct MountRoot {
     ) {
         self.key = key
         self.placementRole = .active
-        self.transitionCoordinator = .init(transaction: ctx.transaction, enteringPending: false)
+        self.mountTransaction = ctx.transaction
         self.state = .mounted(.init(node: nil, layoutNodes: [], status: .unchanged))
 
         let context = copy seedContext
-        let registrationSink = transitionCoordinator.makeRegistrationSink()
-        let (node, layoutNodes) = ctx.withChildContext { (childCtx: consuming _MountContext) in
-            childCtx.configureMountRootTransition(sink: registrationSink)
-            let node = create(context, &childCtx)
-            let layoutNodes = childCtx.takeLayoutNodes()
-            return (node, layoutNodes)
+        let (node, mountedOutput) = ctx.withMountRootContext { (rootCtx: consuming _MountContext) in
+            var rootCtx = consume rootCtx
+            let node = create(context, &rootCtx)
+            let mountedOutput = rootCtx.takeMountedOutput()
+            return (node, mountedOutput)
         }
-        self.state = .mounted(.init(node: node, layoutNodes: layoutNodes, status: .unchanged))
+        self.transitionCoordinator = mountedOutput.transitionCoordinator
+        self.state = .mounted(.init(node: node, layoutNodes: mountedOutput.layoutNodes, status: .unchanged))
     }
 
     var isActive: Bool {
@@ -83,7 +84,7 @@ struct MountRoot {
                 handle?.reportLeavingElement(element, &tx)
             }
 
-            let shouldDeferRemoval = transitionCoordinator.beginRemoval(tx: &tx, handle: handle)
+            let shouldDeferRemoval = transitionCoordinator?.beginRemoval(tx: &tx, handle: handle) ?? false
             if !shouldDeferRemoval {
                 mounted.status = .removed
             }
@@ -100,10 +101,10 @@ struct MountRoot {
             pendingPrunedBeforeMount = false
         case .mounted(var mounted):
             let isImmediatelyRemoved = mounted.status == .removed
-            let isDeferredLeaving = transitionCoordinator.isRemovalInFlight
+            let isDeferredLeaving = transitionCoordinator?.isRemovalInFlight ?? false
             guard isImmediatelyRemoved || isDeferredLeaving else { return }
 
-            transitionCoordinator.cancelRemoval(tx: &tx)
+            transitionCoordinator?.cancelRemoval(tx: &tx)
             mounted.status = .moved
             for element in mountedElementReferences(mounted.layoutNodes) {
                 handle?.reportReenteringElement(element, &tx)
@@ -125,7 +126,7 @@ struct MountRoot {
             mount(&context)
             return collectAndMaybePrune(into: &ops, context: &context)
         case .mounted(var mounted):
-            if mounted.status != .removed, transitionCoordinator.consumeDeferredRemovalReadySignal() {
+            if mounted.status != .removed, transitionCoordinator?.consumeDeferredRemovalReadySignal() == true {
                 mounted.status = .removed
             }
 
@@ -178,17 +179,17 @@ struct MountRoot {
     private mutating func mount(_ ctx: inout _CommitContext) {
         guard case let .pending(seedContext, create) = state else { return }
 
-        let (node, layoutNodes) = ctx.withMountContext(transaction: transitionCoordinator.mountTransaction()) { mountCtx in
+        let (node, mountedOutput) = ctx.withMountContext(transaction: mountTransaction) { mountCtx in
             var mountCtx = consume mountCtx
-            mountCtx.configureMountRootTransition(sink: transitionCoordinator.makeRegistrationSink())
             let node = create(seedContext, &mountCtx)
-            let layoutNodes = mountCtx.takeLayoutNodes()
-            return (node, layoutNodes)
+            let mountedOutput = mountCtx.takeMountedOutput()
+            return (node, mountedOutput)
         }
-        state = .mounted(.init(node: node, layoutNodes: layoutNodes, status: .added))
+        transitionCoordinator = mountedOutput.transitionCoordinator
+        state = .mounted(.init(node: node, layoutNodes: mountedOutput.layoutNodes, status: .added))
         pendingPrunedBeforeMount = false
 
-        transitionCoordinator.scheduleEnterIdentityIfNeeded(scheduler: ctx.scheduler)
+        transitionCoordinator?.scheduleEnterIdentityIfNeeded(scheduler: ctx.scheduler)
     }
 
     private func mountedElementReferences(_ layoutNodes: [LayoutNode]) -> [DOM.Node] {

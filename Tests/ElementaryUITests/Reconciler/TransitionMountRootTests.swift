@@ -6,6 +6,21 @@ import Testing
 @Suite(.serialized)
 struct TransitionMountRootTests {
     @Test
+    func initialMountTransitionStartsAtIdentity() {
+        let recorder = TransitionPhaseRecorder()
+        let dom = TestDOM()
+
+        dom.mount {
+            p {}
+                .transition(RecordingFadeTransition(recorder: recorder), animation: .linear(duration: 0.35))
+        }
+        dom.runNextFrame()
+
+        #expect(recorder.phases.first == .identity)
+        #expect(!recorder.phases.contains(.willAppear))
+    }
+
+    @Test
     func topLevelTransitionReceivesEnterSignal() {
         let animation = Animation.linear(duration: 0.35)
         let state = VisibilityState()
@@ -140,6 +155,60 @@ struct TransitionMountRootTests {
         let newPhases = Array(recorder.phases.dropFirst(previousCount))
         #expect(newPhases.contains(.willAppear))
         #expect(dom.ops.contains(.createElement("p")))
+    }
+
+    @Test
+    func transitionInNonRootChildContextDoesNotRegister() {
+        let state = VisibilityState()
+        let recorder = TransitionPhaseRecorder()
+        let dom = TestDOM()
+
+        dom.mount {
+            Group {
+                if state.value {
+                    div {
+                        p {}
+                            .transition(RecordingFadeTransition(recorder: recorder), animation: .linear(duration: 0.35))
+                    }
+                }
+            }
+        }
+        dom.runNextFrame()
+        recorder.reset()
+
+        withAnimation(.linear(duration: 0.35)) {
+            state.value = true
+        }
+        dom.runNextFrame()
+
+        #expect(!recorder.phases.contains(.willAppear))
+        #expect(recorder.phases.contains(.identity))
+    }
+
+    @Test
+    func eagerNestedMountUnderAnimatedTransactionStartsWithWillAppear() {
+        let state = StringItemsState()
+        nonisolated(unsafe) let recorder = TransitionPhaseRecorder()
+        let dom = TestDOM()
+
+        dom.mount {
+            ForEach(state.items, key: \.self) { item in
+                Group {
+                    if item == "A" {
+                        p { item }.transition(RecordingFadeTransition(recorder: recorder))
+                    }
+                }
+            }
+        }
+        dom.runNextFrame()
+        recorder.reset()
+
+        withAnimation(.linear(duration: 0.35)) {
+            state.items = ["A"]
+        }
+        dom.runNextFrame()
+
+        #expect(recorder.phases.contains(.willAppear))
     }
 
     @Test
