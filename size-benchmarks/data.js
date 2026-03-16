@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773645133169,
+  "lastUpdate": 1773675769969,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -1791,6 +1791,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 163.48,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c7e02f81154e972ede7f9ddee4d797bd24fd8fa2",
+          "message": "reworked mounting for more performance (#86)\n\n* WIP: makeNodes in commit phase\n\n* WIP: MountRoot\n\n* WIP: simplify mounting\n\n* context clean up\n\n* WIP: MountRootContainer\n\n* WIP: transitions\n\n* WIP: MountRootContainer\n\n* WIP: MountRootContainer\n\n* _MountContext cleanup\n\n* more clean up\n\n* tiny clean up\n\n* code cleanup\n\n* embedded fix\n\n* a bit more clean up\n\n* removed lifetimes\n\n* format\n\n* different alg (leave this for future PR)",
+          "timestamp": "2026-03-16T16:39:45+01:00",
+          "tree_id": "b1c21b35c8e37bc89169c8ee0e784144a7d219e1",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/c7e02f81154e972ede7f9ddee4d797bd24fd8fa2"
+        },
+        "date": 1773675769191,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 174.13,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 132.5,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 119.34,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 169.27,
             "unit": "kB"
           }
         ]
