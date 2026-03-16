@@ -64,13 +64,13 @@ final class MountRootTransitionCoordinator {
             let animation = transitionEffectiveAnimation(for: participant, transaction: tx.transaction)
             if let animation {
                 pendingExitCompletions += 1
-                tx.withModifiedTransaction({
+                tx.withModifiedTransaction {
                     $0.animation = animation
                     $0.disablesAnimation = false
                     $0.addAnimationCompletion { [coordinator = self, scheduler, handle] in
                         coordinator.notifyExitAnimationCompleted(token: token, scheduler: scheduler, handle: handle)
                     }
-                }) { tx in
+                } run: { tx in
                     participant.mountRootPatchTransitionPhase(.didDisappear, tx: &tx)
                 }
             } else {
@@ -102,17 +102,17 @@ final class MountRootTransitionCoordinator {
         for participant in participants where participant.mountRootIsMounted {
             let animation = transitionEffectiveAnimation(for: participant, transaction: transaction)
             if let animation {
-                tx.withModifiedTransaction({
+                tx.withModifiedTransaction {
                     $0.animation = animation
                     $0.disablesAnimation = false
-                }) { tx in
+                } run: { tx in
                     participant.mountRootPatchTransitionPhase(phase, tx: &tx)
                 }
             } else {
-                tx.withModifiedTransaction({
+                tx.withModifiedTransaction {
                     $0.animation = nil
                     $0.disablesAnimation = false
-                }) { tx in
+                } run: { tx in
                     participant.mountRootPatchTransitionPhase(phase, tx: &tx)
                 }
             }

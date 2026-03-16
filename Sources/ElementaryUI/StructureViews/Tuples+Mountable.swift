@@ -195,7 +195,7 @@ private func __noop_goshDarnValuePacksAreAnnoyingAF(_ v: inout some _Mountable) 
 private func makeNode<V: _Mountable>(
     _ view: consuming V,
     context: borrowing _ViewContext,
-        ctx: inout _MountContext
+    ctx: inout _MountContext
 ) -> V._MountedNode {
     V._makeNode(view, context: context, ctx: &ctx)
 }
