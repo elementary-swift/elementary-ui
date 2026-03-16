@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773219486168,
+  "lastUpdate": 1773675862911,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -1099,6 +1099,85 @@ window.BENCHMARK_DATA = {
           {
             "name": "25_run-clear-memory",
             "value": 3.09,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c7e02f81154e972ede7f9ddee4d797bd24fd8fa2",
+          "message": "reworked mounting for more performance (#86)\n\n* WIP: makeNodes in commit phase\n\n* WIP: MountRoot\n\n* WIP: simplify mounting\n\n* context clean up\n\n* WIP: MountRootContainer\n\n* WIP: transitions\n\n* WIP: MountRootContainer\n\n* WIP: MountRootContainer\n\n* _MountContext cleanup\n\n* more clean up\n\n* tiny clean up\n\n* code cleanup\n\n* embedded fix\n\n* a bit more clean up\n\n* removed lifetimes\n\n* format\n\n* different alg (leave this for future PR)",
+          "timestamp": "2026-03-16T16:39:45+01:00",
+          "tree_id": "b1c21b35c8e37bc89169c8ee0e784144a7d219e1",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/c7e02f81154e972ede7f9ddee4d797bd24fd8fa2"
+        },
+        "date": 1773675862558,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 220.95,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 245.31,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 221.63,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 29.44,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 67.66,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 51.69,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 248.97,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 99.96,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.02,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.55,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 3.08,
             "unit": "MB"
           }
         ]
