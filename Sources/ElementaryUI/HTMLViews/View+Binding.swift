@@ -91,27 +91,30 @@ struct DOMEffectView<Effect: DOMElementModifier, Wrapped: View>: View {
     static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
-        let effect = Effect(value: view.value, upstream: context.modifiers, &tx)
+        let effect = Effect(value: view.value, upstream: context.modifiers)
 
         #if hasFeature(Embedded) && compiler(<6.3)
         if __omg_this_was_annoying_I_am_false {
             // NOTE: 6.2 embedded hack for type inclusion
-            var context = _CommitContext(
+            let commitContext = _CommitContext(
                 dom: JSKitDOMInteractor(),
                 scheduler: Scheduler(dom: JSKitDOMInteractor()),
                 currentFrameTime: 0
             )
             // force inclusion of types used in mount
-            _ = effect.mount(.init(.init()), &context)
+            _ = commitContext.withMountContext(transaction: Transaction()) { mountCtx in
+                var mountCtx = consume mountCtx
+                return effect.mount(.init(.init()), &mountCtx)
+            }
         }
         #endif
 
         var context = copy context
         context.modifiers[Effect.key] = effect
 
-        return .init(state: effect, child: Wrapped._makeNode(view.wrapped, context: context, tx: &tx))
+        return .init(state: effect, child: Wrapped._makeNode(view.wrapped, context: context, ctx: &ctx))
     }
 
     static func _patchNode(

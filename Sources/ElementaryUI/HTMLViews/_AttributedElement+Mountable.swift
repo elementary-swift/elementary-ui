@@ -4,16 +4,16 @@ extension _AttributedElement: _Mountable, View where Content: _Mountable {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
-        let attributeModifier = _AttributeModifier(value: view.attributes, upstream: context.modifiers, &tx)
+        let attributeModifier = _AttributeModifier(value: view.attributes, upstream: context.modifiers)
 
         var context = copy context
         context.modifiers[_AttributeModifier.key] = attributeModifier
 
         return _MountedNode(
             state: attributeModifier,
-            child: Content._makeNode(view.content, context: context, tx: &tx)
+            child: Content._makeNode(view.content, context: context, ctx: &ctx)
         )
     }
 

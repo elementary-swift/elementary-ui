@@ -8,12 +8,15 @@ public struct _KeyedView<Value: View>: View {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         .init(
             key: view.key,
-            child: Value._makeNode(view.value, context: context, tx: &tx),
-            context: context
+            context: context,
+            ctx: &ctx,
+            makeNode: { context, ctx in
+                Value._makeNode(view.value, context: context, ctx: &ctx)
+            }
         )
     }
 
@@ -26,12 +29,11 @@ public struct _KeyedView<Value: View>: View {
             key: view.key,
             context: &tx,
             as: Value._MountedNode.self,
-            makeOrPatchNode: { node, context, tx in
-                if node == nil {
-                    node = Value._makeNode(view.value, context: context, tx: &tx)
-                } else {
-                    Value._patchNode(view.value, node: &node!, tx: &tx)
-                }
+            makeNode: { context, ctx in
+                Value._makeNode(view.value, context: context, ctx: &ctx)
+            },
+            patchNode: { node, tx in
+                Value._patchNode(view.value, node: &node, tx: &tx)
             }
         )
     }

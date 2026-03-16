@@ -4,16 +4,23 @@ extension _HTMLArray: _Mountable, View where Element: View {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
-        _MountedNode(
-            view.value.enumerated().map { (index, element) in
-                (
-                    key: _ViewKey(String(index)),
-                    node: Element._makeNode(element, context: context, tx: &tx)
-                )
-            },
-            context: context
+        var keys: [_ViewKey] = []
+        let estimatedCount = view.value.underestimatedCount
+        keys.reserveCapacity(estimatedCount)
+
+        for (index, _) in view.value.enumerated() {
+            keys.append(_ViewKey(index))
+        }
+
+        return _MountedNode(
+            keys: keys,
+            context: context,
+            ctx: &ctx,
+            makeNode: { index, context, ctx in
+                Element._makeNode(view.value[index], context: context, ctx: &ctx)
+            }
         )
     }
 
@@ -24,18 +31,17 @@ extension _HTMLArray: _Mountable, View where Element: View {
     ) {
         // maybe we can optimize this
         // NOTE: written with cast for this https://github.com/swiftlang/swift/issues/83895
-        let indexes = view.value.indices.map { _ViewKey(String($0 as Int)) }
+        let indexes = view.value.indices.map { _ViewKey($0 as Int) }
 
         node.patch(
             indexes,
             context: &tx,
             as: Element._MountedNode.self,
-            makeOrPatchNode: { index, node, context, tx in
-                if node == nil {
-                    node = Element._makeNode(view.value[index], context: context, tx: &tx)
-                } else {
-                    Element._patchNode(view.value[index], node: &node!, tx: &tx)
-                }
+            makeNode: { index, context, ctx in
+                Element._makeNode(view.value[index], context: context, ctx: &ctx)
+            },
+            patchNode: { index, node, tx in
+                Element._patchNode(view.value[index], node: &node, tx: &tx)
             }
         )
 

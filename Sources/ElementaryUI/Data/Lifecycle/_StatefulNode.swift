@@ -20,14 +20,6 @@ public struct _StatefulNode<State, Child: _Reconcilable> {
 }
 
 extension _StatefulNode: _Reconcilable {
-    public mutating func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
-        child.collectChildren(&ops, &context)
-    }
-
-    public mutating func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext) {
-        child.apply(op, &tx)
-    }
-
     public consuming func unmount(_ context: inout _CommitContext) {
         child.unmount(&context)
         onUnmount?(&context)

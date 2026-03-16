@@ -104,7 +104,7 @@ extension ViewMacro: ExtensionMacro {
 
             let extensionDecl: DeclSyntax = """
                 extension \(raw: type.trimmedDescription): __FunctionView {
-                    //\(access)typealias _MountedNode = _FunctionNode<Self, Self.Content._MountedNode>
+                    //\(access)typealias _MountedNode = _FunctionNode<Self, Self.Body._MountedNode>
                     
                     \(raw: decls.map { $0.description }.joined(separator: "\n"))
                 }

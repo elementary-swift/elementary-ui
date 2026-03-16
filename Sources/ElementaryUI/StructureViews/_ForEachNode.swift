@@ -2,28 +2,46 @@ import Reactivity
 
 public final class _ForEachNode<Data, Content>: _Reconcilable
 where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
+    private typealias Evaluation = (views: [Content], keys: [_ViewKey], session: TrackingSession)
+
     private var data: Data
     private var contentBuilder: @Sendable (Data.Element) -> Content
-    private var keyedNode: _KeyedNode?
-    private var context: _ViewContext
     private var trackingSession: TrackingSession? = nil
-
-    public var depthInTree: Int
-    var asFunctionNode: AnyFunctionNode!
+    private var container: MountContainer!
+    private var asFunctionNode: AnyFunctionNode!
 
     init(
         data: consuming Data,
         contentBuilder: @escaping @Sendable (Data.Element) -> Content,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _MountContext
     ) {
         self.data = data
         self.contentBuilder = contentBuilder
-        self.context = copy context
-        self.depthInTree = context.functionDepth
-        self.asFunctionNode = AnyFunctionNode(self)
 
-        runFunction(tx: &tx)
+        self.asFunctionNode = AnyFunctionNode(self, depthInTree: context.functionDepth)
+
+        let (views, keys, session) = Self.evaluateViewsAndKeys(
+            data: self.data,
+            contentBuilder: self.contentBuilder,
+            onWillSet: { [scheduler = ctx.scheduler, asFunctionNode] in
+                scheduler.invalidateFunction(asFunctionNode)
+            }
+        )
+
+        self.trackingSession = session
+
+        let containerContext = copy context
+        self.container = MountContainer(
+            mountedKeys: keys,
+            context: consume containerContext,
+            ctx: &ctx,
+            makeNode: { index, context, mountCtx in
+                Content.Value._makeNode(views[index]._value, context: context, ctx: &mountCtx)
+            }
+        )
+
+        ctx.appendContainer(container)
     }
 
     func patch(
@@ -33,77 +51,86 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
     ) {
         self.data = data
         self.contentBuilder = contentBuilder
-        tx.addFunction(asFunctionNode)
+        runFunction(tx: &tx)
     }
 
     func runFunction(tx: inout _TransactionContext) {
         self.trackingSession.take()?.cancel()
 
-        let ((views, keys), session) = withReactiveTrackingSession {
-            var views: [Content] = []
-            var keys: [_ViewKey] = []
-            let estimatedCount = data.underestimatedCount
-            views.reserveCapacity(estimatedCount)
-            keys.reserveCapacity(estimatedCount)
-
-            for value in data {
-                let view = contentBuilder(value)
-                views.append(view)
-                keys.append(view._key)
-            }
-
-            return (views, keys)
-        } onWillSet: { [scheduler = tx.scheduler, asFunctionNode = asFunctionNode!] in
-            scheduler.invalidateFunction(asFunctionNode)
-        }
+        let (views, keys, session) = evaluateViewsAndKeys(scheduler: tx.scheduler)
 
         self.trackingSession = session
 
-        if keyedNode == nil {
-            var children: [AnyReconcilable?] = []
-            children.reserveCapacity(views.count)
-
-            for view in views {
-                let node = Content.Value._makeNode(view._value, context: context, tx: &tx)
-                children.append(AnyReconcilable(node))
+        container.patch(
+            keys: keys,
+            tx: &tx,
+            makeNode: { index, context, mountCtx in
+                Content.Value._makeNode(views[index]._value, context: context, ctx: &mountCtx)
+            },
+            patchNode: { index, node, tx in
+                Content.Value._patchNode(views[index]._value, node: &node, tx: &tx)
             }
-
-            keyedNode = _KeyedNode(keys: keys, children: children, context: context)
-            return
-        }
-
-        keyedNode!.patch(
-            keys,
-            context: &tx,
-            as: Content.Value._MountedNode.self,
-        ) { index, node, context, tx in
-            if node == nil {
-                node = Content.Value._makeNode(views[index]._value, context: context, tx: &tx)
-            } else {
-                Content.Value._patchNode(views[index]._value, node: &node!, tx: &tx)
-            }
-        }
+        )
     }
 
-    public func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
-        keyedNode?.collectChildren(&ops, &context)
-    }
-
-    public func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext) {
-        keyedNode?.apply(op, &tx)
-    }
-
-    public func unmount(_ context: inout _CommitContext) {
+    public consuming func unmount(_ context: inout _CommitContext) {
         self.trackingSession.take()?.cancel()
-        let node = keyedNode.take()
-        node?.unmount(&context)
+        container.unmount(&context)
+    }
+
+    private static func makeOnWillSet(
+        scheduler: Scheduler,
+        functionNode: AnyFunctionNode
+    ) -> @Sendable () -> Void {
+        {
+            scheduler.invalidateFunction(functionNode)
+        }
+    }
+
+    private func makeOnWillSet(scheduler: Scheduler) -> @Sendable () -> Void {
+        Self.makeOnWillSet(scheduler: scheduler, functionNode: asFunctionNode)
+    }
+
+    private func evaluateViewsAndKeys(scheduler: Scheduler) -> Evaluation {
+        Self.evaluateViewsAndKeys(
+            data: data,
+            contentBuilder: contentBuilder,
+            onWillSet: makeOnWillSet(scheduler: scheduler)
+        )
+    }
+
+    private static func evaluateViewsAndKeys(
+        data: Data,
+        contentBuilder: @escaping @Sendable (Data.Element) -> Content,
+        onWillSet: @escaping @Sendable () -> Void
+    ) -> Evaluation {
+        let ((views, keys), session) = withReactiveTrackingSession(
+            {
+                var views: [Content] = []
+                var keys: [_ViewKey] = []
+                let estimatedCount = data.underestimatedCount
+                views.reserveCapacity(estimatedCount)
+                keys.reserveCapacity(estimatedCount)
+
+                for value in data {
+                    let view = contentBuilder(value)
+                    views.append(view)
+                    keys.append(view._key)
+                }
+
+                return (views, keys)
+            },
+            onWillSet: onWillSet
+        )
+
+        return (views, keys, session)
     }
 }
 
 extension AnyFunctionNode {
-    init(_ forEachNode: _ForEachNode<some Collection, some _KeyReadableView>) {
-        self.identifier = ObjectIdentifier(forEachNode)
-        self.depthInTree = forEachNode.depthInTree
-        self.runUpdate = forEachNode.runFunction
+    init(_ node: _ForEachNode<some Collection, some _KeyReadableView>, depthInTree: Int) {
+        self.identifier = ObjectIdentifier(node)
+        self.depthInTree = depthInTree
+        self.runUpdate = node.runFunction
     }
 }

@@ -77,8 +77,8 @@ struct DOMPatchingTests {
         #expect(
             ops == [
                 .createElement("p"),
-                .removeChild(parent: "<div>", child: "<a>"),
                 .addChild(parent: "<div>", child: "<p>"),
+                .removeChild(parent: "<div>", child: "<a>"),
             ]
         )
     }
@@ -214,10 +214,31 @@ struct DOMPatchingTests {
 
         #expect(
             ops == [
-                .addChild(parent: "<>", child: "A"),
                 .addChild(parent: "<>", child: "B", before: "A"),
+                .addChild(parent: "<>", child: "C", before: "B"),
             ]
         )
+    }
+
+    @Test
+    func updatesPendingKeyedInsertionWithLatestPatchBeforeCommit() {
+        let state = KeyedItemState()
+        let dom = TestDOM()
+
+        dom.mount {
+            ForEach(state.items, key: \.id) { item in
+                p { item.value }
+            }
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        state.items = [.init(id: 1, value: "A")]
+        state.items = [.init(id: 1, value: "B")]
+        dom.runNextFrame()
+
+        #expect(!dom.ops.contains(.createText("A")))
+        #expect(dom.ops.contains(.createText("B")))
     }
 
     @Test
@@ -253,10 +274,29 @@ struct DOMPatchingTests {
             ops == [
                 .createText("D"),
                 .addChild(parent: "<>", child: "D"),
-                .addChild(parent: "<>", child: "B", before: "D"),
+                .addChild(parent: "<>", child: "C", before: "B"),
                 .removeChild(parent: "<>", child: "A"),
             ]
         )
+    }
+
+    @Test
+    func duplicateKeysAreUndefinedButDoNotTrap() {
+        let state = StringListState(["A", "B"])
+        let dom = TestDOM()
+
+        dom.mount {
+            ForEach(state.items, key: { _ in 0 }) { item in
+                p { item }
+            }
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        state.items = ["X", "Y", "Z"]
+        dom.runNextFrame()
+
+        #expect(!dom.ops.isEmpty)
     }
 
     @Test
@@ -424,6 +464,20 @@ private class StringListState {
     var items: [String]
 
     init(_ items: [String] = []) {
+        self.items = items
+    }
+}
+
+private struct KeyedItem {
+    let id: Int
+    let value: String
+}
+
+@Reactive
+private class KeyedItemState {
+    var items: [KeyedItem]
+
+    init(_ items: [KeyedItem] = []) {
         self.items = items
     }
 }

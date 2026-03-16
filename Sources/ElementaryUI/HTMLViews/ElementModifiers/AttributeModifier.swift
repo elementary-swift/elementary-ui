@@ -14,7 +14,7 @@ public final class _AttributeModifier: DOMElementModifier, Invalidateable {
         return combined
     }
 
-    init(value: consuming Value, upstream: borrowing DOMElementModifiers, _ context: inout _TransactionContext) {
+    init(value: consuming Value, upstream: borrowing DOMElementModifiers) {
         self.lastValue = value
         self.upstream = upstream[_AttributeModifier.key]
         self.upstream?.tracker.addDependency(self)
@@ -38,7 +38,7 @@ public final class _AttributeModifier: DOMElementModifier, Invalidateable {
         }
     }
 
-    func mount(_ node: DOM.Node, _ context: inout _CommitContext) -> AnyUnmountable {
+    func mount(_ node: DOM.Node, _ context: inout _MountContext) -> AnyUnmountable {
         logTrace("mounting attribute modifier")
         return AnyUnmountable(MountedInstance(node, self, &context))
     }
@@ -58,11 +58,11 @@ extension _AttributeModifier {
         var isDirty: Bool = false
         var previousAttributes: _AttributeStorage = .none
 
-        init(_ node: DOM.Node, _ modifier: _AttributeModifier, _ context: inout _CommitContext) {
+        init(_ node: DOM.Node, _ modifier: _AttributeModifier, _ context: inout _MountContext) {
             self.node = node
             self.modifier = modifier
             self.modifier.tracker.addDependency(self)
-            updateDOMNode(&context)
+            patchAttributes(with: modifier.value, on: context.dom)
         }
 
         func invalidate(_ context: inout _TransactionContext) {

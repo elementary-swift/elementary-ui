@@ -1,63 +1,22 @@
-public final class _TextNode: _Reconcilable {
+public struct _TextNode: _Reconcilable {
+    let domNode: DOM.Node
     var value: String
-    var domNode: ManagedDOMReference?
-    var isDirty: Bool = false
-    var parentElement: _ElementNode?
 
-    init(_ newValue: String, viewContext: borrowing _ViewContext, context: inout _TransactionContext) {
+    init(_ newValue: String, ctx: inout _MountContext) {
         self.value = newValue
-        self.domNode = nil
-        self.parentElement = viewContext.parentElement
-
-        self.parentElement?.reportChangedChildren(.elementAdded, tx: &context)
-
-        isDirty = true
-        context.scheduler.addCommitAction { [self] context in
-            self.domNode = ManagedDOMReference(reference: context.dom.createText(newValue), status: .added)
-            self.isDirty = false
-        }
+        self.domNode = ctx.dom.createText(newValue)
+        ctx.appendStaticText(self.domNode)
     }
 
-    func patch(_ newValue: String, context: inout _TransactionContext) {
-        let needsUpdate = !isDirty && !value.utf8Equals(newValue)
+    mutating func patch(_ newValue: String, tx: inout _TransactionContext) {
+        guard !value.utf8Equals(newValue) else { return }
         self.value = newValue
 
-        guard needsUpdate else { return }
-
-        isDirty = true
-        context.scheduler.addCommitAction { [self] context in
-            assert(isDirty, "text node is not dirty")
-            assert(domNode != nil, "text node is not mounted")
-
-            (domNode?.reference).map { context.dom.patchText($0, with: value) }
-            self.isDirty = false
+        tx.scheduler.addCommitAction { [self] ctx in
+            ctx.dom.patchText(domNode, with: value)
         }
     }
 
-    public func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
-        assert(domNode != nil, "unitialized text node in layout pass")
-        domNode?.collectLayoutChanges(&ops, type: .text)
-    }
-
-    public func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext) {
-        switch op {
-        case .startRemoval:
-            domNode?.status = .removed
-            self.parentElement?.reportChangedChildren(.elementRemoved, tx: &tx)
-        case .markAsMoved:
-            domNode?.status = .moved
-            self.parentElement?.reportChangedChildren(.elementMoved, tx: &tx)
-        case .cancelRemoval:
-            // a text node can not leave and re-enter
-            break
-        case .markAsLeaving:
-            // no-op
-            break
-        }
-    }
-
-    public func unmount(_ context: inout _CommitContext) {
-        self.domNode = nil
-        self.parentElement = nil
+    public consuming func unmount(_ context: inout _CommitContext) {
     }
 }

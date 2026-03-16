@@ -6,7 +6,7 @@ final class TransformModifier: DOMElementModifier {
 
     var value: CSSTransform.AnyFunction.ValueSource
 
-    init(value: consuming Value, upstream: borrowing DOMElementModifiers, _ context: inout _TransactionContext) {
+    init(value: consuming Value, upstream: borrowing DOMElementModifiers) {
         self.value = value.makeSource()
         self.upstream = upstream[TransformModifier.key]
         self.layerNumber = (self.upstream?.layerNumber ?? 0) + 1
@@ -25,11 +25,11 @@ final class TransformModifier: DOMElementModifier {
         }
     }
 
-    func mount(_ node: DOM.Node, _ context: inout _CommitContext) -> AnyUnmountable {
+    func mount(_ node: DOM.Node, _ context: inout _MountContext) -> AnyUnmountable {
         AnyUnmountable(MountedStyleModifier(node, makeLayers(&context), &context))
     }
 
-    private func makeLayers(_ context: inout _CommitContext) -> [AnyCSSAnimatedValueInstance<CSSTransform>] {
+    private func makeLayers(_ context: inout _MountContext) -> [AnyCSSAnimatedValueInstance<CSSTransform>] {
         if var layers = upstream.map({ $0.makeLayers(&context) }) {
             layers.append(AnyCSSAnimatedValueInstance(value.makeInstance()))
             return layers

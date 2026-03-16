@@ -147,11 +147,24 @@ final class TestDOM: DOM.Interactor {
     }
 
     func makeStyleAccessor(_ node: DOM.Node, cssName: String) -> DOM.StyleAccessor {
-        fatalError("Not implemented")
+        DOM.StyleAccessor(
+            get: {
+                guard case let .element(data) = node.value.kind else { return "" }
+                return data.inlineStyles[cssName] ?? ""
+            },
+            set: { [self] value in
+                guard case let .element(data) = node.value.kind else { return }
+                data.inlineStyles[cssName] = value
+                ops.append(.setStyle(node: label(node), name: cssName, value: value))
+            }
+        )
     }
 
     func makeComputedStyleAccessor(_ node: DOM.Node) -> DOM.ComputedStyleAccessor {
-        fatalError("Not implemented")
+        DOM.ComputedStyleAccessor { cssName in
+            guard case let .element(data) = node.value.kind else { return "" }
+            return data.inlineStyles[cssName] ?? ""
+        }
     }
 
     func makeFocusAccessor(_ node: DOM.Node, onEvent: @escaping (DOM.FocusEvent) -> Void) -> DOM.FocusAccessor {

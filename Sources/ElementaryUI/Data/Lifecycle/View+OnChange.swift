@@ -52,15 +52,15 @@ struct _OnChangeView<Wrapped: View, Value: Equatable>: View {
     static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         let state = State(value: view.value, action: view.action)
-        let child = Wrapped._makeNode(view.wrapped, context: context, tx: &tx)
+        let child = Wrapped._makeNode(view.wrapped, context: context, ctx: &ctx)
 
         if view.initial {
             let initialValue = view.value
             let action = view.action
-            tx.scheduler.addEffect {
+            ctx.scheduler.addEffect {
                 action(initialValue, initialValue)
             }
         }

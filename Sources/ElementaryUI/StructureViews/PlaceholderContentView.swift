@@ -14,9 +14,9 @@
 /// }
 /// ```
 public struct PlaceholderContentView<Value>: View {
-    private var makeNodeFn: (borrowing _ViewContext, inout _TransactionContext) -> _PlaceholderNode
+    private var makeNodeFn: (borrowing _ViewContext, inout _MountContext) -> _PlaceholderNode
 
-    init(makeNodeFn: @escaping (borrowing _ViewContext, inout _TransactionContext) -> _PlaceholderNode) {
+    init(makeNodeFn: @escaping (borrowing _ViewContext, inout _MountContext) -> _PlaceholderNode) {
         self.makeNodeFn = makeNodeFn
     }
 }
@@ -27,16 +27,17 @@ extension PlaceholderContentView: _Mountable {
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
-        view.makeNodeFn(context, &tx)
+        view.makeNodeFn(context, &ctx)
     }
 
     public static func _patchNode(
         _ view: consuming Self,
         node: inout _MountedNode,
         tx: inout _TransactionContext
-    ) {}
+    ) {
+    }
 }
 
 public final class _PlaceholderNode: _Reconcilable {
@@ -46,17 +47,7 @@ public final class _PlaceholderNode: _Reconcilable {
         self.node = node
     }
 
-    public func apply(_ op: _ReconcileOp, _ tx: inout _TransactionContext) {
-        node.apply(op, &tx)
-    }
-
-    public func collectChildren(_ ops: inout _ContainerLayoutPass, _ context: inout _CommitContext) {
-        node.collectChildren(&ops, &context)
-    }
-
     public func unmount(_ context: inout _CommitContext) {
-        // TODO: we should maybe remove ourself from the parent list?
-        // or at least prevent updates to unmounted placeholders
         node.unmount(&context)
     }
 }

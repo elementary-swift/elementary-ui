@@ -5,13 +5,27 @@ extension _HTMLConditional: _Mountable where TrueContent: _Mountable, FalseConte
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
-        tx: inout _TransactionContext
+        ctx: inout _MountContext
     ) -> _MountedNode {
         switch view.value {
         case let .trueContent(content):
-            return .init(a: TrueContent._makeNode(content, context: context, tx: &tx), context: context)
+            return .init(
+                isA: true,
+                context: context,
+                ctx: &ctx,
+                makeActive: { c, mountCtx in
+                    TrueContent._makeNode(content, context: c, ctx: &mountCtx)
+                }
+            )
         case let .falseContent(content):
-            return .init(b: FalseContent._makeNode(content, context: context, tx: &tx), context: context)
+            return .init(
+                isA: false,
+                context: context,
+                ctx: &ctx,
+                makeActive: { c, mountCtx in
+                    FalseContent._makeNode(content, context: c, ctx: &mountCtx)
+                }
+            )
         }
     }
 
@@ -24,13 +38,13 @@ extension _HTMLConditional: _Mountable where TrueContent: _Mountable, FalseConte
         case let .trueContent(content):
             node.patchWithA(
                 tx: &tx,
-                makeNode: { c, tx in TrueContent._makeNode(content, context: c, tx: &tx) },
+                makeNode: { c, ctx in TrueContent._makeNode(content, context: c, ctx: &ctx) },
                 updateNode: { node, tx in TrueContent._patchNode(content, node: &node, tx: &tx) }
             )
         case let .falseContent(content):
             node.patchWithB(
                 tx: &tx,
-                makeNode: { c, tx in FalseContent._makeNode(content, context: c, tx: &tx) },
+                makeNode: { c, ctx in FalseContent._makeNode(content, context: c, ctx: &ctx) },
                 updateNode: { node, tx in FalseContent._patchNode(content, node: &node, tx: &tx) }
             )
         }

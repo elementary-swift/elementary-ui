@@ -7,7 +7,7 @@ final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: Unmountabl
 
     var isDirty: Bool = false
 
-    init(_ node: DOM.Node, _ layers: [Instance], _ context: inout _CommitContext) {
+    init(_ node: DOM.Node, _ layers: [Instance], _ context: inout _MountContext) {
         self.node = node
         self.accessor = context.dom.makeStyleAccessor(node, cssName: Instance.CSSValue.styleKey)
         self.values = layers
@@ -18,7 +18,11 @@ final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: Unmountabl
             value.setTarget(selfAsTarget)
         }
 
-        updateDOMNode(&context)
+        if let combined = reduceCombinedSingleValue() {
+            accessor.set(combined.cssString)
+        } else {
+            startOrUpdateAnimations(dom: context.dom, scheduler: context.scheduler)
+        }
     }
 
     func invalidate(_ context: inout _TransactionContext) {
@@ -32,7 +36,7 @@ final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: Unmountabl
             clearAllAnimations()
             accessor.set(combined.cssString)
         } else {
-            startOrUpdateAnimations(&context)
+            startOrUpdateAnimations(dom: context.dom, scheduler: context.scheduler)
         }
 
         isDirty = false
@@ -56,7 +60,7 @@ final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: Unmountabl
         animations.removeAll(keepingCapacity: true)
     }
 
-    private func startOrUpdateAnimations(_ context: inout _CommitContext) {
+    private func startOrUpdateAnimations(dom: any DOM.Interactor, scheduler: Scheduler) {
         if animations.isEmpty {
             logTrace("starting animations")
             animations.reserveCapacity(values.count)
@@ -64,10 +68,10 @@ final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: Unmountabl
             for (index, value) in values.enumerated() {
                 let progressAnimation = value.progressAnimation(_:)
                 animations.append(
-                    context.dom.animateElement(
+                    dom.animateElement(
                         node,
                         DOM.Animation.KeyframeEffect(value.value, isFirst: index == 0)
-                    ) { [scheduler = context.scheduler, progressAnimation] in
+                    ) { [scheduler, progressAnimation] in
                         logTrace("animation finished")
                         scheduler.scheduleUpdate(progressAnimation)
                     }
