@@ -3,7 +3,7 @@ import Benchmark
 import Reactivity
 
 struct BenchRow: Equatable {
-    let id: Int
+    let id: String
     var label: String
 }
 
@@ -44,7 +44,7 @@ struct BenchRowView {
 
     var body: some View {
         tr {
-            td(.class("id")) { "\(row.id)" }
+            td(.class("id")) { row.id }
             td(.class("label")) { row.label }
         }
     }
@@ -117,7 +117,7 @@ private func makeRows(startID: Int, count: Int, labelPrefix: String) -> [BenchRo
     var rows: [BenchRow] = []
     rows.reserveCapacity(count)
     for i in 0..<count {
-        rows.append(.init(id: startID + i, label: "\(labelPrefix)-\(i)"))
+        rows.append(.init(id: "\(startID + i)", label: "\(labelPrefix)-\(i)"))
     }
     return rows
 }

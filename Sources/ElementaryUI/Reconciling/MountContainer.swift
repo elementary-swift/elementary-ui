@@ -1,18 +1,18 @@
+// TODO: optimize this, currently a bit AI-sloppy
 final class MountContainer {
-    private struct ActiveInfo {
-        var slot: Slot
-        var sourceIndex: Int
+    private struct ActiveIndexInfo {
+        var slotIndex: Int
         var oldActiveOffset: Int
-    }
-
-    private struct LeavingAnchor {
-        var key: _ViewKey
-        var sourceIndex: Int
-        var anchorActiveOffset: Int
     }
 
     private let viewContext: _ViewContext
     private var slots: [Slot]
+    private var scratchIncomingKeys: [_ViewKey] = []
+    private var scratchIncomingKeySet: Set<_ViewKey> = []
+    private var scratchActiveByKey: [_ViewKey: ActiveIndexInfo] = [:]
+    private var scratchLeavingByKey: [_ViewKey: Int] = [:]
+    private var scratchSlots: [Slot] = []
+    private var scratchTargetActive: [Slot] = []
     var containerHandle: LayoutContainer.Handle?
 
     private init(context: borrowing _ViewContext, slots: [Slot]) {
@@ -93,14 +93,11 @@ final class MountContainer {
         makeNode: @escaping (Int, borrowing _ViewContext, inout _MountContext) -> Node,
         patchNode: (Int, inout Node, inout _TransactionContext) -> Void
     ) {
-        let newKeysArray = Array(newKeys)
+        scratchIncomingKeys.removeAll(keepingCapacity: true)
+        scratchIncomingKeys.append(contentsOf: newKeys)
 
-        var newKeyToIndex: [_ViewKey: Int] = [:]
-        newKeyToIndex.reserveCapacity(newKeysArray.count)
-        for (index, key) in newKeysArray.enumerated() {
-            // duplicate keys are undefined behavior
-            newKeyToIndex[key] = index
-        }
+        scratchIncomingKeySet.removeAll(keepingCapacity: true)
+        scratchIncomingKeySet.formUnion(scratchIncomingKeys)
 
         var didStructureChange = false
         var didReportLayoutChange = false
@@ -115,64 +112,49 @@ final class MountContainer {
             }
         }
 
-        var activeByKey: [_ViewKey: ActiveInfo] = [:]
-        activeByKey.reserveCapacity(slots.count)
-        var leavingByKey: [_ViewKey: Slot] = [:]
-        leavingByKey.reserveCapacity(slots.count)
-        var leavingAnchors: [LeavingAnchor] = []
-        leavingAnchors.reserveCapacity(slots.count)
+        scratchActiveByKey.removeAll(keepingCapacity: true)
+        scratchActiveByKey.reserveCapacity(slots.count)
+        scratchLeavingByKey.removeAll(keepingCapacity: true)
+        scratchLeavingByKey.reserveCapacity(slots.count)
 
         var activeOffset = 0
-        for (sourceIndex, slot) in slots.enumerated() {
-            if slot.isActiveForPatch {
-                activeByKey[slot.key] = .init(
-                    slot: slot,
-                    sourceIndex: sourceIndex,
-                    oldActiveOffset: activeOffset
-                )
+        for slotIndex in slots.indices {
+            if slots[slotIndex].isActiveForPatch {
+                let key = slots[slotIndex].key
+
+                if !scratchIncomingKeySet.contains(key) {
+                    didStructureChange = true
+
+                    if slots[slotIndex].isMounted {
+                        reportLayoutChangeIfNeeded(&tx, &didReportLayoutChange)
+                    }
+                    _ = slots[slotIndex].beginLeaving(tx: &tx, handle: containerHandle)
+                    if slots[slotIndex].isLeavingInline {
+                        scratchLeavingByKey[key] = slotIndex
+                    }
+                } else {
+                    scratchActiveByKey[key] = .init(
+                        slotIndex: slotIndex,
+                        oldActiveOffset: activeOffset
+                    )
+                }
+
                 activeOffset += 1
-            } else if slot.isLeavingInline {
-                leavingByKey[slot.key] = slot
-                leavingAnchors.append(
-                    .init(
-                        key: slot.key,
-                        sourceIndex: sourceIndex,
-                        anchorActiveOffset: activeOffset
-                    )
-                )
+            } else if slots[slotIndex].isLeavingInline {
+                scratchLeavingByKey[slots[slotIndex].key] = slotIndex
             }
         }
 
-        let activeKeysSnapshot = Array(activeByKey.keys)
-        for key in activeKeysSnapshot where newKeyToIndex[key] == nil {
-            guard var removed = activeByKey.removeValue(forKey: key) else { continue }
-            didStructureChange = true
+        scratchTargetActive.removeAll(keepingCapacity: true)
+        scratchTargetActive.reserveCapacity(scratchIncomingKeys.count)
 
-            if removed.slot.isMounted {
-                reportLayoutChangeIfNeeded(&tx, &didReportLayoutChange)
-            }
-            _ = removed.slot.beginLeaving(tx: &tx, handle: containerHandle)
+        for (newActiveOffset, key) in scratchIncomingKeys.enumerated() {
+            if let reusedActive = scratchActiveByKey.removeValue(forKey: key) {
+                var slot = slots[reusedActive.slotIndex]
 
-            if removed.slot.isLeavingInline {
-                leavingByKey[key] = removed.slot
-                leavingAnchors.append(
-                    .init(
-                        key: key,
-                        sourceIndex: removed.sourceIndex,
-                        anchorActiveOffset: removed.oldActiveOffset
-                    )
-                )
-            }
-        }
-
-        var targetActiveSlots: [Slot] = []
-        targetActiveSlots.reserveCapacity(newKeysArray.count)
-
-        for (newActiveOffset, key) in newKeysArray.enumerated() {
-            if var reusedActive = activeByKey.removeValue(forKey: key) {
-                switch reusedActive.slot.slotState {
+                switch slot.slotState {
                 case .pending:
-                    reusedActive.slot.overwritePending(
+                    slot.overwritePending(
                         transaction: tx.transaction,
                         create: { context, mountCtx in
                             AnyReconcilable(makeNode(newActiveOffset, context, &mountCtx))
@@ -180,25 +162,34 @@ final class MountContainer {
                     )
                 case .mounted:
                     if reusedActive.oldActiveOffset != newActiveOffset {
-                        reusedActive.slot.markMoved()
+                        slot.markMoved()
                         didStructureChange = true
                     }
+                    _ = slot.patchMountedIfActive(as: Node.self) { node in
+                        patchNode(newActiveOffset, &node, &tx)
+                    }
                 case .removed:
-                    reusedActive.slot.overwritePending(
+                    slot.overwritePending(
                         transaction: tx.transaction,
                         create: { context, mountCtx in
                             AnyReconcilable(makeNode(newActiveOffset, context, &mountCtx))
                         }
                     )
                 }
-                targetActiveSlots.append(reusedActive.slot)
-            } else if var revived = leavingByKey.removeValue(forKey: key) {
+
+                scratchTargetActive.append(slot)
+            } else if let leavingIndex = scratchLeavingByKey.removeValue(forKey: key) {
+                var revived = slots[leavingIndex]
                 reportLayoutChangeIfNeeded(&tx, &didReportLayoutChange)
                 _ = revived.reviveFromLeaving(tx: &tx, handle: containerHandle)
                 didStructureChange = true
-                targetActiveSlots.append(revived)
+                _ = revived.patchMountedIfActive(as: Node.self) { node in
+                    patchNode(newActiveOffset, &node, &tx)
+                }
+                slots[leavingIndex] = revived
+                scratchTargetActive.append(revived)
             } else {
-                targetActiveSlots.append(
+                scratchTargetActive.append(
                     Slot.pending(
                         key: key,
                         transaction: tx.transaction,
@@ -211,42 +202,25 @@ final class MountContainer {
             }
         }
 
-        leavingAnchors.sort { lhs, rhs in
-            lhs.sourceIndex < rhs.sourceIndex
-        }
+        scratchSlots.removeAll(keepingCapacity: true)
+        scratchSlots.reserveCapacity(max(slots.count, scratchTargetActive.count))
 
-        var leavingByOffset: [Int: [Slot]] = [:]
-        leavingByOffset.reserveCapacity(leavingAnchors.count)
-        for anchor in leavingAnchors {
-            guard let slot = leavingByKey[anchor.key] else { continue }
-            let boundedOffset = min(anchor.anchorActiveOffset, targetActiveSlots.count)
-            leavingByOffset[boundedOffset, default: []].append(slot)
-        }
-
-        var rebuiltSlots: [Slot] = []
-        rebuiltSlots.reserveCapacity(targetActiveSlots.count + leavingByKey.count)
-        for activeIndex in 0...targetActiveSlots.count {
-            if let leavingSlots = leavingByOffset[activeIndex] {
-                rebuiltSlots.append(contentsOf: leavingSlots)
-            }
-            if activeIndex < targetActiveSlots.count {
-                rebuiltSlots.append(targetActiveSlots[activeIndex])
+        var activeCursor = 0
+        for slot in slots {
+            if slot.isLeavingInline {
+                scratchSlots.append(slot)
+            } else if activeCursor < scratchTargetActive.count {
+                scratchSlots.append(scratchTargetActive[activeCursor])
+                activeCursor += 1
             }
         }
-        slots = rebuiltSlots
 
-        var activeSlotIndicesByKey: [_ViewKey: Int] = [:]
-        activeSlotIndicesByKey.reserveCapacity(newKeysArray.count)
-        for index in slots.indices where slots[index].isActiveForPatch {
-            activeSlotIndicesByKey[slots[index].key] = index
+        if activeCursor < scratchTargetActive.count {
+            scratchSlots.append(contentsOf: scratchTargetActive[activeCursor...])
         }
 
-        for (index, key) in newKeysArray.enumerated() {
-            guard let slotIndex = activeSlotIndicesByKey[key] else { continue }
-            _ = slots[slotIndex].patchMountedIfActive(as: Node.self) { node in
-                patchNode(index, &node, &tx)
-            }
-        }
+        swap(&slots, &scratchSlots)
+        scratchSlots.removeAll(keepingCapacity: true)
 
         if didStructureChange, !didReportLayoutChange {
             reportLayoutChange(&tx)
@@ -339,7 +313,7 @@ extension MountContainer {
             let (node, layoutNodes, transitionCoordinator) = ctx.withMountRootContext { (rootCtx: consuming _MountContext) in
                 var rootCtx = consume rootCtx
                 let node = AnyReconcilable(makeNode(index, context, &rootCtx))
-                let (layoutNodes, transitionCoordinator) = rootCtx.takeMountedOutput()
+                let (layoutNodes, transitionCoordinator) = rootCtx.takeMountOutput()
                 return (node, layoutNodes, transitionCoordinator)
             }
 
@@ -380,8 +354,10 @@ extension MountContainer {
                 slotState = .removed
                 return false
             case .mounted(var mounted):
-                for element in mountedElementReferences(mounted.layoutNodes) {
-                    handle?.reportLeavingElement(element, &tx)
+                for layoutNode in mounted.layoutNodes {
+                    if case let .elementNode(element) = layoutNode {
+                        handle?.reportLeavingElement(element, &tx)
+                    }
                 }
 
                 let shouldDeferRemoval = mounted.transitionCoordinator?.beginRemoval(tx: &tx, handle: handle) ?? false
@@ -411,8 +387,10 @@ extension MountContainer {
             mounted.mountState = .active
             mounted.didMove = true
 
-            for element in mountedElementReferences(mounted.layoutNodes) {
-                handle?.reportReenteringElement(element, &tx)
+            for layoutNode in mounted.layoutNodes {
+                if case let .elementNode(element) = layoutNode {
+                    handle?.reportReenteringElement(element, &tx)
+                }
             }
 
             slotState = .mounted(mounted)
@@ -430,7 +408,7 @@ extension MountContainer {
                 let (node, layoutNodes, transitionCoordinator) = context.withMountContext(transaction: pending.transaction) { mountCtx in
                     var mountCtx = consume mountCtx
                     let node = pending.create(contextCopy, &mountCtx)
-                    let (layoutNodes, transitionCoordinator) = mountCtx.takeMountedOutput()
+                    let (layoutNodes, transitionCoordinator) = mountCtx.takeMountOutput()
                     return (node, layoutNodes, transitionCoordinator)
                 }
 
@@ -524,21 +502,6 @@ extension MountContainer {
                 ops.entries[entryIndex] = .init(kind: kind, reference: entry.reference, type: entry.type)
             }
             ops.recomputeBatchFlags()
-        }
-
-        private func mountedElementReferences(_ layoutNodes: [LayoutNode]) -> [DOM.Node] {
-            var elements: [DOM.Node] = []
-            elements.reserveCapacity(layoutNodes.count)
-
-            for node in layoutNodes {
-                switch node {
-                case .elementNode(let ref):
-                    elements.append(ref)
-                case .textNode, .container:
-                    break
-                }
-            }
-            return elements
         }
     }
 

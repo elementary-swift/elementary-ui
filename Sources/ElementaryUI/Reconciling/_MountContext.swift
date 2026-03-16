@@ -87,8 +87,7 @@ public struct _MountContext: ~Copyable {
         return body(&commitContext)
     }
 
-    // TODO: rename
-    consuming func takeMountedOutput() -> ([LayoutNode], MountRootTransitionCoordinator?) {
+    consuming func takeMountOutput() -> ([LayoutNode], MountRootTransitionCoordinator?) {
         (layoutNodes, transitionCoordinator)
     }
 

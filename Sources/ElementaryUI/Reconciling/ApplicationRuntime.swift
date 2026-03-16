@@ -25,7 +25,7 @@ final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
                             RootView._makeNode(rootView, context: rootViewContext, ctx: &ctx)
                         )
                         // TODO: clean this up - this should be a mount root contaienrs
-                        let (layoutNodes, _) = ctx.takeMountedOutput()
+                        let (layoutNodes, _) = ctx.takeMountOutput()
                         return (child, layoutNodes)
                     }
 
