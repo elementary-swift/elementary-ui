@@ -19,7 +19,7 @@ final class LayoutContainer {
 
     func mountInitial(_ context: inout _CommitContext) {
         var ops = LayoutPass(layoutContainer: self)
-        collectLayout(&ops, &context)
+        layoutNodes.collect(into: &ops, context: &context, op: .added)
 
         if ops.entries.count == 1 {
             context.dom.insertChild(ops.entries[0].reference, before: nil, in: domNode)
@@ -35,18 +35,12 @@ final class LayoutContainer {
     // TODO: I get rid of this...
     func removeAllChildren(_ context: inout _CommitContext) {
         var ops = LayoutPass(layoutContainer: self)
-        collectLayout(&ops, &context)
+        layoutNodes.collect(into: &ops, context: &context, op: .removed)
 
         if ops.entries.count == 1 {
             context.dom.removeChild(ops.entries[0].reference, from: domNode)
         } else if ops.entries.count > 1 {
             context.dom.replaceChildren([], in: domNode)
-        }
-    }
-
-    private func collectLayout(_ ops: inout LayoutPass, _ context: inout _CommitContext) {
-        for node in layoutNodes {
-            node.collect(into: &ops, context: &context)
         }
     }
 
@@ -77,7 +71,7 @@ final class LayoutContainer {
         isDirty = false
 
         var ops = LayoutPass(layoutContainer: self)
-        collectLayout(&ops, &context)
+        layoutNodes.collect(into: &ops, context: &context, op: .unchanged)
 
         if ops.canBatchReplace {
             if ops.isAllRemovals {
@@ -90,7 +84,7 @@ final class LayoutContainer {
         } else {
             var sibling: DOM.Node?
             for entry in ops.entries.reversed() {
-                switch entry.kind {
+                switch entry.op {
                 case .added, .moved:
                     context.dom.insertChild(entry.reference, before: sibling, in: domNode)
                     sibling = entry.reference
@@ -133,14 +127,18 @@ enum LayoutNode {
     case textNode(DOM.Node)
     case container(MountContainer)
 
-    func collect(into ops: inout LayoutPass, context: inout _CommitContext) {
+    func collect(
+        into ops: inout LayoutPass,
+        context: inout _CommitContext,
+        op: LayoutPass.Entry.LayoutOp
+    ) {
         switch self {
         case .elementNode(let node):
-            ops.append(.init(kind: .unchanged, reference: node, type: .element))
+            ops.append(.init(op: op, reference: node, type: .element))
         case .textNode(let node):
-            ops.append(.init(kind: .unchanged, reference: node, type: .text))
+            ops.append(.init(op: op, reference: node, type: .text))
         case .container(let container):
-            container.collect(into: &ops, context: &context)
+            container.collect(into: &ops, context: &context, op: op)
         }
     }
 
@@ -172,17 +170,8 @@ struct LayoutPass: ~Copyable {
 
     mutating func append(_ entry: Entry) {
         entries.append(entry)
-        isAllAdditions = isAllAdditions && entry.kind == .added
-        isAllRemovals = isAllRemovals && entry.kind == .removed
-    }
-
-    mutating func recomputeBatchFlags() {
-        isAllAdditions = true
-        isAllRemovals = true
-        for entry in entries {
-            isAllAdditions = isAllAdditions && entry.kind == .added
-            isAllRemovals = isAllRemovals && entry.kind == .removed
-        }
+        isAllAdditions = isAllAdditions && entry.op == .added
+        isAllRemovals = isAllRemovals && entry.op == .removed
     }
 
     struct Entry {
@@ -191,15 +180,27 @@ struct LayoutPass: ~Copyable {
             case text
         }
 
-        enum Status {
+        enum LayoutOp {
             case unchanged
             case added
             case removed
             case moved
         }
 
-        let kind: Status
+        let op: LayoutOp
         let reference: DOM.Node
         let type: NodeType
+    }
+}
+
+extension [LayoutNode] {
+    func collect(
+        into ops: inout LayoutPass,
+        context: inout _CommitContext,
+        op: LayoutPass.Entry.LayoutOp
+    ) {
+        for node in self {
+            node.collect(into: &ops, context: &context, op: op)
+        }
     }
 }

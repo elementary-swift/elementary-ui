@@ -61,11 +61,11 @@ final class MountContainer {
         )
     }
 
-    func collect(into ops: inout LayoutPass, context: inout _CommitContext) {
+    func collect(into ops: inout LayoutPass, context: inout _CommitContext, op: LayoutPass.Entry.LayoutOp) {
         if containerHandle == nil { containerHandle = ops.containerHandle }
 
         for index in slots.indices {
-            slots[index].collect(into: &ops, context: &context, viewContext: viewContext)
+            slots[index].collect(into: &ops, context: &context, viewContext: viewContext, parentOp: op)
         }
 
         slots.removeAll { $0.isRemoved }
@@ -536,17 +536,18 @@ extension MountContainer {
         mutating func collect(
             into ops: inout LayoutPass,
             context: inout _CommitContext,
-            viewContext: borrowing _ViewContext
+            viewContext: borrowing _ViewContext,
+            parentOp: LayoutPass.Entry.LayoutOp
         ) {
             switch slotState {
             case .pending(let pending):
-                let contextCopy = copy viewContext
-                let (node, layoutNodes, transitionCoordinator) = context.withMountContext(transaction: pending.transaction) { mountCtx in
-                    var mountCtx = consume mountCtx
-                    let node = pending.create(contextCopy, &mountCtx)
-                    let (layoutNodes, transitionCoordinator) = mountCtx.takeMountOutput()
-                    return (node, layoutNodes, transitionCoordinator)
-                }
+                let viewContext = copy viewContext
+                let (node, layoutNodes, transitionCoordinator) =
+                    context.withMountContext(transaction: pending.transaction) { (ctx: consuming _MountContext) in
+                        let node = pending.create(viewContext, &ctx)
+                        let (layoutNodes, transitionCoordinator) = ctx.takeMountOutput()
+                        return (node, layoutNodes, transitionCoordinator)
+                    }
 
                 transitionCoordinator?.scheduleEnterIdentityIfNeeded(scheduler: context.scheduler)
 
@@ -557,7 +558,7 @@ extension MountContainer {
                     didMove: false,
                     transitionCoordinator: transitionCoordinator
                 )
-                collectLayoutNodes(mounted.layoutNodes, kind: .added, into: &ops, context: &context)
+                mounted.layoutNodes.collect(into: &ops, context: &context, op: .added)
                 slotState = .mounted(mounted)
 
             case .mounted(var mounted):
@@ -567,17 +568,17 @@ extension MountContainer {
                     mounted.mountState = .left
                 }
 
-                let kind: LayoutPass.Entry.Status
+                let childOp: LayoutPass.Entry.LayoutOp
                 switch mounted.mountState {
                 case .active:
-                    kind = mounted.didMove ? .moved : .unchanged
+                    childOp = mounted.didMove ? .moved : parentOp
                 case .leaving:
-                    kind = .unchanged
+                    childOp = parentOp
                 case .left:
-                    kind = .removed
+                    childOp = .removed
                 }
 
-                collectLayoutNodes(mounted.layoutNodes, kind: kind, into: &ops, context: &context)
+                mounted.layoutNodes.collect(into: &ops, context: &context, op: childOp)
 
                 switch mounted.mountState {
                 case .active:
@@ -619,25 +620,6 @@ extension MountContainer {
 
             mounted.node.modify(as: Node.self, body)
             return true
-        }
-
-        private func collectLayoutNodes(
-            _ layoutNodes: [LayoutNode],
-            kind: LayoutPass.Entry.Status,
-            into ops: inout LayoutPass,
-            context: inout _CommitContext
-        ) {
-            let startIndex = ops.entries.count
-            for layoutNode in layoutNodes {
-                layoutNode.collect(into: &ops, context: &context)
-            }
-
-            guard kind != .unchanged else { return }
-            for entryIndex in startIndex..<ops.entries.count {
-                let entry = ops.entries[entryIndex]
-                ops.entries[entryIndex] = .init(kind: kind, reference: entry.reference, type: entry.type)
-            }
-            ops.recomputeBatchFlags()
         }
     }
 

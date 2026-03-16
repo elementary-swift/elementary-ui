@@ -37,7 +37,7 @@ final class FLIPLayoutObserver: DOMLayoutObserver {
         childNodes.reserveCapacity(entries.count)
 
         for entry in entries where entry.type == .element {
-            switch entry.kind {
+            switch entry.op {
             case .added, .unchanged, .moved:
                 childNodes.append(entry.reference)
             case .removed:
