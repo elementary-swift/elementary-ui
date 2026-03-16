@@ -21,12 +21,8 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
 
         self.asFunctionNode = AnyFunctionNode(self, depthInTree: context.functionDepth)
 
-        let (views, keys, session) = Self.evaluateViewsAndKeys(
-            data: self.data,
-            contentBuilder: self.contentBuilder,
-            onWillSet: { [scheduler = ctx.scheduler, asFunctionNode] in
-                scheduler.invalidateFunction(asFunctionNode)
-            }
+        let (views, keys, session) = evaluateViewsAndKeys(
+            scheduler: ctx.scheduler
         )
 
         self.trackingSession = session
@@ -57,7 +53,9 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
     func runFunction(tx: inout _TransactionContext) {
         self.trackingSession.take()?.cancel()
 
-        let (views, keys, session) = evaluateViewsAndKeys(scheduler: tx.scheduler)
+        let (views, keys, session) = evaluateViewsAndKeys(
+            scheduler: tx.scheduler
+        )
 
         self.trackingSession = session
 
@@ -78,31 +76,8 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
         container.unmount(&context)
     }
 
-    private static func makeOnWillSet(
-        scheduler: Scheduler,
-        functionNode: AnyFunctionNode
-    ) -> @Sendable () -> Void {
-        {
-            scheduler.invalidateFunction(functionNode)
-        }
-    }
-
-    private func makeOnWillSet(scheduler: Scheduler) -> @Sendable () -> Void {
-        Self.makeOnWillSet(scheduler: scheduler, functionNode: asFunctionNode)
-    }
-
-    private func evaluateViewsAndKeys(scheduler: Scheduler) -> Evaluation {
-        Self.evaluateViewsAndKeys(
-            data: data,
-            contentBuilder: contentBuilder,
-            onWillSet: makeOnWillSet(scheduler: scheduler)
-        )
-    }
-
-    private static func evaluateViewsAndKeys(
-        data: Data,
-        contentBuilder: @escaping @Sendable (Data.Element) -> Content,
-        onWillSet: @escaping @Sendable () -> Void
+    private func evaluateViewsAndKeys(
+        scheduler: Scheduler
     ) -> Evaluation {
         let ((views, keys), session) = withReactiveTrackingSession(
             {
@@ -120,7 +95,9 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
 
                 return (views, keys)
             },
-            onWillSet: onWillSet
+            onWillSet: { [scheduler, asFunctionNode] in
+                scheduler.invalidateFunction(asFunctionNode)
+            }
         )
 
         return (views, keys, session)
