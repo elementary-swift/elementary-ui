@@ -1,19 +1,14 @@
-// TODO: optimize this, currently a bit AI-sloppy
 final class MountContainer {
-    private struct ActiveIndexInfo {
-        var slotIndex: Int
-        var oldActiveOffset: Int
-    }
-
     private let viewContext: _ViewContext
     private var slots: [Slot]
-    private var scratchIncomingKeys: [_ViewKey] = []
-    private var scratchIncomingKeySet: Set<_ViewKey> = []
-    private var scratchActiveByKey: [_ViewKey: ActiveIndexInfo] = [:]
-    private var scratchLeavingByKey: [_ViewKey: Int] = [:]
-    private var scratchSlots: [Slot] = []
-    private var scratchTargetActive: [Slot] = []
     var containerHandle: LayoutContainer.Handle?
+
+    private var scratchOldMiddle: [Int] = []
+    private var scratchSources: [Int] = []
+    private var scratchOldKeyMap: [_ViewKey: Int] = [:]
+    private var scratchLeavingByKey: [_ViewKey: Int] = [:]
+    private var scratchNewMiddle: [Slot] = []
+    private var scratchMiddleResult: [Slot] = []
 
     private init(context: borrowing _ViewContext, slots: [Slot]) {
         self.viewContext = copy context
@@ -87,144 +82,285 @@ final class MountContainer {
         containerHandle?.reportLayoutChange(&tx)
     }
 
+    // MARK: - Patch (thin generic wrapper)
+
     func patch<Node: _Reconcilable>(
         keys newKeys: some BidirectionalCollection<_ViewKey>,
         tx: inout _TransactionContext,
         makeNode: @escaping (Int, borrowing _ViewContext, inout _MountContext) -> Node,
         patchNode: (Int, inout Node, inout _TransactionContext) -> Void
     ) {
-        scratchIncomingKeys.removeAll(keepingCapacity: true)
-        scratchIncomingKeys.append(contentsOf: newKeys)
-
-        scratchIncomingKeySet.removeAll(keepingCapacity: true)
-        scratchIncomingKeySet.formUnion(scratchIncomingKeys)
-
-        var didStructureChange = false
-        var didReportLayoutChange = false
-
-        func reportLayoutChangeIfNeeded(
-            _ tx: inout _TransactionContext,
-            _ didReportLayoutChange: inout Bool
-        ) {
-            if !didReportLayoutChange {
-                reportLayoutChange(&tx)
-                didReportLayoutChange = true
-            }
-        }
-
-        scratchActiveByKey.removeAll(keepingCapacity: true)
-        scratchActiveByKey.reserveCapacity(slots.count)
-        scratchLeavingByKey.removeAll(keepingCapacity: true)
-        scratchLeavingByKey.reserveCapacity(slots.count)
-
-        var activeOffset = 0
-        for slotIndex in slots.indices {
-            if slots[slotIndex].isActiveForPatch {
-                let key = slots[slotIndex].key
-
-                if !scratchIncomingKeySet.contains(key) {
-                    didStructureChange = true
-
-                    if slots[slotIndex].isMounted {
-                        reportLayoutChangeIfNeeded(&tx, &didReportLayoutChange)
-                    }
-                    _ = slots[slotIndex].beginLeaving(tx: &tx, handle: containerHandle)
-                    if slots[slotIndex].isLeavingInline {
-                        scratchLeavingByKey[key] = slotIndex
-                    }
-                } else {
-                    scratchActiveByKey[key] = .init(
-                        slotIndex: slotIndex,
-                        oldActiveOffset: activeOffset
-                    )
-                }
-
-                activeOffset += 1
-            } else if slots[slotIndex].isLeavingInline {
-                scratchLeavingByKey[slots[slotIndex].key] = slotIndex
-            }
-        }
-
-        scratchTargetActive.removeAll(keepingCapacity: true)
-        scratchTargetActive.reserveCapacity(scratchIncomingKeys.count)
-
-        for (newActiveOffset, key) in scratchIncomingKeys.enumerated() {
-            if let reusedActive = scratchActiveByKey.removeValue(forKey: key) {
-                var slot = slots[reusedActive.slotIndex]
-
-                switch slot.slotState {
-                case .pending:
-                    slot.overwritePending(
+        let startIndex = newKeys.startIndex
+        _performDiff(
+            newKeyCount: newKeys.count,
+            newKey: { newKeys[newKeys.index(startIndex, offsetBy: $0)] },
+            tx: &tx,
+            patchSlot: { slotIndex, newKeyIndex, tx in
+                switch self.slots[slotIndex].slotState {
+                case .pending, .removed:
+                    self.slots[slotIndex].overwritePending(
                         transaction: tx.transaction,
                         create: { context, mountCtx in
-                            AnyReconcilable(makeNode(newActiveOffset, context, &mountCtx))
+                            AnyReconcilable(makeNode(newKeyIndex, context, &mountCtx))
                         }
                     )
                 case .mounted:
-                    if reusedActive.oldActiveOffset != newActiveOffset {
-                        slot.markMoved()
-                        didStructureChange = true
+                    _ = self.slots[slotIndex].patchMountedIfActive(as: Node.self) { node in
+                        patchNode(newKeyIndex, &node, &tx)
                     }
-                    _ = slot.patchMountedIfActive(as: Node.self) { node in
-                        patchNode(newActiveOffset, &node, &tx)
-                    }
-                case .removed:
-                    slot.overwritePending(
-                        transaction: tx.transaction,
-                        create: { context, mountCtx in
-                            AnyReconcilable(makeNode(newActiveOffset, context, &mountCtx))
-                        }
-                    )
                 }
+            },
+            makeNewSlot: { key, newKeyIndex, transaction in
+                .pending(key: key, transaction: transaction) { context, mountCtx in
+                    AnyReconcilable(makeNode(newKeyIndex, context, &mountCtx))
+                }
+            }
+        )
+    }
 
-                scratchTargetActive.append(slot)
-            } else if let leavingIndex = scratchLeavingByKey.removeValue(forKey: key) {
-                var revived = slots[leavingIndex]
-                reportLayoutChangeIfNeeded(&tx, &didReportLayoutChange)
-                _ = revived.reviveFromLeaving(tx: &tx, handle: containerHandle)
-                didStructureChange = true
-                _ = revived.patchMountedIfActive(as: Node.self) { node in
-                    patchNode(newActiveOffset, &node, &tx)
-                }
-                slots[leavingIndex] = revived
-                scratchTargetActive.append(revived)
-            } else {
-                scratchTargetActive.append(
-                    Slot.pending(
-                        key: key,
-                        transaction: tx.transaction,
-                        create: { context, mountCtx in
-                            AnyReconcilable(makeNode(newActiveOffset, context, &mountCtx))
-                        }
-                    )
-                )
-                didStructureChange = true
+    // MARK: - Non-generic diff engine (prefix/suffix + LIS)
+
+    private func _performDiff(
+        newKeyCount: Int,
+        newKey: (Int) -> _ViewKey,
+        tx: inout _TransactionContext,
+        patchSlot: (_ slotIndex: Int, _ newKeyIndex: Int, _ tx: inout _TransactionContext) -> Void,
+        makeNewSlot: (_ key: _ViewKey, _ newKeyIndex: Int, _ transaction: Transaction) -> Slot
+    ) {
+        let oldCount = slots.count
+        if oldCount == 0 && newKeyCount == 0 { return }
+
+        scratchLeavingByKey.removeAll(keepingCapacity: true)
+        for i in slots.indices where slots[i].isLeavingInline {
+            scratchLeavingByKey[slots[i].key] = i
+        }
+
+        // ── Phase 1: Common prefix ──────────────────────────────────────
+        var fwdSlot = 0
+        var fwdKey = 0
+        while fwdSlot < oldCount && fwdKey < newKeyCount {
+            if !slots[fwdSlot].isActiveForPatch { fwdSlot += 1; continue }
+            guard slots[fwdSlot].key == newKey(fwdKey) else { break }
+            patchSlot(fwdSlot, fwdKey, &tx)
+            fwdSlot += 1; fwdKey += 1
+        }
+
+        // ── Phase 2: Common suffix ──────────────────────────────────────
+        var bwdSlot = oldCount - 1
+        var bwdKey = newKeyCount - 1
+        while bwdSlot >= fwdSlot && bwdKey >= fwdKey {
+            if !slots[bwdSlot].isActiveForPatch { bwdSlot -= 1; continue }
+            guard slots[bwdSlot].key == newKey(bwdKey) else { break }
+            bwdSlot -= 1; bwdKey -= 1
+        }
+
+        // ── Phase 3: Patch suffix in-place (before middle modifies structure) ─
+        do {
+            var ss = bwdSlot + 1
+            var sk = bwdKey + 1
+            while ss < oldCount && sk < newKeyCount {
+                if !slots[ss].isActiveForPatch { ss += 1; continue }
+                patchSlot(ss, sk, &tx)
+                ss += 1; sk += 1
             }
         }
 
-        scratchSlots.removeAll(keepingCapacity: true)
-        scratchSlots.reserveCapacity(max(slots.count, scratchTargetActive.count))
+        // ── Determine middle extents ────────────────────────────────────
+        let newMiddleCount = max(0, bwdKey - fwdKey + 1)
 
-        var activeCursor = 0
-        for slot in slots {
-            if slot.isLeavingInline {
-                scratchSlots.append(slot)
-            } else if activeCursor < scratchTargetActive.count {
-                scratchSlots.append(scratchTargetActive[activeCursor])
+        scratchOldMiddle.removeAll(keepingCapacity: true)
+        if fwdSlot <= bwdSlot {
+            for i in fwdSlot...bwdSlot where slots[i].isActiveForPatch {
+                scratchOldMiddle.append(i)
+            }
+        }
+        let oldMiddleCount = scratchOldMiddle.count
+
+        if oldMiddleCount == 0 && newMiddleCount == 0 { return }
+
+        // ── Phase 4: Process middle ─────────────────────────────────────
+        var didStructureChange = false
+        var didReportLayoutChange = false
+
+        if oldMiddleCount == 0 {
+            // Pure insertions
+            didStructureChange = true
+            scratchNewMiddle.removeAll(keepingCapacity: true)
+            scratchNewMiddle.reserveCapacity(newMiddleCount)
+            for j in 0..<newMiddleCount {
+                let keyIdx = fwdKey + j
+                let key = newKey(keyIdx)
+                if let leavingIdx = scratchLeavingByKey.removeValue(forKey: key) {
+                    if !didReportLayoutChange { reportLayoutChange(&tx); didReportLayoutChange = true }
+                    _ = slots[leavingIdx].reviveFromLeaving(tx: &tx, handle: containerHandle)
+                    patchSlot(leavingIdx, keyIdx, &tx)
+                    scratchNewMiddle.append(slots[leavingIdx])
+                    if leavingIdx < fwdSlot || leavingIdx > bwdSlot {
+                        slots[leavingIdx].slotState = .removed
+                    }
+                } else {
+                    scratchNewMiddle.append(makeNewSlot(key, keyIdx, tx.transaction))
+                }
+            }
+
+        } else if newMiddleCount == 0 {
+            // Pure removals
+            didStructureChange = true
+            scratchNewMiddle.removeAll(keepingCapacity: true)
+            for localIdx in 0..<oldMiddleCount {
+                let slotIdx = scratchOldMiddle[localIdx]
+                if slots[slotIdx].isMounted && !didReportLayoutChange {
+                    reportLayoutChange(&tx); didReportLayoutChange = true
+                }
+                _ = slots[slotIdx].beginLeaving(tx: &tx, handle: containerHandle)
+            }
+
+        } else {
+            // General case: keyed diff with LIS
+            scratchOldKeyMap.removeAll(keepingCapacity: true)
+            scratchOldKeyMap.reserveCapacity(oldMiddleCount)
+            for localIdx in 0..<oldMiddleCount {
+                scratchOldKeyMap[slots[scratchOldMiddle[localIdx]].key] = localIdx
+            }
+
+            scratchSources.removeAll(keepingCapacity: true)
+            scratchSources.reserveCapacity(newMiddleCount)
+            for j in 0..<newMiddleCount {
+                let keyIdx = fwdKey + j
+                let key = newKey(keyIdx)
+                if let oldLocalIdx = scratchOldKeyMap.removeValue(forKey: key) {
+                    scratchSources.append(oldLocalIdx)
+                    patchSlot(scratchOldMiddle[oldLocalIdx], keyIdx, &tx)
+                } else {
+                    scratchSources.append(-1)
+                }
+            }
+
+            // Begin leaving for unreused old middle slots (keys still in map)
+            for (_, oldLocalIdx) in scratchOldKeyMap {
+                let slotIdx = scratchOldMiddle[oldLocalIdx]
+                didStructureChange = true
+                if slots[slotIdx].isMounted && !didReportLayoutChange {
+                    reportLayoutChange(&tx); didReportLayoutChange = true
+                }
+                _ = slots[slotIdx].beginLeaving(tx: &tx, handle: containerHandle)
+            }
+
+            // Mark revivable leaving slots (encode slot index as -(idx+2))
+            for j in 0..<newMiddleCount where scratchSources[j] < 0 {
+                let key = newKey(fwdKey + j)
+                if let leavingIdx = scratchLeavingByKey[key] {
+                    scratchSources[j] = -(leavingIdx + 2)
+                }
+                didStructureChange = true
+            }
+
+            // Compute LIS on reused-slot positions → nodes in the LIS don't move
+            let inLIS = Self._longestIncreasingSubsequence(scratchSources)
+
+            for j in 0..<newMiddleCount {
+                if scratchSources[j] >= 0 && !inLIS[j] {
+                    slots[scratchOldMiddle[scratchSources[j]]].markMoved()
+                    didStructureChange = true
+                }
+            }
+
+            // Build new middle active array in target order
+            scratchNewMiddle.removeAll(keepingCapacity: true)
+            scratchNewMiddle.reserveCapacity(newMiddleCount)
+            for j in 0..<newMiddleCount {
+                let keyIdx = fwdKey + j
+                let key = newKey(keyIdx)
+                let src = scratchSources[j]
+                if src >= 0 {
+                    scratchNewMiddle.append(slots[scratchOldMiddle[src]])
+                } else if src < -1 {
+                    let leavingIdx = -(src + 2)
+                    if !didReportLayoutChange { reportLayoutChange(&tx); didReportLayoutChange = true }
+                    _ = slots[leavingIdx].reviveFromLeaving(tx: &tx, handle: containerHandle)
+                    patchSlot(leavingIdx, keyIdx, &tx)
+                    scratchNewMiddle.append(slots[leavingIdx])
+                    if leavingIdx < fwdSlot || leavingIdx > bwdSlot {
+                        slots[leavingIdx].slotState = .removed
+                    }
+                } else {
+                    scratchNewMiddle.append(makeNewSlot(key, keyIdx, tx.transaction))
+                }
+            }
+        }
+
+        // ── Phase 5: Reassemble middle ──────────────────────────────────
+        if fwdSlot <= bwdSlot {
+            scratchMiddleResult.removeAll(keepingCapacity: true)
+            scratchMiddleResult.reserveCapacity(max(bwdSlot - fwdSlot + 1, scratchNewMiddle.count))
+            var activeCursor = 0
+            for i in fwdSlot...bwdSlot {
+                if slots[i].isLeavingInline {
+                    scratchMiddleResult.append(slots[i])
+                } else if !slots[i].isRemoved && activeCursor < scratchNewMiddle.count {
+                    scratchMiddleResult.append(scratchNewMiddle[activeCursor])
+                    activeCursor += 1
+                }
+            }
+            while activeCursor < scratchNewMiddle.count {
+                scratchMiddleResult.append(scratchNewMiddle[activeCursor])
                 activeCursor += 1
             }
+            slots.replaceSubrange(fwdSlot...bwdSlot, with: scratchMiddleResult)
+        } else if !scratchNewMiddle.isEmpty {
+            slots.insert(contentsOf: scratchNewMiddle, at: fwdSlot)
         }
 
-        if activeCursor < scratchTargetActive.count {
-            scratchSlots.append(contentsOf: scratchTargetActive[activeCursor...])
-        }
+        scratchNewMiddle.removeAll(keepingCapacity: true)
+        scratchMiddleResult.removeAll(keepingCapacity: true)
 
-        swap(&slots, &scratchSlots)
-        scratchSlots.removeAll(keepingCapacity: true)
-
-        if didStructureChange, !didReportLayoutChange {
+        if didStructureChange && !didReportLayoutChange {
             reportLayoutChange(&tx)
         }
+    }
+
+    // MARK: - Longest Increasing Subsequence (O(n log n))
+
+    private static func _longestIncreasingSubsequence(_ sources: [Int]) -> [Bool] {
+        let n = sources.count
+        guard n > 0 else { return [] }
+
+        var result = [Bool](repeating: false, count: n)
+        var tails: [Int] = []
+        var tailIdx: [Int] = []
+        var preds = [Int](repeating: -1, count: n)
+
+        for i in 0..<n {
+            let val = sources[i]
+            guard val >= 0 else { continue }
+
+            var lo = 0
+            var hi = tails.count
+            while lo < hi {
+                let mid = (lo + hi) &>> 1
+                if tails[mid] < val { lo = mid + 1 } else { hi = mid }
+            }
+
+            if lo == tails.count {
+                tails.append(val)
+                tailIdx.append(i)
+            } else {
+                tails[lo] = val
+                tailIdx[lo] = i
+            }
+
+            preds[i] = lo > 0 ? tailIdx[lo - 1] : -1
+        }
+
+        if !tails.isEmpty {
+            var pos = tailIdx[tails.count - 1]
+            while pos >= 0 {
+                result[pos] = true
+                pos = preds[pos]
+            }
+        }
+
+        return result
     }
 }
 

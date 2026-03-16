@@ -196,7 +196,6 @@ struct DOMPatchingTests {
             ops == [
                 .createText("D"),
                 .addChild(parent: "<>", child: "D", before: "C"),
-                .addChild(parent: "<>", child: "B", before: "D"),
                 .removeChild(parent: "<>", child: "A"),
             ]
         )
@@ -215,7 +214,7 @@ struct DOMPatchingTests {
 
         #expect(
             ops == [
-                .addChild(parent: "<>", child: "A"),
+                .addChild(parent: "<>", child: "B", before: "A"),
                 .addChild(parent: "<>", child: "C", before: "B"),
             ]
         )
