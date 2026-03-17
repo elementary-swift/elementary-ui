@@ -1,8 +1,8 @@
 final class LayoutContainer {
     let domNode: DOM.Node
     private let scheduler: Scheduler
+    private let layoutNodes: [LayoutNode]
     private var layoutObservers: [any DOMLayoutObserver]
-    private var layoutNodes: [LayoutNode]
     private var isDirty: Bool = false
 
     init(
@@ -70,6 +70,7 @@ final class LayoutContainer {
         guard isDirty else { return }
         isDirty = false
 
+        // TODO: use lifetimes and scratch container here
         var ops = LayoutPass(layoutContainer: self)
         layoutNodes.collect(into: &ops, context: &context, op: .unchanged)
 

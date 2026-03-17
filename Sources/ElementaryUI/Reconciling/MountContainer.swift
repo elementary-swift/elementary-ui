@@ -9,6 +9,7 @@ final class MountContainer {
     private var scratchLeavingByKey: [_ViewKey: Int] = [:]
     private var scratchNewMiddle: [Slot] = []
     private var scratchMiddleResult: [Slot] = []
+    private var pendingMakeNode: ((Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable)?
 
     private init(context: borrowing _ViewContext, slots: [Slot]) {
         self.viewContext = copy context
@@ -64,11 +65,18 @@ final class MountContainer {
     func collect(into ops: inout LayoutPass, context: inout _CommitContext, op: LayoutPass.Entry.LayoutOp) {
         if containerHandle == nil { containerHandle = ops.containerHandle }
 
+        var hasRemovedSlots = false
+
         for index in slots.indices {
-            slots[index].collect(into: &ops, context: &context, viewContext: viewContext, parentOp: op)
+            slots[index].collect(into: &ops, context: &context, viewContext: viewContext, makeNode: pendingMakeNode, parentOp: op)
+            hasRemovedSlots = hasRemovedSlots || slots[index].isRemoved
         }
 
-        slots.removeAll { $0.isRemoved }
+        if hasRemovedSlots {
+            slots.removeAll { $0.isRemoved }
+        }
+
+        pendingMakeNode = nil
     }
 
     func unmount(_ context: inout _CommitContext) {
@@ -76,6 +84,7 @@ final class MountContainer {
             slots[index].unmount(&context)
         }
         slots.removeAll()
+        containerHandle = nil
     }
 
     func reportLayoutChange(_ tx: inout _TransactionContext) {
@@ -91,6 +100,9 @@ final class MountContainer {
         patchNode: (Int, inout Node, inout _TransactionContext) -> Void
     ) {
         let startIndex = newKeys.startIndex
+        pendingMakeNode = { index, viewContext, mountCtx in
+            AnyReconcilable(makeNode(index, viewContext, &mountCtx))
+        }
         _performDiff(
             newKeyCount: newKeys.count,
             newKey: { newKeys[newKeys.index(startIndex, offsetBy: $0)] },
@@ -100,9 +112,7 @@ final class MountContainer {
                 case .pending, .removed:
                     self.slots[slotIndex].overwritePending(
                         transaction: tx.transaction,
-                        create: { context, mountCtx in
-                            AnyReconcilable(makeNode(newKeyIndex, context, &mountCtx))
-                        }
+                        newKeyIndex: newKeyIndex
                     )
                 case .mounted:
                     _ = self.slots[slotIndex].patchMountedIfActive(as: Node.self) { node in
@@ -111,9 +121,7 @@ final class MountContainer {
                 }
             },
             makeNewSlot: { key, newKeyIndex, transaction in
-                .pending(key: key, transaction: transaction) { context, mountCtx in
-                    AnyReconcilable(makeNode(newKeyIndex, context, &mountCtx))
-                }
+                .pending(key: key, transaction: transaction, newKeyIndex: newKeyIndex)
             }
         )
     }
@@ -369,7 +377,7 @@ extension MountContainer {
     private struct Slot {
         struct Pending {
             var transaction: Transaction
-            var create: (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
+            var newKeyIndex: Int
         }
 
         struct Mounted {
@@ -392,7 +400,7 @@ extension MountContainer {
             case removed
         }
 
-        var key: _ViewKey
+        let key: _ViewKey
         var slotState: SlotState
 
         var isRemoved: Bool {
@@ -428,12 +436,12 @@ extension MountContainer {
         static func pending(
             key: _ViewKey,
             transaction: Transaction,
-            create: @escaping (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
+            newKeyIndex: Int
         ) -> Self {
             .init(
                 key: key,
                 slotState: .pending(
-                    .init(transaction: transaction, create: create)
+                    .init(transaction: transaction, newKeyIndex: newKeyIndex)
                 )
             )
         }
@@ -445,10 +453,9 @@ extension MountContainer {
             ctx: inout _MountContext,
             makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> Node
         ) -> Self {
-            let context = copy viewContext
             let (node, layoutNodes, transitionCoordinator) = ctx.withMountRootContext { (rootCtx: consuming _MountContext) in
                 var rootCtx = consume rootCtx
-                let node = AnyReconcilable(makeNode(index, context, &rootCtx))
+                let node = AnyReconcilable(makeNode(index, viewContext, &rootCtx))
                 let (layoutNodes, transitionCoordinator) = rootCtx.takeMountOutput()
                 return (node, layoutNodes, transitionCoordinator)
             }
@@ -469,9 +476,9 @@ extension MountContainer {
 
         mutating func overwritePending(
             transaction: Transaction,
-            create: @escaping (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
+            newKeyIndex: Int
         ) {
-            slotState = .pending(.init(transaction: transaction, create: create))
+            slotState = .pending(.init(transaction: transaction, newKeyIndex: newKeyIndex))
         }
 
         mutating func markMoved() {
@@ -537,14 +544,15 @@ extension MountContainer {
             into ops: inout LayoutPass,
             context: inout _CommitContext,
             viewContext: borrowing _ViewContext,
+            makeNode: ((Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable)?,
             parentOp: LayoutPass.Entry.LayoutOp
         ) {
             switch slotState {
             case .pending(let pending):
-                let viewContext = copy viewContext
+                precondition(makeNode != nil)
                 let (node, layoutNodes, transitionCoordinator) =
                     context.withMountContext(transaction: pending.transaction) { (ctx: consuming _MountContext) in
-                        let node = pending.create(viewContext, &ctx)
+                        let node = makeNode!(pending.newKeyIndex, viewContext, &ctx)
                         let (layoutNodes, transitionCoordinator) = ctx.takeMountOutput()
                         return (node, layoutNodes, transitionCoordinator)
                     }
