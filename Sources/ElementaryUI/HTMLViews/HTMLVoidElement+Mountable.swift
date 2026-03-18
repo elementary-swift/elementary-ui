@@ -1,24 +1,17 @@
 extension HTMLVoidElement: _Mountable, View {
-    public typealias _MountedNode = _StatefulNode<_AttributeModifier, _ElementNode<_EmptyNode>>
+    public typealias _MountedNode = _ElementNode<_EmptyNode>
 
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) -> _MountedNode {
-        let attributeModifier = _AttributeModifier(value: view._attributes, upstream: context.modifiers)
-
-        var context = copy context
-        context.modifiers[_AttributeModifier.key] = attributeModifier
-
-        return _MountedNode(
-            state: attributeModifier,
-            child: _ElementNode(
-                tag: self.Tag.name,
-                viewContext: context,
-                ctx: &ctx,
-                makeChild: { _, _ in _EmptyNode() }
-            )
+        _ElementNode(
+            tag: self.Tag.name,
+            attributes: view._attributes,
+            viewContext: context,
+            ctx: &ctx,
+            makeChild: { _, _ in _EmptyNode() }
         )
     }
 
@@ -27,6 +20,6 @@ extension HTMLVoidElement: _Mountable, View {
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        node.state.updateValue(view._attributes, &tx)
+        node.update(attributes: view._attributes, &tx) { _, _ in }
     }
 }

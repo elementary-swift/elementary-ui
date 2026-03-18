@@ -1,24 +1,43 @@
+enum _ElementAttributes {
+    case inline(node: DOM.Node, lastApplied: _AttributeStorage)
+    case modifier(_AttributeModifier)
+}
+
 public struct _ElementNode<Child: _Reconcilable>: _Reconcilable {
     private var child: Child
-    private var mountedModifiers: [AnyUnmountable]?
+    private var attributes: _ElementAttributes
+    private var mountedModifiers: [AnyUnmountable] = []
 
     init(
         tag: String,
+        attributes: _AttributeStorage,
         viewContext: borrowing _ViewContext,
         ctx: inout _MountContext,
         makeChild: (borrowing _ViewContext, inout _MountContext) -> Child
     ) {
+        var childContext = copy viewContext
+
         let domNode = ctx.dom.createElement(tag)
 
-        var childContext = copy viewContext
+        if childContext.modifiers[_AttributeModifier.key] != nil {
+            // upstream modifier exists: chain through _AttributeModifier as before
+            let modifier = _AttributeModifier(value: attributes, upstream: childContext.modifiers)
+            self.attributes = .modifier(modifier)
+            childContext.modifiers[_AttributeModifier.key] = modifier
+        } else {
+            // no upstream: apply attributes directly, skip _AttributeModifier allocation
+            ctx.dom.addHTMLAttributes(domNode, attributes)
+            self.attributes = .inline(node: domNode, lastApplied: attributes)
+        }
+
         let modifiers = childContext.takeModifiers()
         let layoutObservers = childContext.takeLayoutObservers()
 
-        var mountedModifiers: [AnyUnmountable] = []
+        self.mountedModifiers.reserveCapacity(modifiers.count)
+
         for modifier in modifiers.reversed() {
-            mountedModifiers.append(modifier.mount(domNode, &ctx))
+            self.mountedModifiers.append(modifier.mount(domNode, &ctx))
         }
-        self.mountedModifiers = mountedModifiers
 
         ctx.appendStaticElement(domNode)
 
@@ -29,19 +48,32 @@ public struct _ElementNode<Child: _Reconcilable>: _Reconcilable {
         }
     }
 
-    mutating func updateChild(
+    mutating func update(
+        attributes: _AttributeStorage,
         _ context: inout _TransactionContext,
         block: (inout Child, inout _TransactionContext) -> Void
     ) {
+        switch self.attributes {
+        case .modifier(let modifier):
+            modifier.updateValue(attributes, &context)
+        case .inline(let node, let lastApplied):
+            if attributes != lastApplied {
+                let (prev, next, n) = (lastApplied, attributes, node)
+                context.scheduler.addCommitAction { ctx in
+                    ctx.dom.applyHTMLAttributes(n, from: prev, to: next)
+                }
+                self.attributes = .inline(node: node, lastApplied: attributes)
+            }
+        }
         block(&child, &context)
     }
 
     public consuming func unmount(_ context: inout _CommitContext) {
         child.unmount(&context)
 
-        for modifier in mountedModifiers ?? [] {
+        for modifier in mountedModifiers {
             modifier.unmount(&context)
         }
-        mountedModifiers = nil
+        mountedModifiers.removeAll()
     }
 }

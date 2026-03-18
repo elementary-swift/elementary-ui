@@ -50,8 +50,6 @@ public final class _AttributeModifier: DOMElementModifier, Invalidateable {
 
 extension _AttributeModifier {
     final class MountedInstance: Unmountable, Invalidateable {
-        private typealias StylePair = (key: Substring.UTF8View, value: Substring.UTF8View)
-
         let modifier: _AttributeModifier
         let node: DOM.Node
 
@@ -62,7 +60,9 @@ extension _AttributeModifier {
             self.node = node
             self.modifier = modifier
             self.modifier.tracker.addDependency(self)
-            patchAttributes(with: modifier.value, on: context.dom)
+            let initialValue = modifier.value
+            context.dom.addHTMLAttributes(node, initialValue)
+            previousAttributes = initialValue
         }
 
         func invalidate(_ context: inout _TransactionContext) {
@@ -74,7 +74,9 @@ extension _AttributeModifier {
 
         func updateDOMNode(_ context: inout _CommitContext) {
             logTrace("updating attribute modifier")
-            patchAttributes(with: modifier.value, on: context.dom)
+            let newValue = modifier.value
+            context.dom.applyHTMLAttributes(node, from: previousAttributes, to: newValue)
+            previousAttributes = newValue
             isDirty = false
         }
 
@@ -82,210 +84,222 @@ extension _AttributeModifier {
             logTrace("unmounting attribute modifier")
             self.modifier.tracker.removeDependency(self)
         }
+    }
+}
 
-        // MARK: - Attribute patching
+// MARK: - Attribute patching
 
-        private func patchAttributes(with attributes: _AttributeStorage, on dom: any DOM.Interactor) {
-            guard attributes != .none || previousAttributes != .none else { return }
+extension DOM.Interactor {
+    private typealias StylePair = (key: Substring.UTF8View, value: Substring.UTF8View)
 
-            var oldIterator = previousAttributes.flattened().makeIterator()
-            var newIterator = attributes.flattened().makeIterator()
-            applyAttributeChanges(
-                oldIterator: &oldIterator,
-                newIterator: &newIterator,
-                on: dom
-            )
-            previousAttributes = attributes
+    func addHTMLAttributes(_ node: DOM.Node, _ attributes: _AttributeStorage) {
+        guard attributes != .none else { return }
+
+        for attribute in attributes.flattened() {
+            if let newStyle = attribute._styleKeyValuePairs {
+                applyStyleChanges(node, from: nil, to: newStyle)
+            } else {
+                setAttribute(node, name: attribute.name, value: attribute.value)
+            }
         }
+    }
 
-        private func applyAttributeChanges(
-            oldIterator: inout _MergedAttributes.Iterator,
-            newIterator: inout _MergedAttributes.Iterator,
-            on dom: any DOM.Interactor
-        ) {
-            while true {
-                let oldNext = oldIterator.next()
-                let newNext = newIterator.next()
+    func applyHTMLAttributes(_ node: DOM.Node, from previousAttributes: _AttributeStorage, to newAttributes: _AttributeStorage) {
+        if previousAttributes == .none {
+            addHTMLAttributes(node, newAttributes)
+        } else {
+            var oldIterator = previousAttributes.flattened().makeIterator()
+            var newIterator = newAttributes.flattened().makeIterator()
+            applyAttributeChanges(node, oldIterator: &oldIterator, newIterator: &newIterator)
+        }
+    }
 
-                switch (oldNext, newNext) {
-                case let (.some(old), .some(new)):
-                    guard old.name.utf8Equals(new.name) else {
-                        applyAttributesSlowPath(
-                            firstOld: old,
-                            oldIterator: &oldIterator,
-                            firstNew: new,
-                            newIterator: &newIterator,
-                            on: dom
-                        )
-                        return
-                    }
+    private func applyAttributeChanges(
+        _ node: DOM.Node,
+        oldIterator: inout _MergedAttributes.Iterator,
+        newIterator: inout _MergedAttributes.Iterator
+    ) {
+        while true {
+            let oldNext = oldIterator.next()
+            let newNext = newIterator.next()
 
-                    let oldStyle = old._styleKeyValuePairs
-                    let newStyle = new._styleKeyValuePairs
-                    if oldStyle != nil || newStyle != nil {
-                        applyStyleChanges(from: oldStyle, to: newStyle, on: dom)
-                    } else if !old.value.utf8Equals(new.value) {
-                        logTrace("updating attribute \(new.name) from \(old.value ?? "") to \(new.value ?? "")")
-                        dom.setAttribute(node, name: new.name, value: new.value)
-                    }
-                case (.none, .none):
-                    return
-                default:
+            switch (oldNext, newNext) {
+            case let (.some(old), .some(new)):
+                guard old.name.utf8Equals(new.name) else {
                     applyAttributesSlowPath(
-                        firstOld: oldNext,
+                        node,
+                        firstOld: old,
                         oldIterator: &oldIterator,
-                        firstNew: newNext,
-                        newIterator: &newIterator,
-                        on: dom
+                        firstNew: new,
+                        newIterator: &newIterator
                     )
                     return
                 }
-            }
-        }
 
-        private func applyAttributesSlowPath(
-            firstOld: _StoredAttribute?,
-            oldIterator: inout _MergedAttributes.Iterator,
-            firstNew: _StoredAttribute?,
-            newIterator: inout _MergedAttributes.Iterator,
-            on dom: any DOM.Interactor
-        ) {
-            var oldByKey: [HashableUTF8View: _StoredAttribute] = [:]
-            if let firstOld {
-                oldByKey[HashableUTF8View(firstOld.name)] = firstOld
-            }
-            while let old = oldIterator.next() {
-                oldByKey[HashableUTF8View(old.name)] = old
-            }
-
-            func apply(_ new: _StoredAttribute) {
-                let key = HashableUTF8View(new.name)
-                let old = oldByKey.removeValue(forKey: key)
-                let oldStyle = old?._styleKeyValuePairs
+                let oldStyle = old._styleKeyValuePairs
                 let newStyle = new._styleKeyValuePairs
                 if oldStyle != nil || newStyle != nil {
-                    applyStyleChanges(from: oldStyle, to: newStyle, on: dom)
-                } else if old == nil || !old!.value.utf8Equals(new.value) {
-                    dom.setAttribute(node, name: new.name, value: new.value)
+                    applyStyleChanges(node, from: oldStyle, to: newStyle)
+                } else if !old.value.utf8Equals(new.value) {
+                    logTrace("updating attribute \(new.name) from \(old.value ?? "") to \(new.value ?? "")")
+                    setAttribute(node, name: new.name, value: new.value)
                 }
+            case (.none, .none):
+                return
+            default:
+                applyAttributesSlowPath(
+                    node,
+                    firstOld: oldNext,
+                    oldIterator: &oldIterator,
+                    firstNew: newNext,
+                    newIterator: &newIterator
+                )
+                return
             }
+        }
+    }
 
-            if let firstNew {
-                apply(firstNew)
-            }
-            while let new = newIterator.next() {
-                apply(new)
-            }
+    private func applyAttributesSlowPath(
+        _ node: DOM.Node,
+        firstOld: _StoredAttribute?,
+        oldIterator: inout _MergedAttributes.Iterator,
+        firstNew: _StoredAttribute?,
+        newIterator: inout _MergedAttributes.Iterator
+    ) {
+        var oldByKey: [HashableUTF8View: _StoredAttribute] = [:]
+        if let firstOld {
+            oldByKey[HashableUTF8View(firstOld.name)] = firstOld
+        }
+        while let old = oldIterator.next() {
+            oldByKey[HashableUTF8View(old.name)] = old
+        }
 
-            for old in oldByKey.values {
-                if let oldStylePairs = old._styleKeyValuePairs {
-                    applyStyleChanges(from: oldStylePairs, to: nil, on: dom)
-                } else {
-                    logTrace("removing attribute \(old.name)")
-                    dom.removeAttribute(node, name: old.name)
-                }
+        func apply(_ new: _StoredAttribute) {
+            let key = HashableUTF8View(new.name)
+            let old = oldByKey.removeValue(forKey: key)
+            let oldStyle = old?._styleKeyValuePairs
+            let newStyle = new._styleKeyValuePairs
+            if oldStyle != nil || newStyle != nil {
+                applyStyleChanges(node, from: oldStyle, to: newStyle)
+            } else if old == nil || !old!.value.utf8Equals(new.value) {
+                setAttribute(node, name: new.name, value: new.value)
             }
         }
 
-        private func applyStyleChanges(
-            from oldStylePairs: _StoredAttribute._StyleKeyValuePairs?,
-            to newStylePairs: _StoredAttribute._StyleKeyValuePairs?,
-            on dom: any DOM.Interactor
-        ) {
-            guard let newStylePairs else {
-                if let oldStylePairs {
-                    for (oldKey, _) in oldStylePairs {
-                        dom.removeStyleProperty(node, name: String(decoding: oldKey, as: UTF8.self))
-                    }
-                }
-                return
+        if let firstNew {
+            apply(firstNew)
+        }
+        while let new = newIterator.next() {
+            apply(new)
+        }
+
+        for old in oldByKey.values {
+            if let oldStylePairs = old._styleKeyValuePairs {
+                applyStyleChanges(node, from: oldStylePairs, to: nil)
+            } else {
+                logTrace("removing attribute \(old.name)")
+                removeAttribute(node, name: old.name)
             }
+        }
+    }
 
-            guard let oldStylePairs else {
-                for (newKey, newValue) in newStylePairs {
-                    dom.setStyleProperty(
-                        node,
-                        name: String(Substring(newKey)),
-                        value: String(Substring(newValue))
-                    )
+    private func applyStyleChanges(
+        _ node: DOM.Node,
+        from oldStylePairs: _StoredAttribute._StyleKeyValuePairs?,
+        to newStylePairs: _StoredAttribute._StyleKeyValuePairs?
+    ) {
+        guard let newStylePairs else {
+            if let oldStylePairs {
+                for (oldKey, _) in oldStylePairs {
+                    removeStyleProperty(node, name: String(decoding: oldKey, as: UTF8.self))
                 }
-                return
             }
+            return
+        }
 
-            var oldIterator = oldStylePairs.makeIterator()
-            var newIterator = newStylePairs.makeIterator()
+        guard let oldStylePairs else {
+            for (newKey, newValue) in newStylePairs {
+                setStyleProperty(
+                    node,
+                    name: String(Substring(newKey)),
+                    value: String(Substring(newValue))
+                )
+            }
+            return
+        }
 
-            while true {
-                let oldNext = oldIterator.next()
-                let newNext = newIterator.next()
+        var oldIterator = oldStylePairs.makeIterator()
+        var newIterator = newStylePairs.makeIterator()
 
-                switch (oldNext, newNext) {
-                case let (.some(oldPair), .some(newPair)):
-                    guard oldPair.key.elementsEqual(newPair.key) else {
-                        applyStylesSlowPath(
-                            firstOld: oldPair,
-                            oldIterator: &oldIterator,
-                            firstNew: newPair,
-                            newIterator: &newIterator,
-                            on: dom
-                        )
-                        return
-                    }
+        while true {
+            let oldNext = oldIterator.next()
+            let newNext = newIterator.next()
 
-                    if !oldPair.value.elementsEqual(newPair.value) {
-                        dom.setStyleProperty(
-                            node,
-                            name: String(Substring(newPair.key)),
-                            value: String(Substring(newPair.value))
-                        )
-                    }
-                case (.none, .none):
-                    return
-                default:
+            switch (oldNext, newNext) {
+            case let (.some(oldPair), .some(newPair)):
+                guard oldPair.key.elementsEqual(newPair.key) else {
                     applyStylesSlowPath(
-                        firstOld: oldNext,
+                        node,
+                        firstOld: oldPair,
                         oldIterator: &oldIterator,
-                        firstNew: newNext,
-                        newIterator: &newIterator,
-                        on: dom
+                        firstNew: newPair,
+                        newIterator: &newIterator
                     )
                     return
                 }
+
+                if !oldPair.value.elementsEqual(newPair.value) {
+                    setStyleProperty(
+                        node,
+                        name: String(Substring(newPair.key)),
+                        value: String(Substring(newPair.value))
+                    )
+                }
+            case (.none, .none):
+                return
+            default:
+                applyStylesSlowPath(
+                    node,
+                    firstOld: oldNext,
+                    oldIterator: &oldIterator,
+                    firstNew: newNext,
+                    newIterator: &newIterator
+                )
+                return
             }
         }
+    }
 
-        private func applyStylesSlowPath(
-            firstOld: StylePair?,
-            oldIterator: inout _StoredAttribute._StyleKeyValuePairs.Iterator,
-            firstNew: StylePair?,
-            newIterator: inout _StoredAttribute._StyleKeyValuePairs.Iterator,
-            on dom: any DOM.Interactor
-        ) {
-            var oldByKey: [HashableUTF8View: Substring.UTF8View] = [:]
-            if let firstOld {
-                oldByKey[HashableUTF8View(firstOld.key)] = firstOld.value
-            }
-            while let pair = oldIterator.next() {
-                oldByKey[HashableUTF8View(pair.key)] = pair.value
-            }
-
-            func apply(_ pair: StylePair) {
-                let key = HashableUTF8View(pair.key)
-                if let oldValue = oldByKey.removeValue(forKey: key), oldValue.elementsEqual(pair.value) { return }
-                dom.setStyleProperty(node, name: key.stringValue, value: String(decoding: pair.value, as: UTF8.self))
-            }
-
-            if let firstNew {
-                apply(firstNew)
-            }
-            while let pair = newIterator.next() {
-                apply(pair)
-            }
-
-            for remainingKey in oldByKey.keys {
-                dom.removeStyleProperty(node, name: remainingKey.stringValue)
-            }
+    private func applyStylesSlowPath(
+        _ node: DOM.Node,
+        firstOld: StylePair?,
+        oldIterator: inout _StoredAttribute._StyleKeyValuePairs.Iterator,
+        firstNew: StylePair?,
+        newIterator: inout _StoredAttribute._StyleKeyValuePairs.Iterator
+    ) {
+        var oldByKey: [HashableUTF8View: Substring.UTF8View] = [:]
+        if let firstOld {
+            oldByKey[HashableUTF8View(firstOld.key)] = firstOld.value
+        }
+        while let pair = oldIterator.next() {
+            oldByKey[HashableUTF8View(pair.key)] = pair.value
         }
 
+        func apply(_ pair: StylePair) {
+            let key = HashableUTF8View(pair.key)
+            if let oldValue = oldByKey.removeValue(forKey: key), oldValue.elementsEqual(pair.value) { return }
+            setStyleProperty(node, name: key.stringValue, value: String(decoding: pair.value, as: UTF8.self))
+        }
+
+        if let firstNew {
+            apply(firstNew)
+        }
+        while let pair = newIterator.next() {
+            apply(pair)
+        }
+
+        for remainingKey in oldByKey.keys {
+            removeStyleProperty(node, name: remainingKey.stringValue)
+        }
     }
 }
