@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773782442765,
+  "lastUpdate": 1773817123869,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -1921,6 +1921,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 169.34,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "ccb6cfa532b6833b412a14e5ed5ed1ab6321a721",
+          "message": "minor performance tweaks (#87)\n\n* direct parent op forwarding\n\n* foreach cleanup\n\n* postpone scratch storage reuse",
+          "timestamp": "2026-03-17T21:17:45Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/ccb6cfa532b6833b412a14e5ed5ed1ab6321a721"
+        },
+        "date": 1773817122992,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 174.04,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 132.85,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 119.44,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 169.33,
             "unit": "kB"
           }
         ]
