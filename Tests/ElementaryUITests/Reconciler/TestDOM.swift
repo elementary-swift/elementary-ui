@@ -249,13 +249,6 @@ final class TestDOM: DOM.Interactor {
         node.value.kind = .text(text)
     }
 
-    func replaceChildren(_ children: [DOM.Node], in parent: DOM.Node) {
-        guard case let .element(data) = parent.value.kind else { return }
-        for child in children { child.value.parent = parent.value }
-        data.children = children.map { $0.value }
-        ops.append(.setChildren(parent: label(parent), children: children.map(label)))
-    }
-
     func insertChild(_ child: DOM.Node, before sibling: DOM.Node?, in parent: DOM.Node) {
         let index: Int
         if let sibling, let i = parent.value.children.firstIndex(where: { $0 === sibling.value }) {
@@ -270,11 +263,24 @@ final class TestDOM: DOM.Interactor {
         ops.append(.addChild(parent: label(parent), child: label(child), before: sibling.map(label)))
     }
 
+    func appendChild(_ child: DOM.Node, to parent: DOM.Node) {
+        insertChild(child, before: nil, in: parent)
+    }
+
     func removeChild(_ child: DOM.Node, from parent: DOM.Node) {
         if case let .element(data) = parent.value.kind, let index = data.children.firstIndex(where: { $0 === child.value }) {
             data.children.remove(at: index)
             ops.append(.removeChild(parent: label(parent), child: label(child)))
         }
+    }
+
+    func clearChildren(in parent: DOM.Node) {
+        guard case let .element(data) = parent.value.kind else { return }
+        for child in data.children {
+            child.parent = nil
+        }
+        data.children.removeAll(keepingCapacity: false)
+        ops.append(.setChildren(parent: label(parent), children: []))
     }
 
     func getOffsetParent(_ node: DOM.Node) -> DOM.Node? {

@@ -90,7 +90,7 @@ struct DOMMountingTests {
         #expect(ops.contains(.createElement("ul")))
         #expect(ops.contains(.createText("Text")))
         #expect(ops.contains(.createElement("p")))
-        #expect(ops.contains(.setChildren(parent: "<ul>", children: ["<li>", "<li>"])))
+        #expect(ops.contains(.addChild(parent: "<ul>", child: "<li>")))
         #expect(ops.contains(.addChild(parent: "<>", child: "<ul>")))
     }
 
@@ -107,7 +107,8 @@ struct DOMMountingTests {
                 .createElement("div"),
                 .createElement("p"),
                 .createElement("p"),
-                .setChildren(parent: "<div>", children: ["<p>", "<p>"]),
+                .addChild(parent: "<div>", child: "<p>"),
+                .addChild(parent: "<div>", child: "<p>"),
                 .addChild(parent: "<>", child: "<div>"),
             ]
         )
@@ -196,7 +197,8 @@ struct DOMMountingTests {
             } == [
                 .createText("Item 0"),
                 .createText("Item 1"),
-                .setChildren(parent: "<>", children: ["Item 0", "Item 1"]),
+                .addChild(parent: "<>", child: "Item 0"),
+                .addChild(parent: "<>", child: "Item 1"),
             ]
         )
     }
@@ -211,7 +213,8 @@ struct DOMMountingTests {
             } == [
                 .createText("Item 0"),
                 .createText("Item 1"),
-                .setChildren(parent: "<>", children: ["Item 0", "Item 1"]),
+                .addChild(parent: "<>", child: "Item 0"),
+                .addChild(parent: "<>", child: "Item 1"),
             ]
         )
     }

@@ -156,7 +156,8 @@ struct DOMPatchingTests {
             ops == [
                 .createText("Item 0"),
                 .createText("Item 1"),
-                .setChildren(parent: "<>", children: ["Item 0", "Item 1"]),
+                .addChild(parent: "<>", child: "Item 0"),
+                .addChild(parent: "<>", child: "Item 1"),
             ]
         )
     }

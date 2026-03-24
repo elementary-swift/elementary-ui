@@ -103,9 +103,10 @@ final class NoOpInteractor: DOM.Interactor {
         (node.ref as? NoOpNodeRef)?.text = text
     }
 
-    func replaceChildren(_ children: [DOM.Node], in parent: DOM.Node) {}
     func insertChild(_ child: DOM.Node, before sibling: DOM.Node?, in parent: DOM.Node) {}
+    func appendChild(_ child: DOM.Node, to parent: DOM.Node) {}
     func removeChild(_ child: DOM.Node, from parent: DOM.Node) {}
+    func clearChildren(in parent: DOM.Node) {}
 
     func querySelector(_ selector: String) -> DOM.Node? { nil }
 
