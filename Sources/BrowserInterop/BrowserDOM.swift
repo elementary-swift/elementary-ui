@@ -36,7 +36,7 @@ public struct JSElement {
     @JSFunction public func appendChild(_ child: JSNode) throws(JSException)
     @JSFunction public func removeChild(_ child: JSNode) throws(JSException)
     @JSFunction public func insertBefore(_ newChild: JSNode, _ refChild: JSNode) throws(JSException)
-    //@JSFunction public func replaceChildren(_ children: JSNode) throws(JSException)
+    @JSFunction public func replaceChildren() throws(JSException)
     @JSFunction public func getBoundingClientRect() throws(JSException) -> JSDOMRect
     @JSFunction public func addEventListener(_ type: String, _ listener: JSObject) throws(JSException)
     @JSFunction public func removeEventListener(_ type: String, _ listener: JSObject) throws(JSException)

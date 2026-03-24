@@ -93,11 +93,12 @@ public struct _MountContext: ~Copyable {
 
     consuming func mountInDOMNode(_ domNode: DOM.Node, observers: [any DOMLayoutObserver]) -> LayoutContainer? {
         if isStatic {
-            let refs = layoutNodes.map { $0.staticDOMNode }
-            if refs.count == 1 {
-                dom.insertChild(refs[0], before: nil, in: domNode)
-            } else if refs.count > 1 {
-                dom.replaceChildren(refs, in: domNode)
+            if layoutNodes.count == 1 {
+                dom.appendChild(layoutNodes[0].staticDOMNode, to: domNode)
+            } else if layoutNodes.count > 1 {
+                for node in layoutNodes {
+                    dom.appendChild(node.staticDOMNode, to: domNode)
+                }
             }
             return nil
         }

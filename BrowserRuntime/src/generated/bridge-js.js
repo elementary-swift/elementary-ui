@@ -21,6 +21,7 @@ export async function createInstantiator(options, swift) {
     let tmpRetOptionalHeapObject;
     let strStack = [];
     let i32Stack = [];
+    let i64Stack = [];
     let f32Stack = [];
     let f64Stack = [];
     let ptrStack = [];
@@ -40,7 +41,7 @@ export async function createInstantiator(options, swift) {
                 const bytes = new Uint8Array(memory.buffer, state.file);
                 let length = 0;
                 while (bytes[length] !== 0) { length += 1; }
-                const fileID = textDecoder.decode(bytes.subarray(0, length));
+                const fileID = decodeString(state.file, length);
                 throw new Error(`Attempted to call a released JSTypedClosure created at ${fileID}:${state.line}`);
             }
             return func(...args);
@@ -115,6 +116,12 @@ export async function createInstantiator(options, swift) {
             }
             bjs["swift_js_pop_pointer"] = function() {
                 return ptrStack.pop();
+            }
+            bjs["swift_js_push_i64"] = function(v) {
+                i64Stack.push(v);
+            }
+            bjs["swift_js_pop_i64"] = function() {
+                return i64Stack.pop();
             }
             bjs["swift_js_return_optional_bool"] = function(isSome, value) {
                 if (isSome === 0) {
@@ -402,6 +409,13 @@ export async function createInstantiator(options, swift) {
             BrowserInterop["bjs_JSElement_insertBefore"] = function bjs_JSElement_insertBefore(self, newChild, refChild) {
                 try {
                     swift.memory.getObject(self).insertBefore(swift.memory.getObject(newChild), swift.memory.getObject(refChild));
+                } catch (error) {
+                    setException(error);
+                }
+            }
+            BrowserInterop["bjs_JSElement_replaceChildren"] = function bjs_JSElement_replaceChildren(self) {
+                try {
+                    swift.memory.getObject(self).replaceChildren();
                 } catch (error) {
                     setException(error);
                 }

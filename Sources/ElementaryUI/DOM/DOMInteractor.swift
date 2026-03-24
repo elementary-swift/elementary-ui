@@ -38,10 +38,11 @@ public enum DOM {
         func addEventListener(_ node: Node, event: String, sink: EventSink)
         func removeEventListener(_ node: Node, event: String, sink: EventSink)
         func patchText(_ node: Node, with text: String)
-        func replaceChildren(_ children: [Node], in parent: Node)
         // New explicit child list operations
         func insertChild(_ child: Node, before sibling: Node?, in parent: Node)
+        func appendChild(_ child: Node, to parent: Node)
         func removeChild(_ child: Node, from parent: Node)
+        func clearChildren(in parent: Node)
 
         // Document query APIs
         func querySelector(_ selector: String) -> Node?

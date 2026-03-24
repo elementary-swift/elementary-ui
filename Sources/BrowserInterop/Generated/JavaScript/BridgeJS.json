@@ -360,6 +360,17 @@
                 }
               },
               {
+                "name" : "replaceChildren",
+                "parameters" : [
+
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              },
+              {
                 "name" : "getBoundingClientRect",
                 "parameters" : [
 
@@ -811,16 +822,22 @@
               {
                 "name" : "button",
                 "type" : {
-                  "int" : {
-
+                  "integer" : {
+                    "_0" : {
+                      "isSigned" : true,
+                      "width" : "word"
+                    }
                   }
                 }
               },
               {
                 "name" : "buttons",
                 "type" : {
-                  "int" : {
-
+                  "integer" : {
+                    "_0" : {
+                      "isSigned" : true,
+                      "width" : "word"
+                    }
                   }
                 }
               },

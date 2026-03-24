@@ -182,16 +182,6 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
         _ = try? node.jsNode.setTextContent(text)
     }
 
-    func replaceChildren(_ children: [DOM.Node], in parent: DOM.Node) {
-        // TODO: this is not supported rn - maybe create a hand-made JS tranpoline for this
-        // _ = try? parent.jsElement.replaceChildren(children.map { $0.jsNode })
-
-        parent.jsNode.jsObject.replaceChildren.function!.callAsFunction(
-            this: parent.jsElement.jsObject,
-            arguments: children.map { $0.jsNode.jsObject.jsValue }
-        )
-    }
-
     func insertChild(_ child: DOM.Node, before sibling: DOM.Node?, in parent: DOM.Node) {
         if let sibling {
             _ = try? parent.jsElement.insertBefore(
@@ -203,8 +193,16 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
         }
     }
 
+    func appendChild(_ child: DOM.Node, to parent: DOM.Node) {
+        _ = try? parent.jsElement.appendChild(child.jsNode)
+    }
+
     func removeChild(_ child: DOM.Node, from parent: DOM.Node) {
         _ = try? parent.jsElement.removeChild(child.jsNode)
+    }
+
+    func clearChildren(in parent: DOM.Node) {
+        _ = try? parent.jsElement.replaceChildren()
     }
 
     func getBoundingClientRect(_ node: DOM.Node) -> DOM.Rect {

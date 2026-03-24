@@ -22,9 +22,11 @@ final class LayoutContainer {
         layoutNodes.collect(into: &ops, context: &context, op: .added)
 
         if ops.entries.count == 1 {
-            context.dom.insertChild(ops.entries[0].reference, before: nil, in: domNode)
+            context.dom.appendChild(ops.entries[0].reference, to: domNode)
         } else if ops.entries.count > 1 {
-            context.dom.replaceChildren(ops.entries.map { $0.reference }, in: domNode)
+            for entry in ops.entries {
+                context.dom.appendChild(entry.reference, to: domNode)
+            }
         }
 
         for observer in layoutObservers {
@@ -40,7 +42,7 @@ final class LayoutContainer {
         if ops.entries.count == 1 {
             context.dom.removeChild(ops.entries[0].reference, from: domNode)
         } else if ops.entries.count > 1 {
-            context.dom.replaceChildren([], in: domNode)
+            context.dom.clearChildren(in: domNode)
         }
     }
 
@@ -76,9 +78,11 @@ final class LayoutContainer {
 
         if ops.canBatchReplace {
             if ops.isAllRemovals {
-                context.dom.replaceChildren([], in: domNode)
+                context.dom.clearChildren(in: domNode)
             } else if ops.isAllAdditions {
-                context.dom.replaceChildren(ops.entries.map { $0.reference }, in: domNode)
+                for entry in ops.entries {
+                    context.dom.appendChild(entry.reference, to: domNode)
+                }
             } else {
                 fatalError("invalid batch replace pass in layout container")
             }

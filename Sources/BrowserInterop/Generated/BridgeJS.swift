@@ -462,6 +462,18 @@ fileprivate func bjs_JSElement_insertBefore_extern(_ self: Int32, _ newChild: In
 }
 
 #if arch(wasm32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_replaceChildren")
+fileprivate func bjs_JSElement_replaceChildren_extern(_ self: Int32) -> Void
+#else
+fileprivate func bjs_JSElement_replaceChildren_extern(_ self: Int32) -> Void {
+    fatalError("Only available on WebAssembly")
+}
+#endif
+@inline(never) fileprivate func bjs_JSElement_replaceChildren(_ self: Int32) -> Void {
+    return bjs_JSElement_replaceChildren_extern(self)
+}
+
+#if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_getBoundingClientRect")
 fileprivate func bjs_JSElement_getBoundingClientRect_extern(_ self: Int32) -> Int32
 #else
@@ -596,6 +608,14 @@ func _$JSElement_insertBefore(_ self: JSObject, _ newChild: JSNode, _ refChild: 
     let newChildValue = newChild.bridgeJSLowerParameter()
     let refChildValue = refChild.bridgeJSLowerParameter()
     bjs_JSElement_insertBefore(selfValue, newChildValue, refChildValue)
+    if let error = _swift_js_take_exception() {
+        throw error
+    }
+}
+
+func _$JSElement_replaceChildren(_ self: JSObject) throws(JSException) -> Void {
+    let selfValue = self.bridgeJSLowerParameter()
+    bjs_JSElement_replaceChildren(selfValue)
     if let error = _swift_js_take_exception() {
         throw error
     }
