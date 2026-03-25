@@ -11,7 +11,7 @@ echo "Generating BridgeJS artifacts for BrowserInterop..."
 swift package --allow-writing-to-package-directory bridge-js --target BrowserInterop
 
 if [[ -f "$GENERATED_SWIFT_FILE" ]]; then
-  if ! rg -q '^// swift-format-ignore-file$' "$GENERATED_SWIFT_FILE"; then
+  if ! grep -qF '// swift-format-ignore-file' "$GENERATED_SWIFT_FILE"; then
     tmp_file="$(mktemp)"
     {
       echo "// swift-format-ignore-file"
@@ -23,4 +23,3 @@ if [[ -f "$GENERATED_SWIFT_FILE" ]]; then
 fi
 
 echo "BridgeJS generation complete."
-echo "If you need BrowserRuntime runtime wiring, run Scripts/fold-bridgejs-runtime.sh"

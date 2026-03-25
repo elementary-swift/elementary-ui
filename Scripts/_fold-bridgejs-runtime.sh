@@ -10,21 +10,6 @@ mkdir -p "$RUNTIME_DIR"
 
 SOURCE_JS="${1:-${BRIDGE_JS_SOURCE:-}}"
 
-if [[ -z "$SOURCE_JS" ]]; then
-  CANDIDATES=(
-    "$ROOT_DIR/.build/plugins/PackageToJS/outputs/Package/bridge-js.js"
-    "$ROOT_DIR/.build/plugins/PackageToJS/outputs/elementary-ui/bridge-js.js"
-    "$ROOT_DIR/Benchmarks/PerformanceBenchmarks/.build/plugins/PackageToJS/outputs/Package/bridge-js.js"
-    "$ROOT_DIR/Benchmarks/PerformanceBenchmarks/.build/index-build/plugins/PackageToJS/outputs/Package/bridge-js.js"
-  )
-  for candidate in "${CANDIDATES[@]}"; do
-    if [[ -f "$candidate" ]]; then
-      SOURCE_JS="$candidate"
-      break
-    fi
-  done
-fi
-
 if [[ -z "$SOURCE_JS" && -f "$SKELETON_JSON" ]]; then
   TMP_JS="$ROOT_DIR/.build/bridge-js.js"
   TMP_DTS="$ROOT_DIR/.build/bridge-js.d.ts"
