@@ -65,7 +65,7 @@ struct Counter {
 ## 🚧 Work In Progress 🚧
 Based on the [swift.org WebAssembly SDKs](https://forums.swift.org/t/swift-sdks-for-webassembly-now-available-on-swift-org/80405), [JavaScriptKit](https://github.com/swiftwasm/JavaScriptKit), and [Elementary](https://github.com/elementary-swift/elementary).
 
-Swift 6.2 or later with matching *Swift SDKs for WebAssembly* from [swift.org](https://www.swift.org/install) is required.
+Swift 6.3 or later with matching *Swift SDKs for WebAssembly* from [swift.org](https://www.swift.org/install) is required.
 
 ### Things to figure out
 

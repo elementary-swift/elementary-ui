@@ -76,18 +76,7 @@ final class JSKitDOMInteractor: DOM.Interactor {
 
     private let staticStrings = StaticJSStringCache()
 
-    init() {
-        #if hasFeature(Embedded) && compiler(<6.3)
-        if __omg_this_was_annoying_I_am_false {
-            // NOTE: 6.2 embedded hack for type inclusion
-            _ = JSClosure { _ in .undefined }
-            _ = JSObject()
-            _ = JSObject?(nil)
-            _ = JSArray.constructor?.jsValue
-            // _ = JSClosure?(nil)
-        }
-        #endif
-    }
+    init() {}
 
     func makeEventSink(_ handler: @escaping (String, DOM.Event) -> Void) -> DOM.EventSink {
         .init(

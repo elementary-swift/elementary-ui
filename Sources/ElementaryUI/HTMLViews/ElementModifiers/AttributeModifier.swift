@@ -18,17 +18,6 @@ public final class _AttributeModifier: DOMElementModifier, Invalidateable {
         self.lastValue = value
         self.upstream = upstream[_AttributeModifier.key]
         self.upstream?.tracker.addDependency(self)
-
-        #if hasFeature(Embedded) && compiler(<6.3)
-        if __omg_this_was_annoying_I_am_false {
-            // NOTE: 6.2 embedded hack for type inclusion
-            _ = p {}.attributes(.class([""]), .style(["": ""]))
-            var f = [HashableUTF8View: _StoredAttribute]()
-            f[HashableUTF8View("")] = .none
-            var u = [HashableUTF8View: Substring.UTF8View]()
-            u[HashableUTF8View("")] = .none
-        }
-        #endif
     }
 
     func updateValue(_ value: consuming Value, _ context: inout _TransactionContext) {

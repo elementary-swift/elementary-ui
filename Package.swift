@@ -1,4 +1,4 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.3
 import CompilerPluginSupport
 import PackageDescription
 
@@ -14,7 +14,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/swiftwasm/JavaScriptKit", .upToNextMinor(from: "0.46.3")),
         .package(url: "https://github.com/elementary-swift/elementary", from: "0.7.0"),
-        .package(url: "https://github.com/swiftlang/swift-syntax", "600.0.0"..<"603.0.0"),
+        .package(url: "https://github.com/swiftlang/swift-syntax", "600.0.0"..<"604.0.0"),
     ],
     targets: [
         .target(
