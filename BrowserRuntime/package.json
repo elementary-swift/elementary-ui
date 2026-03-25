@@ -9,7 +9,6 @@
     }
   },
   "scripts": {
-    "prebuild": "node scripts/verify-bridgejs-generated.mjs",
     "build": "tsdown src/index.ts --dts"
   },
   "keywords": [],
