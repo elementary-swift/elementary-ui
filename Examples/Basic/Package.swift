@@ -1,4 +1,4 @@
-// swift-tools-version:6.2
+// swift-tools-version: 6.3
 import PackageDescription
 
 let traceLogs = Context.environment["TRACE_LOGS"].flatMap { Bool($0) } ?? false

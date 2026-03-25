@@ -95,22 +95,6 @@ struct DOMEffectView<Effect: DOMElementModifier, Wrapped: View>: View {
     ) -> _MountedNode {
         let effect = Effect(value: view.value, upstream: context.modifiers)
 
-        #if hasFeature(Embedded) && compiler(<6.3)
-        if __omg_this_was_annoying_I_am_false {
-            // NOTE: 6.2 embedded hack for type inclusion
-            let commitContext = _CommitContext(
-                dom: JSKitDOMInteractor(),
-                scheduler: Scheduler(dom: JSKitDOMInteractor()),
-                currentFrameTime: 0
-            )
-            // force inclusion of types used in mount
-            _ = commitContext.withMountContext(transaction: Transaction()) { mountCtx in
-                var mountCtx = consume mountCtx
-                return effect.mount(.init(.init()), &mountCtx)
-            }
-        }
-        #endif
-
         var context = copy context
         context.modifiers[Effect.key] = effect
 

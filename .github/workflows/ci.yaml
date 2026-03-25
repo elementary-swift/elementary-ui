@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ["swift:6.2"]
+        image: ["swift:6.3.0"]
 
     container:
       image: ${{ matrix.image }}
@@ -36,7 +36,7 @@ jobs:
   format:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    container: "swift:6.2"
+    container: "swift:6.3.0"
     steps:
       - uses: actions/checkout@v4
       - run: swift format lint -rps .
@@ -44,11 +44,11 @@ jobs:
   build-embedded:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    container: "swift:6.2.3"
+    container: "swift:6.3.0"
     env:
-      SWIFT_SDK_ID: swift-6.2.3-RELEASE_wasm-embedded
-      SDK_URL: https://download.swift.org/swift-6.2.3-release/wasm-sdk/swift-6.2.3-RELEASE/swift-6.2.3-RELEASE_wasm.artifactbundle.tar.gz
-      SDK-CHECKSUM: 394040ecd5260e68bb02f6c20aeede733b9b90702c2204e178f3e42413edad2a
+      SWIFT_SDK_ID: swift-6.3-RELEASE_wasm-embedded
+      SDK_URL: https://download.swift.org/swift-6.3-release/wasm-sdk/swift-6.3-RELEASE/swift-6.3-RELEASE_wasm.artifactbundle.tar.gz
+      SDK-CHECKSUM: 9fa4016ee632c7e9e906608ec3b55cf13dfc4dff44e47574c5af58064dc33fd9
 
     steps:
       - uses: actions/checkout@v4
@@ -61,7 +61,7 @@ jobs:
   bundled-runtime:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    container: "swift:6.2"
+    container: "swift:6.3.0"
     steps:
       - name: Checkout
         uses: actions/checkout@v4

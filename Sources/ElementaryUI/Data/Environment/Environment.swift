@@ -94,13 +94,6 @@ public struct Environment<V> {
             }
         case let .objectReader(reader, _):
             storage = .objectReader(reader, values.boxes[reader.propertyID])
-
-            #if hasFeature(Embedded) && compiler(<6.3)
-            // NOTE: 6.2 embedded hack for type inclusion
-            if __omg_this_was_annoying_I_am_false {
-                storage = .valueBox(EnvironmentValues._Box<V>(reader.read(values.boxes[reader.propertyID])))
-            }
-            #endif
         default:
             fatalError("Cannot load environment value twice")
         }
