@@ -1,5 +1,5 @@
 import BrowserInterop
-import JavaScriptKit
+@_spi(BridgeJS) import JavaScriptKit
 
 // NOTE: all of this is because tasks were not a thing in embedded until recently
 // revisit in 6.3
@@ -51,18 +51,19 @@ extension GlobalDocument {
         let eventName: String
 
         func subscribe(_ callback: @escaping (Event) -> Void) -> EventSourceSubscription {
-            let closure = JSClosure { event in
-                callback(Event(__jsObject: event[0].object!)!)
-                return .undefined
+            guard let document = try? BrowserInterop.document else {
+                fatalError("failed to get document")
             }
 
-            guard let document = try? BrowserInterop.document else {
-                return EventSourceSubscription {}
+            let closure = JSEventCallback.make { event in
+                callback(Event(__jsObject: event.jsObject)!)
             }
-            _ = try? document.addEventListener(eventName, closure)
+
+            try! document.addEventListener(eventName, closure)
 
             return EventSourceSubscription {
                 _ = try? document.removeEventListener(eventName, closure)
+                closure.release()
             }
         }
     }

@@ -1,5 +1,15 @@
 @_spi(BridgeJS) import JavaScriptKit
 
+public typealias JSEventCallback = JSTypedClosure<(JSEvent) -> Void>
+
+public extension JSEventCallback {
+    // NOTE: this is a workaround because the codegen makes an internal initializer
+    // https://github.com/swiftwasm/JavaScriptKit/issues/709
+    static func make(fileID: StaticString = #fileID, line: UInt32 = #line, _ body: @escaping (JSEvent) -> Void) -> JSEventCallback {
+        JSTypedClosure<(JSEvent) -> Void>(fileID: fileID, line: line, body)
+    }
+}
+
 @JSClass(jsName: "Event")
 public struct JSEvent {
     @JSGetter public var type: String

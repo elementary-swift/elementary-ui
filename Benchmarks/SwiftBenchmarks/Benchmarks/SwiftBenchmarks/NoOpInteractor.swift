@@ -96,8 +96,8 @@ final class NoOpInteractor: DOM.Interactor {
     func getOffsetParent(_ node: DOM.Node) -> DOM.Node? { nil }
     func getScrollOffset() -> (x: Double, y: Double) { (0, 0) }
 
-    func addEventListener(_ node: DOM.Node, event: String, sink: DOM.EventSink) {}
-    func removeEventListener(_ node: DOM.Node, event: String, sink: DOM.EventSink) {}
+    func addEventListener(_ node: DOM.Node, event: String, sink: borrowing DOM.EventSink) {}
+    func removeEventListener(_ node: DOM.Node, event: String, sink: borrowing DOM.EventSink) {}
 
     func patchText(_ node: DOM.Node, with text: String) {
         (node.ref as? NoOpNodeRef)?.text = text

@@ -1,3 +1,8 @@
+import BrowserInterop
+import JavaScriptKit
+
+// TODO: rework all of these types to be less indirect in prod while keeping the testability up
+
 extension DOM {
     @_spi(Benchmarking)
     public struct Node: Hashable {
@@ -28,11 +33,30 @@ extension DOM {
     }
 
     @_spi(Benchmarking)
-    public struct EventSink {
-        let ref: AnyObject
+    public struct EventSink: ~Copyable {
+        // TODO: untangle this....
+        enum Storage {
+            case js(JSEventCallback)
+            case ref(AnyObject)
+        }
+
+        internal let storage: Storage
 
         public init(ref: AnyObject) {
-            self.ref = ref
+            self.storage = .ref(ref)
+        }
+
+        internal init(js: JSEventCallback) {
+            self.storage = .js(js)
+        }
+
+        deinit {
+            switch storage {
+            case .js(let closure):
+                closure.release()
+            case .ref:
+                ()
+            }
         }
     }
 

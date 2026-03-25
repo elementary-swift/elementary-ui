@@ -54,16 +54,11 @@ extension EventModifier {
             }
 
             context.dom.addEventListener(node, event: Config.name, sink: sink)
-            self.sink = sink
+            self.sink = consume sink
         }
 
         func unmount(_ context: inout _CommitContext) {
-            guard let sink = self.sink else {
-                return
-            }
-
-            context.dom.removeEventListener(node, event: Config.name, sink: sink)
-            self.sink = nil
+            _ = self.sink.take()
         }
     }
 }

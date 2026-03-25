@@ -217,6 +217,26 @@ export async function createInstantiator(options, swift) {
                 const func = swift.memory.getObject(funcRef);
                 func.__unregister();
             }
+            bjs["invoke_js_callback_BrowserInterop_14BrowserInterop7JSEventC_y"] = function(callbackId, param0) {
+                try {
+                    const callback = swift.memory.getObject(callbackId);
+                    callback(swift.memory.getObject(param0));
+                } catch (error) {
+                    setException(error);
+                }
+            }
+            bjs["make_swift_closure_BrowserInterop_14BrowserInterop7JSEventC_y"] = function(boxPtr, file, line) {
+                const lower_closure_BrowserInterop_14BrowserInterop7JSEventC_y = function(param0) {
+                    instance.exports.invoke_swift_closure_BrowserInterop_14BrowserInterop7JSEventC_y(boxPtr, swift.memory.retain(param0));
+                    if (tmpRetException) {
+                        const error = swift.memory.getObject(tmpRetException);
+                        swift.memory.release(tmpRetException);
+                        tmpRetException = undefined;
+                        throw error;
+                    }
+                };
+                return makeClosure(boxPtr, file, line, lower_closure_BrowserInterop_14BrowserInterop7JSEventC_y);
+            }
             bjs["invoke_js_callback_BrowserInterop_14BrowserInteropSd_y"] = function(callbackId, param0) {
                 try {
                     const callback = swift.memory.getObject(callbackId);

@@ -8,6 +8,17 @@ extension DOM.Node {
     var jsElement: JSElement { JSElement(unsafelyWrapping: ref as! JSObject) }
 }
 
+extension DOM.EventSink {
+    var jsClosure: JSEventCallback {
+        switch self.storage {
+        case let .js(closure):
+            return closure
+        case .ref:
+            fatalError("ref is not a JSEventCallback")
+        }
+    }
+}
+
 final class BridgeJSDOMInteractor: DOM.Interactor {
     private let _document: JSDocument
     private let _window: JSWindow
@@ -20,21 +31,11 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
     }
 
     func makeEventSink(_ handler: @escaping (String, DOM.Event) -> Void) -> DOM.EventSink {
-        .init(
-            JSClosure { arguments in
-                guard arguments.count >= 1 else { return .undefined }
-                guard let eventObject = arguments[0].object else {
-                    return .undefined
-                }
-                let type = (try? JSEvent(unsafelyWrapping: eventObject).type) ?? ""
-                if type.isEmpty {
-                    return .undefined
-                }
+        let closure = JSEventCallback.make { e in
+            handler(try! e.type, .init(e.jsObject))
+        }
 
-                handler(type, .init(eventObject))
-                return .undefined
-            }
-        )
+        return .init(js: closure)
     }
 
     func makePropertyAccessor(_ node: DOM.Node, name: String) -> DOM.PropertyAccessor {
@@ -69,16 +70,15 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
 
     func makeFocusAccessor(_ node: DOM.Node, onEvent: @escaping (DOM.FocusEvent) -> Void) -> DOM.FocusAccessor {
         let focusSink = DOM.EventSink(
-            JSClosure { _ in
-                onEvent(.focus)
-                return .undefined
-            }
+            js:
+                JSEventCallback.make { _ in
+                    onEvent(.focus)
+                }
         )
 
         let blurSink = DOM.EventSink(
-            JSClosure { _ in
+            js: JSEventCallback.make { _ in
                 onEvent(.blur)
-                return .undefined
             }
         )
 
@@ -92,10 +92,8 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
             blur: {
                 _ = try? node.jsElement.blur()
             },
-            unmount: { [self] in
-                self.removeEventListener(node, event: "focus", sink: focusSink)
-                self.removeEventListener(node, event: "blur", sink: blurSink)
-            }
+            focusSink: focusSink,
+            blurSink: blurSink,
         )
     }
 
@@ -170,11 +168,11 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
         )
     }
 
-    func addEventListener(_ node: DOM.Node, event: String, sink: DOM.EventSink) {
+    func addEventListener(_ node: DOM.Node, event: String, sink: borrowing DOM.EventSink) {
         _ = try? node.jsElement.addEventListener(event, sink.jsClosure)
     }
 
-    func removeEventListener(_ node: DOM.Node, event: String, sink: DOM.EventSink) {
+    func removeEventListener(_ node: DOM.Node, event: String, sink: borrowing DOM.EventSink) {
         _ = try? node.jsElement.removeEventListener(event, sink.jsClosure)
     }
 

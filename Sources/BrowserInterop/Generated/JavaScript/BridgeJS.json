@@ -87,8 +87,26 @@
                   {
                     "name" : "listener",
                     "type" : {
-                      "jsObject" : {
+                      "closure" : {
+                        "_0" : {
+                          "isAsync" : false,
+                          "isThrows" : false,
+                          "mangleName" : "14BrowserInterop7JSEventC_y",
+                          "moduleName" : "BrowserInterop",
+                          "parameters" : [
+                            {
+                              "jsObject" : {
+                                "_0" : "JSEvent"
+                              }
+                            }
+                          ],
+                          "returnType" : {
+                            "void" : {
 
+                            }
+                          }
+                        },
+                        "useJSTypedClosure" : true
                       }
                     }
                   }
@@ -113,8 +131,26 @@
                   {
                     "name" : "listener",
                     "type" : {
-                      "jsObject" : {
+                      "closure" : {
+                        "_0" : {
+                          "isAsync" : false,
+                          "isThrows" : false,
+                          "mangleName" : "14BrowserInterop7JSEventC_y",
+                          "moduleName" : "BrowserInterop",
+                          "parameters" : [
+                            {
+                              "jsObject" : {
+                                "_0" : "JSEvent"
+                              }
+                            }
+                          ],
+                          "returnType" : {
+                            "void" : {
 
+                            }
+                          }
+                        },
+                        "useJSTypedClosure" : true
                       }
                     }
                   }
@@ -395,8 +431,26 @@
                   {
                     "name" : "listener",
                     "type" : {
-                      "jsObject" : {
+                      "closure" : {
+                        "_0" : {
+                          "isAsync" : false,
+                          "isThrows" : false,
+                          "mangleName" : "14BrowserInterop7JSEventC_y",
+                          "moduleName" : "BrowserInterop",
+                          "parameters" : [
+                            {
+                              "jsObject" : {
+                                "_0" : "JSEvent"
+                              }
+                            }
+                          ],
+                          "returnType" : {
+                            "void" : {
 
+                            }
+                          }
+                        },
+                        "useJSTypedClosure" : true
                       }
                     }
                   }
@@ -421,8 +475,26 @@
                   {
                     "name" : "listener",
                     "type" : {
-                      "jsObject" : {
+                      "closure" : {
+                        "_0" : {
+                          "isAsync" : false,
+                          "isThrows" : false,
+                          "mangleName" : "14BrowserInterop7JSEventC_y",
+                          "moduleName" : "BrowserInterop",
+                          "parameters" : [
+                            {
+                              "jsObject" : {
+                                "_0" : "JSEvent"
+                              }
+                            }
+                          ],
+                          "returnType" : {
+                            "void" : {
 
+                            }
+                          }
+                        },
+                        "useJSTypedClosure" : true
                       }
                     }
                   }

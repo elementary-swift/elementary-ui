@@ -10,6 +10,67 @@
 @_spi(BridgeJS) import JavaScriptKit
 
 #if arch(wasm32)
+@_extern(wasm, module: "bjs", name: "invoke_js_callback_BrowserInterop_14BrowserInterop7JSEventC_y")
+fileprivate func invoke_js_callback_BrowserInterop_14BrowserInterop7JSEventC_y_extern(_ callback: Int32, _ param0: Int32) -> Void
+#else
+fileprivate func invoke_js_callback_BrowserInterop_14BrowserInterop7JSEventC_y_extern(_ callback: Int32, _ param0: Int32) -> Void {
+    fatalError("Only available on WebAssembly")
+}
+#endif
+@inline(never) fileprivate func invoke_js_callback_BrowserInterop_14BrowserInterop7JSEventC_y(_ callback: Int32, _ param0: Int32) -> Void {
+    return invoke_js_callback_BrowserInterop_14BrowserInterop7JSEventC_y_extern(callback, param0)
+}
+
+#if arch(wasm32)
+@_extern(wasm, module: "bjs", name: "make_swift_closure_BrowserInterop_14BrowserInterop7JSEventC_y")
+fileprivate func make_swift_closure_BrowserInterop_14BrowserInterop7JSEventC_y_extern(_ boxPtr: UnsafeMutableRawPointer, _ file: UnsafePointer<UInt8>, _ line: UInt32) -> Int32
+#else
+fileprivate func make_swift_closure_BrowserInterop_14BrowserInterop7JSEventC_y_extern(_ boxPtr: UnsafeMutableRawPointer, _ file: UnsafePointer<UInt8>, _ line: UInt32) -> Int32 {
+    fatalError("Only available on WebAssembly")
+}
+#endif
+@inline(never) fileprivate func make_swift_closure_BrowserInterop_14BrowserInterop7JSEventC_y(_ boxPtr: UnsafeMutableRawPointer, _ file: UnsafePointer<UInt8>, _ line: UInt32) -> Int32 {
+    return make_swift_closure_BrowserInterop_14BrowserInterop7JSEventC_y_extern(boxPtr, file, line)
+}
+
+private enum _BJS_Closure_14BrowserInterop7JSEventC_y {
+    static func bridgeJSLift(_ callbackId: Int32) -> (JSEvent) -> Void {
+        let callback = JSObject.bridgeJSLiftParameter(callbackId)
+        return { [callback] param0 in
+            #if arch(wasm32)
+            let callbackValue = callback.bridgeJSLowerParameter()
+            let param0Value = param0.bridgeJSLowerParameter()
+            invoke_js_callback_BrowserInterop_14BrowserInterop7JSEventC_y(callbackValue, param0Value)
+            #else
+            fatalError("Only available on WebAssembly")
+            #endif
+        }
+    }
+}
+
+extension JSTypedClosure where Signature == (JSEvent) -> Void {
+    init(fileID: StaticString = #fileID, line: UInt32 = #line, _ body: @escaping (JSEvent) -> Void) {
+        self.init(
+            makeClosure: make_swift_closure_BrowserInterop_14BrowserInterop7JSEventC_y,
+            body: body,
+            fileID: fileID,
+            line: line
+        )
+    }
+}
+
+@_expose(wasm, "invoke_swift_closure_BrowserInterop_14BrowserInterop7JSEventC_y")
+@_cdecl("invoke_swift_closure_BrowserInterop_14BrowserInterop7JSEventC_y")
+public func _invoke_swift_closure_BrowserInterop_14BrowserInterop7JSEventC_y(_ boxPtr: UnsafeMutableRawPointer, _ param0: Int32) -> Void {
+    #if arch(wasm32)
+    let closure = Unmanaged<_BridgeJSTypedClosureBox<(JSEvent) -> Void>>.fromOpaque(boxPtr).takeUnretainedValue().closure
+    closure(JSEvent.bridgeJSLiftParameter(param0))
+    #else
+    fatalError("Only available on WebAssembly")
+    #endif
+}
+
+#if arch(wasm32)
 @_extern(wasm, module: "bjs", name: "invoke_js_callback_BrowserInterop_14BrowserInteropSd_y")
 fileprivate func invoke_js_callback_BrowserInterop_14BrowserInteropSd_y_extern(_ callback: Int32, _ param0: Float64) -> Void
 #else
@@ -250,22 +311,22 @@ func _$JSDocument_querySelector(_ self: JSObject, _ selector: String) throws(JSE
     return JSElement.bridgeJSLiftReturn(ret)
 }
 
-func _$JSDocument_addEventListener(_ self: JSObject, _ type: String, _ listener: JSObject) throws(JSException) -> Void {
+func _$JSDocument_addEventListener(_ self: JSObject, _ type: String, _ listener: JSTypedClosure<(JSEvent) -> Void>) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
     type.bridgeJSWithLoweredParameter { (typeBytes, typeLength) in
-        let listenerValue = listener.bridgeJSLowerParameter()
-        bjs_JSDocument_addEventListener(selfValue, typeBytes, typeLength, listenerValue)
+        let listenerFuncRef = listener.bridgeJSLowerParameter()
+        bjs_JSDocument_addEventListener(selfValue, typeBytes, typeLength, listenerFuncRef)
     }
     if let error = _swift_js_take_exception() {
         throw error
     }
 }
 
-func _$JSDocument_removeEventListener(_ self: JSObject, _ type: String, _ listener: JSObject) throws(JSException) -> Void {
+func _$JSDocument_removeEventListener(_ self: JSObject, _ type: String, _ listener: JSTypedClosure<(JSEvent) -> Void>) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
     type.bridgeJSWithLoweredParameter { (typeBytes, typeLength) in
-        let listenerValue = listener.bridgeJSLowerParameter()
-        bjs_JSDocument_removeEventListener(selfValue, typeBytes, typeLength, listenerValue)
+        let listenerFuncRef = listener.bridgeJSLowerParameter()
+        bjs_JSDocument_removeEventListener(selfValue, typeBytes, typeLength, listenerFuncRef)
     }
     if let error = _swift_js_take_exception() {
         throw error
@@ -632,22 +693,22 @@ func _$JSElement_getBoundingClientRect(_ self: JSObject) throws(JSException) -> 
     return JSDOMRect.bridgeJSLiftReturn(ret)
 }
 
-func _$JSElement_addEventListener(_ self: JSObject, _ type: String, _ listener: JSObject) throws(JSException) -> Void {
+func _$JSElement_addEventListener(_ self: JSObject, _ type: String, _ listener: JSTypedClosure<(JSEvent) -> Void>) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
     type.bridgeJSWithLoweredParameter { (typeBytes, typeLength) in
-        let listenerValue = listener.bridgeJSLowerParameter()
-        bjs_JSElement_addEventListener(selfValue, typeBytes, typeLength, listenerValue)
+        let listenerFuncRef = listener.bridgeJSLowerParameter()
+        bjs_JSElement_addEventListener(selfValue, typeBytes, typeLength, listenerFuncRef)
     }
     if let error = _swift_js_take_exception() {
         throw error
     }
 }
 
-func _$JSElement_removeEventListener(_ self: JSObject, _ type: String, _ listener: JSObject) throws(JSException) -> Void {
+func _$JSElement_removeEventListener(_ self: JSObject, _ type: String, _ listener: JSTypedClosure<(JSEvent) -> Void>) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
     type.bridgeJSWithLoweredParameter { (typeBytes, typeLength) in
-        let listenerValue = listener.bridgeJSLowerParameter()
-        bjs_JSElement_removeEventListener(selfValue, typeBytes, typeLength, listenerValue)
+        let listenerFuncRef = listener.bridgeJSLowerParameter()
+        bjs_JSElement_removeEventListener(selfValue, typeBytes, typeLength, listenerFuncRef)
     }
     if let error = _swift_js_take_exception() {
         throw error

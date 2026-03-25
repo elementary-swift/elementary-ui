@@ -8,8 +8,8 @@ export interface JSDocument {
     createElement(tagName: string): JSElement;
     createTextNode(text: string): JSNode;
     querySelector(selector: string): JSElement;
-    addEventListener(type: string, listener: any): void;
-    removeEventListener(type: string, listener: any): void;
+    addEventListener(type: string, listener: (arg0: JSEvent) => void): void;
+    removeEventListener(type: string, listener: (arg0: JSEvent) => void): void;
     readonly body: JSElement;
 }
 export interface JSWindow {
@@ -31,8 +31,8 @@ export interface JSElement {
     insertBefore(newChild: JSNode, refChild: JSNode): void;
     replaceChildren(): void;
     getBoundingClientRect(): JSDOMRect;
-    addEventListener(type: string, listener: any): void;
-    removeEventListener(type: string, listener: any): void;
+    addEventListener(type: string, listener: (arg0: JSEvent) => void): void;
+    removeEventListener(type: string, listener: (arg0: JSEvent) => void): void;
     focus(): void;
     blur(): void;
     animate(keyframes: any, options: any): JSAnimation;

@@ -6,8 +6,8 @@ public struct JSDocument {
     @JSFunction public func createElement(_ tagName: String) throws(JSException) -> JSElement
     @JSFunction public func createTextNode(_ text: String) throws(JSException) -> JSNode
     @JSFunction public func querySelector(_ selector: String) throws(JSException) -> JSElement
-    @JSFunction public func addEventListener(_ type: String, _ listener: JSObject) throws(JSException)
-    @JSFunction public func removeEventListener(_ type: String, _ listener: JSObject) throws(JSException)
+    @JSFunction public func addEventListener(_ type: String, _ listener: JSTypedClosure<(JSEvent) -> Void>) throws(JSException)
+    @JSFunction public func removeEventListener(_ type: String, _ listener: JSTypedClosure<(JSEvent) -> Void>) throws(JSException)
 }
 
 @JSClass(jsName: "Window")
@@ -38,8 +38,8 @@ public struct JSElement {
     @JSFunction public func insertBefore(_ newChild: JSNode, _ refChild: JSNode) throws(JSException)
     @JSFunction public func replaceChildren() throws(JSException)
     @JSFunction public func getBoundingClientRect() throws(JSException) -> JSDOMRect
-    @JSFunction public func addEventListener(_ type: String, _ listener: JSObject) throws(JSException)
-    @JSFunction public func removeEventListener(_ type: String, _ listener: JSObject) throws(JSException)
+    @JSFunction public func addEventListener(_ type: String, _ listener: JSEventCallback) throws(JSException)
+    @JSFunction public func removeEventListener(_ type: String, _ listener: JSEventCallback) throws(JSException)
     @JSFunction public func focus() throws(JSException)
     @JSFunction public func blur() throws(JSException)
     @JSFunction public func animate(_ keyframes: JSObject, _ options: JSObject) throws(JSException) -> JSAnimation

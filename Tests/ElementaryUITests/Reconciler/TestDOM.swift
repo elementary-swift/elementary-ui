@@ -6,7 +6,14 @@ private extension DOM.Event {
 
 private extension DOM.EventSink {
     init(_ sink: TestDOM.EventSink) { self.init(ref: sink) }
-    var value: TestDOM.EventSink { ref as! TestDOM.EventSink }
+    var value: TestDOM.EventSink {
+        switch storage {
+        case let .ref(ref):
+            ref as! TestDOM.EventSink
+        default:
+            fatalError("ref is not a TestDOM.EventSink")
+        }
+    }
 }
 
 private extension DOM.Node {
@@ -231,14 +238,14 @@ final class TestDOM: DOM.Interactor {
         mockBoundingRects[ObjectIdentifier(node.value)] = rect
     }
 
-    func addEventListener(_ node: DOM.Node, event: String, sink: DOM.EventSink) {
+    func addEventListener(_ node: DOM.Node, event: String, sink: borrowing DOM.EventSink) {
         guard case let .element(data) = node.value.kind else { return }
         data.listeners.insert(event)
         data.sink = sink.value
         ops.append(.addListener(node: label(node), event: event))
     }
 
-    func removeEventListener(_ node: DOM.Node, event: String, sink: DOM.EventSink) {
+    func removeEventListener(_ node: DOM.Node, event: String, sink: borrowing DOM.EventSink) {
         guard case let .element(data) = node.value.kind else { return }
         data.listeners.remove(event)
         ops.append(.removeListener(node: label(node), event: event))

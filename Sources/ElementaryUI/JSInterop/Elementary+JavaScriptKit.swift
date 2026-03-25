@@ -5,11 +5,6 @@ extension DOM.Event {
     var jsObject: JSObject { ref as! JSObject }
 }
 
-extension DOM.EventSink {
-    init(_ sink: JSClosure) { self.init(ref: sink) }
-    var jsClosure: JSClosure { ref as! JSClosure }
-}
-
 extension DOM.PropertyValue {
     var jsValue: JSValue {
         switch self {
