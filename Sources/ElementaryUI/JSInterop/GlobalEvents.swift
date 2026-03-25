@@ -32,8 +32,9 @@ public extension View {
 public enum GlobalDocument {
     static var body: DOM.Node {
         guard let document = try? BrowserInterop.document,
-              let body = try? document.body else {
-            return DOM.Node(ref: JSObject())
+            let body = try? document.body
+        else {
+            fatalError("Failed to get body")
         }
         return DOM.Node(ref: body.jsObject)
     }

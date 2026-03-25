@@ -1,3 +1,5 @@
+// swift-format-ignore-file
+
 // bridge-js: skip
 // NOTICE: This is auto-generated code by BridgeJS from JavaScriptKit,
 // DO NOT EDIT.
