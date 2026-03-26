@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774449612355,
+  "lastUpdate": 1774508991797,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -2369,6 +2369,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/elementary-swift/elementary-ui/commit/e41d274e320e3afbf44cb47eda086a1b27a572ea"
         },
         "date": 1774449611975,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 183.1,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 140.44,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 121.56,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 181.63,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "e41d274e320e3afbf44cb47eda086a1b27a572ea",
+          "message": "migrate to swift 6.3 (#90)",
+          "timestamp": "2026-03-25T14:30:17Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/e41d274e320e3afbf44cb47eda086a1b27a572ea"
+        },
+        "date": 1774508991088,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
