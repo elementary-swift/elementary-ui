@@ -42,7 +42,10 @@ public struct JSElement {
     @JSFunction public func removeEventListener(_ type: String, _ listener: JSEventCallback) throws(JSException)
     @JSFunction public func focus() throws(JSException)
     @JSFunction public func blur() throws(JSException)
-    @JSFunction public func animate(_ keyframes: JSObject, _ options: JSObject) throws(JSException) -> JSAnimation
+    @JSFunction public func animate(
+        _ keyframes: JSAnimationKeyframes,
+        _ options: JSKeyframeEffectOptions
+    ) throws(JSException) -> JSAnimation
 }
 
 @JSClass(jsName: "CSSStyleDeclaration")
@@ -68,13 +71,51 @@ public struct JSAnimation {
     @JSFunction public func pause() throws(JSException)
     @JSFunction public func play() throws(JSException)
     @JSFunction public func cancel() throws(JSException)
-    @JSSetter public func setOnfinish(_ callback: JSObject) throws(JSException)
+    @JSSetter public func setOnfinish(_ callback: @escaping () -> Void) throws(JSException)
 }
 
 @JSClass(jsName: "AnimationEffect")
 public struct JSAnimationEffect {
-    @JSFunction public func setKeyframes(_ keyframes: JSObject) throws(JSException)
-    @JSFunction public func updateTiming(_ timing: JSObject) throws(JSException)
+    @JSFunction public func setKeyframes(_ keyframes: JSAnimationKeyframes) throws(JSException)
+    @JSFunction public func updateTiming(_ timing: JSAnimationTiming) throws(JSException)
+}
+
+public typealias JSAnimationKeyframes = [String: [String]]
+
+@JS public enum JSCompositeOperation: String {
+    case replace
+    case add
+    case accumulate
+}
+
+@JS public enum JSFillMode: String {
+    case none
+    case forwards
+    case backwards
+    case both
+    case auto
+}
+
+@JS
+public struct JSKeyframeEffectOptions {
+    public var duration: Int
+    public var fill: JSFillMode
+    public var composite: JSCompositeOperation
+
+    public init(duration: Int, fill: JSFillMode, composite: JSCompositeOperation) {
+        self.duration = duration
+        self.fill = fill
+        self.composite = composite
+    }
+}
+
+@JS
+public struct JSAnimationTiming {
+    public var duration: Int
+
+    public init(duration: Int) {
+        self.duration = duration
+    }
 }
 
 public extension JSNode {

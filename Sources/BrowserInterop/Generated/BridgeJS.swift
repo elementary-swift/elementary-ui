@@ -191,6 +191,108 @@ public func _invoke_swift_closure_BrowserInterop_14BrowserInteropy_y(_ boxPtr: U
     #endif
 }
 
+extension JSCompositeOperation: _BridgedSwiftEnumNoPayload, _BridgedSwiftRawValueEnum {
+}
+
+extension JSFillMode: _BridgedSwiftEnumNoPayload, _BridgedSwiftRawValueEnum {
+}
+
+extension JSKeyframeEffectOptions: _BridgedSwiftStruct {
+    @_spi(BridgeJS) @_transparent public static func bridgeJSStackPop() -> JSKeyframeEffectOptions {
+        let composite = JSCompositeOperation.bridgeJSStackPop()
+        let fill = JSFillMode.bridgeJSStackPop()
+        let duration = Int.bridgeJSStackPop()
+        return JSKeyframeEffectOptions(duration: duration, fill: fill, composite: composite)
+    }
+
+    @_spi(BridgeJS) @_transparent public consuming func bridgeJSStackPush() {
+        self.duration.bridgeJSStackPush()
+        self.fill.bridgeJSStackPush()
+        self.composite.bridgeJSStackPush()
+    }
+
+    public init(unsafelyCopying jsObject: JSObject) {
+        _bjs_struct_lower_JSKeyframeEffectOptions(jsObject.bridgeJSLowerParameter())
+        self = Self.bridgeJSStackPop()
+    }
+
+    public func toJSObject() -> JSObject {
+        let __bjs_self = self
+        __bjs_self.bridgeJSStackPush()
+        return JSObject(id: UInt32(bitPattern: _bjs_struct_lift_JSKeyframeEffectOptions()))
+    }
+}
+
+#if arch(wasm32)
+@_extern(wasm, module: "bjs", name: "swift_js_struct_lower_JSKeyframeEffectOptions")
+fileprivate func _bjs_struct_lower_JSKeyframeEffectOptions_extern(_ objectId: Int32) -> Void
+#else
+fileprivate func _bjs_struct_lower_JSKeyframeEffectOptions_extern(_ objectId: Int32) -> Void {
+    fatalError("Only available on WebAssembly")
+}
+#endif
+@inline(never) fileprivate func _bjs_struct_lower_JSKeyframeEffectOptions(_ objectId: Int32) -> Void {
+    return _bjs_struct_lower_JSKeyframeEffectOptions_extern(objectId)
+}
+
+#if arch(wasm32)
+@_extern(wasm, module: "bjs", name: "swift_js_struct_lift_JSKeyframeEffectOptions")
+fileprivate func _bjs_struct_lift_JSKeyframeEffectOptions_extern() -> Int32
+#else
+fileprivate func _bjs_struct_lift_JSKeyframeEffectOptions_extern() -> Int32 {
+    fatalError("Only available on WebAssembly")
+}
+#endif
+@inline(never) fileprivate func _bjs_struct_lift_JSKeyframeEffectOptions() -> Int32 {
+    return _bjs_struct_lift_JSKeyframeEffectOptions_extern()
+}
+
+extension JSAnimationTiming: _BridgedSwiftStruct {
+    @_spi(BridgeJS) @_transparent public static func bridgeJSStackPop() -> JSAnimationTiming {
+        let duration = Int.bridgeJSStackPop()
+        return JSAnimationTiming(duration: duration)
+    }
+
+    @_spi(BridgeJS) @_transparent public consuming func bridgeJSStackPush() {
+        self.duration.bridgeJSStackPush()
+    }
+
+    public init(unsafelyCopying jsObject: JSObject) {
+        _bjs_struct_lower_JSAnimationTiming(jsObject.bridgeJSLowerParameter())
+        self = Self.bridgeJSStackPop()
+    }
+
+    public func toJSObject() -> JSObject {
+        let __bjs_self = self
+        __bjs_self.bridgeJSStackPush()
+        return JSObject(id: UInt32(bitPattern: _bjs_struct_lift_JSAnimationTiming()))
+    }
+}
+
+#if arch(wasm32)
+@_extern(wasm, module: "bjs", name: "swift_js_struct_lower_JSAnimationTiming")
+fileprivate func _bjs_struct_lower_JSAnimationTiming_extern(_ objectId: Int32) -> Void
+#else
+fileprivate func _bjs_struct_lower_JSAnimationTiming_extern(_ objectId: Int32) -> Void {
+    fatalError("Only available on WebAssembly")
+}
+#endif
+@inline(never) fileprivate func _bjs_struct_lower_JSAnimationTiming(_ objectId: Int32) -> Void {
+    return _bjs_struct_lower_JSAnimationTiming_extern(objectId)
+}
+
+#if arch(wasm32)
+@_extern(wasm, module: "bjs", name: "swift_js_struct_lift_JSAnimationTiming")
+fileprivate func _bjs_struct_lift_JSAnimationTiming_extern() -> Int32
+#else
+fileprivate func _bjs_struct_lift_JSAnimationTiming_extern() -> Int32 {
+    fatalError("Only available on WebAssembly")
+}
+#endif
+@inline(never) fileprivate func _bjs_struct_lift_JSAnimationTiming() -> Int32 {
+    return _bjs_struct_lift_JSAnimationTiming_extern()
+}
+
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_body_get")
 fileprivate func bjs_JSDocument_body_get_extern(_ self: Int32) -> Int32
@@ -598,14 +700,14 @@ fileprivate func bjs_JSElement_blur_extern(_ self: Int32) -> Void {
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_animate")
-fileprivate func bjs_JSElement_animate_extern(_ self: Int32, _ keyframes: Int32, _ options: Int32) -> Int32
+fileprivate func bjs_JSElement_animate_extern(_ self: Int32, _ options: Int32) -> Int32
 #else
-fileprivate func bjs_JSElement_animate_extern(_ self: Int32, _ keyframes: Int32, _ options: Int32) -> Int32 {
+fileprivate func bjs_JSElement_animate_extern(_ self: Int32, _ options: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSElement_animate(_ self: Int32, _ keyframes: Int32, _ options: Int32) -> Int32 {
-    return bjs_JSElement_animate_extern(self, keyframes, options)
+@inline(never) fileprivate func bjs_JSElement_animate(_ self: Int32, _ options: Int32) -> Int32 {
+    return bjs_JSElement_animate_extern(self, options)
 }
 
 func _$JSElement_style_get(_ self: JSObject) throws(JSException) -> JSCSSStyleDeclaration {
@@ -731,11 +833,11 @@ func _$JSElement_blur(_ self: JSObject) throws(JSException) -> Void {
     }
 }
 
-func _$JSElement_animate(_ self: JSObject, _ keyframes: JSObject, _ options: JSObject) throws(JSException) -> JSAnimation {
+func _$JSElement_animate(_ self: JSObject, _ keyframes: [String: [String]], _ options: JSKeyframeEffectOptions) throws(JSException) -> JSAnimation {
     let selfValue = self.bridgeJSLowerParameter()
-    let keyframesValue = keyframes.bridgeJSLowerParameter()
-    let optionsValue = options.bridgeJSLowerParameter()
-    let ret = bjs_JSElement_animate(selfValue, keyframesValue, optionsValue)
+    let optionsObjectId = options.bridgeJSLowerParameter()
+    let _ = keyframes.bridgeJSLowerParameter()
+    let ret = bjs_JSElement_animate(selfValue, optionsObjectId)
     if let error = _swift_js_take_exception() {
         throw error
     }
@@ -999,10 +1101,13 @@ func _$JSAnimation_currentTime_set(_ self: JSObject, _ newValue: Double) throws(
     }
 }
 
-func _$JSAnimation_onfinish_set(_ self: JSObject, _ newValue: JSObject) throws(JSException) -> Void {
+func _$JSAnimation_onfinish_set(_ self: JSObject, _ newValue: @escaping () -> Void) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    let newValueValue = newValue.bridgeJSLowerParameter()
-    bjs_JSAnimation_onfinish_set(selfValue, newValueValue)
+    let newValue = JSTypedClosure<() -> Void>(newValue)
+    let newValueFuncRef = newValue.bridgeJSLowerParameter()
+    withExtendedLifetime((newValue)) {
+        bjs_JSAnimation_onfinish_set(selfValue, newValueFuncRef)
+    }
     if let error = _swift_js_take_exception() {
         throw error
     }
@@ -1042,14 +1147,14 @@ func _$JSAnimation_cancel(_ self: JSObject) throws(JSException) -> Void {
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimationEffect_setKeyframes")
-fileprivate func bjs_JSAnimationEffect_setKeyframes_extern(_ self: Int32, _ keyframes: Int32) -> Void
+fileprivate func bjs_JSAnimationEffect_setKeyframes_extern(_ self: Int32) -> Void
 #else
-fileprivate func bjs_JSAnimationEffect_setKeyframes_extern(_ self: Int32, _ keyframes: Int32) -> Void {
+fileprivate func bjs_JSAnimationEffect_setKeyframes_extern(_ self: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSAnimationEffect_setKeyframes(_ self: Int32, _ keyframes: Int32) -> Void {
-    return bjs_JSAnimationEffect_setKeyframes_extern(self, keyframes)
+@inline(never) fileprivate func bjs_JSAnimationEffect_setKeyframes(_ self: Int32) -> Void {
+    return bjs_JSAnimationEffect_setKeyframes_extern(self)
 }
 
 #if arch(wasm32)
@@ -1064,19 +1169,19 @@ fileprivate func bjs_JSAnimationEffect_updateTiming_extern(_ self: Int32, _ timi
     return bjs_JSAnimationEffect_updateTiming_extern(self, timing)
 }
 
-func _$JSAnimationEffect_setKeyframes(_ self: JSObject, _ keyframes: JSObject) throws(JSException) -> Void {
+func _$JSAnimationEffect_setKeyframes(_ self: JSObject, _ keyframes: [String: [String]]) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    let keyframesValue = keyframes.bridgeJSLowerParameter()
-    bjs_JSAnimationEffect_setKeyframes(selfValue, keyframesValue)
+    let _ = keyframes.bridgeJSLowerParameter()
+    bjs_JSAnimationEffect_setKeyframes(selfValue)
     if let error = _swift_js_take_exception() {
         throw error
     }
 }
 
-func _$JSAnimationEffect_updateTiming(_ self: JSObject, _ timing: JSObject) throws(JSException) -> Void {
+func _$JSAnimationEffect_updateTiming(_ self: JSObject, _ timing: JSAnimationTiming) throws(JSException) -> Void {
     let selfValue = self.bridgeJSLowerParameter()
-    let timingValue = timing.bridgeJSLowerParameter()
-    bjs_JSAnimationEffect_updateTiming(selfValue, timingValue)
+    let timingObjectId = timing.bridgeJSLowerParameter()
+    bjs_JSAnimationEffect_updateTiming(selfValue, timingObjectId)
     if let error = _swift_js_take_exception() {
         throw error
     }

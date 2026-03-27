@@ -4,6 +4,20 @@
 // To update this file, just rebuild your project or run
 // `swift package bridge-js`.
 
+export const JSCompositeOperationValues = {
+    Replace: "replace",
+    Add: "add",
+    Accumulate: "accumulate",
+};
+
+export const JSFillModeValues = {
+    None: "none",
+    Forwards: "forwards",
+    Backwards: "backwards",
+    Both: "both",
+    Auto: "auto",
+};
+
 export async function createInstantiator(options, swift) {
     let instance;
     let memory;
@@ -55,6 +69,34 @@ export async function createInstantiator(options, swift) {
         return swift.memory.retain(real);
     };
 
+    const __bjs_createJSKeyframeEffectOptionsHelpers = () => ({
+        lower: (value) => {
+            i32Stack.push((value.duration | 0));
+            const bytes = textEncoder.encode(value.fill);
+            const id = swift.memory.retain(bytes);
+            i32Stack.push(bytes.length);
+            i32Stack.push(id);
+            const bytes1 = textEncoder.encode(value.composite);
+            const id1 = swift.memory.retain(bytes1);
+            i32Stack.push(bytes1.length);
+            i32Stack.push(id1);
+        },
+        lift: () => {
+            const rawValue = strStack.pop();
+            const rawValue1 = strStack.pop();
+            const int = i32Stack.pop();
+            return { duration: int, fill: rawValue1, composite: rawValue };
+        }
+    });
+    const __bjs_createJSAnimationTimingHelpers = () => ({
+        lower: (value) => {
+            i32Stack.push((value.duration | 0));
+        },
+        lift: () => {
+            const int = i32Stack.pop();
+            return { duration: int };
+        }
+    });
 
     return {
         /**
@@ -122,6 +164,20 @@ export async function createInstantiator(options, swift) {
             }
             bjs["swift_js_pop_i64"] = function() {
                 return i64Stack.pop();
+            }
+            bjs["swift_js_struct_lower_JSKeyframeEffectOptions"] = function(objectId) {
+                structHelpers.JSKeyframeEffectOptions.lower(swift.memory.getObject(objectId));
+            }
+            bjs["swift_js_struct_lift_JSKeyframeEffectOptions"] = function() {
+                const value = structHelpers.JSKeyframeEffectOptions.lift();
+                return swift.memory.retain(value);
+            }
+            bjs["swift_js_struct_lower_JSAnimationTiming"] = function(objectId) {
+                structHelpers.JSAnimationTiming.lower(swift.memory.getObject(objectId));
+            }
+            bjs["swift_js_struct_lift_JSAnimationTiming"] = function() {
+                const value = structHelpers.JSAnimationTiming.lift();
+                return swift.memory.retain(value);
             }
             bjs["swift_js_return_optional_bool"] = function(isSome, value) {
                 if (isSome === 0) {
@@ -479,9 +535,24 @@ export async function createInstantiator(options, swift) {
                     setException(error);
                 }
             }
-            BrowserInterop["bjs_JSElement_animate"] = function bjs_JSElement_animate(self, keyframes, options) {
+            BrowserInterop["bjs_JSElement_animate"] = function bjs_JSElement_animate(self, options) {
                 try {
-                    let ret = swift.memory.getObject(self).animate(swift.memory.getObject(keyframes), swift.memory.getObject(options));
+                    const dictLen = i32Stack.pop();
+                    const dictResult = {};
+                    for (let i = 0; i < dictLen; i++) {
+                        const arrayLen = i32Stack.pop();
+                        const arrayResult = [];
+                        for (let i1 = 0; i1 < arrayLen; i1++) {
+                            const string = strStack.pop();
+                            arrayResult.push(string);
+                        }
+                        arrayResult.reverse();
+                        const string1 = strStack.pop();
+                        dictResult[string1] = arrayResult;
+                    }
+                    const value = swift.memory.getObject(options);
+                    swift.memory.release(options);
+                    let ret = swift.memory.getObject(self).animate(dictResult, value);
                     return swift.memory.retain(ret);
                 } catch (error) {
                     setException(error);
@@ -602,16 +673,31 @@ export async function createInstantiator(options, swift) {
                     setException(error);
                 }
             }
-            BrowserInterop["bjs_JSAnimationEffect_setKeyframes"] = function bjs_JSAnimationEffect_setKeyframes(self, keyframes) {
+            BrowserInterop["bjs_JSAnimationEffect_setKeyframes"] = function bjs_JSAnimationEffect_setKeyframes(self) {
                 try {
-                    swift.memory.getObject(self).setKeyframes(swift.memory.getObject(keyframes));
+                    const dictLen = i32Stack.pop();
+                    const dictResult = {};
+                    for (let i = 0; i < dictLen; i++) {
+                        const arrayLen = i32Stack.pop();
+                        const arrayResult = [];
+                        for (let i1 = 0; i1 < arrayLen; i1++) {
+                            const string = strStack.pop();
+                            arrayResult.push(string);
+                        }
+                        arrayResult.reverse();
+                        const string1 = strStack.pop();
+                        dictResult[string1] = arrayResult;
+                    }
+                    swift.memory.getObject(self).setKeyframes(dictResult);
                 } catch (error) {
                     setException(error);
                 }
             }
             BrowserInterop["bjs_JSAnimationEffect_updateTiming"] = function bjs_JSAnimationEffect_updateTiming(self, timing) {
                 try {
-                    swift.memory.getObject(self).updateTiming(swift.memory.getObject(timing));
+                    const value = swift.memory.getObject(timing);
+                    swift.memory.release(timing);
+                    swift.memory.getObject(self).updateTiming(value);
                 } catch (error) {
                     setException(error);
                 }
@@ -876,7 +962,15 @@ export async function createInstantiator(options, swift) {
         /** @param {WebAssembly.Instance} instance */
         createExports: (instance) => {
             const js = swift.memory.heap;
+            const JSKeyframeEffectOptionsHelpers = __bjs_createJSKeyframeEffectOptionsHelpers();
+            structHelpers.JSKeyframeEffectOptions = JSKeyframeEffectOptionsHelpers;
+
+            const JSAnimationTimingHelpers = __bjs_createJSAnimationTimingHelpers();
+            structHelpers.JSAnimationTiming = JSAnimationTimingHelpers;
+
             const exports = {
+                JSCompositeOperation: JSCompositeOperationValues,
+                JSFillMode: JSFillModeValues,
             };
             _exports = exports;
             return exports;

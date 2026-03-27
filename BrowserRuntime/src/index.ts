@@ -34,6 +34,7 @@ export async function runApplication(initializer: WasmInstanceInitializer) {
 
   swiftRuntime.setInstance(instance);
   instantiator.setInstance(instance);
+  instantiator.createExports(instance);
   // TODO: deal with this typing issue later
   wasi.initialize(instance as any);
 

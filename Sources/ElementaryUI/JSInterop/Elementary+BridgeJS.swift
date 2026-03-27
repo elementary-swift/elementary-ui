@@ -32,7 +32,7 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
 
     func makeEventSink(_ handler: @escaping (String, DOM.Event) -> Void) -> DOM.EventSink {
         let closure = JSEventCallback.make { e in
-            handler(try! e.type, .init(e.jsObject))
+            handler(try! e.type, DOM.Event(e.jsObject))
         }
 
         return .init(js: closure)
@@ -108,16 +108,12 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
     }
 
     func createText(_ text: String) -> DOM.Node {
-        guard let node = try? _document.createTextNode(text) else {
-            return .init(ref: JSObject())
-        }
+        let node = try! _document.createTextNode(text)
         return .init(ref: node.jsObject)
     }
 
     func createElement(_ element: String) -> DOM.Node {
-        guard let node = try? _document.createElement(element) else {
-            return .init(ref: JSObject())
-        }
+        let node = try! _document.createElement(element)
         return .init(ref: node.jsObject)
     }
 
@@ -135,7 +131,7 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
     }
 
     func animateElement(_ element: DOM.Node, _ effect: DOM.Animation.KeyframeEffect, onFinish: @escaping () -> Void) -> DOM.Animation {
-        guard let animation = try? element.jsElement.animate(effect.jsKeyframes, effect.jsTiming) else {
+        guard let animation = try? element.jsElement.animate(effect.jsKeyframes, effect.jsEffectOptions) else {
             return .init(_cancel: {}, _update: { _ in })
         }
 
@@ -145,12 +141,7 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
             _ = try? animation.pause()
         }
 
-        _ = try? animation.setOnfinish(
-            JSClosure { _ in
-                onFinish()
-                return .undefined
-            }
-        )
+        _ = try? animation.setOnfinish(onFinish)
 
         return .init(
             _cancel: {
@@ -259,20 +250,72 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
     }
 }
 
-private extension DOM.Animation.KeyframeEffect {
-    var jsKeyframes: JSObject {
-        let object = JSObject()
-        object[property] = values.jsValue
-        return object
+extension DOM.Animation.KeyframeEffect {
+    var jsKeyframes: JSAnimationKeyframes {
+        [property: values]
     }
 
-    var jsTiming: JSObject {
-        let object = JSObject()
-        object["duration"] = duration.jsValue
-        object["fill"] = "forwards".jsValue
-        if composite != .replace {
-            object["composite"] = composite.jsValue
+    var jsEffectOptions: JSKeyframeEffectOptions {
+        .init(duration: duration, fill: .forwards, composite: self.composite.jsValue)
+    }
+
+    var jsTiming: JSAnimationTiming {
+        .init(duration: duration)
+    }
+}
+
+extension DOM.Animation.CompositeOperation {
+    var jsValue: JSCompositeOperation {
+        switch self {
+        case .replace:
+            return .replace
+        case .add:
+            return .add
+        case .accumulate:
+            return .accumulate
         }
-        return object
+    }
+}
+
+extension DOM.Event {
+    init(_ event: JSObject) { self.init(ref: event) }
+    var jsObject: JSObject { ref as! JSObject }
+}
+
+extension DOM.PropertyValue {
+    var jsValue: JSValue {
+        switch self {
+        case let .string(value):
+            return value.jsValue
+        case let .number(value):
+            return value.jsValue
+        case let .boolean(value):
+            return value.jsValue
+        case let .stringArray(value):
+            return value.jsValue
+        case .null:
+            return .null
+        case .undefined:
+            return .undefined
+        }
+    }
+
+    init?(_ jsValue: JSValue) {
+        if let value = jsValue.string {
+            self = .string(value)
+        } else if let value = jsValue.number {
+            self = .number(value)
+        } else if let value = jsValue.boolean {
+            self = .boolean(value)
+        } else if let object = jsValue.object {
+            guard let array = JSArray(object) else { return nil }
+            self = .stringArray(array.compactMap { $0.string })
+        } else if jsValue.isNull {
+            self = .null
+        } else if jsValue.isUndefined {
+            self = .undefined
+        } else {
+            return nil
+        }
     }
 }

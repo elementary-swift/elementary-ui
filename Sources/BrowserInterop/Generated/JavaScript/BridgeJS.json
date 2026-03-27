@@ -1,4 +1,168 @@
 {
+  "exported" : {
+    "classes" : [
+
+    ],
+    "enums" : [
+      {
+        "cases" : [
+          {
+            "associatedValues" : [
+
+            ],
+            "name" : "replace"
+          },
+          {
+            "associatedValues" : [
+
+            ],
+            "name" : "add"
+          },
+          {
+            "associatedValues" : [
+
+            ],
+            "name" : "accumulate"
+          }
+        ],
+        "emitStyle" : "const",
+        "explicitAccessControl" : "public",
+        "name" : "JSCompositeOperation",
+        "rawType" : "String",
+        "staticMethods" : [
+
+        ],
+        "staticProperties" : [
+
+        ],
+        "swiftCallName" : "JSCompositeOperation",
+        "tsFullPath" : "JSCompositeOperation"
+      },
+      {
+        "cases" : [
+          {
+            "associatedValues" : [
+
+            ],
+            "name" : "none"
+          },
+          {
+            "associatedValues" : [
+
+            ],
+            "name" : "forwards"
+          },
+          {
+            "associatedValues" : [
+
+            ],
+            "name" : "backwards"
+          },
+          {
+            "associatedValues" : [
+
+            ],
+            "name" : "both"
+          },
+          {
+            "associatedValues" : [
+
+            ],
+            "name" : "auto"
+          }
+        ],
+        "emitStyle" : "const",
+        "explicitAccessControl" : "public",
+        "name" : "JSFillMode",
+        "rawType" : "String",
+        "staticMethods" : [
+
+        ],
+        "staticProperties" : [
+
+        ],
+        "swiftCallName" : "JSFillMode",
+        "tsFullPath" : "JSFillMode"
+      }
+    ],
+    "exposeToGlobal" : false,
+    "functions" : [
+
+    ],
+    "protocols" : [
+
+    ],
+    "structs" : [
+      {
+        "explicitAccessControl" : "public",
+        "methods" : [
+
+        ],
+        "name" : "JSKeyframeEffectOptions",
+        "properties" : [
+          {
+            "isReadonly" : true,
+            "isStatic" : false,
+            "name" : "duration",
+            "type" : {
+              "integer" : {
+                "_0" : {
+                  "isSigned" : true,
+                  "width" : "word"
+                }
+              }
+            }
+          },
+          {
+            "isReadonly" : true,
+            "isStatic" : false,
+            "name" : "fill",
+            "type" : {
+              "rawValueEnum" : {
+                "_0" : "JSFillMode",
+                "_1" : "String"
+              }
+            }
+          },
+          {
+            "isReadonly" : true,
+            "isStatic" : false,
+            "name" : "composite",
+            "type" : {
+              "rawValueEnum" : {
+                "_0" : "JSCompositeOperation",
+                "_1" : "String"
+              }
+            }
+          }
+        ],
+        "swiftCallName" : "JSKeyframeEffectOptions"
+      },
+      {
+        "explicitAccessControl" : "public",
+        "methods" : [
+
+        ],
+        "name" : "JSAnimationTiming",
+        "properties" : [
+          {
+            "isReadonly" : true,
+            "isStatic" : false,
+            "name" : "duration",
+            "type" : {
+              "integer" : {
+                "_0" : {
+                  "isSigned" : true,
+                  "width" : "word"
+                }
+              }
+            }
+          }
+        ],
+        "swiftCallName" : "JSAnimationTiming"
+      }
+    ]
+  },
   "imported" : {
     "children" : [
       {
@@ -533,16 +697,24 @@
                   {
                     "name" : "keyframes",
                     "type" : {
-                      "jsObject" : {
+                      "dictionary" : {
+                        "_0" : {
+                          "array" : {
+                            "_0" : {
+                              "string" : {
 
+                              }
+                            }
+                          }
+                        }
                       }
                     }
                   },
                   {
                     "name" : "options",
                     "type" : {
-                      "jsObject" : {
-
+                      "swiftStruct" : {
+                        "_0" : "JSKeyframeEffectOptions"
                       }
                     }
                   }
@@ -759,8 +931,22 @@
                 "functionName" : "onfinish_set",
                 "name" : "onfinish",
                 "type" : {
-                  "jsObject" : {
+                  "closure" : {
+                    "_0" : {
+                      "isAsync" : false,
+                      "isThrows" : false,
+                      "mangleName" : "14BrowserInteropy_y",
+                      "moduleName" : "BrowserInterop",
+                      "parameters" : [
 
+                      ],
+                      "returnType" : {
+                        "void" : {
+
+                        }
+                      }
+                    },
+                    "useJSTypedClosure" : false
                   }
                 }
               }
@@ -781,8 +967,16 @@
                   {
                     "name" : "keyframes",
                     "type" : {
-                      "jsObject" : {
+                      "dictionary" : {
+                        "_0" : {
+                          "array" : {
+                            "_0" : {
+                              "string" : {
 
+                              }
+                            }
+                          }
+                        }
                       }
                     }
                   }
@@ -799,8 +993,8 @@
                   {
                     "name" : "timing",
                     "type" : {
-                      "jsObject" : {
-
+                      "swiftStruct" : {
+                        "_0" : "JSAnimationTiming"
                       }
                     }
                   }

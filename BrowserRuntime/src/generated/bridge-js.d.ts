@@ -4,6 +4,34 @@
 // To update this file, just rebuild your project or run
 // `swift package bridge-js`.
 
+export const JSCompositeOperationValues: {
+    readonly Replace: "replace";
+    readonly Add: "add";
+    readonly Accumulate: "accumulate";
+};
+export type JSCompositeOperationTag = typeof JSCompositeOperationValues[keyof typeof JSCompositeOperationValues];
+
+export const JSFillModeValues: {
+    readonly None: "none";
+    readonly Forwards: "forwards";
+    readonly Backwards: "backwards";
+    readonly Both: "both";
+    readonly Auto: "auto";
+};
+export type JSFillModeTag = typeof JSFillModeValues[keyof typeof JSFillModeValues];
+
+export interface JSKeyframeEffectOptions {
+    duration: number;
+    fill: JSFillModeTag;
+    composite: JSCompositeOperationTag;
+}
+export interface JSAnimationTiming {
+    duration: number;
+}
+export type JSCompositeOperationObject = typeof JSCompositeOperationValues;
+
+export type JSFillModeObject = typeof JSFillModeValues;
+
 export interface JSDocument {
     createElement(tagName: string): JSElement;
     createTextNode(text: string): JSNode;
@@ -35,7 +63,7 @@ export interface JSElement {
     removeEventListener(type: string, listener: (arg0: JSEvent) => void): void;
     focus(): void;
     blur(): void;
-    animate(keyframes: any, options: any): JSAnimation;
+    animate(keyframes: Record<string, string[]>, options: JSKeyframeEffectOptions): JSAnimation;
     readonly style: JSCSSStyleDeclaration;
     readonly offsetParent: JSElement;
 }
@@ -57,11 +85,11 @@ export interface JSAnimation {
     cancel(): void;
     readonly effect: JSAnimationEffect;
     currentTime: number;
-    onfinish: any;
+    onfinish: () => void;
 }
 export interface JSAnimationEffect {
-    setKeyframes(keyframes: any): void;
-    updateTiming(timing: any): void;
+    setKeyframes(keyframes: Record<string, string[]>): void;
+    updateTiming(timing: JSAnimationTiming): void;
 }
 export interface JSEvent {
     readonly type: string;
@@ -93,6 +121,8 @@ export interface JSInputEvent {
     readonly target: any;
 }
 export type Exports = {
+    JSCompositeOperation: JSCompositeOperationObject
+    JSFillMode: JSFillModeObject
 }
 export type Imports = {
 }
