@@ -77,14 +77,14 @@ jobs:
       - name: Resolve Swift dependencies
         run: swift package resolve
 
-      - name: Build bundled runtime
-        run: ./Scripts/build-bundled-runtime.sh
+      - name: Build runtime
+        run: ./Scripts/build-runtime.sh
 
       - name: Check for uncommitted changes
         run: |
           if [ -n "$(git status --porcelain)" ]; then
             echo "Error: Bundled runtime has uncommitted changes"
-            echo "Please run './Scripts/build-bundled-runtime.sh' and commit the changes"
+            echo "Please run './Scripts/build-runtime.sh' and commit the changes"
             git status
             git diff
             exit 1

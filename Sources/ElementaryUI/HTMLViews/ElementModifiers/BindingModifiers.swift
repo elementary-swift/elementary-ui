@@ -46,10 +46,9 @@ final class BindingModifier<Configuration>: DOMElementModifier, Unmountable wher
     func mount(_ node: DOM.Node, _ context: inout _MountContext) -> AnyUnmountable {
         if mountedNode != nil {
             assertionFailure("Binding effect can only be mounted on a single element")
-            if let sink = self.sink, let node = self.mountedNode {
+            if let sink = self.sink.take(), let node = self.mountedNode {
                 context.dom.removeEventListener(node, event: Configuration.eventName, sink: sink)
                 self.mountedNode = nil
-                self.sink = nil
             }
         }
 
@@ -72,6 +71,7 @@ final class BindingModifier<Configuration>: DOMElementModifier, Unmountable wher
         }
 
         context.dom.addEventListener(node, event: Configuration.eventName, sink: sink)
+        self.sink = consume sink
 
         // NOTE: we want to set the initial value - but we need to make sure that all
         // attributes are set before we do so - value properties in the DOM depend on attributes
@@ -81,14 +81,8 @@ final class BindingModifier<Configuration>: DOMElementModifier, Unmountable wher
     }
 
     func unmount(_ context: inout _CommitContext) {
-        guard let sink = self.sink, let node = self.mountedNode else {
-            // NOTE: since this object is used for both state and mounted effect, it will be unmounted twice
-            return
-        }
-
-        context.dom.removeEventListener(node, event: "input", sink: sink)
+        _ = self.sink.take()
         self.mountedNode = nil
-        self.sink = nil
     }
 }
 

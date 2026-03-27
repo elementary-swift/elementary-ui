@@ -167,11 +167,7 @@ function deserializeError(error) {
 	if (error.isError) return Object.assign(new Error(error.value.message), error.value);
 	return error.value;
 }
-let globalVariable;
-if (typeof globalThis !== "undefined") globalVariable = globalThis;
-else if (typeof window !== "undefined") globalVariable = window;
-else if (typeof global !== "undefined") globalVariable = global;
-else if (typeof self !== "undefined") globalVariable = self;
+const globalVariable = globalThis;
 var JSObjectSpace = class {
 	constructor() {
 		this._heapValueById = /* @__PURE__ */ new Map();
@@ -405,15 +401,15 @@ var SwiftRuntime = class {
 				this.getDataView().setUint32(bytes_ptr_result, bytes_ptr, true);
 				return bytes.length;
 			},
-			swjs_decode_string: this.options.sharedMemory == true ? ((bytes_ptr, length) => {
+			swjs_decode_string: this.options.sharedMemory == true ? (bytes_ptr, length) => {
 				const bytes = this.getUint8Array().slice(bytes_ptr, bytes_ptr + length);
 				const string = this.textDecoder.decode(bytes);
 				return this.memory.retain(string);
-			}) : ((bytes_ptr, length) => {
+			} : (bytes_ptr, length) => {
 				const bytes = this.getUint8Array().subarray(bytes_ptr, bytes_ptr + length);
 				const string = this.textDecoder.decode(bytes);
 				return this.memory.retain(string);
-			}),
+			},
 			swjs_load_string: (ref, buffer) => {
 				const bytes = this.memory.getObject(ref);
 				this.getUint8Array().set(bytes, buffer);
@@ -421,7 +417,7 @@ var SwiftRuntime = class {
 			swjs_call_function: (ref, argv, argc, payload1_ptr, payload2_ptr) => {
 				const memory = this.memory;
 				const func = memory.getObject(ref);
-				let result = void 0;
+				let result;
 				try {
 					result = func(...decodeArray(argv, argc, this.getDataView(), memory));
 				} catch (error) {
@@ -450,10 +446,8 @@ var SwiftRuntime = class {
 				const memory = this.memory;
 				const obj = memory.getObject(obj_ref);
 				const func = memory.getObject(func_ref);
-				let result = void 0;
 				const args = decodeArray(argv, argc, this.getDataView(), memory);
-				result = func.apply(obj, args);
-				return writeAndReturnKindBits(result, payload1_ptr, payload2_ptr, false, this.getDataView(), this.memory);
+				return writeAndReturnKindBits(func.apply(obj, args), payload1_ptr, payload2_ptr, false, this.getDataView(), this.memory);
 			},
 			swjs_call_new: (ref, argv, argc) => {
 				const memory = this.memory;
@@ -568,9 +562,10 @@ var SwiftRuntime = class {
 						case "response":
 							broker$1.onReceivingResponse(message);
 							break;
-						default:
+						default: {
 							const unknownMessage = message;
 							throw new Error(`Unknown message type: ${unknownMessage}`);
+						}
 					}
 				});
 			},
@@ -592,9 +587,10 @@ var SwiftRuntime = class {
 						case "response":
 							broker$1.onReceivingResponse(message);
 							break;
-						default:
+						default: {
 							const unknownMessage = message;
 							throw new Error(`Unknown message type: ${unknownMessage}`);
+						}
 					}
 				});
 			},
@@ -668,45 +664,892 @@ var SwiftRuntime = class {
 var UnsafeEventLoopYield = class extends Error {};
 
 //#endregion
-//#region src/bridgejs-shims.ts
-function createBridgeJSStubs() {
-	const unexpectedBjsCall = () => {
-		throw new Error("Unexpected call to BridgeJS function");
+//#region src/generated/bridge-js.js
+const JSCompositeOperationValues = {
+	Replace: "replace",
+	Add: "add",
+	Accumulate: "accumulate"
+};
+const JSFillModeValues = {
+	None: "none",
+	Forwards: "forwards",
+	Backwards: "backwards",
+	Both: "both",
+	Auto: "auto"
+};
+async function createInstantiator(options, swift) {
+	let instance;
+	let memory;
+	let setException;
+	let decodeString;
+	const textDecoder = new TextDecoder("utf-8");
+	const textEncoder = new TextEncoder("utf-8");
+	let tmpRetString;
+	let tmpRetBytes;
+	let tmpRetException;
+	let tmpRetOptionalInt;
+	let tmpRetOptionalFloat;
+	let tmpRetOptionalDouble;
+	let tmpRetOptionalHeapObject;
+	let strStack = [];
+	let i32Stack = [];
+	let i64Stack = [];
+	let f32Stack = [];
+	let f64Stack = [];
+	let ptrStack = [];
+	const structHelpers = {};
+	let bjs = null;
+	const swiftClosureRegistry = typeof FinalizationRegistry === "undefined" ? {
+		register: () => {},
+		unregister: () => {}
+	} : new FinalizationRegistry((state) => {
+		if (state.unregistered) return;
+		instance?.exports?.bjs_release_swift_closure(state.pointer);
+	});
+	const makeClosure = (pointer, file, line, func) => {
+		const state = {
+			pointer,
+			file,
+			line,
+			unregistered: false
+		};
+		const real = (...args) => {
+			if (state.unregistered) {
+				const bytes = new Uint8Array(memory.buffer, state.file);
+				let length = 0;
+				while (bytes[length] !== 0) length += 1;
+				const fileID = decodeString(state.file, length);
+				throw new Error(`Attempted to call a released JSTypedClosure created at ${fileID}:${state.line}`);
+			}
+			return func(...args);
+		};
+		real.__unregister = () => {
+			if (state.unregistered) return;
+			state.unregistered = true;
+			swiftClosureRegistry.unregister(state);
+		};
+		swiftClosureRegistry.register(real, state, state);
+		return swift.memory.retain(real);
 	};
+	const __bjs_createJSKeyframeEffectOptionsHelpers = () => ({
+		lower: (value) => {
+			i32Stack.push(value.duration | 0);
+			const bytes = textEncoder.encode(value.fill);
+			const id = swift.memory.retain(bytes);
+			i32Stack.push(bytes.length);
+			i32Stack.push(id);
+			const bytes1 = textEncoder.encode(value.composite);
+			const id1 = swift.memory.retain(bytes1);
+			i32Stack.push(bytes1.length);
+			i32Stack.push(id1);
+		},
+		lift: () => {
+			const rawValue = strStack.pop();
+			const rawValue1 = strStack.pop();
+			return {
+				duration: i32Stack.pop(),
+				fill: rawValue1,
+				composite: rawValue
+			};
+		}
+	});
+	const __bjs_createJSAnimationTimingHelpers = () => ({
+		lower: (value) => {
+			i32Stack.push(value.duration | 0);
+		},
+		lift: () => {
+			return { duration: i32Stack.pop() };
+		}
+	});
 	return {
-		swift_js_return_string: unexpectedBjsCall,
-		swift_js_init_memory: unexpectedBjsCall,
-		swift_js_make_js_string: unexpectedBjsCall,
-		swift_js_init_memory_with_result: unexpectedBjsCall,
-		swift_js_throw: unexpectedBjsCall,
-		swift_js_retain: unexpectedBjsCall,
-		swift_js_release: unexpectedBjsCall,
-		swift_js_push_i32: unexpectedBjsCall,
-		swift_js_push_f32: unexpectedBjsCall,
-		swift_js_push_f64: unexpectedBjsCall,
-		swift_js_push_string: unexpectedBjsCall,
-		swift_js_pop_i32: unexpectedBjsCall,
-		swift_js_pop_f32: unexpectedBjsCall,
-		swift_js_pop_f64: unexpectedBjsCall,
-		swift_js_return_optional_bool: unexpectedBjsCall,
-		swift_js_return_optional_int: unexpectedBjsCall,
-		swift_js_return_optional_string: unexpectedBjsCall,
-		swift_js_return_optional_double: unexpectedBjsCall,
-		swift_js_return_optional_float: unexpectedBjsCall,
-		swift_js_return_optional_heap_object: unexpectedBjsCall,
-		swift_js_return_optional_object: unexpectedBjsCall,
-		swift_js_get_optional_int_presence: unexpectedBjsCall,
-		swift_js_get_optional_int_value: unexpectedBjsCall,
-		swift_js_get_optional_string: unexpectedBjsCall,
-		swift_js_get_optional_float_presence: unexpectedBjsCall,
-		swift_js_get_optional_float_value: unexpectedBjsCall,
-		swift_js_get_optional_double_presence: unexpectedBjsCall,
-		swift_js_get_optional_double_value: unexpectedBjsCall,
-		swift_js_get_optional_heap_object_pointer: unexpectedBjsCall,
-		swift_js_push_pointer: unexpectedBjsCall,
-		swift_js_pop_pointer: unexpectedBjsCall,
-		swift_js_struct_cleanup: unexpectedBjsCall,
-		swift_js_closure_unregister: unexpectedBjsCall
+		addImports: (importObject, importsContext) => {
+			bjs = {};
+			importObject["bjs"] = bjs;
+			bjs["swift_js_return_string"] = function(ptr, len) {
+				tmpRetString = decodeString(ptr, len);
+			};
+			bjs["swift_js_init_memory"] = function(sourceId, bytesPtr) {
+				const source = swift.memory.getObject(sourceId);
+				swift.memory.release(sourceId);
+				new Uint8Array(memory.buffer, bytesPtr).set(source);
+			};
+			bjs["swift_js_make_js_string"] = function(ptr, len) {
+				return swift.memory.retain(decodeString(ptr, len));
+			};
+			bjs["swift_js_init_memory_with_result"] = function(ptr, len) {
+				new Uint8Array(memory.buffer, ptr, len).set(tmpRetBytes);
+				tmpRetBytes = void 0;
+			};
+			bjs["swift_js_throw"] = function(id) {
+				tmpRetException = swift.memory.retainByRef(id);
+			};
+			bjs["swift_js_retain"] = function(id) {
+				return swift.memory.retainByRef(id);
+			};
+			bjs["swift_js_release"] = function(id) {
+				swift.memory.release(id);
+			};
+			bjs["swift_js_push_i32"] = function(v) {
+				i32Stack.push(v | 0);
+			};
+			bjs["swift_js_push_f32"] = function(v) {
+				f32Stack.push(Math.fround(v));
+			};
+			bjs["swift_js_push_f64"] = function(v) {
+				f64Stack.push(v);
+			};
+			bjs["swift_js_push_string"] = function(ptr, len) {
+				const value = decodeString(ptr, len);
+				strStack.push(value);
+			};
+			bjs["swift_js_pop_i32"] = function() {
+				return i32Stack.pop();
+			};
+			bjs["swift_js_pop_f32"] = function() {
+				return f32Stack.pop();
+			};
+			bjs["swift_js_pop_f64"] = function() {
+				return f64Stack.pop();
+			};
+			bjs["swift_js_push_pointer"] = function(pointer) {
+				ptrStack.push(pointer);
+			};
+			bjs["swift_js_pop_pointer"] = function() {
+				return ptrStack.pop();
+			};
+			bjs["swift_js_push_i64"] = function(v) {
+				i64Stack.push(v);
+			};
+			bjs["swift_js_pop_i64"] = function() {
+				return i64Stack.pop();
+			};
+			bjs["swift_js_struct_lower_JSKeyframeEffectOptions"] = function(objectId) {
+				structHelpers.JSKeyframeEffectOptions.lower(swift.memory.getObject(objectId));
+			};
+			bjs["swift_js_struct_lift_JSKeyframeEffectOptions"] = function() {
+				const value = structHelpers.JSKeyframeEffectOptions.lift();
+				return swift.memory.retain(value);
+			};
+			bjs["swift_js_struct_lower_JSAnimationTiming"] = function(objectId) {
+				structHelpers.JSAnimationTiming.lower(swift.memory.getObject(objectId));
+			};
+			bjs["swift_js_struct_lift_JSAnimationTiming"] = function() {
+				const value = structHelpers.JSAnimationTiming.lift();
+				return swift.memory.retain(value);
+			};
+			bjs["swift_js_return_optional_bool"] = function(isSome, value) {
+				if (isSome === 0) {}
+			};
+			bjs["swift_js_return_optional_int"] = function(isSome, value) {
+				if (isSome === 0) tmpRetOptionalInt = null;
+				else tmpRetOptionalInt = value | 0;
+			};
+			bjs["swift_js_return_optional_float"] = function(isSome, value) {
+				if (isSome === 0) tmpRetOptionalFloat = null;
+				else tmpRetOptionalFloat = Math.fround(value);
+			};
+			bjs["swift_js_return_optional_double"] = function(isSome, value) {
+				if (isSome === 0) tmpRetOptionalDouble = null;
+				else tmpRetOptionalDouble = value;
+			};
+			bjs["swift_js_return_optional_string"] = function(isSome, ptr, len) {
+				if (isSome === 0) tmpRetString = null;
+				else tmpRetString = decodeString(ptr, len);
+			};
+			bjs["swift_js_return_optional_object"] = function(isSome, objectId) {
+				if (isSome === 0) tmpRetString = null;
+				else tmpRetString = swift.memory.getObject(objectId);
+			};
+			bjs["swift_js_return_optional_heap_object"] = function(isSome, pointer) {
+				if (isSome === 0) tmpRetOptionalHeapObject = null;
+				else tmpRetOptionalHeapObject = pointer;
+			};
+			bjs["swift_js_get_optional_int_presence"] = function() {
+				return tmpRetOptionalInt != null ? 1 : 0;
+			};
+			bjs["swift_js_get_optional_int_value"] = function() {
+				const value = tmpRetOptionalInt;
+				tmpRetOptionalInt = void 0;
+				return value;
+			};
+			bjs["swift_js_get_optional_string"] = function() {
+				const str = tmpRetString;
+				tmpRetString = void 0;
+				if (str == null) return -1;
+				else {
+					const bytes = textEncoder.encode(str);
+					tmpRetBytes = bytes;
+					return bytes.length;
+				}
+			};
+			bjs["swift_js_get_optional_float_presence"] = function() {
+				return tmpRetOptionalFloat != null ? 1 : 0;
+			};
+			bjs["swift_js_get_optional_float_value"] = function() {
+				const value = tmpRetOptionalFloat;
+				tmpRetOptionalFloat = void 0;
+				return value;
+			};
+			bjs["swift_js_get_optional_double_presence"] = function() {
+				return tmpRetOptionalDouble != null ? 1 : 0;
+			};
+			bjs["swift_js_get_optional_double_value"] = function() {
+				const value = tmpRetOptionalDouble;
+				tmpRetOptionalDouble = void 0;
+				return value;
+			};
+			bjs["swift_js_get_optional_heap_object_pointer"] = function() {
+				const pointer = tmpRetOptionalHeapObject;
+				tmpRetOptionalHeapObject = void 0;
+				return pointer || 0;
+			};
+			bjs["swift_js_closure_unregister"] = function(funcRef) {};
+			bjs["swift_js_closure_unregister"] = function(funcRef) {
+				swift.memory.getObject(funcRef).__unregister();
+			};
+			bjs["invoke_js_callback_BrowserInterop_14BrowserInterop7JSEventC_y"] = function(callbackId, param0) {
+				try {
+					swift.memory.getObject(callbackId)(swift.memory.getObject(param0));
+				} catch (error) {
+					setException(error);
+				}
+			};
+			bjs["make_swift_closure_BrowserInterop_14BrowserInterop7JSEventC_y"] = function(boxPtr, file, line) {
+				const lower_closure_BrowserInterop_14BrowserInterop7JSEventC_y = function(param0) {
+					instance.exports.invoke_swift_closure_BrowserInterop_14BrowserInterop7JSEventC_y(boxPtr, swift.memory.retain(param0));
+					if (tmpRetException) {
+						const error = swift.memory.getObject(tmpRetException);
+						swift.memory.release(tmpRetException);
+						tmpRetException = void 0;
+						throw error;
+					}
+				};
+				return makeClosure(boxPtr, file, line, lower_closure_BrowserInterop_14BrowserInterop7JSEventC_y);
+			};
+			bjs["invoke_js_callback_BrowserInterop_14BrowserInteropSd_y"] = function(callbackId, param0) {
+				try {
+					swift.memory.getObject(callbackId)(param0);
+				} catch (error) {
+					setException(error);
+				}
+			};
+			bjs["make_swift_closure_BrowserInterop_14BrowserInteropSd_y"] = function(boxPtr, file, line) {
+				const lower_closure_BrowserInterop_14BrowserInteropSd_y = function(param0) {
+					instance.exports.invoke_swift_closure_BrowserInterop_14BrowserInteropSd_y(boxPtr, param0);
+					if (tmpRetException) {
+						const error = swift.memory.getObject(tmpRetException);
+						swift.memory.release(tmpRetException);
+						tmpRetException = void 0;
+						throw error;
+					}
+				};
+				return makeClosure(boxPtr, file, line, lower_closure_BrowserInterop_14BrowserInteropSd_y);
+			};
+			bjs["invoke_js_callback_BrowserInterop_14BrowserInteropy_y"] = function(callbackId) {
+				try {
+					swift.memory.getObject(callbackId)();
+				} catch (error) {
+					setException(error);
+				}
+			};
+			bjs["make_swift_closure_BrowserInterop_14BrowserInteropy_y"] = function(boxPtr, file, line) {
+				const lower_closure_BrowserInterop_14BrowserInteropy_y = function() {
+					instance.exports.invoke_swift_closure_BrowserInterop_14BrowserInteropy_y(boxPtr);
+					if (tmpRetException) {
+						const error = swift.memory.getObject(tmpRetException);
+						swift.memory.release(tmpRetException);
+						tmpRetException = void 0;
+						throw error;
+					}
+				};
+				return makeClosure(boxPtr, file, line, lower_closure_BrowserInterop_14BrowserInteropy_y);
+			};
+			const BrowserInterop = importObject["BrowserInterop"] = importObject["BrowserInterop"] || {};
+			BrowserInterop["bjs_JSDocument_body_get"] = function bjs_JSDocument_body_get(self) {
+				try {
+					let ret = swift.memory.getObject(self).body;
+					return swift.memory.retain(ret);
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSDocument_createElement"] = function bjs_JSDocument_createElement(self, tagNameBytes, tagNameCount) {
+				try {
+					const string = decodeString(tagNameBytes, tagNameCount);
+					let ret = swift.memory.getObject(self).createElement(string);
+					return swift.memory.retain(ret);
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSDocument_createTextNode"] = function bjs_JSDocument_createTextNode(self, textBytes, textCount) {
+				try {
+					const string = decodeString(textBytes, textCount);
+					let ret = swift.memory.getObject(self).createTextNode(string);
+					return swift.memory.retain(ret);
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSDocument_querySelector"] = function bjs_JSDocument_querySelector(self, selectorBytes, selectorCount) {
+				try {
+					const string = decodeString(selectorBytes, selectorCount);
+					let ret = swift.memory.getObject(self).querySelector(string);
+					return swift.memory.retain(ret);
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSDocument_addEventListener"] = function bjs_JSDocument_addEventListener(self, typeBytes, typeCount, listener) {
+				try {
+					const string = decodeString(typeBytes, typeCount);
+					swift.memory.getObject(self).addEventListener(string, swift.memory.getObject(listener));
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSDocument_removeEventListener"] = function bjs_JSDocument_removeEventListener(self, typeBytes, typeCount, listener) {
+				try {
+					const string = decodeString(typeBytes, typeCount);
+					swift.memory.getObject(self).removeEventListener(string, swift.memory.getObject(listener));
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSWindow_scrollX_get"] = function bjs_JSWindow_scrollX_get(self) {
+				try {
+					return swift.memory.getObject(self).scrollX;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSWindow_scrollY_get"] = function bjs_JSWindow_scrollY_get(self) {
+				try {
+					return swift.memory.getObject(self).scrollY;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSWindow_getComputedStyle"] = function bjs_JSWindow_getComputedStyle(self, element) {
+				try {
+					let ret = swift.memory.getObject(self).getComputedStyle(swift.memory.getObject(element));
+					return swift.memory.retain(ret);
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSPerformance_now"] = function bjs_JSPerformance_now(self) {
+				try {
+					return swift.memory.getObject(self).now();
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSNode_textContent_set"] = function bjs_JSNode_textContent_set(self, newValueBytes, newValueCount) {
+				try {
+					const string = decodeString(newValueBytes, newValueCount);
+					swift.memory.getObject(self).textContent = string;
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSElement_style_get"] = function bjs_JSElement_style_get(self) {
+				try {
+					let ret = swift.memory.getObject(self).style;
+					return swift.memory.retain(ret);
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSElement_offsetParent_get"] = function bjs_JSElement_offsetParent_get(self) {
+				try {
+					let ret = swift.memory.getObject(self).offsetParent;
+					return swift.memory.retain(ret);
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSElement_setAttribute"] = function bjs_JSElement_setAttribute(self, nameBytes, nameCount, valueBytes, valueCount) {
+				try {
+					const string = decodeString(nameBytes, nameCount);
+					const string1 = decodeString(valueBytes, valueCount);
+					swift.memory.getObject(self).setAttribute(string, string1);
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSElement_removeAttribute"] = function bjs_JSElement_removeAttribute(self, nameBytes, nameCount) {
+				try {
+					const string = decodeString(nameBytes, nameCount);
+					swift.memory.getObject(self).removeAttribute(string);
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSElement_appendChild"] = function bjs_JSElement_appendChild(self, child) {
+				try {
+					swift.memory.getObject(self).appendChild(swift.memory.getObject(child));
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSElement_removeChild"] = function bjs_JSElement_removeChild(self, child) {
+				try {
+					swift.memory.getObject(self).removeChild(swift.memory.getObject(child));
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSElement_insertBefore"] = function bjs_JSElement_insertBefore(self, newChild, refChild) {
+				try {
+					swift.memory.getObject(self).insertBefore(swift.memory.getObject(newChild), swift.memory.getObject(refChild));
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSElement_replaceChildren"] = function bjs_JSElement_replaceChildren(self) {
+				try {
+					swift.memory.getObject(self).replaceChildren();
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSElement_getBoundingClientRect"] = function bjs_JSElement_getBoundingClientRect(self) {
+				try {
+					let ret = swift.memory.getObject(self).getBoundingClientRect();
+					return swift.memory.retain(ret);
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSElement_addEventListener"] = function bjs_JSElement_addEventListener(self, typeBytes, typeCount, listener) {
+				try {
+					const string = decodeString(typeBytes, typeCount);
+					swift.memory.getObject(self).addEventListener(string, swift.memory.getObject(listener));
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSElement_removeEventListener"] = function bjs_JSElement_removeEventListener(self, typeBytes, typeCount, listener) {
+				try {
+					const string = decodeString(typeBytes, typeCount);
+					swift.memory.getObject(self).removeEventListener(string, swift.memory.getObject(listener));
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSElement_focus"] = function bjs_JSElement_focus(self) {
+				try {
+					swift.memory.getObject(self).focus();
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSElement_blur"] = function bjs_JSElement_blur(self) {
+				try {
+					swift.memory.getObject(self).blur();
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSElement_animate"] = function bjs_JSElement_animate(self, keyframes, options$1) {
+				try {
+					const value = swift.memory.getObject(options$1);
+					swift.memory.release(options$1);
+					let ret = swift.memory.getObject(self).animate(swift.memory.getObject(keyframes), value);
+					return swift.memory.retain(ret);
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSCSSStyleDeclaration_getPropertyValue"] = function bjs_JSCSSStyleDeclaration_getPropertyValue(self, nameBytes, nameCount) {
+				try {
+					const string = decodeString(nameBytes, nameCount);
+					let ret = swift.memory.getObject(self).getPropertyValue(string);
+					tmpRetBytes = textEncoder.encode(ret);
+					return tmpRetBytes.length;
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSCSSStyleDeclaration_setProperty"] = function bjs_JSCSSStyleDeclaration_setProperty(self, nameBytes, nameCount, valueBytes, valueCount) {
+				try {
+					const string = decodeString(nameBytes, nameCount);
+					const string1 = decodeString(valueBytes, valueCount);
+					swift.memory.getObject(self).setProperty(string, string1);
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSCSSStyleDeclaration_removeProperty"] = function bjs_JSCSSStyleDeclaration_removeProperty(self, nameBytes, nameCount) {
+				try {
+					const string = decodeString(nameBytes, nameCount);
+					swift.memory.getObject(self).removeProperty(string);
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSDOMRect_x_get"] = function bjs_JSDOMRect_x_get(self) {
+				try {
+					return swift.memory.getObject(self).x;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSDOMRect_y_get"] = function bjs_JSDOMRect_y_get(self) {
+				try {
+					return swift.memory.getObject(self).y;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSDOMRect_width_get"] = function bjs_JSDOMRect_width_get(self) {
+				try {
+					return swift.memory.getObject(self).width;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSDOMRect_height_get"] = function bjs_JSDOMRect_height_get(self) {
+				try {
+					return swift.memory.getObject(self).height;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSAnimation_effect_get"] = function bjs_JSAnimation_effect_get(self) {
+				try {
+					let ret = swift.memory.getObject(self).effect;
+					return swift.memory.retain(ret);
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSAnimation_currentTime_set"] = function bjs_JSAnimation_currentTime_set(self, newValue) {
+				try {
+					swift.memory.getObject(self).currentTime = newValue;
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSAnimation_onfinish_set"] = function bjs_JSAnimation_onfinish_set(self, newValue) {
+				try {
+					swift.memory.getObject(self).onfinish = swift.memory.getObject(newValue);
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSAnimation_persist"] = function bjs_JSAnimation_persist(self) {
+				try {
+					swift.memory.getObject(self).persist();
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSAnimation_pause"] = function bjs_JSAnimation_pause(self) {
+				try {
+					swift.memory.getObject(self).pause();
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSAnimation_play"] = function bjs_JSAnimation_play(self) {
+				try {
+					swift.memory.getObject(self).play();
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSAnimation_cancel"] = function bjs_JSAnimation_cancel(self) {
+				try {
+					swift.memory.getObject(self).cancel();
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSAnimationEffect_setKeyframes"] = function bjs_JSAnimationEffect_setKeyframes(self, keyframes) {
+				try {
+					swift.memory.getObject(self).setKeyframes(swift.memory.getObject(keyframes));
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSAnimationEffect_updateTiming"] = function bjs_JSAnimationEffect_updateTiming(self, timing) {
+				try {
+					const value = swift.memory.getObject(timing);
+					swift.memory.release(timing);
+					swift.memory.getObject(self).updateTiming(value);
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSEvent_type_get"] = function bjs_JSEvent_type_get(self) {
+				try {
+					let ret = swift.memory.getObject(self).type;
+					tmpRetBytes = textEncoder.encode(ret);
+					return tmpRetBytes.length;
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSEvent_target_get"] = function bjs_JSEvent_target_get(self) {
+				try {
+					let ret = swift.memory.getObject(self).target;
+					return swift.memory.retain(ret);
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSKeyboardEvent_key_get"] = function bjs_JSKeyboardEvent_key_get(self) {
+				try {
+					let ret = swift.memory.getObject(self).key;
+					tmpRetBytes = textEncoder.encode(ret);
+					return tmpRetBytes.length;
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSMouseEvent_altKey_get"] = function bjs_JSMouseEvent_altKey_get(self) {
+				try {
+					return swift.memory.getObject(self).altKey ? 1 : 0;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSMouseEvent_button_get"] = function bjs_JSMouseEvent_button_get(self) {
+				try {
+					return swift.memory.getObject(self).button;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSMouseEvent_buttons_get"] = function bjs_JSMouseEvent_buttons_get(self) {
+				try {
+					return swift.memory.getObject(self).buttons;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSMouseEvent_clientX_get"] = function bjs_JSMouseEvent_clientX_get(self) {
+				try {
+					return swift.memory.getObject(self).clientX;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSMouseEvent_clientY_get"] = function bjs_JSMouseEvent_clientY_get(self) {
+				try {
+					return swift.memory.getObject(self).clientY;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSMouseEvent_ctrlKey_get"] = function bjs_JSMouseEvent_ctrlKey_get(self) {
+				try {
+					return swift.memory.getObject(self).ctrlKey ? 1 : 0;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSMouseEvent_metaKey_get"] = function bjs_JSMouseEvent_metaKey_get(self) {
+				try {
+					return swift.memory.getObject(self).metaKey ? 1 : 0;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSMouseEvent_movementX_get"] = function bjs_JSMouseEvent_movementX_get(self) {
+				try {
+					return swift.memory.getObject(self).movementX;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSMouseEvent_movementY_get"] = function bjs_JSMouseEvent_movementY_get(self) {
+				try {
+					return swift.memory.getObject(self).movementY;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSMouseEvent_offsetX_get"] = function bjs_JSMouseEvent_offsetX_get(self) {
+				try {
+					return swift.memory.getObject(self).offsetX;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSMouseEvent_offsetY_get"] = function bjs_JSMouseEvent_offsetY_get(self) {
+				try {
+					return swift.memory.getObject(self).offsetY;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSMouseEvent_pageX_get"] = function bjs_JSMouseEvent_pageX_get(self) {
+				try {
+					return swift.memory.getObject(self).pageX;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSMouseEvent_pageY_get"] = function bjs_JSMouseEvent_pageY_get(self) {
+				try {
+					return swift.memory.getObject(self).pageY;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSMouseEvent_screenX_get"] = function bjs_JSMouseEvent_screenX_get(self) {
+				try {
+					return swift.memory.getObject(self).screenX;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSMouseEvent_screenY_get"] = function bjs_JSMouseEvent_screenY_get(self) {
+				try {
+					return swift.memory.getObject(self).screenY;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSMouseEvent_shiftKey_get"] = function bjs_JSMouseEvent_shiftKey_get(self) {
+				try {
+					return swift.memory.getObject(self).shiftKey ? 1 : 0;
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_JSInputEvent_data_get"] = function bjs_JSInputEvent_data_get(self) {
+				try {
+					let ret = swift.memory.getObject(self).data;
+					tmpRetBytes = textEncoder.encode(ret);
+					return tmpRetBytes.length;
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_JSInputEvent_target_get"] = function bjs_JSInputEvent_target_get(self) {
+				try {
+					let ret = swift.memory.getObject(self).target;
+					return swift.memory.retain(ret);
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_window_get"] = function bjs_window_get() {
+				try {
+					let ret = globalThis.window;
+					return swift.memory.retain(ret);
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_document_get"] = function bjs_document_get() {
+				try {
+					let ret = globalThis.document;
+					return swift.memory.retain(ret);
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_performance_get"] = function bjs_performance_get() {
+				try {
+					let ret = globalThis.performance;
+					return swift.memory.retain(ret);
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_requestAnimationFrame"] = function bjs_requestAnimationFrame(callback) {
+				try {
+					return globalThis.requestAnimationFrame(swift.memory.getObject(callback));
+				} catch (error) {
+					setException(error);
+					return 0;
+				}
+			};
+			BrowserInterop["bjs_cancelAnimationFrame"] = function bjs_cancelAnimationFrame(handle) {
+				try {
+					globalThis.cancelAnimationFrame(handle);
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_queueMicrotask"] = function bjs_queueMicrotask(callback) {
+				try {
+					globalThis.queueMicrotask(swift.memory.getObject(callback));
+				} catch (error) {
+					setException(error);
+				}
+			};
+			BrowserInterop["bjs_setTimeout"] = function bjs_setTimeout(callback, timeout) {
+				try {
+					globalThis.setTimeout(swift.memory.getObject(callback), timeout);
+				} catch (error) {
+					setException(error);
+				}
+			};
+		},
+		setInstance: (i) => {
+			instance = i;
+			memory = instance.exports.memory;
+			decodeString = (ptr, len) => {
+				const bytes = new Uint8Array(memory.buffer, ptr >>> 0, len >>> 0);
+				return textDecoder.decode(bytes);
+			};
+			setException = (error) => {
+				instance.exports._swift_js_exception.value = swift.memory.retain(error);
+			};
+		},
+		createExports: (instance$1) => {
+			swift.memory.heap;
+			structHelpers.JSKeyframeEffectOptions = __bjs_createJSKeyframeEffectOptionsHelpers();
+			structHelpers.JSAnimationTiming = __bjs_createJSAnimationTimingHelpers();
+			return {
+				JSCompositeOperation: JSCompositeOperationValues,
+				JSFillMode: JSFillModeValues
+			};
+		}
 	};
 }
 
@@ -724,13 +1567,17 @@ function createBridgeJSStubs() {
 async function runApplication(initializer) {
 	const wasi = createDefaultWASI();
 	const swiftRuntime = new SwiftRuntime();
-	const bridgeJSStubs = createBridgeJSStubs();
-	const instance = await initializer({
+	let instance = null;
+	const instantiator = await createInstantiator({ imports: {} }, swiftRuntime);
+	const importsObject = {
 		javascript_kit: swiftRuntime.wasmImports,
-		wasi_snapshot_preview1: wasi.wasiImport,
-		bjs: bridgeJSStubs
-	});
+		wasi_snapshot_preview1: wasi.wasiImport
+	};
+	instantiator.addImports(importsObject);
+	instance = await initializer(importsObject);
 	swiftRuntime.setInstance(instance);
+	instantiator.setInstance(instance);
+	instantiator.createExports(instance);
 	wasi.initialize(instance);
 	swiftRuntime.main();
 }

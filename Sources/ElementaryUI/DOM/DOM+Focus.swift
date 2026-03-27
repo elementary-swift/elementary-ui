@@ -1,14 +1,24 @@
+// TODO: fix this type
+
 extension DOM {
     @_spi(Benchmarking)
     public struct FocusAccessor: ~Copyable {
         let _focus: () -> Void
         let _blur: () -> Void
-        let _unmount: () -> Void
 
-        public init(focus: @escaping () -> Void, blur: @escaping () -> Void, unmount: @escaping () -> Void) {
+        var focusSink: EventSink?
+        var blurSink: EventSink?
+
+        public init(
+            focus: @escaping () -> Void,
+            blur: @escaping () -> Void,
+            focusSink: consuming EventSink?,
+            blurSink: consuming EventSink?
+        ) {
             self._focus = focus
             self._blur = blur
-            self._unmount = unmount
+            self.focusSink = focusSink
+            self.blurSink = blurSink
         }
 
         func focus() {
@@ -22,7 +32,7 @@ extension DOM {
         consuming func unmount() {}
 
         deinit {
-            _unmount()
+            // nothing to do I think
         }
     }
 

@@ -6,7 +6,14 @@ private extension DOM.Event {
 
 private extension DOM.EventSink {
     init(_ sink: TestDOM.EventSink) { self.init(ref: sink) }
-    var value: TestDOM.EventSink { ref as! TestDOM.EventSink }
+    var value: TestDOM.EventSink {
+        switch storage {
+        case let .ref(ref):
+            ref as! TestDOM.EventSink
+        default:
+            fatalError("ref is not a TestDOM.EventSink")
+        }
+    }
 }
 
 private extension DOM.Node {
@@ -231,14 +238,14 @@ final class TestDOM: DOM.Interactor {
         mockBoundingRects[ObjectIdentifier(node.value)] = rect
     }
 
-    func addEventListener(_ node: DOM.Node, event: String, sink: DOM.EventSink) {
+    func addEventListener(_ node: DOM.Node, event: String, sink: borrowing DOM.EventSink) {
         guard case let .element(data) = node.value.kind else { return }
         data.listeners.insert(event)
         data.sink = sink.value
         ops.append(.addListener(node: label(node), event: event))
     }
 
-    func removeEventListener(_ node: DOM.Node, event: String, sink: DOM.EventSink) {
+    func removeEventListener(_ node: DOM.Node, event: String, sink: borrowing DOM.EventSink) {
         guard case let .element(data) = node.value.kind else { return }
         data.listeners.remove(event)
         ops.append(.removeListener(node: label(node), event: event))
@@ -247,13 +254,6 @@ final class TestDOM: DOM.Interactor {
     func patchText(_ node: DOM.Node, with text: String) {
         ops.append(.patchText(node: label(node), to: text))
         node.value.kind = .text(text)
-    }
-
-    func replaceChildren(_ children: [DOM.Node], in parent: DOM.Node) {
-        guard case let .element(data) = parent.value.kind else { return }
-        for child in children { child.value.parent = parent.value }
-        data.children = children.map { $0.value }
-        ops.append(.setChildren(parent: label(parent), children: children.map(label)))
     }
 
     func insertChild(_ child: DOM.Node, before sibling: DOM.Node?, in parent: DOM.Node) {
@@ -270,11 +270,24 @@ final class TestDOM: DOM.Interactor {
         ops.append(.addChild(parent: label(parent), child: label(child), before: sibling.map(label)))
     }
 
+    func appendChild(_ child: DOM.Node, to parent: DOM.Node) {
+        insertChild(child, before: nil, in: parent)
+    }
+
     func removeChild(_ child: DOM.Node, from parent: DOM.Node) {
         if case let .element(data) = parent.value.kind, let index = data.children.firstIndex(where: { $0 === child.value }) {
             data.children.remove(at: index)
             ops.append(.removeChild(parent: label(parent), child: label(child)))
         }
+    }
+
+    func clearChildren(in parent: DOM.Node) {
+        guard case let .element(data) = parent.value.kind else { return }
+        for child in data.children {
+            child.parent = nil
+        }
+        data.children.removeAll(keepingCapacity: false)
+        ops.append(.setChildren(parent: label(parent), children: []))
     }
 
     func getOffsetParent(_ node: DOM.Node) -> DOM.Node? {

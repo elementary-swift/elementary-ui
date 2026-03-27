@@ -257,9 +257,7 @@ struct TransitionMountRootTests {
         }.count
 
         #expect(createdPCount == 3)
-        #expect(
-            dom.ops.contains(.setChildren(parent: "<>", children: ["<p>", "<p>", "<p>"]))
-        )
+        #expect(dom.ops.filter { $0 == .addChild(parent: "<>", child: "<p>") }.count == 3)
     }
 
     @Test

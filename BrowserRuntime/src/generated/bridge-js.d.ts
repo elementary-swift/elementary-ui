@@ -1,0 +1,135 @@
+// NOTICE: This is auto-generated code by BridgeJS from JavaScriptKit,
+// DO NOT EDIT.
+//
+// To update this file, just rebuild your project or run
+// `swift package bridge-js`.
+
+export const JSCompositeOperationValues: {
+    readonly Replace: "replace";
+    readonly Add: "add";
+    readonly Accumulate: "accumulate";
+};
+export type JSCompositeOperationTag = typeof JSCompositeOperationValues[keyof typeof JSCompositeOperationValues];
+
+export const JSFillModeValues: {
+    readonly None: "none";
+    readonly Forwards: "forwards";
+    readonly Backwards: "backwards";
+    readonly Both: "both";
+    readonly Auto: "auto";
+};
+export type JSFillModeTag = typeof JSFillModeValues[keyof typeof JSFillModeValues];
+
+export interface JSKeyframeEffectOptions {
+    duration: number;
+    fill: JSFillModeTag;
+    composite: JSCompositeOperationTag;
+}
+export interface JSAnimationTiming {
+    duration: number;
+}
+export type JSCompositeOperationObject = typeof JSCompositeOperationValues;
+
+export type JSFillModeObject = typeof JSFillModeValues;
+
+export interface JSDocument {
+    createElement(tagName: string): JSElement;
+    createTextNode(text: string): JSNode;
+    querySelector(selector: string): JSElement;
+    addEventListener(type: string, listener: (arg0: JSEvent) => void): void;
+    removeEventListener(type: string, listener: (arg0: JSEvent) => void): void;
+    readonly body: JSElement;
+}
+export interface JSWindow {
+    getComputedStyle(element: JSElement): JSCSSStyleDeclaration;
+    readonly scrollX: number;
+    readonly scrollY: number;
+}
+export interface JSPerformance {
+    now(): number;
+}
+export interface JSNode {
+    textContent: string;
+}
+export interface JSElement {
+    setAttribute(name: string, value: string): void;
+    removeAttribute(name: string): void;
+    appendChild(child: JSNode): void;
+    removeChild(child: JSNode): void;
+    insertBefore(newChild: JSNode, refChild: JSNode): void;
+    replaceChildren(): void;
+    getBoundingClientRect(): JSDOMRect;
+    addEventListener(type: string, listener: (arg0: JSEvent) => void): void;
+    removeEventListener(type: string, listener: (arg0: JSEvent) => void): void;
+    focus(): void;
+    blur(): void;
+    animate(keyframes: any, options: JSKeyframeEffectOptions): JSAnimation;
+    readonly style: JSCSSStyleDeclaration;
+    readonly offsetParent: JSElement;
+}
+export interface JSCSSStyleDeclaration {
+    getPropertyValue(name: string): string;
+    setProperty(name: string, value: string): void;
+    removeProperty(name: string): void;
+}
+export interface JSDOMRect {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+}
+export interface JSAnimation {
+    persist(): void;
+    pause(): void;
+    play(): void;
+    cancel(): void;
+    readonly effect: JSAnimationEffect;
+    currentTime: number;
+    onfinish: () => void;
+}
+export interface JSAnimationEffect {
+    setKeyframes(keyframes: any): void;
+    updateTiming(timing: JSAnimationTiming): void;
+}
+export interface JSEvent {
+    readonly type: string;
+    readonly target: any;
+}
+export interface JSKeyboardEvent {
+    readonly key: string;
+}
+export interface JSMouseEvent {
+    readonly altKey: boolean;
+    readonly button: number;
+    readonly buttons: number;
+    readonly clientX: number;
+    readonly clientY: number;
+    readonly ctrlKey: boolean;
+    readonly metaKey: boolean;
+    readonly movementX: number;
+    readonly movementY: number;
+    readonly offsetX: number;
+    readonly offsetY: number;
+    readonly pageX: number;
+    readonly pageY: number;
+    readonly screenX: number;
+    readonly screenY: number;
+    readonly shiftKey: boolean;
+}
+export interface JSInputEvent {
+    readonly data: string;
+    readonly target: any;
+}
+export type Exports = {
+    JSCompositeOperation: JSCompositeOperationObject
+    JSFillMode: JSFillModeObject
+}
+export type Imports = {
+}
+export function createInstantiator(options: {
+    imports: Imports;
+}, swift: any): Promise<{
+    addImports: (importObject: WebAssembly.Imports) => void;
+    setInstance: (instance: WebAssembly.Instance) => void;
+    createExports: (instance: WebAssembly.Instance) => Exports;
+}>;

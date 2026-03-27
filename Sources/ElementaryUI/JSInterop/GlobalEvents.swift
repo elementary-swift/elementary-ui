@@ -1,4 +1,5 @@
-import JavaScriptKit
+import BrowserInterop
+@_spi(BridgeJS) import JavaScriptKit
 
 // NOTE: all of this is because tasks were not a thing in embedded until recently
 // revisit in 6.3
@@ -29,10 +30,13 @@ public extension View {
 }
 
 public enum GlobalDocument {
-    static let document = JSObject.global.document
-
     static var body: DOM.Node {
-        DOM.Node(document.body.object!)
+        guard let document = try? BrowserInterop.document,
+            let body = try? document.body
+        else {
+            fatalError("Failed to get body")
+        }
+        return DOM.Node(ref: body.jsObject)
     }
 }
 
@@ -47,15 +51,19 @@ extension GlobalDocument {
         let eventName: String
 
         func subscribe(_ callback: @escaping (Event) -> Void) -> EventSourceSubscription {
-            let closure = JSClosure { event in
-                callback(Event(__jsObject: event[0].object!)!)
-                return .undefined
+            guard let document = try? BrowserInterop.document else {
+                fatalError("failed to get document")
             }
 
-            _ = document.addEventListener(eventName, closure)
+            let closure = JSEventCallback.make { event in
+                callback(Event(__jsObject: event.jsObject)!)
+            }
+
+            try! document.addEventListener(eventName, closure)
 
             return EventSourceSubscription {
-                _ = document.removeEventListener(eventName, closure)
+                _ = try? document.removeEventListener(eventName, closure)
+                closure.release()
             }
         }
     }
@@ -68,27 +76,26 @@ public var onAnimationFrame: some EventSource<AnimationFrameEvent> {
 
 struct AnimationFrameEventSource: EventSource {
     typealias Event = AnimationFrameEvent
-    static let _requestAnimationFrame = JSObject.global.requestAnimationFrame.function!
-    static let _cancelAnimationFrame = JSObject.global.cancelAnimationFrame.function!
 
     func subscribe(_ callback: @escaping (AnimationFrameEvent) -> Void) -> EventSourceSubscription {
-        var rafID: JSValue?
-        var closure: JSClosure?
+        var rafID: Double?
+        var closure: ((Double) -> Void)?
 
-        closure = JSClosure { value in
+        closure = { value in
             guard let closure else {
-                return .undefined
+                return
             }
-            rafID = AnimationFrameEventSource._requestAnimationFrame(closure)
-            callback(AnimationFrameEvent(timestamp: value[0].number!))
-            return .undefined
+            rafID = try? BrowserInterop.requestAnimationFrame(closure)
+            callback(AnimationFrameEvent(timestamp: value))
         }
 
-        rafID = AnimationFrameEventSource._requestAnimationFrame(closure)
+        if let closure {
+            rafID = try? BrowserInterop.requestAnimationFrame(closure)
+        }
 
         return EventSourceSubscription {
             if let rafID = rafID {
-                AnimationFrameEventSource._cancelAnimationFrame(rafID)
+                _ = try? BrowserInterop.cancelAnimationFrame(rafID)
             }
             closure = nil
             rafID = nil
