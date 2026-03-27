@@ -80,7 +80,9 @@ public struct JSAnimationEffect {
     @JSFunction public func updateTiming(_ timing: JSAnimationTiming) throws(JSException)
 }
 
-public typealias JSAnimationKeyframes = [String: [String]]
+// NOTE: this does not work well for embedded because it requires unicode tables
+// public typealias JSAnimationKeyframes = [String: [String]]
+public typealias JSAnimationKeyframes = JSObject
 
 @JS public enum JSCompositeOperation: String {
     case replace

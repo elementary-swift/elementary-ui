@@ -63,7 +63,7 @@ export interface JSElement {
     removeEventListener(type: string, listener: (arg0: JSEvent) => void): void;
     focus(): void;
     blur(): void;
-    animate(keyframes: Record<string, string[]>, options: JSKeyframeEffectOptions): JSAnimation;
+    animate(keyframes: any, options: JSKeyframeEffectOptions): JSAnimation;
     readonly style: JSCSSStyleDeclaration;
     readonly offsetParent: JSElement;
 }
@@ -88,7 +88,7 @@ export interface JSAnimation {
     onfinish: () => void;
 }
 export interface JSAnimationEffect {
-    setKeyframes(keyframes: Record<string, string[]>): void;
+    setKeyframes(keyframes: any): void;
     updateTiming(timing: JSAnimationTiming): void;
 }
 export interface JSEvent {

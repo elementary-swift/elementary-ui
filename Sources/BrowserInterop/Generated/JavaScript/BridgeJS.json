@@ -697,16 +697,8 @@
                   {
                     "name" : "keyframes",
                     "type" : {
-                      "dictionary" : {
-                        "_0" : {
-                          "array" : {
-                            "_0" : {
-                              "string" : {
+                      "jsObject" : {
 
-                              }
-                            }
-                          }
-                        }
                       }
                     }
                   },
@@ -967,16 +959,8 @@
                   {
                     "name" : "keyframes",
                     "type" : {
-                      "dictionary" : {
-                        "_0" : {
-                          "array" : {
-                            "_0" : {
-                              "string" : {
+                      "jsObject" : {
 
-                              }
-                            }
-                          }
-                        }
                       }
                     }
                   }

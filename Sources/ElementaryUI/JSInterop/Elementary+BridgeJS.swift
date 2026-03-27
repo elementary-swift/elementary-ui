@@ -251,16 +251,20 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
 }
 
 extension DOM.Animation.KeyframeEffect {
-    var jsKeyframes: JSAnimationKeyframes {
-        [property: values]
-    }
-
     var jsEffectOptions: JSKeyframeEffectOptions {
         .init(duration: duration, fill: .forwards, composite: self.composite.jsValue)
     }
 
     var jsTiming: JSAnimationTiming {
         .init(duration: duration)
+    }
+
+    var jsKeyframes: JSObject {
+        // NOTE: this could be a [String: [String]] but that doesn't work well for embedded because it requires unicode tables
+        // caching the property name would be nice....
+        [
+            property: values.jsValue
+        ]
     }
 }
 

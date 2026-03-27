@@ -1163,24 +1163,11 @@ async function createInstantiator(options, swift) {
 					setException(error);
 				}
 			};
-			BrowserInterop["bjs_JSElement_animate"] = function bjs_JSElement_animate(self, options$1) {
+			BrowserInterop["bjs_JSElement_animate"] = function bjs_JSElement_animate(self, keyframes, options$1) {
 				try {
-					const dictLen = i32Stack.pop();
-					const dictResult = {};
-					for (let i = 0; i < dictLen; i++) {
-						const arrayLen = i32Stack.pop();
-						const arrayResult = [];
-						for (let i1 = 0; i1 < arrayLen; i1++) {
-							const string = strStack.pop();
-							arrayResult.push(string);
-						}
-						arrayResult.reverse();
-						const string1 = strStack.pop();
-						dictResult[string1] = arrayResult;
-					}
 					const value = swift.memory.getObject(options$1);
 					swift.memory.release(options$1);
-					let ret = swift.memory.getObject(self).animate(dictResult, value);
+					let ret = swift.memory.getObject(self).animate(swift.memory.getObject(keyframes), value);
 					return swift.memory.retain(ret);
 				} catch (error) {
 					setException(error);
@@ -1297,22 +1284,9 @@ async function createInstantiator(options, swift) {
 					setException(error);
 				}
 			};
-			BrowserInterop["bjs_JSAnimationEffect_setKeyframes"] = function bjs_JSAnimationEffect_setKeyframes(self) {
+			BrowserInterop["bjs_JSAnimationEffect_setKeyframes"] = function bjs_JSAnimationEffect_setKeyframes(self, keyframes) {
 				try {
-					const dictLen = i32Stack.pop();
-					const dictResult = {};
-					for (let i = 0; i < dictLen; i++) {
-						const arrayLen = i32Stack.pop();
-						const arrayResult = [];
-						for (let i1 = 0; i1 < arrayLen; i1++) {
-							const string = strStack.pop();
-							arrayResult.push(string);
-						}
-						arrayResult.reverse();
-						const string1 = strStack.pop();
-						dictResult[string1] = arrayResult;
-					}
-					swift.memory.getObject(self).setKeyframes(dictResult);
+					swift.memory.getObject(self).setKeyframes(swift.memory.getObject(keyframes));
 				} catch (error) {
 					setException(error);
 				}
