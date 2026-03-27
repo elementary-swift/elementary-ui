@@ -67,7 +67,7 @@ final class MountRootTransitionCoordinator {
                 tx.withModifiedTransaction {
                     $0.animation = animation
                     $0.disablesAnimation = false
-                    $0.addAnimationCompletion { [coordinator = self, scheduler, handle] in
+                    $0.addAnimationCompletion(criteria: .removed) { [coordinator = self, scheduler, handle] in
                         coordinator.notifyExitAnimationCompleted(token: token, scheduler: scheduler, handle: handle)
                     }
                 } run: { tx in
