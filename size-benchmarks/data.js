@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774595343068,
+  "lastUpdate": 1774633421666,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -2473,6 +2473,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 181.63,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4577a74cd0373aba5bc927089220ca51556d37bb",
+          "message": "Migrate DOM interop to BridgeJS (#76)\n\n* WIP: bridge-js\n\n* manual \"env\" override for BridgeJS (working)\n\n* moar BridgeJS\n\n* cache globals\n\n* bridge JS with unretained string passing\n\n* WIP: JavaScriptKit off main\n\n* generate script fix\n\n* get rid of replaceChildren arrays\n\n* adjusted tests\n\n* fixed format for generated code\n\n* typed event listeners\n\n* disable main CI for now\n\n* cleaned up runtime bundle scripts\n\n* scripts cleanup\n\n* transition fix\n\n* ported animations to BridgeJS\n\n* reverted keyframes to JSObject",
+          "timestamp": "2026-03-27T18:34:59+01:00",
+          "tree_id": "28007871d68b8ac06f5b9c9b7305e0b9c7b44783",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/4577a74cd0373aba5bc927089220ca51556d37bb"
+        },
+        "date": 1774633421352,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 180.88,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 138.28,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 120,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 182,
             "unit": "kB"
           }
         ]
