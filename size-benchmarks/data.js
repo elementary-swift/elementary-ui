@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774767909643,
+  "lastUpdate": 1774855688029,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -2591,6 +2591,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "Counter",
             "value": 138.29,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 120,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 182,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "4577a74cd0373aba5bc927089220ca51556d37bb",
+          "message": "Migrate DOM interop to BridgeJS (#76)\n\n* WIP: bridge-js\n\n* manual \"env\" override for BridgeJS (working)\n\n* moar BridgeJS\n\n* cache globals\n\n* bridge JS with unretained string passing\n\n* WIP: JavaScriptKit off main\n\n* generate script fix\n\n* get rid of replaceChildren arrays\n\n* adjusted tests\n\n* fixed format for generated code\n\n* typed event listeners\n\n* disable main CI for now\n\n* cleaned up runtime bundle scripts\n\n* scripts cleanup\n\n* transition fix\n\n* ported animations to BridgeJS\n\n* reverted keyframes to JSObject",
+          "timestamp": "2026-03-27T17:34:59Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/4577a74cd0373aba5bc927089220ca51556d37bb"
+        },
+        "date": 1774855687570,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 180.88,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 138.28,
             "unit": "kB"
           },
           {
