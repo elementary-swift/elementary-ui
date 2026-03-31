@@ -8,7 +8,6 @@ final class MountContainer {
 
     var containerHandle: LayoutContainer.Handle?
 
-    private var keyedDiff: KeyedDiffEngine = .init()
     private var removedMiddleSlots: UniqueArray<Slot> = .init()
     private var leavingRemovalScratch: UniqueArray<Int> = .init()
 
@@ -146,13 +145,15 @@ final class MountContainer {
 
         removedMiddleSlots.removeAll(keepingCapacity: true)
 
-        let didStructureChange = keyedDiff.run(
-            activeSlots: &activeSlots,
-            leavingSlots: &leavingSlots,
-            removedSlots: &removedMiddleSlots,
-            keys: keys,
-            transaction: tx.transaction
-        )
+        let didStructureChange = KeyedDiffEngine.withShared { differ in
+            differ.run(
+                activeSlots: &activeSlots,
+                leavingSlots: &leavingSlots,
+                removedSlots: &removedMiddleSlots,
+                keys: keys,
+                transaction: tx.transaction
+            )
+        }
 
         while var slot = removedMiddleSlots.popLast() {
             switch slot.beginRemovalForDiff(tx: &tx, handle: containerHandle) {
