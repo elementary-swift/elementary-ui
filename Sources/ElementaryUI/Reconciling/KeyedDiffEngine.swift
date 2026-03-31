@@ -1,27 +1,9 @@
 import BasicContainers
-
-enum _KeyedDiffSource {
-    static let new = -1
-    private static let reviveBase = -2
-
-    @inline(__always)
-    static func encodeRevive(_ leavingIndex: Int) -> Int {
-        reviveBase - leavingIndex
-    }
-
-    @inline(__always)
-    static func isRevive(_ source: Int) -> Bool {
-        source <= reviveBase
-    }
-
-    @inline(__always)
-    static func decodeRevive(_ source: Int) -> Int {
-        reviveBase - source
-    }
-}
+import ContainersPreview
 
 struct KeyedDiffEngine: ~Copyable {
     private var oldKeyMap: [_ViewKey: Int] = [:]
+    private var leavingKeyMap: [_ViewKey: Int] = [:]
 
     private var sources: UniqueArray<Int> = .init()
     private var tails: UniqueArray<Int> = .init()
@@ -37,88 +19,101 @@ struct KeyedDiffEngine: ~Copyable {
     mutating func run(
         activeSlots: inout UniqueArray<MountContainer.Slot>,
         leavingSlots: inout UniqueArray<MountContainer.Slot>,
-        leavingByKey: inout [_ViewKey: Int],
-        removedNodes: inout UniqueArray<MountContainer.RemovedNode>,
+        removedSlots: inout UniqueArray<MountContainer.Slot>,
         keys: borrowing Span<_ViewKey>,
-        tx: inout _TransactionContext,
-        containerHandle: LayoutContainer.Handle?
+        transaction: Transaction
     ) -> Bool {
         let oldCount = activeSlots.count
         let newCount = keys.count
         if oldCount == 0 && newCount == 0 { return false }
 
-        let (prefixCount, suffixCount) = scanUnchangedEdges(activeSlots: activeSlots, keys: keys)
-        let oldMiddleStart = prefixCount
-        let oldMiddleEnd = oldCount - suffixCount
-        let newMiddleStart = prefixCount
-        let newMiddleEnd = newCount - suffixCount
-        let oldMiddleCount = oldMiddleEnd - oldMiddleStart
-        let newMiddleCount = newMiddleEnd - newMiddleStart
+        let (prefixCount, suffixCount) = scanUnchangedEdges(activeSlots: activeSlots.span, keys: keys)
+        let oldMiddleCount = oldCount - prefixCount - suffixCount
+        let newMiddleCount = newCount - prefixCount - suffixCount
 
         if oldMiddleCount == 0 && newMiddleCount == 0 {
             return false
         }
 
         prepareScratch(
-            oldActiveCount: oldCount,
             oldMiddleCount: oldMiddleCount,
             newMiddleCount: newMiddleCount,
             oldLeavingCount: leavingSlots.count
         )
 
+        buildLeavingKeyMap(leavingSlots: leavingSlots.span)
+        materializeLeavingCells(leavingSlots: &leavingSlots)
+
+        let newMiddleKeys = keys.extracting(prefixCount..<(prefixCount + newMiddleCount))
+
         var didStructureChange = false
         buildSourcePlan(
-            activeSlots: activeSlots,
-            keys: keys,
-            leavingByKey: leavingByKey,
-            oldMiddleStart: oldMiddleStart,
-            oldMiddleEnd: oldMiddleEnd,
-            newMiddleStart: newMiddleStart,
-            newMiddleEnd: newMiddleEnd,
+            oldMiddleSlots: activeSlots.span.extracting(prefixCount..<(prefixCount + oldMiddleCount)),
+            newMiddleKeys: newMiddleKeys,
             didStructureChange: &didStructureChange
         )
 
-        materializeCells(activeSlots: &activeSlots, leavingSlots: &leavingSlots)
+        activeSlots.replace(
+            removing: prefixCount..<(prefixCount + oldMiddleCount),
+            consumingWith: { inputSpan in
+                let count = inputSpan.count
+                for i in 0..<count {
+                    self.activeCells[i] = .some(inputSpan.removeFirst())
+                }
+            },
+            addingCount: newMiddleCount,
+            initializingWith: { outputSpan in
+                if self.markMovedByLIS() { didStructureChange = true }
 
-        var rebuiltLeaving = UniqueArray<MountContainer.Slot>(capacity: leavingCells.count + oldKeyMap.count)
-        processRemovedActiveSlots(
-            tx: &tx,
-            containerHandle: containerHandle,
-            rebuiltLeaving: &rebuiltLeaving,
-            removedNodes: &removedNodes,
-            didStructureChange: &didStructureChange
+                for middleOffset in 0..<self.sources.count {
+                    let source = self.sources[middleOffset]
+                    if source >= 0 {
+                        outputSpan.append(self.takeActiveCell(at: source))
+                    } else if source == KeyedDiffSource.new {
+                        outputSpan.append(
+                            .pending(
+                                key: newMiddleKeys[unchecked: middleOffset],
+                                transaction: transaction,
+                                newKeyIndex: prefixCount + middleOffset
+                            )
+                        )
+                    } else {
+                        let leavingIndex = KeyedDiffSource.decodeRevive(source)
+                        if leavingIndex >= 0 && leavingIndex < self.leavingCells.count,
+                            var revived = self.leavingCells[leavingIndex].take()
+                        {
+                            revived.markReviving()
+                            outputSpan.append(revived)
+                        } else {
+                            outputSpan.append(
+                                .pending(
+                                    key: newMiddleKeys[unchecked: middleOffset],
+                                    transaction: transaction,
+                                    newKeyIndex: prefixCount + middleOffset
+                                )
+                            )
+                        }
+                    }
+                }
+            }
         )
 
-        if markMovedByLIS() {
-            didStructureChange = true
-        }
-
-        let rebuiltActive = rebuildActive(
-            oldCount: oldCount,
-            prefixCount: prefixCount,
-            suffixCount: suffixCount,
-            newMiddleStart: newMiddleStart,
-            keys: keys,
-            tx: &tx,
-            containerHandle: containerHandle
-        )
-
-        appendRemainingLeavingSlots(into: &rebuiltLeaving)
-        rebuildLeavingMap(leavingByKey: &leavingByKey, leavingSlots: rebuiltLeaving)
-
-        activeSlots = consume rebuiltActive
-        leavingSlots = consume rebuiltLeaving
+        collectRemovedSlots(into: &removedSlots)
+        if !oldKeyMap.isEmpty { didStructureChange = true }
+        drainUnconsumedLeavingCells(into: &leavingSlots)
         return didStructureChange
     }
 
     private mutating func prepareScratch(
-        oldActiveCount: Int,
         oldMiddleCount: Int,
         newMiddleCount: Int,
         oldLeavingCount: Int
     ) {
         oldKeyMap.removeAll(keepingCapacity: true)
         oldKeyMap.reserveCapacity(oldMiddleCount)
+
+        leavingKeyMap.removeAll(keepingCapacity: true)
+        leavingKeyMap.reserveCapacity(oldLeavingCount)
 
         sources.removeAll(keepingCapacity: true)
         sources.reserveCapacity(newMiddleCount)
@@ -136,8 +131,8 @@ struct KeyedDiffEngine: ~Copyable {
         inLIS.reserveCapacity(newMiddleCount)
 
         activeCells.removeAll(keepingCapacity: true)
-        activeCells.reserveCapacity(oldActiveCount)
-        for _ in 0..<oldActiveCount {
+        activeCells.reserveCapacity(oldMiddleCount)
+        for _ in 0..<oldMiddleCount {
             activeCells.append(nil)
         }
 
@@ -149,70 +144,51 @@ struct KeyedDiffEngine: ~Copyable {
     }
 
     private mutating func buildSourcePlan(
-        activeSlots: borrowing UniqueArray<MountContainer.Slot>,
-        keys: borrowing Span<_ViewKey>,
-        leavingByKey: borrowing [_ViewKey: Int],
-        oldMiddleStart: Int,
-        oldMiddleEnd: Int,
-        newMiddleStart: Int,
-        newMiddleEnd: Int,
+        oldMiddleSlots: borrowing Span<MountContainer.Slot>,
+        newMiddleKeys: borrowing Span<_ViewKey>,
         didStructureChange: inout Bool
     ) {
-        let oldSlots = activeSlots.span
-        for oldIndex in oldMiddleStart..<oldMiddleEnd {
-            oldKeyMap[oldSlots[unchecked: oldIndex].key] = oldIndex
+        for i in oldMiddleSlots.indices {
+            oldKeyMap[oldMiddleSlots[unchecked: i].key] = i
         }
 
-        for newIndex in newMiddleStart..<newMiddleEnd {
-            let key = keys[unchecked: newIndex]
+        for i in newMiddleKeys.indices {
+            let key = newMiddleKeys[unchecked: i]
             if let oldIndex = oldKeyMap.removeValue(forKey: key) {
                 sources.append(oldIndex)
-            } else if let leavingIndex = leavingByKey[key] {
-                sources.append(_KeyedDiffSource.encodeRevive(leavingIndex))
+            } else if let leavingIndex = leavingKeyMap[key] {
+                sources.append(KeyedDiffSource.encodeRevive(leavingIndex))
                 didStructureChange = true
             } else {
-                sources.append(_KeyedDiffSource.new)
+                sources.append(KeyedDiffSource.new)
                 didStructureChange = true
             }
         }
     }
 
-    private mutating func materializeCells(
-        activeSlots: inout UniqueArray<MountContainer.Slot>,
+    private mutating func materializeLeavingCells(
         leavingSlots: inout UniqueArray<MountContainer.Slot>
     ) {
-        var oldIndex = activeSlots.count
-        while oldIndex > 0 {
-            oldIndex -= 1
-            activeCells[oldIndex] = activeSlots.removeLast()
-        }
-
-        var leavingIndex = leavingSlots.count
-        while leavingIndex > 0 {
-            leavingIndex -= 1
-            leavingCells[leavingIndex] = leavingSlots.removeLast()
+        var i = leavingSlots.count
+        while i > 0 {
+            i -= 1
+            leavingCells[i] = leavingSlots.removeLast()
         }
     }
 
-    private mutating func processRemovedActiveSlots(
-        tx: inout _TransactionContext,
-        containerHandle: LayoutContainer.Handle?,
-        rebuiltLeaving: inout UniqueArray<MountContainer.Slot>,
-        removedNodes: inout UniqueArray<MountContainer.RemovedNode>,
-        didStructureChange: inout Bool
+    private mutating func buildLeavingKeyMap(
+        leavingSlots: borrowing Span<MountContainer.Slot>
+    ) {
+        for i in leavingSlots.indices {
+            leavingKeyMap[leavingSlots[unchecked: i].key] = i
+        }
+    }
+
+    private mutating func collectRemovedSlots(
+        into removedSlots: inout UniqueArray<MountContainer.Slot>
     ) {
         for (_, removedOldIndex) in oldKeyMap {
-            var slot = takeActiveCell(at: removedOldIndex)
-            switch slot.beginRemovalForDiff(tx: &tx, handle: containerHandle) {
-            case .none:
-                break
-            case .removed(let removed):
-                removedNodes.append(removed)
-                didStructureChange = true
-            case .leaving(let leavingSlot):
-                rebuiltLeaving.append(leavingSlot)
-                didStructureChange = true
-            }
+            removedSlots.append(takeActiveCell(at: removedOldIndex))
         }
     }
 
@@ -273,83 +249,28 @@ struct KeyedDiffEngine: ~Copyable {
         return didMove
     }
 
-    private mutating func rebuildActive(
-        oldCount: Int,
-        prefixCount: Int,
-        suffixCount: Int,
-        newMiddleStart: Int,
-        keys: borrowing Span<_ViewKey>,
-        tx: inout _TransactionContext,
-        containerHandle: LayoutContainer.Handle?
-    ) -> UniqueArray<MountContainer.Slot> {
-        var rebuiltActive = UniqueArray<MountContainer.Slot>(capacity: keys.count)
-
-        if prefixCount > 0 {
-            for oldIndex in 0..<prefixCount {
-                rebuiltActive.append(takeActiveCell(at: oldIndex))
-            }
-        }
-
-        var middleOffset = 0
-        while middleOffset < sources.count {
-            let source = sources[middleOffset]
-            let newIndex = newMiddleStart + middleOffset
-
-            if source >= 0 {
-                rebuiltActive.append(takeActiveCell(at: source))
-            } else if source == _KeyedDiffSource.new {
-                rebuiltActive.append(
-                    .pending(key: keys[unchecked: newIndex], transaction: tx.transaction, newKeyIndex: newIndex)
-                )
-            } else {
-                let leavingIndex = _KeyedDiffSource.decodeRevive(source)
-                if leavingIndex >= 0 && leavingIndex < leavingCells.count, var revived = leavingCells[leavingIndex].take() {
-                    revived.reviveFromLeaving(tx: &tx, handle: containerHandle)
-                    rebuiltActive.append(revived)
-                } else {
-                    rebuiltActive.append(
-                        .pending(key: keys[unchecked: newIndex], transaction: tx.transaction, newKeyIndex: newIndex)
-                    )
-                }
-            }
-
-            middleOffset += 1
-        }
-
-        if suffixCount > 0 {
-            let oldSuffixStart = oldCount - suffixCount
-            for oldIndex in oldSuffixStart..<oldCount {
-                rebuiltActive.append(takeActiveCell(at: oldIndex))
-            }
-        }
-
-        return rebuiltActive
-    }
-
-    private mutating func appendRemainingLeavingSlots(
-        into rebuiltLeaving: inout UniqueArray<MountContainer.Slot>
+    private mutating func drainUnconsumedLeavingCells(
+        into leavingSlots: inout UniqueArray<MountContainer.Slot>
     ) {
         var cells = leavingCells.mutableSpan
         for index in cells.indices {
             if let slot = cells[unchecked: index].take() {
-                rebuiltLeaving.append(slot)
+                leavingSlots.append(slot)
             }
         }
     }
 
     private func scanUnchangedEdges(
-        activeSlots: borrowing UniqueArray<MountContainer.Slot>,
+        activeSlots: borrowing Span<MountContainer.Slot>,
         keys: borrowing Span<_ViewKey>
     ) -> (prefixCount: Int, suffixCount: Int) {
         let oldCount = activeSlots.count
         let newCount = keys.count
         let sharedCount = Swift.min(oldCount, newCount)
 
-        let oldSlots = activeSlots.span
-
         var prefixCount = 0
         while prefixCount < sharedCount {
-            if oldSlots[unchecked: prefixCount].key != keys[unchecked: prefixCount] {
+            if activeSlots[unchecked: prefixCount].key != keys[unchecked: prefixCount] {
                 break
             }
             prefixCount += 1
@@ -360,7 +281,7 @@ struct KeyedDiffEngine: ~Copyable {
         while suffixCount < maxSuffix {
             let oldIndex = oldCount - 1 - suffixCount
             let newIndex = newCount - 1 - suffixCount
-            if oldSlots[unchecked: oldIndex].key != keys[unchecked: newIndex] {
+            if activeSlots[unchecked: oldIndex].key != keys[unchecked: newIndex] {
                 break
             }
             suffixCount += 1
@@ -377,16 +298,24 @@ struct KeyedDiffEngine: ~Copyable {
         return slot
     }
 
-    private func rebuildLeavingMap(
-        leavingByKey: inout [_ViewKey: Int],
-        leavingSlots: borrowing UniqueArray<MountContainer.Slot>
-    ) {
-        leavingByKey.removeAll(keepingCapacity: true)
-        leavingByKey.reserveCapacity(leavingSlots.count)
+}
 
-        let slots = leavingSlots.span
-        for index in slots.indices {
-            leavingByKey[slots[unchecked: index].key] = index
-        }
+private enum KeyedDiffSource {
+    static let new = -1
+    private static let reviveBase = -2
+
+    @inline(__always)
+    static func encodeRevive(_ leavingIndex: Int) -> Int {
+        reviveBase - leavingIndex
+    }
+
+    @inline(__always)
+    static func isRevive(_ source: Int) -> Bool {
+        source <= reviveBase
+    }
+
+    @inline(__always)
+    static func decodeRevive(_ source: Int) -> Int {
+        reviveBase - source
     }
 }

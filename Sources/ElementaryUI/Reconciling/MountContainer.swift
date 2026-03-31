@@ -5,12 +5,11 @@ final class MountContainer {
     private var activeSlots: UniqueArray<Slot>
     private var leavingSlots: UniqueArray<Slot> = .init()
     private var removedNodes: UniqueArray<RemovedNode> = .init()
-    private var leavingByKey: [_ViewKey: Int] = [:]
 
     var containerHandle: LayoutContainer.Handle?
 
     private var keyedDiff: KeyedDiffEngine = .init()
-    private var keyScratch: UniqueArray<_ViewKey> = .init()
+    private var removedMiddleSlots: UniqueArray<Slot> = .init()
     private var leavingRemovalScratch: UniqueArray<Int> = .init()
 
     private var pendingMakeNode: ((Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable)?
@@ -26,76 +25,52 @@ final class MountContainer {
         ctx: inout _MountContext,
         makeNode: (borrowing _ViewContext, inout _MountContext) -> Node
     ) {
-        var initialSlots = UniqueArray<Slot>(capacity: 1)
-        let mountedSlot = ctx.withMountRootContext { (rootCtx: consuming _MountContext) in
-            Slot.mounted(
-                key: key,
-                mounted: rootCtx.makeMountedState(
-                    newKeyIndex: 0,
-                    viewContext: context,
-                    makeNode: { _, viewContext, mountCtx in
-                        AnyReconcilable(makeNode(viewContext, &mountCtx))
+        self.init(
+            context: context,
+            slots: UniqueArray<Slot>(capacity: 1) { span in
+                let mountedSlot = ctx.withMountRootContext { (rootCtx: consuming _MountContext) in
+                    Slot.mounted(
+                        key: key,
+                        mounted: rootCtx.makeMountedState(
+                            newKeyIndex: 0,
+                            viewContext: context,
+                            makeNode: { _, viewContext, mountCtx in
+                                AnyReconcilable(makeNode(viewContext, &mountCtx))
+                            }
+                        )
+                    )
+                }
+                span.append(mountedSlot)
+            }
+        )
+    }
+
+    convenience init<Node: _Reconcilable>(
+        mountedKeyStorage keys: borrowing Span<_ViewKey>,
+        context: borrowing _ViewContext,
+        ctx: inout _MountContext,
+        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> Node
+    ) {
+        self.init(
+            context: context,
+            slots: UniqueArray<Slot>(capacity: keys.count) { span in
+                for index in keys.indices {
+                    let mountedSlot = ctx.withMountRootContext { (rootCtx: consuming _MountContext) in
+                        Slot.mounted(
+                            key: keys[unchecked: index],
+                            mounted: rootCtx.makeMountedState(
+                                newKeyIndex: index,
+                                viewContext: context,
+                                makeNode: { index, viewContext, mountCtx in
+                                    AnyReconcilable(makeNode(index, viewContext, &mountCtx))
+                                }
+                            )
+                        )
                     }
-                )
-            )
-        }
-        initialSlots.append(mountedSlot)
-
-        self.init(context: context, slots: consume initialSlots)
-    }
-
-    convenience init<Node: _Reconcilable>(
-        mountedKeys keys: some Collection<_ViewKey>,
-        context: borrowing _ViewContext,
-        ctx: inout _MountContext,
-        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> Node
-    ) {
-        var initialSlots = UniqueArray<Slot>(capacity: keys.count)
-        for (index, key) in keys.enumerated() {
-            let mountedSlot = ctx.withMountRootContext { (rootCtx: consuming _MountContext) in
-                Slot.mounted(
-                    key: key,
-                    mounted: rootCtx.makeMountedState(
-                        newKeyIndex: index,
-                        viewContext: context,
-                        makeNode: { index, viewContext, mountCtx in
-                            AnyReconcilable(makeNode(index, viewContext, &mountCtx))
-                        }
-                    )
-                )
+                    span.append(mountedSlot)
+                }
             }
-            initialSlots.append(mountedSlot)
-        }
-
-        self.init(context: context, slots: consume initialSlots)
-    }
-
-    convenience init<Node: _Reconcilable>(
-        mountedKeyStorage keys: borrowing UniqueArray<_ViewKey>,
-        context: borrowing _ViewContext,
-        ctx: inout _MountContext,
-        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> Node
-    ) {
-        let keySpan = keys.span
-        var initialSlots = UniqueArray<Slot>(capacity: keySpan.count)
-        for index in keySpan.indices {
-            let key = keySpan[unchecked: index]
-            let mountedSlot = ctx.withMountRootContext { (rootCtx: consuming _MountContext) in
-                Slot.mounted(
-                    key: key,
-                    mounted: rootCtx.makeMountedState(
-                        newKeyIndex: index,
-                        viewContext: context,
-                        makeNode: { index, viewContext, mountCtx in
-                            AnyReconcilable(makeNode(index, viewContext, &mountCtx))
-                        }
-                    )
-                )
-            }
-            initialSlots.append(mountedSlot)
-        }
-
-        self.init(context: context, slots: consume initialSlots)
+        )
     }
 
     func collect(into ops: inout LayoutPass, context: inout _CommitContext, op: LayoutPass.Entry.LayoutOp) {
@@ -134,7 +109,6 @@ final class MountContainer {
         activeSlots.removeAll(keepingCapacity: true)
         leavingSlots.removeAll(keepingCapacity: true)
         removedNodes.removeAll(keepingCapacity: true)
-        leavingByKey.removeAll(keepingCapacity: true)
         containerHandle = nil
     }
 
@@ -143,55 +117,13 @@ final class MountContainer {
     }
 
     func patch(
-        keys newKeys: some BidirectionalCollection<_ViewKey>,
+        keys newKeys: borrowing Span<_ViewKey>,
         tx: inout _TransactionContext,
         makeNode: @escaping (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
         patchNode: (Int, AnyReconcilable, inout _TransactionContext) -> Void
     ) {
         pendingMakeNode = makeNode
-        prepareKeyScratch(from: newKeys)
-        patchPrepared(keyStorage: keyScratch, tx: &tx, patchNode: patchNode)
-    }
-
-    func patch(
-        keyStorage newKeys: borrowing UniqueArray<_ViewKey>,
-        tx: inout _TransactionContext,
-        makeNode: @escaping (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
-        patchNode: (Int, AnyReconcilable, inout _TransactionContext) -> Void
-    ) {
-        pendingMakeNode = makeNode
-        patchPrepared(keyStorage: newKeys, tx: &tx, patchNode: patchNode)
-    }
-
-    private func patchPrepared(
-        keyStorage: borrowing UniqueArray<_ViewKey>,
-        tx: inout _TransactionContext,
-        patchNode: (Int, AnyReconcilable, inout _TransactionContext) -> Void
-    ) {
-        let keys = keyStorage.span
-        prepareLaneCapacities(newCount: keys.count)
-
-        let didStructureChange = keyedDiff.run(
-            activeSlots: &activeSlots,
-            leavingSlots: &leavingSlots,
-            leavingByKey: &leavingByKey,
-            removedNodes: &removedNodes,
-            keys: keys,
-            tx: &tx,
-            containerHandle: containerHandle
-        )
-
-        for index in activeSlots.indices {
-            activeSlots[index].patchInActiveLane(
-                newKeyIndex: index,
-                tx: &tx,
-                patchNode: patchNode
-            )
-        }
-
-        if didStructureChange {
-            containerHandle?.reportLayoutChange(&tx)
-        }
+        patchPrepared(keys: newKeys, tx: &tx, patchNode: patchNode)
     }
 
     func patch(
@@ -201,17 +133,46 @@ final class MountContainer {
         patchNode: (AnyReconcilable, inout _TransactionContext) -> Void
     ) {
         pendingMakeNode = { _, viewContext, mountCtx in makeNode(viewContext, &mountCtx) }
-        keyScratch.removeAll(keepingCapacity: true)
-        keyScratch.reserveCapacity(1)
-        keyScratch.append(newKey)
-        patchPrepared(keyStorage: keyScratch, tx: &tx) { _, node, tx in patchNode(node, &tx) }
+
+        patchPrepared(keys: CollectionOfOne(newKey).span, tx: &tx) { _, node, tx in patchNode(node, &tx) }
     }
 
-    private func prepareKeyScratch(from keys: some BidirectionalCollection<_ViewKey>) {
-        keyScratch.removeAll(keepingCapacity: true)
-        keyScratch.reserveCapacity(keys.count)
-        for key in keys {
-            keyScratch.append(key)
+    private func patchPrepared(
+        keys: borrowing Span<_ViewKey>,
+        tx: inout _TransactionContext,
+        patchNode: (Int, AnyReconcilable, inout _TransactionContext) -> Void
+    ) {
+        prepareLaneCapacities(newCount: keys.count)
+
+        removedMiddleSlots.removeAll(keepingCapacity: true)
+
+        let didStructureChange = keyedDiff.run(
+            activeSlots: &activeSlots,
+            leavingSlots: &leavingSlots,
+            removedSlots: &removedMiddleSlots,
+            keys: keys,
+            transaction: tx.transaction
+        )
+
+        while var slot = removedMiddleSlots.popLast() {
+            switch slot.beginRemovalForDiff(tx: &tx, handle: containerHandle) {
+            case .none: break
+            case .removed(let removed): removedNodes.append(removed)
+            case .leaving(let leavingSlot): leavingSlots.append(leavingSlot)
+            }
+        }
+
+        for index in activeSlots.indices {
+            activeSlots[index].patchInActiveLane(
+                newKeyIndex: index,
+                tx: &tx,
+                containerHandle: containerHandle,
+                patchNode: patchNode
+            )
+        }
+
+        if didStructureChange {
+            containerHandle?.reportLayoutChange(&tx)
         }
     }
 
@@ -223,7 +184,7 @@ final class MountContainer {
         let removableUpperBound = oldCount
         leavingSlots.reserveCapacity(leavingSlots.count + removableUpperBound)
         removedNodes.reserveCapacity(removedNodes.count + removableUpperBound)
-        leavingByKey.reserveCapacity(leavingSlots.count + removableUpperBound)
+        removedMiddleSlots.reserveCapacity(removableUpperBound)
     }
 
     private func promoteReadyLeavingNodes() {
@@ -233,7 +194,6 @@ final class MountContainer {
         for index in leavingSlots.indices {
             if let removed = leavingSlots[index].consumeRemovedIfReadyFromLeaving() {
                 removedNodes.append(removed)
-                leavingByKey.removeValue(forKey: leavingSlots[index].key)
                 leavingRemovalScratch.append(index)
             }
         }
@@ -265,6 +225,7 @@ extension MountContainer {
         enum SlotState: ~Copyable {
             case pending(Pending)
             case mounted(Mounted)
+            case reviving(Mounted)
             case removed
 
             static func pending(transaction: Transaction, newKeyIndex: Int) -> Self {
@@ -335,9 +296,34 @@ extension MountContainer {
             }
         }
 
+        @inline(__always)
+        private static func reportReenteringElements(
+            of mounted: borrowing Mounted,
+            handle: LayoutContainer.Handle?,
+            tx: inout _TransactionContext
+        ) {
+            let nodes = mounted.layoutNodes.span
+            for index in nodes.indices {
+                if case let .elementNode(element) = nodes[unchecked: index] {
+                    handle?.reportReenteringElement(element, &tx)
+                }
+            }
+        }
+
+        mutating func markReviving() {
+            let state = takeState()
+            switch consume state {
+            case .mounted(let mounted):
+                slotState = .reviving(mounted)
+            default:
+                preconditionFailure("only mounted leaving slots can be marked for revival")
+            }
+        }
+
         mutating func patchInActiveLane(
             newKeyIndex: Int,
             tx: inout _TransactionContext,
+            containerHandle: LayoutContainer.Handle?,
             patchNode: (Int, AnyReconcilable, inout _TransactionContext) -> Void
         ) {
             let state = takeState()
@@ -346,6 +332,12 @@ extension MountContainer {
             case .pending:
                 setPending(transaction: tx.transaction, newKeyIndex: newKeyIndex)
             case .mounted(let mounted):
+                patchNode(newKeyIndex, mounted.node, &tx)
+                setMounted(mounted)
+            case .reviving(var mounted):
+                mounted.transitionCoordinator?.cancelRemoval(tx: &tx)
+                mounted.didMove = true
+                Self.reportReenteringElements(of: mounted, handle: containerHandle, tx: &tx)
                 patchNode(newKeyIndex, mounted.node, &tx)
                 setMounted(mounted)
             case .removed:
@@ -363,6 +355,8 @@ extension MountContainer {
                 var mounted = mounted
                 mounted.didMove = true
                 setMounted(mounted)
+            case .reviving:
+                preconditionFailure("reviving slot should not appear in activeCells")
             case .removed:
                 preconditionFailure("active lane contains removed slot")
             }
@@ -390,38 +384,10 @@ extension MountContainer {
                 setRemoved()
                 return .removed(.init(mounted: mounted))
 
+            case .reviving:
+                preconditionFailure("reviving slot should not appear in removed slots")
             case .removed:
                 preconditionFailure("active lane contains removed slot")
-            }
-        }
-
-        mutating func reviveFromLeaving(
-            tx: inout _TransactionContext,
-            handle: LayoutContainer.Handle?
-        ) {
-            let state = takeState()
-
-            switch consume state {
-            case .mounted(let mounted):
-                var mounted = mounted
-                mounted.transitionCoordinator?.cancelRemoval(tx: &tx)
-                mounted.didMove = true
-
-                do {
-                    let nodes = mounted.layoutNodes.span
-                    for index in nodes.indices {
-                        if case let .elementNode(element) = nodes[unchecked: index] {
-                            handle?.reportReenteringElement(element, &tx)
-                        }
-                    }
-                }
-
-                setMounted(mounted)
-
-            case .pending:
-                preconditionFailure("revive called for non-mounted leaving slot")
-            case .removed:
-                preconditionFailure("revive called for non-mounted leaving slot")
             }
         }
 
@@ -438,6 +404,8 @@ extension MountContainer {
                 setMounted(mounted)
                 return nil
 
+            case .reviving:
+                preconditionFailure("reviving slot should not appear in leaving lane")
             case .pending:
                 preconditionFailure("leaving lane contains non-mounted slot")
             case .removed:
@@ -478,6 +446,8 @@ extension MountContainer {
                 mounted.didMove = false
                 setMounted(mounted)
 
+            case .reviving:
+                preconditionFailure("reviving slot should have been resolved in patchInActiveLane")
             case .removed:
                 preconditionFailure("active lane contains removed slot")
             }
@@ -490,6 +460,9 @@ extension MountContainer {
             case .pending:
                 setRemoved()
             case .mounted(let mounted):
+                mounted.node.unmount(&context)
+                setRemoved()
+            case .reviving(let mounted):
                 mounted.node.unmount(&context)
                 setRemoved()
             case .removed:

@@ -2,14 +2,14 @@ public struct _KeyedNode: _Reconcilable {
     let container: MountContainer
 
     init<Node: _Reconcilable>(
-        keys: some Collection<_ViewKey>,
+        keys: borrowing Span<_ViewKey>,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
         makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> Node
     ) {
         let containerContext = copy context
         self.container = MountContainer(
-            mountedKeys: keys,
+            mountedKeyStorage: keys,
             context: consume containerContext,
             ctx: &ctx,
             makeNode: makeNode
@@ -48,7 +48,7 @@ public struct _KeyedNode: _Reconcilable {
     }
 
     mutating func patch(
-        _ newKeys: some BidirectionalCollection<_ViewKey>,
+        _ newKeys: borrowing Span<_ViewKey>,
         context: inout _TransactionContext,
         makeNode: @escaping (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
         patchNode: (Int, AnyReconcilable, inout _TransactionContext) -> Void

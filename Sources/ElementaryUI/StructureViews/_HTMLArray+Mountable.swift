@@ -1,3 +1,5 @@
+import BasicContainers
+
 extension _HTMLArray: _Mountable, View where Element: View {
     public typealias _MountedNode = _KeyedNode
 
@@ -6,15 +8,10 @@ extension _HTMLArray: _Mountable, View where Element: View {
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) -> _MountedNode {
-        var keys: [_ViewKey] = []
-        let count = view.value.count
-        keys.reserveCapacity(count)
-        for index in 0..<count {
-            keys.append(_ViewKey(index))
-        }
+        let keys = makeKeys(count: view.value.count)
 
         return _MountedNode(
-            keys: keys,
+            keys: keys.span,
             context: context,
             ctx: &ctx,
             makeNode: { index, context, ctx in
@@ -28,15 +25,10 @@ extension _HTMLArray: _Mountable, View where Element: View {
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        var keys: [_ViewKey] = []
-        let count = view.value.count
-        keys.reserveCapacity(count)
-        for index in 0..<count {
-            keys.append(_ViewKey(index))
-        }
+        let keys = makeKeys(count: view.value.count)
 
         node.patch(
-            keys,
+            keys.span,
             context: &tx,
             makeNode: { index, context, ctx in
                 AnyReconcilable(
@@ -50,5 +42,13 @@ extension _HTMLArray: _Mountable, View where Element: View {
             }
         )
 
+    }
+}
+
+private func makeKeys(count: Int) -> RigidArray<_ViewKey> {
+    RigidArray(capacity: count) { span in
+        for index in 0..<count {
+            span.append(_ViewKey(index))
+        }
     }
 }

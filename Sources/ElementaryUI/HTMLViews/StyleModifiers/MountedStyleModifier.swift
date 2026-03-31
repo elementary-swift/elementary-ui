@@ -1,3 +1,5 @@
+import ContainersPreview
+
 final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: Unmountable, Invalidateable {
     let accessor: DOM.StyleAccessor
     var values: [Instance]
@@ -88,7 +90,8 @@ final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: Unmountabl
     }
 
     private func reduceCombinedSingleValue() -> Instance.CSSValue? {
-        guard let first = values.first?.value.singleValue else { return nil }
+        precondition(!values.isEmpty, "values must not be empty")
+        guard let first = values[0].value.singleValue else { return nil }
         var combined = first
         for layer in values.dropFirst() {
             guard let next = layer.value.singleValue else { return nil }
