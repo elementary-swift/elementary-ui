@@ -70,6 +70,34 @@ final class MountContainer {
         self.init(context: context, slots: consume initialSlots)
     }
 
+    convenience init<Node: _Reconcilable>(
+        mountedKeyStorage keys: borrowing UniqueArray<_ViewKey>,
+        context: borrowing _ViewContext,
+        ctx: inout _MountContext,
+        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> Node
+    ) {
+        let keySpan = keys.span
+        var initialSlots = UniqueArray<Slot>(capacity: keySpan.count)
+        for index in keySpan.indices {
+            let key = keySpan[unchecked: index]
+            let mountedSlot = ctx.withMountRootContext { (rootCtx: consuming _MountContext) in
+                Slot.mounted(
+                    key: key,
+                    mounted: rootCtx.makeMountedState(
+                        newKeyIndex: index,
+                        viewContext: context,
+                        makeNode: { index, viewContext, mountCtx in
+                            AnyReconcilable(makeNode(index, viewContext, &mountCtx))
+                        }
+                    )
+                )
+            }
+            initialSlots.append(mountedSlot)
+        }
+
+        self.init(context: context, slots: consume initialSlots)
+    }
+
     func collect(into ops: inout LayoutPass, context: inout _CommitContext, op: LayoutPass.Entry.LayoutOp) {
         if containerHandle == nil { containerHandle = ops.containerHandle }
 
@@ -121,18 +149,34 @@ final class MountContainer {
         patchNode: (Int, AnyReconcilable, inout _TransactionContext) -> Void
     ) {
         pendingMakeNode = makeNode
-        keyScratch.removeAll(keepingCapacity: true)
-        keyScratch.reserveCapacity(newKeys.count)
-        for key in newKeys {
-            keyScratch.append(key)
-        }
+        prepareKeyScratch(from: newKeys)
+        patchPrepared(keyStorage: keyScratch, tx: &tx, patchNode: patchNode)
+    }
+
+    func patch(
+        keyStorage newKeys: borrowing UniqueArray<_ViewKey>,
+        tx: inout _TransactionContext,
+        makeNode: @escaping (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
+        patchNode: (Int, AnyReconcilable, inout _TransactionContext) -> Void
+    ) {
+        pendingMakeNode = makeNode
+        patchPrepared(keyStorage: newKeys, tx: &tx, patchNode: patchNode)
+    }
+
+    private func patchPrepared(
+        keyStorage: borrowing UniqueArray<_ViewKey>,
+        tx: inout _TransactionContext,
+        patchNode: (Int, AnyReconcilable, inout _TransactionContext) -> Void
+    ) {
+        let keys = keyStorage.span
+        prepareLaneCapacities(newCount: keys.count)
 
         let didStructureChange = keyedDiff.run(
             activeSlots: &activeSlots,
             leavingSlots: &leavingSlots,
             leavingByKey: &leavingByKey,
             removedNodes: &removedNodes,
-            keys: keyScratch,
+            keys: keys,
             tx: &tx,
             containerHandle: containerHandle
         )
@@ -160,30 +204,26 @@ final class MountContainer {
         keyScratch.removeAll(keepingCapacity: true)
         keyScratch.reserveCapacity(1)
         keyScratch.append(newKey)
+        patchPrepared(keyStorage: keyScratch, tx: &tx) { _, node, tx in patchNode(node, &tx) }
+    }
 
-        let didStructureChange = keyedDiff.run(
-            activeSlots: &activeSlots,
-            leavingSlots: &leavingSlots,
-            leavingByKey: &leavingByKey,
-            removedNodes: &removedNodes,
-            keys: keyScratch,
-            tx: &tx,
-            containerHandle: containerHandle
-        )
-
-        for index in activeSlots.indices {
-            activeSlots[index].patchInActiveLane(
-                newKeyIndex: index,
-                tx: &tx,
-                patchNode: { _, node, tx in
-                    patchNode(node, &tx)
-                }
-            )
+    private func prepareKeyScratch(from keys: some BidirectionalCollection<_ViewKey>) {
+        keyScratch.removeAll(keepingCapacity: true)
+        keyScratch.reserveCapacity(keys.count)
+        for key in keys {
+            keyScratch.append(key)
         }
+    }
 
-        if didStructureChange {
-            containerHandle?.reportLayoutChange(&tx)
-        }
+    private func prepareLaneCapacities(newCount: Int) {
+        let oldCount = activeSlots.count
+
+        activeSlots.reserveCapacity(newCount)
+
+        let removableUpperBound = oldCount
+        leavingSlots.reserveCapacity(leavingSlots.count + removableUpperBound)
+        removedNodes.reserveCapacity(removedNodes.count + removableUpperBound)
+        leavingByKey.reserveCapacity(leavingSlots.count + removableUpperBound)
     }
 
     private func promoteReadyLeavingNodes() {

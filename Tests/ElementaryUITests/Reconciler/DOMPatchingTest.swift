@@ -313,6 +313,26 @@ struct DOMPatchingTests {
     }
 
     @Test
+    func patchesKeyedMiddleWindowWithUnchangedEdges() {
+        let state = StringListState(["A", "B", "C", "D", "E"])
+        let ops = patchOps {
+            ForEach(state.items, key: \.self) { item in
+                item
+            }
+        } toggle: {
+            state.items = ["A", "C", "X", "D", "E"]
+        }
+
+        #expect(
+            ops == [
+                .createText("X"),
+                .addChild(parent: "<>", child: "X", before: "D"),
+                .removeChild(parent: "<>", child: "B"),
+            ]
+        )
+    }
+
+    @Test
     func duplicateKeysAreUndefinedButDoNotTrap() {
         let state = StringListState(["A", "B"])
         let dom = TestDOM()

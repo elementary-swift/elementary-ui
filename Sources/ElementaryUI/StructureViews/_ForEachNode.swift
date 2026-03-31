@@ -1,12 +1,14 @@
+import BasicContainers
 import Reactivity
 
 public final class _ForEachNode<Data, Content>: _Reconcilable
 where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
-    private typealias Evaluation = (views: [Content], keys: [_ViewKey], session: TrackingSession)
+    private typealias Evaluation = (views: [Content], session: TrackingSession)
 
     private var data: Data
     private var contentBuilder: @Sendable (Data.Element) -> Content
     private var trackingSession: TrackingSession? = nil
+    private var keyScratch: UniqueArray<_ViewKey> = .init()
     private var container: MountContainer!
     private var asFunctionNode: AnyFunctionNode!
 
@@ -21,7 +23,7 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
 
         self.asFunctionNode = AnyFunctionNode(self, depthInTree: context.functionDepth)
 
-        let (views, keys, session) = evaluateViewsAndKeys(
+        let (views, session) = evaluateViewsAndKeys(
             scheduler: ctx.scheduler
         )
 
@@ -30,7 +32,7 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
         let containerContext = copy context
 
         self.container = MountContainer(
-            mountedKeys: keys,
+            mountedKeyStorage: keyScratch,
             context: consume containerContext,
             ctx: &ctx,
             makeNode: { index, context, mountCtx in
@@ -54,14 +56,14 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
     func runFunction(tx: inout _TransactionContext) {
         self.trackingSession.take()?.cancel()
 
-        let (views, keys, session) = evaluateViewsAndKeys(
+        let (views, session) = evaluateViewsAndKeys(
             scheduler: tx.scheduler
         )
 
         self.trackingSession = session
 
         container.patch(
-            keys: keys,
+            keyStorage: keyScratch,
             tx: &tx,
             makeNode: { index, context, mountCtx in
                 AnyReconcilable(
@@ -105,7 +107,13 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
             }
         )
 
-        return (views, keys, session)
+        keyScratch.removeAll(keepingCapacity: true)
+        keyScratch.reserveCapacity(keys.count)
+        for key in keys {
+            keyScratch.append(key)
+        }
+
+        return (views, session)
     }
 }
 
