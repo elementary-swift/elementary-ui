@@ -28,6 +28,7 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
         self.trackingSession = session
 
         let containerContext = copy context
+
         self.container = MountContainer(
             mountedKeys: keys,
             context: consume containerContext,
@@ -63,10 +64,14 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
             keys: keys,
             tx: &tx,
             makeNode: { index, context, mountCtx in
-                Content.Value._makeNode(views[index]._value, context: context, ctx: &mountCtx)
+                AnyReconcilable(
+                    Content.Value._makeNode(views[index]._value, context: context, ctx: &mountCtx)
+                )
             },
-            patchNode: { index, node, tx in
-                Content.Value._patchNode(views[index]._value, node: &node, tx: &tx)
+            patchNode: { index, anyNode, tx in
+                anyNode.modify(as: Content.Value._MountedNode.self) { node in
+                    Content.Value._patchNode(views[index]._value, node: &node, tx: &tx)
+                }
             }
         )
     }

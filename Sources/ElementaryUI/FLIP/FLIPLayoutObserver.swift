@@ -1,5 +1,6 @@
 final class FLIPLayoutObserver: DOMLayoutObserver {
-    private var childNodes: [DOM.Node] = []
+    private var activeChildNodes: [DOM.Node] = []
+    private var outOfBandLeavingNodes: [DOM.Node] = []
     private var animateContainerSize: Bool
 
     init(animateContainerSize: Bool) {
@@ -16,7 +17,15 @@ final class FLIPLayoutObserver: DOMLayoutObserver {
             return
         }
 
-        context.scheduler.flip.scheduleAnimationOf(childNodes, inParent: parent, context: &context)
+        var scheduledNodes = activeChildNodes
+        if !outOfBandLeavingNodes.isEmpty {
+            scheduledNodes.reserveCapacity(activeChildNodes.count + outOfBandLeavingNodes.count)
+            for leaving in outOfBandLeavingNodes where !activeChildNodes.contains(where: { $0 == leaving }) {
+                scheduledNodes.append(leaving)
+            }
+        }
+
+        context.scheduler.flip.scheduleAnimationOf(scheduledNodes, inParent: parent, context: &context)
 
         if animateContainerSize {
             context.scheduler.flip.scheduleAnimationOf(parent, context: &context)
@@ -26,31 +35,42 @@ final class FLIPLayoutObserver: DOMLayoutObserver {
     func setLeaveStatus(_ node: DOM.Node, isLeaving: Bool, context: inout _TransactionContext) {
         logTrace("setting leave status for node \(node) to \(isLeaving)")
         if isLeaving {
-            context.scheduler.flip.markAsLeaving(node)
+            if !outOfBandLeavingNodes.contains(where: { $0 == node }) {
+                outOfBandLeavingNodes.append(node)
+            }
+            context.scheduler.flip.markAsLeaving(node, context: &context)
         } else {
-            context.scheduler.flip.markAsReentering(node)
+            outOfBandLeavingNodes.removeAll { $0 == node }
+            context.scheduler.flip.markAsReentering(node, context: &context)
         }
     }
 
     func didLayoutChildren(parent: DOM.Node, entries: [LayoutPass.Entry], context: inout _CommitContext) {
-        childNodes.removeAll(keepingCapacity: true)
-        childNodes.reserveCapacity(entries.count)
+        activeChildNodes.removeAll(keepingCapacity: true)
+        activeChildNodes.reserveCapacity(entries.count)
 
         for entry in entries where entry.type == .element {
             switch entry.op {
             case .added, .unchanged, .moved:
-                childNodes.append(entry.reference)
+                activeChildNodes.append(entry.reference)
+                outOfBandLeavingNodes.removeAll { $0 == entry.reference }
             case .removed:
                 context.scheduler.flip.markAsRemoved(entry.reference)
+                outOfBandLeavingNodes.removeAll { $0 == entry.reference }
             }
         }
     }
 
     func unmount(_ context: inout _CommitContext) {
-        for node in childNodes {
+        var seen: Set<DOM.Node> = []
+        for node in activeChildNodes where seen.insert(node).inserted {
             context.scheduler.flip.markAsRemoved(node)
         }
-        childNodes = []
+        for node in outOfBandLeavingNodes where seen.insert(node).inserted {
+            context.scheduler.flip.markAsRemoved(node)
+        }
+        activeChildNodes = []
+        outOfBandLeavingNodes = []
     }
 }
 

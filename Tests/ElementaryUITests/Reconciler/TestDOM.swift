@@ -431,6 +431,7 @@ extension TestDOM {
         guard let child, case let .element(data) = child.kind else { return [:] }
         return data.inlineStyles
     }
+
 }
 
 @View

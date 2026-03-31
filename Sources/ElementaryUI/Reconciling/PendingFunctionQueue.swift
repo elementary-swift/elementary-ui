@@ -1,5 +1,7 @@
+import BasicContainers
+
 struct PendingFunctionQueue: ~Copyable {
-    private var functionsToRun: [(AnyFunctionNode, Transaction?)] = []
+    private var functionsToRun: UniqueArray<(AnyFunctionNode, Transaction?)> = .init()
 
     var isEmpty: Bool { functionsToRun.isEmpty }
 

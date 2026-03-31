@@ -1,19 +1,21 @@
+import BasicContainers
+
 final class LayoutContainer {
     let domNode: DOM.Node
     private let scheduler: Scheduler
-    private let layoutNodes: [LayoutNode]
-    private var layoutObservers: [any DOMLayoutObserver]
+    private let layoutNodes: RigidArray<LayoutNode>
+    private let layoutObservers: [any DOMLayoutObserver]
     private var isDirty: Bool = false
 
     init(
         domNode: DOM.Node,
         scheduler: Scheduler,
-        layoutNodes: [LayoutNode],
+        layoutNodes: consuming RigidArray<LayoutNode>,
         layoutObservers: [any DOMLayoutObserver]
     ) {
         self.domNode = domNode
         self.scheduler = scheduler
-        self.layoutNodes = layoutNodes
+        self.layoutNodes = consume layoutNodes
         self.layoutObservers = layoutObservers
     }
 
@@ -80,15 +82,18 @@ final class LayoutContainer {
             if ops.isAllRemovals {
                 context.dom.clearChildren(in: domNode)
             } else if ops.isAllAdditions {
-                for entry in ops.entries {
-                    context.dom.appendChild(entry.reference, to: domNode)
+                for index in ops.entries.indices {
+                    context.dom.appendChild(ops.entries[index].reference, to: domNode)
                 }
             } else {
                 fatalError("invalid batch replace pass in layout container")
             }
         } else {
             var sibling: DOM.Node?
-            for entry in ops.entries.reversed() {
+            var index = ops.entries.endIndex
+            while index > ops.entries.startIndex {
+                index -= 1
+                let entry = ops.entries[index]
                 switch entry.op {
                 case .added, .moved:
                     context.dom.insertChild(entry.reference, before: sibling, in: domNode)
@@ -198,14 +203,15 @@ struct LayoutPass: ~Copyable {
     }
 }
 
-extension [LayoutNode] {
-    func collect(
+extension RigidArray where Element == LayoutNode {
+    borrowing func collect(
         into ops: inout LayoutPass,
         context: inout _CommitContext,
         op: LayoutPass.Entry.LayoutOp
     ) {
-        for node in self {
-            node.collect(into: &ops, context: &context, op: op)
+        let nodes = span
+        for index in nodes.indices {
+            nodes[unchecked: index].collect(into: &ops, context: &context, op: op)
         }
     }
 }

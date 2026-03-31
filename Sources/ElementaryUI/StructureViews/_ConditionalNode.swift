@@ -60,13 +60,15 @@ private extension _ConditionalNode {
         updateNode: (inout Node, inout _TransactionContext) -> Void
     ) {
         container.patch(
-            keys: CollectionOfOne(key),
+            key: key,
             tx: &tx,
-            makeNode: { _, context, mountCtx in
-                makeNode(context, &mountCtx)
+            makeNode: { viewContext, mountCtx in
+                AnyReconcilable(makeNode(viewContext, &mountCtx))
             },
-            patchNode: { _, node, tx in
-                updateNode(&node, &tx)
+            patchNode: { anyNode, tx in
+                anyNode.modify(as: Node.self) { node in
+                    updateNode(&node, &tx)
+                }
             }
         )
     }

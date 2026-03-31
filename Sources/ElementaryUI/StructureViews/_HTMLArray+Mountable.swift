@@ -7,10 +7,9 @@ extension _HTMLArray: _Mountable, View where Element: View {
         ctx: inout _MountContext
     ) -> _MountedNode {
         var keys: [_ViewKey] = []
-        let estimatedCount = view.value.underestimatedCount
-        keys.reserveCapacity(estimatedCount)
-
-        for (index, _) in view.value.enumerated() {
+        let count = view.value.count
+        keys.reserveCapacity(count)
+        for index in 0..<count {
             keys.append(_ViewKey(index))
         }
 
@@ -29,19 +28,25 @@ extension _HTMLArray: _Mountable, View where Element: View {
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        // maybe we can optimize this
-        // NOTE: written with cast for this https://github.com/swiftlang/swift/issues/83895
-        let indexes = view.value.indices.map { _ViewKey($0 as Int) }
+        var keys: [_ViewKey] = []
+        let count = view.value.count
+        keys.reserveCapacity(count)
+        for index in 0..<count {
+            keys.append(_ViewKey(index))
+        }
 
         node.patch(
-            indexes,
+            keys,
             context: &tx,
-            as: Element._MountedNode.self,
             makeNode: { index, context, ctx in
-                Element._makeNode(view.value[index], context: context, ctx: &ctx)
+                AnyReconcilable(
+                    Element._makeNode(view.value[index], context: context, ctx: &ctx)
+                )
             },
-            patchNode: { index, node, tx in
-                Element._patchNode(view.value[index], node: &node, tx: &tx)
+            patchNode: { index, anyNode, tx in
+                anyNode.modify(as: Element._MountedNode.self) { node in
+                    Element._patchNode(view.value[index], node: &node, tx: &tx)
+                }
             }
         )
 

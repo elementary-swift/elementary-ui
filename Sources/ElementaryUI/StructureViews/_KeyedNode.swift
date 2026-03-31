@@ -2,7 +2,7 @@ public struct _KeyedNode: _Reconcilable {
     let container: MountContainer
 
     init<Node: _Reconcilable>(
-        keys: [_ViewKey],
+        keys: some Collection<_ViewKey>,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
         makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> Node
@@ -33,29 +33,26 @@ public struct _KeyedNode: _Reconcilable {
         ctx.appendContainer(container)
     }
 
-    mutating func patch<Node: _Reconcilable>(
+    mutating func patch(
         key: _ViewKey,
         context: inout _TransactionContext,
-        as: Node.Type = Node.self,
-        makeNode: @escaping (borrowing _ViewContext, inout _MountContext) -> Node,
-        patchNode: (inout Node, inout _TransactionContext) -> Void
+        makeNode: @escaping (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
+        patchNode: (AnyReconcilable, inout _TransactionContext) -> Void
     ) {
-        patch(
-            CollectionOfOne(key),
-            context: &context,
-            makeNode: { _, context, ctx in makeNode(context, &ctx) },
-            patchNode: { _, node, tx in patchNode(&node, &tx) }
+        container.patch(
+            key: key,
+            tx: &context,
+            makeNode: makeNode,
+            patchNode: patchNode
         )
     }
 
-    mutating func patch<Node: _Reconcilable>(
+    mutating func patch(
         _ newKeys: some BidirectionalCollection<_ViewKey>,
         context: inout _TransactionContext,
-        as type: Node.Type = Node.self,
-        makeNode: @escaping (Int, borrowing _ViewContext, inout _MountContext) -> Node,
-        patchNode: (Int, inout Node, inout _TransactionContext) -> Void
+        makeNode: @escaping (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
+        patchNode: (Int, AnyReconcilable, inout _TransactionContext) -> Void
     ) {
-        _ = type
         container.patch(
             keys: newKeys,
             tx: &context,

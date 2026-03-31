@@ -65,7 +65,7 @@ final class NoOpInteractor: DOM.Interactor {
     func makeFocusAccessor(_ node: DOM.Node, onEvent: @escaping (DOM.FocusEvent) -> Void) -> DOM.FocusAccessor {
         let _ = node
         let _ = onEvent
-        return .init(focus: {}, blur: {}, unmount: {})
+        return .init(focus: {}, blur: {}, focusSink: nil, blurSink: nil)
     }
 
     func setStyleProperty(_ node: DOM.Node, name: String, value: String) {}

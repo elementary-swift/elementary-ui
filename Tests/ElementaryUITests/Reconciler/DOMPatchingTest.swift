@@ -243,6 +243,37 @@ struct DOMPatchingTests {
     }
 
     @Test
+    func pendingKeyedMiddleInsertionRemovedBeforeCommitProducesNoOps() {
+        let state = KeyedItemState([
+            .init(id: 1, value: "A"),
+            .init(id: 3, value: "C"),
+        ])
+        let dom = TestDOM()
+
+        dom.mount {
+            ForEach(state.items, key: \.id) { item in
+                p { item.value }
+            }
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        state.items = [
+            .init(id: 1, value: "A"),
+            .init(id: 2, value: "B"),
+            .init(id: 3, value: "C"),
+        ]
+        state.items = [
+            .init(id: 1, value: "A"),
+            .init(id: 3, value: "C"),
+        ]
+        dom.runNextFrame()
+
+        #expect(!dom.ops.contains(.createText("B")))
+        #expect(dom.ops.isEmpty)
+    }
+
+    @Test
     func patchesKeyedEmptyList() {
         let state = StringListState(["A", "B", "C"])
         let ops = patchOps {

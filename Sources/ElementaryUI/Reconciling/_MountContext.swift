@@ -1,5 +1,7 @@
+import BasicContainers
+
 public struct _MountContext: ~Copyable {
-    private var layoutNodes: [LayoutNode] = []
+    private var layoutNodes: UniqueArray<LayoutNode> = .init(capacity: 4)
     private(set) var isStatic: Bool = true
 
     private var transitionCoordinator: MountRootTransitionCoordinator?
@@ -46,7 +48,7 @@ public struct _MountContext: ~Copyable {
         return phase
     }
 
-    func withMountRootContext<R>(_ body: (consuming _MountContext) -> R) -> R {
+    func withMountRootContext<R: ~Copyable>(_ body: (consuming _MountContext) -> R) -> R {
         body(
             _MountContext(
                 dom: dom,
@@ -66,7 +68,7 @@ public struct _MountContext: ~Copyable {
         return result
     }
 
-    func withChildContext<R>(_ body: (consuming _MountContext) -> R) -> R {
+    func withChildContext<R: ~Copyable>(_ body: (consuming _MountContext) -> R) -> R {
         body(
             _MountContext(
                 dom: dom,
@@ -87,8 +89,32 @@ public struct _MountContext: ~Copyable {
         return body(&commitContext)
     }
 
-    consuming func takeMountOutput() -> ([LayoutNode], MountRootTransitionCoordinator?) {
-        (layoutNodes, transitionCoordinator)
+    consuming func makeLayoutContainer(
+        domNode: DOM.Node,
+        observers: [any DOMLayoutObserver]
+    ) -> LayoutContainer {
+        let layoutNodes = RigidArray(consuming: consume layoutNodes)
+        return LayoutContainer(
+            domNode: domNode,
+            scheduler: scheduler,
+            layoutNodes: consume layoutNodes,
+            layoutObservers: observers
+        )
+    }
+
+    consuming func makeMountedState(
+        newKeyIndex: Int,
+        viewContext: borrowing _ViewContext,
+        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
+    ) -> MountContainer.Slot.Mounted {
+        var mountContext = consume self
+        let node = makeNode(newKeyIndex, viewContext, &mountContext)
+        return MountContainer.Slot.Mounted(
+            node: node,
+            layoutNodes: RigidArray(consuming: consume mountContext.layoutNodes),
+            didMove: false,
+            transitionCoordinator: mountContext.transitionCoordinator
+        )
     }
 
     consuming func mountInDOMNode(_ domNode: DOM.Node, observers: [any DOMLayoutObserver]) -> LayoutContainer? {
@@ -96,22 +122,24 @@ public struct _MountContext: ~Copyable {
             if layoutNodes.count == 1 {
                 dom.appendChild(layoutNodes[0].staticDOMNode, to: domNode)
             } else if layoutNodes.count > 1 {
-                for node in layoutNodes {
-                    dom.appendChild(node.staticDOMNode, to: domNode)
+                let nodes = layoutNodes.span
+                for index in nodes.indices {
+                    dom.appendChild(nodes[unchecked: index].staticDOMNode, to: domNode)
                 }
             }
             return nil
         }
 
-        let container = LayoutContainer(
-            domNode: domNode,
+        let dom = self.dom
+        let scheduler = self.scheduler
+        let currentFrameTime = self.currentFrameTime
+        let container = makeLayoutContainer(domNode: domNode, observers: observers)
+        var commit = _CommitContext(
+            dom: dom,
             scheduler: scheduler,
-            layoutNodes: layoutNodes,
-            layoutObservers: observers
+            currentFrameTime: currentFrameTime
         )
-        withCommitContext { commit in
-            container.mountInitial(&commit)
-        }
+        container.mountInitial(&commit)
         return container
     }
 
@@ -131,7 +159,7 @@ private extension LayoutNode {
 }
 
 extension _CommitContext {
-    func withMountContext<R>(
+    func withMountContext<R: ~Copyable>(
         transaction: Transaction,
         _ body: (consuming _MountContext) -> R
     ) -> R {
