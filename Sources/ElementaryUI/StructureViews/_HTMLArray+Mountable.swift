@@ -44,17 +44,35 @@ extension _HTMLArray: _Mountable, View where Element: View {
     }
 
     private func withKeys<R: ~Copyable>(_ body: (borrowing Span<_ViewKey>) -> R) -> R {
-        // TODO: make this nicer and less unsafe
-        withUnsafeTemporaryAllocation(
+        _withTemporaryAllocation(
             of: _ViewKey.self,
             capacity: self.value.count,
             { buffer in
                 for index in 0..<value.count {
-                    buffer[index] = _ViewKey(index)
+                    buffer.append(_ViewKey(index))
                 }
 
                 return body(buffer.span)
             }
         )
+    }
+}
+
+// tiny little theft from future stdlib
+@_alwaysEmitIntoClient @_transparent
+func _withTemporaryAllocation<T: ~Copyable, R: ~Copyable, E: Error>(
+    of type: T.Type,
+    capacity: Int,
+    _ body: (inout OutputSpan<T>) throws(E) -> R
+) throws(E) -> R where T: ~Copyable, R: ~Copyable {
+    try withUnsafeTemporaryAllocation(of: type, capacity: capacity) { (buffer) throws(E) in
+        var span = OutputSpan(buffer: buffer, initializedCount: 0)
+        defer {
+            let initializedCount = span.finalize(for: buffer)
+            span = OutputSpan()
+            buffer.extracting(..<initializedCount).deinitialize()
+        }
+
+        return try body(&span)
     }
 }
