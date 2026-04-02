@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775113682586,
+  "lastUpdate": 1775159340985,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -2769,6 +2769,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 182.01,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2493ca62fce6a821912a8423862e926edc572f4e",
+          "message": "Performance: reusable move-only scratch containers (#91)\n\n* WIP: move towards containers\n\n* WIP: diff alg\n\n* wip: differ\n\n* shared diff storage\n\n* WIP: reusable scratch stack storage\n\n* extracted scratch storage type\n\n* fix embedded build mumbo jumbo\n\n* update snapshot, work around for javascriptkit plugin issue\n\n* one should understand raw memory\n\n* snapshot embedded shenanigans\n\n* goshdarn bridge-js plugin",
+          "timestamp": "2026-04-02T21:46:18+02:00",
+          "tree_id": "182a2dfcbb85e559647b5ca921fe250568507ffe",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/2493ca62fce6a821912a8423862e926edc572f4e"
+        },
+        "date": 1775159340654,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 196.72,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 145.91,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 127.18,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 189.48,
             "unit": "kB"
           }
         ]
