@@ -12,9 +12,7 @@ public struct _TextNode: _Reconcilable {
         guard !value.utf8Equals(newValue) else { return }
         self.value = newValue
 
-        tx.scheduler.addCommitAction { [self] ctx in
-            ctx.dom.patchText(domNode, with: value)
-        }
+        tx.scheduler.addCommitAction(.patchText(node: domNode, text: value))
     }
 
     public consuming func unmount(_ context: inout _CommitContext) {

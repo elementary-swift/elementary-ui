@@ -38,7 +38,7 @@ final class LayoutContainer {
         guard !isDirty else { return }
 
         isDirty = true
-        tx.scheduler.addCommitAction(performLayout(_:))
+        tx.scheduler.addCommitAction(.patchLayout(container: self))
         for observer in layoutObservers {
             observer.willLayoutChildren(parent: domNode, context: &tx)
         }
@@ -56,7 +56,7 @@ final class LayoutContainer {
         }
     }
 
-    private func performLayout(_ context: inout _CommitContext) {
+    func performLayout(_ context: inout _CommitContext) {
         guard isDirty else { return }
         isDirty = false
 

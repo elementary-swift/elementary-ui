@@ -58,10 +58,7 @@ public struct _ElementNode<Child: _Reconcilable>: _Reconcilable {
             modifier.updateValue(attributes, &context)
         case .inline(let node, let lastApplied):
             if attributes != lastApplied {
-                let (prev, next, n) = (lastApplied, attributes, node)
-                context.scheduler.addCommitAction { ctx in
-                    ctx.dom.applyHTMLAttributes(n, from: prev, to: next)
-                }
+                context.scheduler.addCommitAction(.patchAttributes(node: node, from: lastApplied, to: attributes))
                 self.attributes = .inline(node: node, lastApplied: attributes)
             }
         }
