@@ -28,12 +28,15 @@ public struct _KeyedView<Value: View>: View {
         node.patch(
             key: view.key,
             context: &tx,
-            as: Value._MountedNode.self,
             makeNode: { context, ctx in
-                Value._makeNode(view.value, context: context, ctx: &ctx)
+                AnyReconcilable(
+                    Value._makeNode(view.value, context: context, ctx: &ctx)
+                )
             },
-            patchNode: { node, tx in
-                Value._patchNode(view.value, node: &node, tx: &tx)
+            patchNode: { anyNode, tx in
+                anyNode.modify(as: Value._MountedNode.self) { node in
+                    Value._patchNode(view.value, node: &node, tx: &tx)
+                }
             }
         )
     }

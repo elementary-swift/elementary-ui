@@ -236,6 +236,95 @@ struct TransitionMountRootTests {
     }
 
     @Test
+    func animateContainerLayoutDirectRemovalDoesNotUseLeavingAbsolutePositioning() {
+        let state = StringItemsState(["A"])
+        let dom = TestDOM()
+
+        dom.mount {
+            div {
+                ForEach(state.items, key: \.self) { item in
+                    p { item }
+                }
+            }
+            .animateContainerLayout()
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        withAnimation(.linear(duration: 0.35)) {
+            state.items = []
+        }
+        dom.runNextFrame()
+
+        #expect(dom.ops.contains(.removeChild(parent: "<div>", child: "<p>")))
+        #expect(!dom.ops.contains(.setStyle(node: "<p>", name: "position", value: "absolute")))
+    }
+
+    @Test
+    func animateContainerLayoutTransitionedLeavingReenterDoesNotRecreate() {
+        let state = StringItemsState(["A"])
+        let dom = TestDOM()
+
+        dom.mount {
+            div {
+                ForEach(state.items, key: \.self) { item in
+                    p { item }.transition(.fade)
+                }
+            }
+            .animateContainerLayout()
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        withAnimation(.linear(duration: 0.35)) {
+            state.items = []
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        withAnimation(.linear(duration: 0.35)) {
+            state.items = ["A"]
+        }
+        dom.runNextFrame()
+
+        #expect(!dom.ops.contains(.createElement("p")))
+        #expect(!dom.ops.contains(.createText("A")))
+    }
+
+    @Test
+    func unmountContainerWithOutOfBandLeavingDoesNotCrash() {
+        let visible = VisibilityState(true)
+        let items = StringItemsState(["A"])
+        let dom = TestDOM()
+
+        dom.mount {
+            Group {
+                if visible.value {
+                    div {
+                        ForEach(items.items, key: \.self) { item in
+                            p { item }.transition(.fade)
+                        }
+                    }
+                    .animateContainerLayout()
+                }
+            }
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        withAnimation(.linear(duration: 0.35)) {
+            items.items = []
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        visible.value = false
+        dom.runNextFrame()
+
+        #expect(dom.ops.contains(.removeChild(parent: "<>", child: "<div>")))
+    }
+
+    @Test
     func noUninitializedNodesInPlacementCollection() {
         let state = StringItemsState()
         let dom = TestDOM()
@@ -286,6 +375,70 @@ struct TransitionMountRootTests {
 
         #expect(!dom.ops.contains(.createElement("p")))
         #expect(!dom.ops.contains(.createText("A")))
+    }
+
+    @Test
+    func keyedReviveFromOutsideMiddlePrefixAndSuffixWithoutRecreate() {
+        let state = StringItemsState(["A", "B", "C", "D"])
+        let dom = TestDOM()
+
+        dom.mount {
+            ForEach(state.items, key: \.self) { item in
+                p { item }.transition(.fade)
+            }
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        withAnimation(.linear(duration: 0.35)) {
+            state.items = ["B", "C"]
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        withAnimation(.linear(duration: 0.35)) {
+            state.items = ["A", "X", "D"]
+        }
+        dom.runNextFrame()
+
+        #expect(!dom.ops.contains(.createText("A")))
+        #expect(!dom.ops.contains(.createText("D")))
+        #expect(dom.ops.contains(.createText("X")))
+    }
+
+    @Test
+    func keyedMixedReuseReviveAndInsertPreservesOrderWithoutRecreate() {
+        let state = StringItemsState(["A", "B", "D"])
+        let dom = TestDOM()
+
+        dom.mount {
+            ForEach(state.items, key: \.self) { item in
+                p { item }.transition(.fade)
+            }
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        withAnimation(.linear(duration: 0.35)) {
+            state.items = ["B", "D"]
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        withAnimation(.linear(duration: 0.35)) {
+            state.items = ["B", "A", "X", "D"]
+        }
+        dom.runNextFrame()
+
+        #expect(!dom.ops.contains(.createText("A")))
+        #expect(!dom.ops.contains(.createText("B")))
+        #expect(!dom.ops.contains(.createText("D")))
+        #expect(dom.ops.contains(.createText("X")))
+
+        let parentBeforeInsertCount = dom.ops.filter { op in
+            op == .addChild(parent: "<>", child: "<p>", before: "<p>")
+        }.count
+        #expect(parentBeforeInsertCount == 2)
     }
 
     // @Test

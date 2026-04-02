@@ -55,8 +55,10 @@ final class FLIPScheduler {
         running?.cancelAll()
     }
 
-    func markAsLeaving(_ node: DOM.Node) {
-        assert(scheduledAnimations[node] != nil, "node not scheduled for animation")
+    func markAsLeaving(_ node: DOM.Node, context: inout _TransactionContext) {
+        if scheduledAnimations[node] == nil {
+            scheduleAnimationOf(node, context: &context)
+        }
 
         if dom.needsAbsolutePositioning(node) {
             let rect = dom.getAbsolutePositionCoordinates(node)
@@ -64,8 +66,10 @@ final class FLIPScheduler {
         }
     }
 
-    func markAsReentering(_ node: DOM.Node) {
-        assert(scheduledAnimations[node] != nil, "node not scheduled for animation")
+    func markAsReentering(_ node: DOM.Node, context: inout _TransactionContext) {
+        if scheduledAnimations[node] == nil {
+            scheduleAnimationOf(node, context: &context)
+        }
 
         if let style = absolutePositionOriginals.removeValue(forKey: node) {
             scheduledAnimations[node]?.layoutAction = .undoMoveAbsolute(style: style)

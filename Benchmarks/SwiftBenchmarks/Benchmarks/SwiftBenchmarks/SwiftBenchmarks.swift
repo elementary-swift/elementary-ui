@@ -113,6 +113,44 @@ struct BenchTextPatchView {
     }
 }
 
+@View
+struct BenchStaticTextMountView {
+    var body: some View {
+        HTMLText("Hello")
+    }
+}
+
+@View
+struct BenchStaticElementMountView {
+    var body: some View {
+        p { "Hello" }
+    }
+}
+
+@View
+struct BenchNestedStaticMountView {
+    var body: some View {
+        div {
+            p { "Hello" }
+            span { "World" }
+        }
+    }
+}
+
+@View
+struct BenchAnimatedListView {
+    @Environment(BenchStore.self) var store: BenchStore
+
+    var body: some View {
+        div {
+            ForEach(store.rows, key: { $0.id }) { row in
+                p { row.label }
+            }
+        }
+        .animateContainerLayout()
+    }
+}
+
 private func makeRows(startID: Int, count: Int, labelPrefix: String) -> [BenchRow] {
     var rows: [BenchRow] = []
     rows.reserveCapacity(count)
@@ -207,9 +245,72 @@ private func withMountedTextPatch(
     dom.drain()
 }
 
+@inline(never)
+private func withMountedAnimatedList(
+    initialRows: [BenchRow],
+    _ body: (BenchStore, NoOpInteractor) -> Void
+) {
+    let store = BenchStore()
+    store.setRows(initialRows)
+    let dom = NoOpInteractor()
+    let mounted = Application(BenchAnimatedListView().environment(store))._mount(dom: dom, root: dom.rootNode)
+    dom.drain()
+
+    body(store, dom)
+
+    mounted.unmount()
+    dom.drain()
+}
+
+@inline(never)
+private func measureInitialMount<MountedView: View>(
+    _ makeView: () -> MountedView,
+    benchmark: Benchmark
+) {
+    for _ in benchmark.scaledIterations {
+        let dom = NoOpInteractor()
+
+        benchmark.startMeasurement()
+        let mounted = Application(makeView())._mount(dom: dom, root: dom.rootNode)
+        dom.drain()
+        benchmark.stopMeasurement()
+
+        mounted.unmount()
+        dom.drain()
+    }
+}
+
 @MainActor
 let benchmarks = {
     let rowCounts = [10, 1_000]
+
+    Benchmark("Mount.initial.text") { benchmark in
+        measureInitialMount({ BenchStaticTextMountView() }, benchmark: benchmark)
+    }
+
+    Benchmark("Mount.initial.elementText") { benchmark in
+        measureInitialMount({ BenchStaticElementMountView() }, benchmark: benchmark)
+    }
+
+    Benchmark("Mount.initial.nestedStaticTree") { benchmark in
+        measureInitialMount({ BenchNestedStaticMountView() }, benchmark: benchmark)
+    }
+
+    Benchmark("Layout.perform.observedSwap") { benchmark in
+        let rows = makeRows(startID: 0, count: 100, labelPrefix: "flip")
+
+        withMountedAnimatedList(initialRows: rows) { store, dom in
+            for _ in benchmark.scaledIterations {
+                benchmark.startMeasurement()
+                store.swapRows()
+                dom.drain()
+                benchmark.stopMeasurement()
+
+                store.swapRows()
+                dom.drain()
+            }
+        }
+    }
 
     for rowCount in rowCounts {
         let deltaCount = max(1, rowCount / 10)

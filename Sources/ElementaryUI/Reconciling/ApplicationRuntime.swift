@@ -19,22 +19,16 @@ final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
                 let rootViewContext = _ViewContext()
                 let mountTransaction = tx.transaction
 
+                // TODO: clean this up and reuse a mount container
                 tx.scheduler.addCommitAction { [self, rootView, rootViewContext] ctx in
-                    let (child, layoutNodes) = ctx.withMountContext(transaction: mountTransaction) { (ctx: consuming _MountContext) in
+                    let (child, container) = ctx.withMountContext(transaction: mountTransaction) { (ctx: consuming _MountContext) in
                         let child = AnyReconcilable(
                             RootView._makeNode(rootView, context: rootViewContext, ctx: &ctx)
                         )
-                        // TODO: clean this up - this should be a mount root contaienrs
-                        let (layoutNodes, _) = ctx.takeMountOutput()
-                        return (child, layoutNodes)
+                        let container = ctx.consumeAsLayoutContainer(domNode: domRoot, observers: [])
+                        return (child, container)
                     }
 
-                    let container = LayoutContainer(
-                        domNode: domRoot,
-                        scheduler: ctx.scheduler,
-                        layoutNodes: layoutNodes,
-                        layoutObservers: []
-                    )
                     container.mountInitial(&ctx)
 
                     self.rootChild = child

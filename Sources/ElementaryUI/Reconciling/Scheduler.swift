@@ -1,3 +1,5 @@
+import BasicContainers
+
 struct AnyFunctionNode {
     let identifier: ObjectIdentifier
     let depthInTree: Int
@@ -16,16 +18,18 @@ struct AnyAnimatable {
 final class Scheduler {
     private let dom: any DOM.Interactor
 
+    let scratch = ScratchStorage()
+
     // TODO: ideally this could be a completely decoupled extensions-style thing
     // TODO: make this more pluggable / strippable
     let flip: FLIPScheduler
 
     // Work queues
     private var pendingFunctions: PendingFunctionQueue = .init()
-    private var pendingUpdates: [(inout _TransactionContext) -> Void] = []
-    private var pendingCommitActions: [(inout _CommitContext) -> Void] = []
-    private var pendingPlacements: [(inout _CommitContext) -> Void] = []
-    private var pendingEffects: [() -> Void] = []
+    private var pendingUpdates: UniqueArray<(inout _TransactionContext) -> Void> = .init()
+    private var pendingCommitActions: UniqueArray<(inout _CommitContext) -> Void> = .init()
+    private var pendingPlacements: UniqueArray<(inout _CommitContext) -> Void> = .init()
+    private var pendingEffects: UniqueArray<() -> Void> = .init()
     private var runningAnimations: [AnyAnimatable] = []
 
     // Scheduling state
@@ -153,9 +157,11 @@ final class Scheduler {
                 break
             }
 
-            let effects = pendingEffects
-            pendingEffects = []
-            for effect in effects { effect() }
+            var effects: UniqueArray<() -> Void> = .init()
+            swap(&effects, &pendingEffects)
+            for index in effects.indices {
+                effects[index]()
+            }
             drainAllWork(frameTime: now)
         }
 
@@ -208,8 +214,8 @@ final class Scheduler {
         var queue = PendingFunctionQueue()
         swap(&pendingFunctions, &queue)
 
-        let updates = pendingUpdates
-        pendingUpdates = []
+        var updates: UniqueArray<(inout _TransactionContext) -> Void> = .init()
+        swap(&updates, &pendingUpdates)
 
         var context = _TransactionContext(
             scheduler: self,
@@ -218,7 +224,9 @@ final class Scheduler {
             pendingFunctions: consume queue
         )
 
-        for update in updates { update(&context) }
+        for index in updates.indices {
+            updates[index](&context)
+        }
         context.drain()
     }
 
@@ -231,15 +239,21 @@ final class Scheduler {
             precondition(passes <= maxCommitPasses, "Exceeded \(maxCommitPasses) commit passes - infinite loop?")
 
             if !pendingCommitActions.isEmpty {
-                let actions = pendingCommitActions
-                pendingCommitActions = []
-                for action in actions { action(&context) }
+                var actions: UniqueArray<(inout _CommitContext) -> Void> = .init()
+                swap(&actions, &pendingCommitActions)
+                for index in actions.indices {
+                    actions[index](&context)
+                }
             }
 
             if !pendingPlacements.isEmpty {
-                let placements = pendingPlacements
-                pendingPlacements = []
-                for action in placements.reversed() { action(&context) }
+                var placements: UniqueArray<(inout _CommitContext) -> Void> = .init()
+                swap(&placements, &pendingPlacements)
+                var index = placements.endIndex
+                while index > placements.startIndex {
+                    index -= 1
+                    placements[index](&context)
+                }
             }
         }
     }

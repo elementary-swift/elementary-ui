@@ -7,7 +7,6 @@ final class EventModifier<Config: _DOMEventHandlerConfig>: DOMElementModifier {
     typealias Value = (Config.Event) -> Void
 
     let upstream: EventModifier?
-    var tracker: DependencyTracker = .init()
 
     private var value: Value
 

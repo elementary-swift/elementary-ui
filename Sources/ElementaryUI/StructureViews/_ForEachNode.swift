@@ -1,14 +1,17 @@
+import BasicContainers
 import Reactivity
 
+// TODO: refactor this entire thing - we need to make the key list without the views, and the resolve the views just off the data....
 public final class _ForEachNode<Data, Content>: _Reconcilable
 where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
-    private typealias Evaluation = (views: [Content], keys: [_ViewKey], session: TrackingSession)
-
     private var data: Data
     private var contentBuilder: @Sendable (Data.Element) -> Content
     private var trackingSession: TrackingSession? = nil
     private var container: MountContainer!
     private var asFunctionNode: AnyFunctionNode!
+
+    private var keysScratch: UniqueArray<_ViewKey> = .init()
+    private var viewsScratch: [Content] = .init()  // TODO: remove this once we refactored everything
 
     init(
         data: consuming Data,
@@ -21,19 +24,18 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
 
         self.asFunctionNode = AnyFunctionNode(self, depthInTree: context.functionDepth)
 
-        let (views, keys, session) = evaluateViewsAndKeys(
-            scheduler: ctx.scheduler
-        )
+        let session = evaluateViewsAndKeys(scheduler: ctx.scheduler)
 
         self.trackingSession = session
 
         let containerContext = copy context
+
         self.container = MountContainer(
-            mountedKeys: keys,
+            mountedKeyStorage: keysScratch.span,
             context: consume containerContext,
             ctx: &ctx,
             makeNode: { index, context, mountCtx in
-                Content.Value._makeNode(views[index]._value, context: context, ctx: &mountCtx)
+                Content.Value._makeNode(self.viewsScratch[index]._value, context: context, ctx: &mountCtx)
             }
         )
 
@@ -50,23 +52,27 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
         runFunction(tx: &tx)
     }
 
-    func runFunction(tx: inout _TransactionContext) {
+    borrowing func runFunction(tx: inout _TransactionContext) {
         self.trackingSession.take()?.cancel()
 
-        let (views, keys, session) = evaluateViewsAndKeys(
-            scheduler: tx.scheduler
+        let session = evaluateViewsAndKeys(
+            scheduler: tx.scheduler,
         )
 
         self.trackingSession = session
 
         container.patch(
-            keys: keys,
+            keys: self.keysScratch.span,
             tx: &tx,
-            makeNode: { index, context, mountCtx in
-                Content.Value._makeNode(views[index]._value, context: context, ctx: &mountCtx)
+            makeNode: { [viewsScratch] index, context, mountCtx in
+                AnyReconcilable(
+                    Content.Value._makeNode(viewsScratch[index]._value, context: context, ctx: &mountCtx)
+                )
             },
-            patchNode: { index, node, tx in
-                Content.Value._patchNode(views[index]._value, node: &node, tx: &tx)
+            patchNode: { [viewsScratch] index, anyNode, tx in
+                anyNode.modify(as: Content.Value._MountedNode.self) { node in
+                    Content.Value._patchNode(viewsScratch[index]._value, node: &node, tx: &tx)
+                }
             }
         )
     }
@@ -77,30 +83,26 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
     }
 
     private func evaluateViewsAndKeys(
-        scheduler: Scheduler
-    ) -> Evaluation {
-        let ((views, keys), session) = withReactiveTrackingSession(
-            {
-                var views: [Content] = []
-                var keys: [_ViewKey] = []
-                let estimatedCount = data.underestimatedCount
-                views.reserveCapacity(estimatedCount)
-                keys.reserveCapacity(estimatedCount)
+        scheduler: Scheduler,
+    ) -> TrackingSession {
 
-                for value in data {
-                    let view = contentBuilder(value)
-                    views.append(view)
-                    keys.append(view._key)
-                }
+        viewsScratch.reserveCapacity(data.underestimatedCount)
+        keysScratch.reserveCapacity(data.underestimatedCount)
 
-                return (views, keys)
-            },
-            onWillSet: { [scheduler, asFunctionNode] in
-                scheduler.invalidateFunction(asFunctionNode)
+        viewsScratch.removeAll(keepingCapacity: true)
+        keysScratch.removeAll(keepingCapacity: true)
+
+        let (_, session) = withReactiveTrackingSession {
+            for value in data {
+                let view = contentBuilder(value)
+                self.viewsScratch.append(view)
+                self.keysScratch.append(view._key)
             }
-        )
+        } onWillSet: { [scheduler, asFunctionNode] in
+            scheduler.invalidateFunction(asFunctionNode)
+        }
 
-        return (views, keys, session)
+        return session
     }
 }
 

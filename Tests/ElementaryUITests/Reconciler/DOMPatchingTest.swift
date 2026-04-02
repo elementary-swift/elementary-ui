@@ -243,6 +243,66 @@ struct DOMPatchingTests {
     }
 
     @Test
+    func pendingKeyedMiddleInsertionRemovedBeforeCommitProducesNoOps() {
+        let state = KeyedItemState([
+            .init(id: 1, value: "A"),
+            .init(id: 3, value: "C"),
+        ])
+        let dom = TestDOM()
+
+        dom.mount {
+            ForEach(state.items, key: \.id) { item in
+                p { item.value }
+            }
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        state.items = [
+            .init(id: 1, value: "A"),
+            .init(id: 2, value: "B"),
+            .init(id: 3, value: "C"),
+        ]
+        state.items = [
+            .init(id: 1, value: "A"),
+            .init(id: 3, value: "C"),
+        ]
+        dom.runNextFrame()
+
+        #expect(!dom.ops.contains(.createText("B")))
+        #expect(dom.ops.isEmpty)
+    }
+
+    @Test
+    func pendingKeyedInsertionUnderLayoutObserverStillMounts() {
+        let state = StringListState()
+        let dom = TestDOM()
+
+        dom.mount {
+            div {
+                ForEach(state.items, key: \.self) { item in
+                    p { item }
+                }
+            }
+            .animateContainerLayout()
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        state.items = ["A"]
+        dom.runNextFrame()
+
+        #expect(
+            dom.ops == [
+                .createElement("p"),
+                .createText("A"),
+                .addChild(parent: "<p>", child: "A"),
+                .addChild(parent: "<div>", child: "<p>"),
+            ]
+        )
+    }
+
+    @Test
     func patchesKeyedEmptyList() {
         let state = StringListState(["A", "B", "C"])
         let ops = patchOps {
@@ -277,6 +337,26 @@ struct DOMPatchingTests {
                 .addChild(parent: "<>", child: "D"),
                 .addChild(parent: "<>", child: "C", before: "B"),
                 .removeChild(parent: "<>", child: "A"),
+            ]
+        )
+    }
+
+    @Test
+    func patchesKeyedMiddleWindowWithUnchangedEdges() {
+        let state = StringListState(["A", "B", "C", "D", "E"])
+        let ops = patchOps {
+            ForEach(state.items, key: \.self) { item in
+                item
+            }
+        } toggle: {
+            state.items = ["A", "C", "X", "D", "E"]
+        }
+
+        #expect(
+            ops == [
+                .createText("X"),
+                .addChild(parent: "<>", child: "X", before: "D"),
+                .removeChild(parent: "<>", child: "B"),
             ]
         )
     }
