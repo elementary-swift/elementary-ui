@@ -1,5 +1,4 @@
 import { ConsoleStdout, File, OpenFile, WASI } from "@bjorn3/browser_wasi_shim";
-
 //#region src/wasi-shim.ts
 function createDefaultWASI() {
 	return new WASI([], [], [
@@ -8,7 +7,6 @@ function createDefaultWASI() {
 		ConsoleStdout.lineBuffered(console.error)
 	], { debug: false });
 }
-
 //#endregion
 //#region src/vendored/javascriptkit/index.mjs
 var SwiftClosureDeallocator = class {
@@ -104,6 +102,12 @@ var ITCInterface = class {
 			object: sendingObjects.map((ref) => this.memory.getObject(ref)),
 			sendingContext,
 			transfer: transferringObjects.map((ref) => this.memory.getObject(ref))
+		};
+	}
+	invokeRemoteJSObjectBody(invocationContext) {
+		return {
+			object: void 0,
+			transfer: []
 		};
 	}
 	release(objectRef) {
@@ -327,14 +331,41 @@ var SwiftRuntime = class {
 			var _a;
 			if (broker) return broker;
 			const itcInterface = new ITCInterface(this.memory);
+			const defaultRequestHandler = (message) => {
+				const request = message.data.request;
+				return {
+					ok: true,
+					value: itcInterface[request.method].apply(itcInterface, request.parameters)
+				};
+			};
+			const requestHandlers = { invokeRemoteJSObjectBody: (message) => {
+				const invocationContext = message.data.request.parameters[0];
+				return {
+					ok: true,
+					value: {
+						object: this.exports.swjs_invoke_remote_jsobject_body(invocationContext),
+						sendingContext: message.data.context,
+						transfer: []
+					}
+				};
+			} };
+			const defaultResponseHandler = (message) => {
+				if (message.data.response.ok) {
+					const object = this.memory.retain(message.data.response.value.object);
+					this.exports.swjs_receive_response(object, message.data.context);
+				} else {
+					const error = deserializeError(message.data.response.error);
+					const errorObject = this.memory.retain(error);
+					this.exports.swjs_receive_error(errorObject, message.data.context);
+				}
+			};
+			const responseHandlers = { invokeRemoteJSObjectBody: (_message) => {} };
 			const newBroker = new MessageBroker((_a = this.tid) !== null && _a !== void 0 ? _a : -1, threadChannel, {
 				onRequest: (message) => {
+					var _a;
 					let returnValue;
 					try {
-						returnValue = {
-							ok: true,
-							value: itcInterface[message.data.request.method](...message.data.request.parameters)
-						};
+						returnValue = ((_a = requestHandlers[message.data.request.method]) !== null && _a !== void 0 ? _a : defaultRequestHandler)(message);
 					} catch (error) {
 						returnValue = {
 							ok: false,
@@ -346,6 +377,7 @@ var SwiftRuntime = class {
 						data: {
 							sourceTid: message.data.sourceTid,
 							context: message.data.context,
+							requestMethod: message.data.request.method,
 							response: returnValue
 						}
 					};
@@ -360,14 +392,8 @@ var SwiftRuntime = class {
 					}
 				},
 				onResponse: (message) => {
-					if (message.data.response.ok) {
-						const object = this.memory.retain(message.data.response.value.object);
-						this.exports.swjs_receive_response(object, message.data.context);
-					} else {
-						const error = deserializeError(message.data.response.error);
-						const errorObject = this.memory.retain(error);
-						this.exports.swjs_receive_error(errorObject, message.data.context);
-					}
+					var _a;
+					((_a = responseHandlers[message.data.requestMethod]) !== null && _a !== void 0 ? _a : defaultResponseHandler)(message);
 				}
 			});
 			broker = newBroker;
@@ -550,22 +576,19 @@ var SwiftRuntime = class {
 			swjs_listen_message_from_main_thread: () => {
 				const threadChannel = this.options.threadChannel;
 				if (!(threadChannel && "listenMessageFromMainThread" in threadChannel)) throw new Error("listenMessageFromMainThread is not set in options given to SwiftRuntime. Please set it to listen to wake events from the main thread.");
-				const broker$1 = getMessageBroker(threadChannel);
+				const broker = getMessageBroker(threadChannel);
 				threadChannel.listenMessageFromMainThread((message) => {
 					switch (message.type) {
 						case "wake":
 							this.exports.swjs_wake_worker_thread();
 							break;
 						case "request":
-							broker$1.onReceivingRequest(message);
+							broker.onReceivingRequest(message);
 							break;
 						case "response":
-							broker$1.onReceivingResponse(message);
+							broker.onReceivingResponse(message);
 							break;
-						default: {
-							const unknownMessage = message;
-							throw new Error(`Unknown message type: ${unknownMessage}`);
-						}
+						default: throw new Error(`Unknown message type: ${message}`);
 					}
 				});
 			},
@@ -575,22 +598,19 @@ var SwiftRuntime = class {
 			swjs_listen_message_from_worker_thread: (tid) => {
 				const threadChannel = this.options.threadChannel;
 				if (!(threadChannel && "listenMessageFromWorkerThread" in threadChannel)) throw new Error("listenMessageFromWorkerThread is not set in options given to SwiftRuntime. Please set it to listen to jobs from worker threads.");
-				const broker$1 = getMessageBroker(threadChannel);
+				const broker = getMessageBroker(threadChannel);
 				threadChannel.listenMessageFromWorkerThread(tid, (message) => {
 					switch (message.type) {
 						case "job":
 							this.exports.swjs_enqueue_main_job_from_worker(message.data);
 							break;
 						case "request":
-							broker$1.onReceivingRequest(message);
+							broker.onReceivingRequest(message);
 							break;
 						case "response":
-							broker$1.onReceivingResponse(message);
+							broker.onReceivingResponse(message);
 							break;
-						default: {
-							const unknownMessage = message;
-							throw new Error(`Unknown message type: ${unknownMessage}`);
-						}
+						default: throw new Error(`Unknown message type: ${message}`);
 					}
 				});
 			},
@@ -605,9 +625,9 @@ var SwiftRuntime = class {
 			swjs_request_sending_object: (sending_object, transferring_objects, transferring_objects_count, object_source_tid, sending_context) => {
 				var _a;
 				if (!this.options.threadChannel) throw new Error("threadChannel is not set in options given to SwiftRuntime. Please set it to request transferring objects.");
-				const broker$1 = getMessageBroker(this.options.threadChannel);
+				const broker = getMessageBroker(this.options.threadChannel);
 				const transferringObjects = decodeObjectRefs(transferring_objects, transferring_objects_count, this.getDataView());
-				broker$1.request({
+				broker.request({
 					type: "request",
 					data: {
 						sourceTid: (_a = this.tid) !== null && _a !== void 0 ? _a : MAIN_THREAD_TID,
@@ -627,11 +647,11 @@ var SwiftRuntime = class {
 			swjs_request_sending_objects: (sending_objects, sending_objects_count, transferring_objects, transferring_objects_count, object_source_tid, sending_context) => {
 				var _a;
 				if (!this.options.threadChannel) throw new Error("threadChannel is not set in options given to SwiftRuntime. Please set it to request transferring objects.");
-				const broker$1 = getMessageBroker(this.options.threadChannel);
+				const broker = getMessageBroker(this.options.threadChannel);
 				const dataView = this.getDataView();
 				const sendingObjects = decodeObjectRefs(sending_objects, sending_objects_count, dataView);
 				const transferringObjects = decodeObjectRefs(transferring_objects, transferring_objects_count, dataView);
-				broker$1.request({
+				broker.request({
 					type: "request",
 					data: {
 						sourceTid: (_a = this.tid) !== null && _a !== void 0 ? _a : MAIN_THREAD_TID,
@@ -644,6 +664,22 @@ var SwiftRuntime = class {
 								transferringObjects,
 								sending_context
 							]
+						}
+					}
+				});
+			},
+			swjs_request_remote_jsobject_body: (object_source_tid, invocation_context) => {
+				var _a;
+				if (!this.options.threadChannel) throw new Error("threadChannel is not set in options given to SwiftRuntime. Please set it to request remote JSObject access.");
+				getMessageBroker(this.options.threadChannel).request({
+					type: "request",
+					data: {
+						sourceTid: (_a = this.tid) !== null && _a !== void 0 ? _a : MAIN_THREAD_TID,
+						targetTid: object_source_tid,
+						context: invocation_context,
+						request: {
+							method: "invokeRemoteJSObjectBody",
+							parameters: [invocation_context]
 						}
 					}
 				});
@@ -662,7 +698,6 @@ var SwiftRuntime = class {
 	}
 };
 var UnsafeEventLoopYield = class extends Error {};
-
 //#endregion
 //#region src/generated/bridge-js.js
 const JSCompositeOperationValues = {
@@ -1163,10 +1198,10 @@ async function createInstantiator(options, swift) {
 					setException(error);
 				}
 			};
-			BrowserInterop["bjs_JSElement_animate"] = function bjs_JSElement_animate(self, keyframes, options$1) {
+			BrowserInterop["bjs_JSElement_animate"] = function bjs_JSElement_animate(self, keyframes, options) {
 				try {
-					const value = swift.memory.getObject(options$1);
-					swift.memory.release(options$1);
+					const value = swift.memory.getObject(options);
+					swift.memory.release(options);
 					let ret = swift.memory.getObject(self).animate(swift.memory.getObject(keyframes), value);
 					return swift.memory.retain(ret);
 				} catch (error) {
@@ -1541,7 +1576,7 @@ async function createInstantiator(options, swift) {
 				instance.exports._swift_js_exception.value = swift.memory.retain(error);
 			};
 		},
-		createExports: (instance$1) => {
+		createExports: (instance) => {
 			swift.memory.heap;
 			structHelpers.JSKeyframeEffectOptions = __bjs_createJSKeyframeEffectOptionsHelpers();
 			structHelpers.JSAnimationTiming = __bjs_createJSAnimationTimingHelpers();
@@ -1552,7 +1587,6 @@ async function createInstantiator(options, swift) {
 		}
 	};
 }
-
 //#endregion
 //#region src/index.ts
 /**
@@ -1581,6 +1615,5 @@ async function runApplication(initializer) {
 	wasi.initialize(instance);
 	swiftRuntime.main();
 }
-
 //#endregion
 export { runApplication };
