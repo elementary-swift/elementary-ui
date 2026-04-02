@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774633473883,
+  "lastUpdate": 1775159441168,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -1558,6 +1558,85 @@ window.BENCHMARK_DATA = {
           {
             "name": "09_clear1k_x8",
             "value": 64.96,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.04,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.4,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.17,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2493ca62fce6a821912a8423862e926edc572f4e",
+          "message": "Performance: reusable move-only scratch containers (#91)\n\n* WIP: move towards containers\n\n* WIP: diff alg\n\n* wip: differ\n\n* shared diff storage\n\n* WIP: reusable scratch stack storage\n\n* extracted scratch storage type\n\n* fix embedded build mumbo jumbo\n\n* update snapshot, work around for javascriptkit plugin issue\n\n* one should understand raw memory\n\n* snapshot embedded shenanigans\n\n* goshdarn bridge-js plugin",
+          "timestamp": "2026-04-02T21:46:18+02:00",
+          "tree_id": "182a2dfcbb85e559647b5ca921fe250568507ffe",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/2493ca62fce6a821912a8423862e926edc572f4e"
+        },
+        "date": 1775159440567,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 119.31,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 143.76,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 233.96,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 27.86,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 65.77,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 43.89,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 144.65,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 75.13,
             "unit": "ms"
           },
           {
