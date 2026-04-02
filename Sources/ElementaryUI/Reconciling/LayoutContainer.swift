@@ -3,7 +3,6 @@ import ContainersPreview
 
 final class LayoutContainer {
     let domNode: DOM.Node
-    fileprivate let scheduler: Scheduler
     private let layoutNodes: RigidArray<LayoutNode>
     private let layoutObservers: [any DOMLayoutObserver]
     private var isDirty: Bool = false
@@ -15,13 +14,12 @@ final class LayoutContainer {
         layoutObservers: [any DOMLayoutObserver]
     ) {
         self.domNode = domNode
-        self.scheduler = scheduler
         self.layoutNodes = consume layoutNodes
         self.layoutObservers = layoutObservers
     }
 
     func mountInitial(_ context: inout _CommitContext) {
-        scheduler.withLayoutEntryScratchFrame { scratch in
+        context.scheduler.scratch.withLayoutEntryScratchFrame { scratch in
             var ops = LayoutPass(layoutContainer: self, scratch: consume scratch)
             layoutNodes.collect(into: &ops, context: &context, op: .added)
 
@@ -38,7 +36,7 @@ final class LayoutContainer {
 
     // TODO: I get rid of this...
     func removeAllChildren(_ context: inout _CommitContext) {
-        scheduler.withLayoutEntryScratchFrame { scratch in
+        context.scheduler.scratch.withLayoutEntryScratchFrame { scratch in
             var ops = LayoutPass(layoutContainer: self, scratch: consume scratch)
             layoutNodes.collect(into: &ops, context: &context, op: .removed)
             let entryCount = ops.count
@@ -79,7 +77,7 @@ final class LayoutContainer {
         guard isDirty else { return }
         isDirty = false
 
-        scheduler.withLayoutEntryScratchFrame { scratch in
+        context.scheduler.scratch.withLayoutEntryScratchFrame { scratch in
             var ops = LayoutPass(layoutContainer: self, scratch: consume scratch)
             layoutNodes.collect(into: &ops, context: &context, op: .unchanged)
             let canBatchReplace = ops.canBatchReplace
@@ -195,7 +193,7 @@ struct LayoutPass: ~Copyable, ~Escapable {
     }
 
     consuming func consume(_ body: (inout InputSpan<Entry>) -> Void) {
-        entryScratch.consumeFrame(body)
+        entryScratch.consume(body)
     }
 
     mutating func append(_ entry: Entry) {

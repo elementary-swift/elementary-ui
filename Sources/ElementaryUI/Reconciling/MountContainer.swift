@@ -8,6 +8,7 @@ final class MountContainer {
 
     var containerHandle: LayoutContainer.Handle?
 
+    // TODO: get rid of these here...
     private var removedMiddleSlots: UniqueArray<Slot> = .init()
     private var leavingRemovalScratch: UniqueArray<Int> = .init()
 
@@ -145,7 +146,7 @@ final class MountContainer {
 
         removedMiddleSlots.removeAll(keepingCapacity: true)
 
-        let didStructureChange = KeyedDiffEngine.withShared { differ in
+        let didStructureChange = tx.scheduler.scratch.withDiffEngine { differ in
             differ.run(
                 activeSlots: &activeSlots,
                 leavingSlots: &leavingSlots,
@@ -155,6 +156,7 @@ final class MountContainer {
             )
         }
 
+        // TODO: fix this to move-only
         while var slot = removedMiddleSlots.popLast() {
             switch slot.beginRemovalForDiff(tx: &tx, handle: containerHandle) {
             case .none: break

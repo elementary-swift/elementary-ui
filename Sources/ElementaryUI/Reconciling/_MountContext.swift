@@ -2,7 +2,7 @@ import BasicContainers
 import ContainersPreview
 
 public struct _MountContext: ~Copyable, ~Escapable {
-    private var layoutNodeScratch: ScratchStack<LayoutNode>
+    private var nodeStack: ScratchStack<LayoutNode>
     private(set) var isStatic: Bool = true
 
     private var transitionCoordinator: MountRootTransitionCoordinator?
@@ -14,16 +14,16 @@ public struct _MountContext: ~Copyable, ~Escapable {
     let currentFrameTime: Double
     let transaction: Transaction
 
-    @_lifetime(copy layoutNodeScratch)
+    @_lifetime(copy nodeStack)
     fileprivate init(
-        layoutNodeScratch: consuming ScratchStack<LayoutNode>,
+        nodeStack: consuming ScratchStack<LayoutNode>,
         dom: any DOM.Interactor,
         scheduler: Scheduler,
         currentFrameTime: Double,
         transaction: Transaction,
         isRoot: Bool
     ) {
-        self.layoutNodeScratch = consume layoutNodeScratch
+        self.nodeStack = consume nodeStack
         self.dom = dom
         self.scheduler = scheduler
         self.currentFrameTime = currentFrameTime
@@ -53,9 +53,9 @@ public struct _MountContext: ~Copyable, ~Escapable {
     }
 
     mutating func withMountRootContext<R: ~Copyable>(_ body: (consuming _MountContext) -> R) -> R {
-        layoutNodeScratch.withNestedFrame { childScratch in
+        nodeStack.withNestedStack { childScratch in
             let childContext = _MountContext(
-                layoutNodeScratch: consume childScratch,
+                nodeStack: consume childScratch,
                 dom: dom,
                 scheduler: scheduler,
                 currentFrameTime: currentFrameTime,
@@ -76,10 +76,10 @@ public struct _MountContext: ~Copyable, ~Escapable {
     }
 
     mutating func withChildContext<R: ~Copyable>(_ body: (consuming _MountContext) -> R) -> R {
-        layoutNodeScratch.withNestedFrame { childScratch in
+        nodeStack.withNestedStack { childStack in
             body(
                 _MountContext(
-                    layoutNodeScratch: consume childScratch,
+                    nodeStack: childStack,
                     dom: dom,
                     scheduler: scheduler,
                     currentFrameTime: currentFrameTime,
@@ -132,7 +132,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
     consuming func mountInDOMNode(_ domNode: DOM.Node, observers: [any DOMLayoutObserver]) -> LayoutContainer? {
         if isStatic {
             let dom = dom
-            layoutNodeScratch.consumeFrame { span in
+            nodeStack.consume { span in
                 for index in span.indices {
                     dom.appendChild(span[unchecked: index].staticDOMNode, to: domNode)
                 }
@@ -154,8 +154,8 @@ public struct _MountContext: ~Copyable, ~Escapable {
     }
 
     private consuming func takeMaterializedLayoutNodes() -> RigidArray<LayoutNode> {
-        var result = RigidArray<LayoutNode>(capacity: layoutNodeScratch.count)
-        self.layoutNodeScratch.consumeFrame { span in
+        var result = RigidArray<LayoutNode>(capacity: nodeStack.count)
+        self.nodeStack.consume { span in
             result.append(moving: &span)
         }
         return result
@@ -163,7 +163,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
 
     private mutating func appendLayoutNode(_ node: LayoutNode) {
         isStatic = isStatic && node.isStatic
-        layoutNodeScratch.append(node)
+        nodeStack.append(node)
     }
 }
 
@@ -181,10 +181,10 @@ extension _CommitContext {
         transaction: Transaction,
         _ body: (consuming _MountContext) -> R
     ) -> R {
-        scheduler.withLayoutNodeScratchFrame { scratch in
+        scheduler.scratch.withLayoutNodeScratchFrame { scratch in
             body(
                 _MountContext(
-                    layoutNodeScratch: consume scratch,
+                    nodeStack: scratch,
                     dom: dom,
                     scheduler: scheduler,
                     currentFrameTime: currentFrameTime,

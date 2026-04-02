@@ -17,8 +17,8 @@ struct AnyAnimatable {
 
 final class Scheduler {
     private let dom: any DOM.Interactor
-    private var layoutNodeScratch: ScratchStorage<LayoutNode> = .init()
-    private var layoutEntryScratch: ScratchStorage<LayoutPass.Entry> = .init()
+
+    let scratch = ScratchStorage()
 
     // TODO: ideally this could be a completely decoupled extensions-style thing
     // TODO: make this more pluggable / strippable
@@ -65,18 +65,6 @@ final class Scheduler {
     init(dom: any DOM.Interactor) {
         self.dom = dom
         self.flip = FLIPScheduler(dom: dom)
-    }
-
-    func withLayoutNodeScratchFrame<R: ~Copyable>(
-        _ body: (consuming ScratchStack<LayoutNode>) -> R
-    ) -> R {
-        layoutNodeScratch.withFrame(body)
-    }
-
-    func withLayoutEntryScratchFrame<R: ~Copyable>(
-        _ body: (consuming ScratchStack<LayoutPass.Entry>) -> R
-    ) -> R {
-        layoutEntryScratch.withFrame(body)
     }
 
     // MARK: - Public API

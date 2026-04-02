@@ -2,7 +2,7 @@ import BasicContainers
 import ContainersPreview
 
 struct ScratchStack<Element: ~Copyable>: ~Copyable, ~Escapable {
-    private var storage: Inout<UniqueArray<Element>>
+    var storage: Inout<UniqueArray<Element>>
     private let startIndex: Int
 
     @_lifetime(&storage)
@@ -16,18 +16,20 @@ struct ScratchStack<Element: ~Copyable>: ~Copyable, ~Escapable {
         storage.value.count - startIndex
     }
 
+    @inline(__always)
     mutating func append(_ element: consuming Element) {
         storage.value.append(element)
     }
 
-    mutating func withNestedFrame<R: ~Copyable>(
+    mutating func withNestedStack<R: ~Copyable>(
         _ body: (consuming ScratchStack<Element>) -> R
     ) -> R {
         let child = ScratchStack(storage: &storage.value)
         return body(consume child)
     }
 
-    consuming func consumeFrame(
+    @inline(__always)
+    consuming func consume(
         _ body: (inout InputSpan<Element>) -> Void
     ) {
         storage.value.consumeLast(count) { span in
@@ -43,20 +45,18 @@ struct ScratchStack<Element: ~Copyable>: ~Copyable, ~Escapable {
     }
 }
 
-struct ScratchStorage<Element: ~Copyable>: ~Copyable {
-    private var storage: UniqueArray<Element>? = .init()
+struct ScratchStackSource<Element: ~Copyable>: ~Copyable {
+    private var storage: UniqueArray<Element>
 
-    mutating func withFrame<R: ~Copyable>(
+    init(initialCapacity: Int) {
+        storage = UniqueArray(capacity: initialCapacity)
+    }
+
+    mutating func withStack<R: ~Copyable>(
         _ body: (consuming ScratchStack<Element>) -> R
     ) -> R {
-        guard var localStorage = storage.take() else {
-            preconditionFailure("overlapping scratch root frame")
-        }
-
-        let frame = ScratchStack(storage: &localStorage)
+        let frame = ScratchStack(storage: &storage)
         let result = body(consume frame)
-        precondition(localStorage.isEmpty, "scratch root frame leaked elements")
-        storage = consume localStorage
         return result
     }
 }

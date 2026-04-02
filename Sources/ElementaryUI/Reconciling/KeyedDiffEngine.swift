@@ -2,23 +2,6 @@ import BasicContainers
 import ContainersPreview
 import Synchronization
 
-extension KeyedDiffEngine {
-    #if !_runtime(_multithreaded)
-    nonisolated(unsafe) static var shared: KeyedDiffEngine = .init()
-
-    static func withShared<Result: ~Copyable>(_ block: (inout Self) -> Result) -> Result {
-        block(&shared)
-    }
-    #else
-    static let shared: Mutex<KeyedDiffEngine> = .init(.init())
-    static func withShared<Result: ~Copyable>(_ block: (inout Self) -> Result) -> Result {
-        shared.withLock { engine in
-            block(&engine)
-        }
-    }
-    #endif
-}
-
 struct KeyedDiffEngine: ~Copyable {
     private var oldKeyMap: [_ViewKey: Int] = [:]
     private var leavingKeyMap: [_ViewKey: Int] = [:]
