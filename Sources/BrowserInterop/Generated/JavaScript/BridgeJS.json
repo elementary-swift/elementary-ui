@@ -184,6 +184,11 @@
             "jsName" : "Document",
             "methods" : [
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "createElement",
                 "parameters" : [
                   {
@@ -202,6 +207,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "createTextNode",
                 "parameters" : [
                   {
@@ -220,6 +230,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "querySelector",
                 "parameters" : [
                   {
@@ -238,6 +253,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "addEventListener",
                 "parameters" : [
                   {
@@ -268,7 +288,8 @@
                             "void" : {
 
                             }
-                          }
+                          },
+                          "sendingParameters" : false
                         },
                         "useJSTypedClosure" : true
                       }
@@ -282,6 +303,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "removeEventListener",
                 "parameters" : [
                   {
@@ -312,7 +338,8 @@
                             "void" : {
 
                             }
-                          }
+                          },
+                          "sendingParameters" : false
                         },
                         "useJSTypedClosure" : true
                       }
@@ -356,6 +383,11 @@
             "jsName" : "Window",
             "methods" : [
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "getComputedStyle",
                 "parameters" : [
                   {
@@ -389,6 +421,11 @@
             "jsName" : "Performance",
             "methods" : [
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "now",
                 "parameters" : [
 
@@ -454,6 +491,11 @@
             "jsName" : "Element",
             "methods" : [
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "setAttribute",
                 "parameters" : [
                   {
@@ -480,6 +522,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "removeAttribute",
                 "parameters" : [
                   {
@@ -498,6 +545,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "appendChild",
                 "parameters" : [
                   {
@@ -516,6 +568,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "removeChild",
                 "parameters" : [
                   {
@@ -534,6 +591,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "insertBefore",
                 "parameters" : [
                   {
@@ -560,6 +622,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "replaceChildren",
                 "parameters" : [
 
@@ -571,6 +638,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "getBoundingClientRect",
                 "parameters" : [
 
@@ -582,6 +654,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "addEventListener",
                 "parameters" : [
                   {
@@ -612,7 +689,8 @@
                             "void" : {
 
                             }
-                          }
+                          },
+                          "sendingParameters" : false
                         },
                         "useJSTypedClosure" : true
                       }
@@ -626,6 +704,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "removeEventListener",
                 "parameters" : [
                   {
@@ -656,7 +739,8 @@
                             "void" : {
 
                             }
-                          }
+                          },
+                          "sendingParameters" : false
                         },
                         "useJSTypedClosure" : true
                       }
@@ -670,6 +754,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "focus",
                 "parameters" : [
 
@@ -681,6 +770,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "blur",
                 "parameters" : [
 
@@ -692,6 +786,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "animate",
                 "parameters" : [
                   {
@@ -733,6 +832,11 @@
             "jsName" : "CSSStyleDeclaration",
             "methods" : [
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "getPropertyValue",
                 "parameters" : [
                   {
@@ -751,6 +855,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "setProperty",
                 "parameters" : [
                   {
@@ -777,6 +886,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "removeProperty",
                 "parameters" : [
                   {
@@ -864,6 +978,11 @@
             "jsName" : "Animation",
             "methods" : [
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "persist",
                 "parameters" : [
 
@@ -875,6 +994,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "pause",
                 "parameters" : [
 
@@ -886,6 +1010,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "play",
                 "parameters" : [
 
@@ -897,6 +1026,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "cancel",
                 "parameters" : [
 
@@ -936,7 +1070,8 @@
                         "void" : {
 
                         }
-                      }
+                      },
+                      "sendingParameters" : false
                     },
                     "useJSTypedClosure" : false
                   }
@@ -954,6 +1089,11 @@
             "jsName" : "AnimationEffect",
             "methods" : [
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "setKeyframes",
                 "parameters" : [
                   {
@@ -972,6 +1112,11 @@
                 }
               },
               {
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "updateTiming",
                 "parameters" : [
                   {
@@ -1244,6 +1389,11 @@
       {
         "functions" : [
           {
+            "effects" : {
+              "isAsync" : false,
+              "isStatic" : false,
+              "isThrows" : true
+            },
             "from" : "global",
             "name" : "requestAnimationFrame",
             "parameters" : [
@@ -1267,7 +1417,8 @@
                         "void" : {
 
                         }
-                      }
+                      },
+                      "sendingParameters" : false
                     },
                     "useJSTypedClosure" : false
                   }
@@ -1281,6 +1432,11 @@
             }
           },
           {
+            "effects" : {
+              "isAsync" : false,
+              "isStatic" : false,
+              "isThrows" : true
+            },
             "from" : "global",
             "name" : "cancelAnimationFrame",
             "parameters" : [
@@ -1300,6 +1456,11 @@
             }
           },
           {
+            "effects" : {
+              "isAsync" : false,
+              "isStatic" : false,
+              "isThrows" : true
+            },
             "from" : "global",
             "name" : "queueMicrotask",
             "parameters" : [
@@ -1319,7 +1480,8 @@
                         "void" : {
 
                         }
-                      }
+                      },
+                      "sendingParameters" : false
                     },
                     "useJSTypedClosure" : false
                   }
@@ -1333,6 +1495,11 @@
             }
           },
           {
+            "effects" : {
+              "isAsync" : false,
+              "isStatic" : false,
+              "isThrows" : true
+            },
             "from" : "global",
             "name" : "setTimeout",
             "parameters" : [
@@ -1352,7 +1519,8 @@
                         "void" : {
 
                         }
-                      }
+                      },
+                      "sendingParameters" : false
                     },
                     "useJSTypedClosure" : false
                   }

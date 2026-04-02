@@ -16,8 +16,8 @@ if [[ -z "$SOURCE_JS" && -f "$SKELETON_JSON" ]]; then
   BRIDGEJS_TOOL_PATH="$ROOT_DIR/.build/checkouts/JavaScriptKit/Plugins/BridgeJS"
 
   echo "No bridge-js.js provided; generating from BrowserInterop skeleton..."
-  swift run --package-path "$BRIDGEJS_TOOL_PATH" BridgeJSToolInternal emit-js "$SKELETON_JSON" > "$TMP_JS"
-  swift run --package-path "$BRIDGEJS_TOOL_PATH" BridgeJSToolInternal emit-dts "$SKELETON_JSON" > "$TMP_DTS"
+  swift run --build-system swiftbuild --package-path "$BRIDGEJS_TOOL_PATH" BridgeJSToolInternal emit-js "$SKELETON_JSON" > "$TMP_JS"
+  swift run --build-system swiftbuild --package-path "$BRIDGEJS_TOOL_PATH" BridgeJSToolInternal emit-dts "$SKELETON_JSON" > "$TMP_DTS"
   SOURCE_JS="$TMP_JS"
 fi
 
