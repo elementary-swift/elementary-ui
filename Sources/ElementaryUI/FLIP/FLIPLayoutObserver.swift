@@ -45,11 +45,14 @@ final class FLIPLayoutObserver: DOMLayoutObserver {
         }
     }
 
-    func didLayoutChildren(parent: DOM.Node, entries: [LayoutPass.Entry], context: inout _CommitContext) {
+    func didLayoutChildren(parent: DOM.Node, entries: borrowing Span<LayoutPass.Entry>, context: inout _CommitContext) {
         activeChildNodes.removeAll(keepingCapacity: true)
         activeChildNodes.reserveCapacity(entries.count)
 
-        for entry in entries where entry.type == .element {
+        for index in entries.indices {
+            let entry = entries[unchecked: index]
+            guard entry.type == .element else { continue }
+
             switch entry.op {
             case .added, .unchanged, .moved:
                 activeChildNodes.append(entry.reference)

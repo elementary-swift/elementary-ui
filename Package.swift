@@ -24,6 +24,7 @@ let package = Package(
                 .product(name: "Elementary", package: "elementary"),
                 .product(name: "JavaScriptKit", package: "JavaScriptKit"),
                 .product(name: "BasicContainers", package: "swift-collections"),
+                .product(name: "ContainersPreview", package: "swift-collections"),
                 .target(name: "BrowserInterop"),
                 .target(name: "ElementaryUIMacros"),
                 .target(name: "Reactivity"),
@@ -31,6 +32,7 @@ let package = Package(
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v5),
+                .enableExperimentalFeature("Lifetimes"),
                 .enableUpcomingFeature("ExistentialAny"),
                 .enableUpcomingFeature("ConciseMagicFile"),
                 .enableUpcomingFeature("ImplicitOpenExistentials"),

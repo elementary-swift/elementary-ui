@@ -27,10 +27,10 @@ final class MountContainer {
         self.init(
             context: context,
             slots: UniqueArray<Slot>(capacity: 1) { span in
-                let mountedSlot = ctx.withMountRootContext { (rootCtx: consuming _MountContext) in
+                let mountedSlot = ctx.withMountRootContext { rootCtx in
                     Slot.mounted(
                         key: key,
-                        mounted: rootCtx.makeMountedState(
+                        mounted: rootCtx.consumeAsMountedState(
                             newKeyIndex: 0,
                             viewContext: context,
                             makeNode: { _, viewContext, mountCtx in
@@ -54,10 +54,10 @@ final class MountContainer {
             context: context,
             slots: UniqueArray<Slot>(capacity: keys.count) { span in
                 for index in keys.indices {
-                    let mountedSlot = ctx.withMountRootContext { (rootCtx: consuming _MountContext) in
+                    let mountedSlot = ctx.withMountRootContext { rootCtx in
                         Slot.mounted(
                             key: keys[unchecked: index],
-                            mounted: rootCtx.makeMountedState(
+                            mounted: rootCtx.consumeAsMountedState(
                                 newKeyIndex: index,
                                 viewContext: context,
                                 makeNode: { index, viewContext, mountCtx in
@@ -428,8 +428,8 @@ extension MountContainer {
                 guard let makeNode else {
                     preconditionFailure("pending slot requires a makeNode callback")
                 }
-                let mounted = context.withMountContext(transaction: pending.transaction) { (mountCtx: consuming _MountContext) in
-                    mountCtx.makeMountedState(
+                let mounted = context.withMountContext(transaction: pending.transaction) { mountCtx in
+                    mountCtx.consumeAsMountedState(
                         newKeyIndex: pending.newKeyIndex,
                         viewContext: viewContext,
                         makeNode: makeNode

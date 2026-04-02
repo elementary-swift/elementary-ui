@@ -1,8 +1,9 @@
 import BasicContainers
+import ContainersPreview
 
 final class LayoutContainer {
     let domNode: DOM.Node
-    private let scheduler: Scheduler
+    fileprivate let scheduler: Scheduler
     private let layoutNodes: RigidArray<LayoutNode>
     private let layoutObservers: [any DOMLayoutObserver]
     private var isDirty: Bool = false
@@ -20,31 +21,35 @@ final class LayoutContainer {
     }
 
     func mountInitial(_ context: inout _CommitContext) {
-        var ops = LayoutPass(layoutContainer: self)
-        layoutNodes.collect(into: &ops, context: &context, op: .added)
+        scheduler.withLayoutEntryScratchFrame { scratch in
+            var ops = LayoutPass(layoutContainer: self, scratch: consume scratch)
+            layoutNodes.collect(into: &ops, context: &context, op: .added)
 
-        if ops.entries.count == 1 {
-            context.dom.appendChild(ops.entries[0].reference, to: domNode)
-        } else if ops.entries.count > 1 {
-            for entry in ops.entries {
-                context.dom.appendChild(entry.reference, to: domNode)
+            ops.consume { entries in
+                for index in entries.indices {
+                    context.dom.appendChild(entries[unchecked: index].reference, to: domNode)
+                }
+                for observer in layoutObservers {
+                    observer.didLayoutChildren(parent: domNode, entries: entries.span, context: &context)
+                }
             }
-        }
-
-        for observer in layoutObservers {
-            observer.didLayoutChildren(parent: domNode, entries: ops.entries, context: &context)
         }
     }
 
     // TODO: I get rid of this...
     func removeAllChildren(_ context: inout _CommitContext) {
-        var ops = LayoutPass(layoutContainer: self)
-        layoutNodes.collect(into: &ops, context: &context, op: .removed)
+        scheduler.withLayoutEntryScratchFrame { scratch in
+            var ops = LayoutPass(layoutContainer: self, scratch: consume scratch)
+            layoutNodes.collect(into: &ops, context: &context, op: .removed)
+            let entryCount = ops.count
 
-        if ops.entries.count == 1 {
-            context.dom.removeChild(ops.entries[0].reference, from: domNode)
-        } else if ops.entries.count > 1 {
-            context.dom.clearChildren(in: domNode)
+            ops.consume { entries in
+                if entryCount == 1 {
+                    context.dom.removeChild(entries[unchecked: 0].reference, from: domNode)
+                } else if entryCount > 1 {
+                    context.dom.clearChildren(in: domNode)
+                }
+            }
         }
     }
 
@@ -74,40 +79,46 @@ final class LayoutContainer {
         guard isDirty else { return }
         isDirty = false
 
-        // TODO: use lifetimes and scratch container here
-        var ops = LayoutPass(layoutContainer: self)
-        layoutNodes.collect(into: &ops, context: &context, op: .unchanged)
+        scheduler.withLayoutEntryScratchFrame { scratch in
+            var ops = LayoutPass(layoutContainer: self, scratch: consume scratch)
+            layoutNodes.collect(into: &ops, context: &context, op: .unchanged)
+            let canBatchReplace = ops.canBatchReplace
+            let isAllRemovals = ops.isAllRemovals
+            let isAllAdditions = ops.isAllAdditions
 
-        if ops.canBatchReplace {
-            if ops.isAllRemovals {
-                context.dom.clearChildren(in: domNode)
-            } else if ops.isAllAdditions {
-                for index in ops.entries.indices {
-                    context.dom.appendChild(ops.entries[index].reference, to: domNode)
+            ops.consume { entries in
+                if canBatchReplace {
+                    if isAllRemovals {
+                        context.dom.clearChildren(in: domNode)
+                    } else if isAllAdditions {
+                        for index in entries.indices {
+                            context.dom.appendChild(entries[unchecked: index].reference, to: domNode)
+                        }
+                    } else {
+                        fatalError("invalid batch replace pass in layout container")
+                    }
+                } else {
+                    var sibling: DOM.Node?
+                    var index = entries.count
+                    while index > 0 {
+                        index -= 1
+                        let entry = entries[unchecked: index]
+                        switch entry.op {
+                        case .added, .moved:
+                            context.dom.insertChild(entry.reference, before: sibling, in: domNode)
+                            sibling = entry.reference
+                        case .removed:
+                            context.dom.removeChild(entry.reference, from: domNode)
+                        case .unchanged:
+                            sibling = entry.reference
+                        }
+                    }
                 }
-            } else {
-                fatalError("invalid batch replace pass in layout container")
-            }
-        } else {
-            var sibling: DOM.Node?
-            var index = ops.entries.endIndex
-            while index > ops.entries.startIndex {
-                index -= 1
-                let entry = ops.entries[index]
-                switch entry.op {
-                case .added, .moved:
-                    context.dom.insertChild(entry.reference, before: sibling, in: domNode)
-                    sibling = entry.reference
-                case .removed:
-                    context.dom.removeChild(entry.reference, from: domNode)
-                case .unchanged:
-                    sibling = entry.reference
-                }
-            }
-        }
 
-        for observer in layoutObservers {
-            observer.didLayoutChildren(parent: domNode, entries: ops.entries, context: &context)
+                for observer in layoutObservers {
+                    observer.didLayoutChildren(parent: domNode, entries: entries.span, context: &context)
+                }
+            }
         }
     }
 
@@ -162,24 +173,33 @@ enum LayoutNode {
     }
 }
 
-struct LayoutPass: ~Copyable {
-    var entries: [Entry]
+struct LayoutPass: ~Copyable, ~Escapable {
+    private var entryScratch: ScratchStack<Entry>
     var containerHandle: LayoutContainer.Handle
 
     private(set) var isAllRemovals: Bool = true
     private(set) var isAllAdditions: Bool = true
 
     var canBatchReplace: Bool {
-        (isAllRemovals || isAllAdditions) && entries.count > 1
+        (isAllRemovals || isAllAdditions) && count > 1
     }
 
-    init(layoutContainer: LayoutContainer) {
-        entries = []
+    @_lifetime(copy scratch)
+    fileprivate init(layoutContainer: LayoutContainer, scratch: consuming ScratchStack<Entry>) {
+        self.entryScratch = consume scratch
         self.containerHandle = .init(container: layoutContainer)
     }
 
+    var count: Int {
+        entryScratch.count
+    }
+
+    consuming func consume(_ body: (inout InputSpan<Entry>) -> Void) {
+        entryScratch.consumeFrame(body)
+    }
+
     mutating func append(_ entry: Entry) {
-        entries.append(entry)
+        entryScratch.append(entry)
         isAllAdditions = isAllAdditions && entry.op == .added
         isAllRemovals = isAllRemovals && entry.op == .removed
     }

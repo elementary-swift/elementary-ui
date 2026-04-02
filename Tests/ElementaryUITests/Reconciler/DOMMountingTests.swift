@@ -115,6 +115,29 @@ struct DOMMountingTests {
     }
 
     @Test
+    func mountsSiblingStaticSubtreesWithoutLeakingChildScratch() {
+        #expect(
+            mountOps {
+                div {
+                    p { "Left" }
+                    span { "Right" }
+                }
+            } == [
+                .createElement("div"),
+                .createElement("p"),
+                .createText("Left"),
+                .addChild(parent: "<p>", child: "Left"),
+                .createElement("span"),
+                .createText("Right"),
+                .addChild(parent: "<span>", child: "Right"),
+                .addChild(parent: "<div>", child: "<p>"),
+                .addChild(parent: "<div>", child: "<span>"),
+                .addChild(parent: "<>", child: "<div>"),
+            ]
+        )
+    }
+
+    @Test
     func mountsConditionals() {
         let ops = mountOps {
             div {

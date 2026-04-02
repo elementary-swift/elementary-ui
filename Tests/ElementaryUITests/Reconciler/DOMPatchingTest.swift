@@ -274,6 +274,35 @@ struct DOMPatchingTests {
     }
 
     @Test
+    func pendingKeyedInsertionUnderLayoutObserverStillMounts() {
+        let state = StringListState()
+        let dom = TestDOM()
+
+        dom.mount {
+            div {
+                ForEach(state.items, key: \.self) { item in
+                    p { item }
+                }
+            }
+            .animateContainerLayout()
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        state.items = ["A"]
+        dom.runNextFrame()
+
+        #expect(
+            dom.ops == [
+                .createElement("p"),
+                .createText("A"),
+                .addChild(parent: "<p>", child: "A"),
+                .addChild(parent: "<div>", child: "<p>"),
+            ]
+        )
+    }
+
+    @Test
     func patchesKeyedEmptyList() {
         let state = StringListState(["A", "B", "C"])
         let ops = patchOps {

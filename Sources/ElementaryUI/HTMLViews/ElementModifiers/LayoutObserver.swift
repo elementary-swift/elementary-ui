@@ -1,7 +1,7 @@
 protocol DOMLayoutObserver: Unmountable {
     func willLayoutChildren(parent: DOM.Node, context: inout _TransactionContext)
     func setLeaveStatus(_ node: DOM.Node, isLeaving: Bool, context: inout _TransactionContext)
-    func didLayoutChildren(parent: DOM.Node, entries: [LayoutPass.Entry], context: inout _CommitContext)
+    func didLayoutChildren(parent: DOM.Node, entries: borrowing Span<LayoutPass.Entry>, context: inout _CommitContext)
 }
 
 struct DOMLayoutObservers {

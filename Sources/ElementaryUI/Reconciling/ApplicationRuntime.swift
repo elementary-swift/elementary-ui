@@ -22,11 +22,10 @@ final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
                 // TODO: clean this up and reuse a mount container
                 tx.scheduler.addCommitAction { [self, rootView, rootViewContext] ctx in
                     let (child, container) = ctx.withMountContext(transaction: mountTransaction) { (ctx: consuming _MountContext) in
-                        var ctx = consume ctx
                         let child = AnyReconcilable(
                             RootView._makeNode(rootView, context: rootViewContext, ctx: &ctx)
                         )
-                        let container = ctx.makeLayoutContainer(domNode: domRoot, observers: [])
+                        let container = ctx.consumeAsLayoutContainer(domNode: domRoot, observers: [])
                         return (child, container)
                     }
 
