@@ -34,28 +34,11 @@ final class LayoutContainer {
         }
     }
 
-    // TODO: I get rid of this...
-    func removeAllChildren(_ context: inout _CommitContext) {
-        context.scheduler.scratch.withLayoutEntryScratchFrame { scratch in
-            var ops = LayoutPass(layoutContainer: self, scratch: consume scratch)
-            layoutNodes.collect(into: &ops, context: &context, op: .removed)
-            let entryCount = ops.count
-
-            ops.consume { entries in
-                if entryCount == 1 {
-                    context.dom.removeChild(entries[unchecked: 0].reference, from: domNode)
-                } else if entryCount > 1 {
-                    context.dom.clearChildren(in: domNode)
-                }
-            }
-        }
-    }
-
     private func markDirty(_ tx: inout _TransactionContext) {
         guard !isDirty else { return }
 
         isDirty = true
-        tx.scheduler.addPlacementAction(performLayout(_:))
+        tx.scheduler.addCommitAction(performLayout(_:))
         for observer in layoutObservers {
             observer.willLayoutChildren(parent: domNode, context: &tx)
         }

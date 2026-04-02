@@ -28,7 +28,6 @@ final class Scheduler {
     private var pendingFunctions: PendingFunctionQueue = .init()
     private var pendingUpdates: UniqueArray<(inout _TransactionContext) -> Void> = .init()
     private var pendingCommitActions: UniqueArray<(inout _CommitContext) -> Void> = .init()
-    private var pendingPlacements: UniqueArray<(inout _CommitContext) -> Void> = .init()
     private var pendingEffects: UniqueArray<() -> Void> = .init()
     private var runningAnimations: [AnyAnimatable] = []
 
@@ -55,7 +54,7 @@ final class Scheduler {
     }
 
     private var hasCommitWork: Bool {
-        !pendingCommitActions.isEmpty || !pendingPlacements.isEmpty
+        !pendingCommitActions.isEmpty
     }
 
     private var needsAnimationFrame: Bool {
@@ -93,11 +92,6 @@ final class Scheduler {
     func addCommitAction(_ action: @escaping (inout _CommitContext) -> Void) {
         assert(isUpdateCycleActive, "Commit actions must be added during an update cycle")
         pendingCommitActions.append(action)
-    }
-
-    func addPlacementAction(_ action: @escaping (inout _CommitContext) -> Void) {
-        assert(isUpdateCycleActive, "Placement actions must be added during an update cycle")
-        pendingPlacements.append(action)
     }
 
     // Effects are run after all pending transactions are committed
@@ -243,16 +237,6 @@ final class Scheduler {
                 swap(&actions, &pendingCommitActions)
                 for index in actions.indices {
                     actions[index](&context)
-                }
-            }
-
-            if !pendingPlacements.isEmpty {
-                var placements: UniqueArray<(inout _CommitContext) -> Void> = .init()
-                swap(&placements, &pendingPlacements)
-                var index = placements.endIndex
-                while index > placements.startIndex {
-                    index -= 1
-                    placements[index](&context)
                 }
             }
         }

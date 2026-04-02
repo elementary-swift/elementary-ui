@@ -1,6 +1,7 @@
+import BasicContainers
+
 final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
-    private var rootChild: AnyReconcilable?
-    private var rootContainer: LayoutContainer?
+    private var rootNode: _ConditionalNode?
     private var scheduler: Scheduler
 
     init(dom: DOMInteractor) {
@@ -16,43 +17,40 @@ final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
             tx.withModifiedTransaction {
                 $0.disablesAnimation = true
             } run: { tx in
-                let rootViewContext = _ViewContext()
-                let mountTransaction = tx.transaction
 
-                // TODO: clean this up and reuse a mount container
-                tx.scheduler.addCommitAction { [self, rootView, rootViewContext] ctx in
-                    let (child, container) = ctx.withMountContext(transaction: mountTransaction) { (ctx: consuming _MountContext) in
-                        let child = AnyReconcilable(
-                            RootView._makeNode(rootView, context: rootViewContext, ctx: &ctx)
-                        )
-                        let container = ctx.consumeAsLayoutContainer(domNode: domRoot, observers: [])
-                        return (child, container)
-                    }
+                tx.scheduler.addCommitAction { [self, transaction = tx.transaction, rootView] ctx in
+                    self.rootNode =
+                        ctx.withMountContext(transaction: transaction) {
+                            (mountCtx: consuming _MountContext) in
+                            let node = _ConditionalNode(
+                                isA: true,
+                                context: _ViewContext(),
+                                ctx: &mountCtx,
+                                makeActive: { viewContext, mountCtx in
+                                    RootView._makeNode(rootView, context: viewContext, ctx: &mountCtx)
+                                }
+                            )
 
-                    container.mountInitial(&ctx)
-
-                    self.rootChild = child
-                    self.rootContainer = container
+                            _ = mountCtx.mountInDOMNode(domRoot, observers: [])
+                            return node
+                        }
                 }
             }
         }
     }
 
     func unmount() {
-        guard let rootChild, let rootContainer else { return }
+        guard var rootNode = self.rootNode.take() else { return }
 
-        scheduler.scheduleUpdate { [rootChild, rootContainer] tx in
+        scheduler.scheduleUpdate { tx in
             tx.withModifiedTransaction {
                 $0.disablesAnimation = true
             } run: { tx in
-                tx.scheduler.addPlacementAction { ctx in
-                    rootContainer.removeAllChildren(&ctx)
-                    rootChild.unmount(&ctx)
-                }
+                rootNode.patchWithB(tx: &tx, makeNode: { _, _ in _EmptyNode() }, updateNode: { _, _ in })
+
+                // Break the root container/layout cycle after patch-driven removals are committed.
+                tx.scheduler.addCommitAction { ctx in rootNode.unmount(&ctx) }
             }
         }
-
-        self.rootChild = nil
-        self.rootContainer = nil
     }
 }
