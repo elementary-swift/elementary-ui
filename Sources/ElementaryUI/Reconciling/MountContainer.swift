@@ -485,5 +485,9 @@ extension MountContainer {
         mutating func unmount(_ context: inout _CommitContext) {
             mounted.node.unmount(&context)
         }
+
+        deinit {
+            // NOTE: this is a load-bearing deinit
+        }
     }
 }
