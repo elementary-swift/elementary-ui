@@ -8,7 +8,10 @@ GENERATED_SWIFT_FILE="$ROOT_DIR/Sources/BrowserInterop/Generated/BridgeJS.swift"
 cd "$ROOT_DIR"
 
 echo "Generating BridgeJS artifacts for BrowserInterop..."
-swift package --allow-writing-to-package-directory bridge-js --target BrowserInterop
+# TODO: fix this eventually
+# retry once if the first attempt fails - https://github.com/swiftwasm/JavaScriptKit/issues/692
+swift package --allow-writing-to-package-directory bridge-js --target BrowserInterop || \
+  swift package --allow-writing-to-package-directory bridge-js --target BrowserInterop
 
 if [[ -f "$GENERATED_SWIFT_FILE" ]]; then
   if ! grep -qF '// swift-format-ignore-file' "$GENERATED_SWIFT_FILE"; then
