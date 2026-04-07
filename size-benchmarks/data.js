@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775545845505,
+  "lastUpdate": 1775573908894,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -3067,6 +3067,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 189.48,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "518e6ee5875a29cace028617116ea3f21cbbbda3",
+          "message": "Minor performance tweaks (#93)\n\n* simplified runtime mount/unmount\n\n* less allocations for commit actions\n\n* less context copying\n\n* less context copying",
+          "timestamp": "2026-04-07T16:55:37+02:00",
+          "tree_id": "95cc4f4060f9d5c58d3710b8b97a623bca3fe060",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/518e6ee5875a29cace028617116ea3f21cbbbda3"
+        },
+        "date": 1775573908117,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 200.21,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 166.85,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 146.93,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 209.17,
             "unit": "kB"
           }
         ]
