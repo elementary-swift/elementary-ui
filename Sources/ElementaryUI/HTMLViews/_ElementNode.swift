@@ -17,12 +17,16 @@ public struct _ElementNode<Child: _Reconcilable>: _Reconcilable {
     ) {
         let domNode = ctx.dom.createElement(tag)
 
+        ctx.appendStaticElement(domNode)
+
         guard !viewContext.hasNoUpstreamModifiers else {
-            // no upstream: apply attributes directly, skip _AttributeModifier allocation
+            // no upstream: apply attributes directly, skip context copy and _AttributeModifier check
             ctx.dom.addHTMLAttributes(domNode, attributes)
             self.attributes = .inline(node: domNode, lastApplied: attributes)
             self.child = ctx.withChildContext { (mctx: consuming _MountContext) in
-                makeChild(viewContext, &mctx)
+                let child = makeChild(viewContext, &mctx)
+                _ = mctx.mountInDOMNode(domNode, observers: [])
+                return child
             }
             return
         }
@@ -48,8 +52,6 @@ public struct _ElementNode<Child: _Reconcilable>: _Reconcilable {
         for modifier in modifiers.reversed() {
             self.mountedModifiers.append(modifier.mount(domNode, &ctx))
         }
-
-        ctx.appendStaticElement(domNode)
 
         self.child = ctx.withChildContext { (mctx: consuming _MountContext) in
             let child = makeChild(childContext, &mctx)
