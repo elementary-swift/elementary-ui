@@ -15,9 +15,19 @@ public struct _ElementNode<Child: _Reconcilable>: _Reconcilable {
         ctx: inout _MountContext,
         makeChild: (borrowing _ViewContext, inout _MountContext) -> Child
     ) {
-        var childContext = copy viewContext
-
         let domNode = ctx.dom.createElement(tag)
+
+        guard !viewContext.hasNoUpstreamModifiers else {
+            // no upstream: apply attributes directly, skip _AttributeModifier allocation
+            ctx.dom.addHTMLAttributes(domNode, attributes)
+            self.attributes = .inline(node: domNode, lastApplied: attributes)
+            self.child = ctx.withChildContext { (mctx: consuming _MountContext) in
+                makeChild(viewContext, &mctx)
+            }
+            return
+        }
+
+        var childContext = copy viewContext
 
         if childContext.modifiers[_AttributeModifier.key] != nil {
             // upstream modifier exists: chain through _AttributeModifier as before
@@ -72,5 +82,11 @@ public struct _ElementNode<Child: _Reconcilable>: _Reconcilable {
             modifier.unmount(&context)
         }
         mountedModifiers.removeAll()
+    }
+}
+
+private extension _ViewContext {
+    var hasNoUpstreamModifiers: Bool {
+        modifiers.isEmpty && layoutObservers.isEmpty
     }
 }

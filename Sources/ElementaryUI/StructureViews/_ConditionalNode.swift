@@ -11,10 +11,9 @@ public struct _ConditionalNode: _Reconcilable {
         makeActive: (borrowing _ViewContext, inout _MountContext) -> Node
     ) {
         let initialKey = isA ? keyA : keyB
-        let containerContext = copy context
         self.container = MountContainer(
             mountedKey: initialKey,
-            context: consume containerContext,
+            context: context,
             ctx: &ctx,
             makeNode: makeActive
         )

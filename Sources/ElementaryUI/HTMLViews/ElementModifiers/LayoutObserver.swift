@@ -7,6 +7,10 @@ protocol DOMLayoutObserver: Unmountable {
 struct DOMLayoutObservers {
     private var storage: [any DOMLayoutObserver] = []
 
+    var isEmpty: Bool {
+        storage.isEmpty
+    }
+
     mutating func add(_ observer: any DOMLayoutObserver) {
         storage.append(observer)
     }
