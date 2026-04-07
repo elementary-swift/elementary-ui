@@ -28,11 +28,9 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
 
         self.trackingSession = session
 
-        let containerContext = copy context
-
         self.container = MountContainer(
             mountedKeyStorage: keysScratch.span,
-            context: consume containerContext,
+            context: context,
             ctx: &ctx,
             makeNode: { index, context, mountCtx in
                 Content.Value._makeNode(self.viewsScratch[index]._value, context: context, ctx: &mountCtx)

@@ -15,6 +15,26 @@ struct AnyAnimatable {
     let progressAnimation: (inout _TransactionContext) -> AnimationProgressResult
 }
 
+enum CommitAction {
+    case patchText(node: DOM.Node, text: String)
+    case patchAttributes(node: DOM.Node, from: _AttributeStorage, to: _AttributeStorage)
+    case patchLayout(container: LayoutContainer)
+    case closure((inout _CommitContext) -> Void)
+
+    func apply(context: inout _CommitContext) {
+        switch self {
+        case let .patchText(node, text):
+            context.dom.patchText(node, with: text)
+        case let .patchAttributes(node, previousAttributes, newAttributes):
+            context.dom.applyHTMLAttributes(node, from: previousAttributes, to: newAttributes)
+        case let .patchLayout(container):
+            container.performLayout(&context)
+        case let .closure(action):
+            action(&context)
+        }
+    }
+}
+
 final class Scheduler {
     private let dom: any DOM.Interactor
 
@@ -27,8 +47,7 @@ final class Scheduler {
     // Work queues
     private var pendingFunctions: PendingFunctionQueue = .init()
     private var pendingUpdates: UniqueArray<(inout _TransactionContext) -> Void> = .init()
-    private var pendingCommitActions: UniqueArray<(inout _CommitContext) -> Void> = .init()
-    private var pendingPlacements: UniqueArray<(inout _CommitContext) -> Void> = .init()
+    private var pendingCommitActions: UniqueArray<CommitAction> = .init()
     private var pendingEffects: UniqueArray<() -> Void> = .init()
     private var runningAnimations: [AnyAnimatable] = []
 
@@ -55,7 +74,7 @@ final class Scheduler {
     }
 
     private var hasCommitWork: Bool {
-        !pendingCommitActions.isEmpty || !pendingPlacements.isEmpty
+        !pendingCommitActions.isEmpty
     }
 
     private var needsAnimationFrame: Bool {
@@ -90,14 +109,13 @@ final class Scheduler {
         pendingUpdates.append(callback)
     }
 
-    func addCommitAction(_ action: @escaping (inout _CommitContext) -> Void) {
+    func addCommitAction(_ action: CommitAction) {
         assert(isUpdateCycleActive, "Commit actions must be added during an update cycle")
         pendingCommitActions.append(action)
     }
 
-    func addPlacementAction(_ action: @escaping (inout _CommitContext) -> Void) {
-        assert(isUpdateCycleActive, "Placement actions must be added during an update cycle")
-        pendingPlacements.append(action)
+    func addCommitAction(_ action: @escaping (inout _CommitContext) -> Void) {
+        addCommitAction(.closure(action))
     }
 
     // Effects are run after all pending transactions are committed
@@ -239,20 +257,10 @@ final class Scheduler {
             precondition(passes <= maxCommitPasses, "Exceeded \(maxCommitPasses) commit passes - infinite loop?")
 
             if !pendingCommitActions.isEmpty {
-                var actions: UniqueArray<(inout _CommitContext) -> Void> = .init()
+                var actions: UniqueArray<CommitAction> = .init()
                 swap(&actions, &pendingCommitActions)
                 for index in actions.indices {
-                    actions[index](&context)
-                }
-            }
-
-            if !pendingPlacements.isEmpty {
-                var placements: UniqueArray<(inout _CommitContext) -> Void> = .init()
-                swap(&placements, &pendingPlacements)
-                var index = placements.endIndex
-                while index > placements.startIndex {
-                    index -= 1
-                    placements[index](&context)
+                    actions[index].apply(context: &context)
                 }
             }
         }

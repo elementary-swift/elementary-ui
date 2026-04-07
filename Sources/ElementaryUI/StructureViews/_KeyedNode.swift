@@ -7,10 +7,9 @@ public struct _KeyedNode: _Reconcilable {
         ctx: inout _MountContext,
         makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> Node
     ) {
-        let containerContext = copy context
         self.container = MountContainer(
             mountedKeyStorage: keys,
-            context: consume containerContext,
+            context: context,
             ctx: &ctx,
             makeNode: makeNode
         )
@@ -23,10 +22,9 @@ public struct _KeyedNode: _Reconcilable {
         ctx: inout _MountContext,
         makeNode: (borrowing _ViewContext, inout _MountContext) -> Node
     ) {
-        let containerContext = copy context
         self.container = MountContainer(
             mountedKey: key,
-            context: consume containerContext,
+            context: context,
             ctx: &ctx,
             makeNode: makeNode
         )

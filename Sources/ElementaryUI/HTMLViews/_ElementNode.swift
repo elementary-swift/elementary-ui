@@ -15,9 +15,23 @@ public struct _ElementNode<Child: _Reconcilable>: _Reconcilable {
         ctx: inout _MountContext,
         makeChild: (borrowing _ViewContext, inout _MountContext) -> Child
     ) {
-        var childContext = copy viewContext
-
         let domNode = ctx.dom.createElement(tag)
+
+        ctx.appendStaticElement(domNode)
+
+        guard !viewContext.hasNoUpstreamModifiers else {
+            // no upstream: apply attributes directly, skip context copy and _AttributeModifier check
+            ctx.dom.addHTMLAttributes(domNode, attributes)
+            self.attributes = .inline(node: domNode, lastApplied: attributes)
+            self.child = ctx.withChildContext { (mctx: consuming _MountContext) in
+                let child = makeChild(viewContext, &mctx)
+                _ = mctx.mountInDOMNode(domNode, observers: [])
+                return child
+            }
+            return
+        }
+
+        var childContext = copy viewContext
 
         if childContext.modifiers[_AttributeModifier.key] != nil {
             // upstream modifier exists: chain through _AttributeModifier as before
@@ -39,8 +53,6 @@ public struct _ElementNode<Child: _Reconcilable>: _Reconcilable {
             self.mountedModifiers.append(modifier.mount(domNode, &ctx))
         }
 
-        ctx.appendStaticElement(domNode)
-
         self.child = ctx.withChildContext { (mctx: consuming _MountContext) in
             let child = makeChild(childContext, &mctx)
             _ = mctx.mountInDOMNode(domNode, observers: layoutObservers)  //NOTE: maybe hold on to the container?
@@ -58,10 +70,7 @@ public struct _ElementNode<Child: _Reconcilable>: _Reconcilable {
             modifier.updateValue(attributes, &context)
         case .inline(let node, let lastApplied):
             if attributes != lastApplied {
-                let (prev, next, n) = (lastApplied, attributes, node)
-                context.scheduler.addCommitAction { ctx in
-                    ctx.dom.applyHTMLAttributes(n, from: prev, to: next)
-                }
+                context.scheduler.addCommitAction(.patchAttributes(node: node, from: lastApplied, to: attributes))
                 self.attributes = .inline(node: node, lastApplied: attributes)
             }
         }
@@ -75,5 +84,11 @@ public struct _ElementNode<Child: _Reconcilable>: _Reconcilable {
             modifier.unmount(&context)
         }
         mountedModifiers.removeAll()
+    }
+}
+
+private extension _ViewContext {
+    var hasNoUpstreamModifiers: Bool {
+        modifiers.isEmpty && layoutObservers.isEmpty
     }
 }

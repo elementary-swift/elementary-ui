@@ -106,9 +106,9 @@ final class MountContainer {
             removed.unmount(&context)
         }
 
-        activeSlots.removeAll(keepingCapacity: true)
-        leavingSlots.removeAll(keepingCapacity: true)
-        removedNodes.removeAll(keepingCapacity: true)
+        activeSlots.removeAll()
+        leavingSlots.removeAll()
+        removedNodes.removeAll()
         containerHandle = nil
     }
 
