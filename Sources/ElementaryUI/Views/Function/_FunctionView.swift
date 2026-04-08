@@ -1,4 +1,4 @@
-public protocol __FunctionView: View where _MountedNode == _FunctionNode<Self, Self.Body._MountedNode> {
+public protocol __FunctionView: _Mountable, View {
     associatedtype __ViewState
 
     static func __initializeState(from view: borrowing Self) -> __ViewState
@@ -18,8 +18,8 @@ public extension __FunctionView {
         _ view: consuming Self,
         context: borrowing _ViewContext,
         ctx: inout _MountContext
-    ) -> _MountedNode {
-        .init(
+    ) -> _FunctionNode<Self> {
+        _FunctionNode(
             value: view,
             context: context,
             ctx: &ctx
@@ -28,14 +28,14 @@ public extension __FunctionView {
 
     static func _patchNode(
         _ view: consuming Self,
-        node: inout _MountedNode,
+        node: inout _FunctionNode<Self>,
         tx: inout _TransactionContext
     ) {
         node.patch(view, tx: &tx)
     }
 }
 
-public extension __FunctionView where __ViewState == Void {
+public extension __FunctionView {
     static func __initializeState(from view: borrowing Self) {}
     static func __restoreState(_ storage: __ViewState, in view: inout Self) {}
 }

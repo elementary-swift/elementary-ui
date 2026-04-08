@@ -49,7 +49,7 @@ final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
                 rootNode.patchWithB(tx: &tx, makeNode: { _, _ in _EmptyNode() }, updateNode: { _, _ in })
 
                 // Break the root container/layout cycle after patch-driven removals are committed.
-                tx.scheduler.addCommitAction { ctx in rootNode.unmount(&ctx) }
+                tx.scheduler.addCommitAction { ctx in rootNode.container.unmount(&ctx) }
             }
         }
     }

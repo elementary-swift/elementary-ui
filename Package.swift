@@ -32,10 +32,11 @@ let package = Package(
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v5),
-                .enableExperimentalFeature("Lifetimes"),
                 .enableUpcomingFeature("ExistentialAny"),
                 .enableUpcomingFeature("ConciseMagicFile"),
                 .enableUpcomingFeature("ImplicitOpenExistentials"),
+                .enableExperimentalFeature("Lifetimes"),
+                .enableExperimentalFeature("SuppressedAssociatedTypes"),
             ]
         ),
         .target(

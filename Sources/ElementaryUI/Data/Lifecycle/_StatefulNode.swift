@@ -1,25 +1,23 @@
-public struct _StatefulNode<State, Child: _Reconcilable> {
+public struct _StatefulNode<State: ~Copyable, Child: _Reconcilable & ~Copyable>: ~Copyable, _Reconcilable {
     var state: State
     var child: Child
     private var onUnmount: ((inout _CommitContext) -> Void)?
 
-    init(state: State, child: Child) {
+    init(state: consuming State, child: consuming Child) {
         self.state = state
         self.child = child
     }
 
-    private init(state: State, child: Child, onUnmount: ((inout _CommitContext) -> Void)? = nil) {
+    private init(state: consuming State, child: consuming Child, onUnmount: ((inout _CommitContext) -> Void)? = nil) {
         self.state = state
         self.child = child
         self.onUnmount = onUnmount
     }
 
-    init(state: State, child: Child) where State: Unmountable {
+    init(state: consuming State, child: consuming Child) where State: Unmountable {
         self.init(state: state, child: child, onUnmount: state.unmount(_:))
     }
-}
 
-extension _StatefulNode: _Reconcilable {
     public consuming func unmount(_ context: inout _CommitContext) {
         child.unmount(&context)
         onUnmount?(&context)

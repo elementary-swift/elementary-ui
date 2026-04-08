@@ -4,8 +4,8 @@ import Reactivity
 
 // NOTE: ChildNode must be specified as extra argument to avoid a compiler error in embedded
 // FIXME: embedded - try with embedded main-snapshot build, revert extra argument if it works
-public final class _FunctionNode<Value, ChildNode>
-where Value: __FunctionView, ChildNode: _Reconcilable, ChildNode == Value.Body._MountedNode {
+public final class _FunctionNode<Value>
+where Value: __FunctionView {
     private var state: Value.__ViewState?
     private var value: Value?
     private var context: _ViewContext?
@@ -134,7 +134,7 @@ extension _FunctionNode: _Reconcilable {
 }
 
 extension AnyFunctionNode {
-    init(_ function: _FunctionNode<some __FunctionView, some _Reconcilable>) {
+    init(_ function: _FunctionNode<some __FunctionView>) {
         self.identifier = ObjectIdentifier(function)
         self.depthInTree = function.depthInTree
         self.runUpdate = function.runFunction

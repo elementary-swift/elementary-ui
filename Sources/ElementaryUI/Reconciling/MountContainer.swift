@@ -19,7 +19,7 @@ final class MountContainer {
         self.activeSlots = slots
     }
 
-    convenience init<Node: _Reconcilable>(
+    convenience init<Node: _Reconcilable & ~Copyable>(
         mountedKey key: _ViewKey,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
@@ -45,7 +45,7 @@ final class MountContainer {
         )
     }
 
-    convenience init<Node: _Reconcilable>(
+    convenience init<Node: _Reconcilable & ~Copyable>(
         mountedKeyStorage keys: borrowing Span<_ViewKey>,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,

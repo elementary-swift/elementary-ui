@@ -18,8 +18,8 @@ extension _HTMLTuple2: _Mountable where V0: _Mountable, V1: _Mountable {
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        V0._patchNode(view.v0, node: &node.value.0, tx: &tx)
-        V1._patchNode(view.v1, node: &node.value.1, tx: &tx)
+        V0._patchNode(view.v0, node: &node.n0, tx: &tx)
+        V1._patchNode(view.v1, node: &node.n1, tx: &tx)
     }
 }
 
@@ -44,9 +44,9 @@ extension _HTMLTuple3: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mou
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        V0._patchNode(view.v0, node: &node.value.0, tx: &tx)
-        V1._patchNode(view.v1, node: &node.value.1, tx: &tx)
-        V2._patchNode(view.v2, node: &node.value.2, tx: &tx)
+        V0._patchNode(view.v0, node: &node.n0, tx: &tx)
+        V1._patchNode(view.v1, node: &node.n1, tx: &tx)
+        V2._patchNode(view.v2, node: &node.n2, tx: &tx)
     }
 }
 
@@ -72,10 +72,10 @@ extension _HTMLTuple4: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mou
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        V0._patchNode(view.v0, node: &node.value.0, tx: &tx)
-        V1._patchNode(view.v1, node: &node.value.1, tx: &tx)
-        V2._patchNode(view.v2, node: &node.value.2, tx: &tx)
-        V3._patchNode(view.v3, node: &node.value.3, tx: &tx)
+        V0._patchNode(view.v0, node: &node.n0, tx: &tx)
+        V1._patchNode(view.v1, node: &node.n1, tx: &tx)
+        V2._patchNode(view.v2, node: &node.n2, tx: &tx)
+        V3._patchNode(view.v3, node: &node.n3, tx: &tx)
     }
 }
 
@@ -102,11 +102,11 @@ extension _HTMLTuple5: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mou
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        V0._patchNode(view.v0, node: &node.value.0, tx: &tx)
-        V1._patchNode(view.v1, node: &node.value.1, tx: &tx)
-        V2._patchNode(view.v2, node: &node.value.2, tx: &tx)
-        V3._patchNode(view.v3, node: &node.value.3, tx: &tx)
-        V4._patchNode(view.v4, node: &node.value.4, tx: &tx)
+        V0._patchNode(view.v0, node: &node.n0, tx: &tx)
+        V1._patchNode(view.v1, node: &node.n1, tx: &tx)
+        V2._patchNode(view.v2, node: &node.n2, tx: &tx)
+        V3._patchNode(view.v3, node: &node.n3, tx: &tx)
+        V4._patchNode(view.v4, node: &node.n4, tx: &tx)
     }
 }
 
@@ -136,16 +136,16 @@ extension _HTMLTuple6: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mou
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        V0._patchNode(view.v0, node: &node.value.0, tx: &tx)
-        V1._patchNode(view.v1, node: &node.value.1, tx: &tx)
-        V2._patchNode(view.v2, node: &node.value.2, tx: &tx)
-        V3._patchNode(view.v3, node: &node.value.3, tx: &tx)
-        V4._patchNode(view.v4, node: &node.value.4, tx: &tx)
-        V5._patchNode(view.v5, node: &node.value.5, tx: &tx)
+        V0._patchNode(view.v0, node: &node.n0, tx: &tx)
+        V1._patchNode(view.v1, node: &node.n1, tx: &tx)
+        V2._patchNode(view.v2, node: &node.n2, tx: &tx)
+        V3._patchNode(view.v3, node: &node.n3, tx: &tx)
+        V4._patchNode(view.v4, node: &node.n4, tx: &tx)
+        V5._patchNode(view.v5, node: &node.n5, tx: &tx)
     }
 }
 
-#if !hasFeature(Embedded)
+#if false  // non-copyable + tuples no bueno for now
 // Generic variadic tuple support using parameter packs
 extension _HTMLTuple: View where repeat each Child: View {}
 extension _HTMLTuple: _Mountable where repeat each Child: _Mountable {
