@@ -67,7 +67,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
         }
     }
 
-    mutating func withTransitionBoundary<R>(_ body: (inout _MountContext) -> R) -> R {
+    mutating func withTransitionBoundary<R: ~Copyable>(_ body: (inout _MountContext) -> R) -> R {
         let previousIsRoot = isRoot
         isRoot = false
         let result = body(&self)

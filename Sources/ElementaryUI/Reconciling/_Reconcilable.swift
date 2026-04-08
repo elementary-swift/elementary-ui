@@ -4,7 +4,7 @@ public protocol _Reconcilable: ~Copyable {
     consuming func unmount(_ context: inout _CommitContext)
 }
 
-struct AnyReconcilable {
+struct AnyReconcilable: ~Copyable {
     class _Box {
         func unmount(_ context: inout _CommitContext) {}
     }

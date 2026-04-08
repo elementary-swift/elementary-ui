@@ -120,7 +120,7 @@ final class MountContainer {
         keys newKeys: borrowing Span<_ViewKey>,
         tx: inout _TransactionContext,
         makeNode: @escaping (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
-        patchNode: (Int, AnyReconcilable, inout _TransactionContext) -> Void
+        patchNode: (Int, inout AnyReconcilable, inout _TransactionContext) -> Void
     ) {
         pendingMakeNode = makeNode
         patchPrepared(keys: newKeys, tx: &tx, patchNode: patchNode)
@@ -130,17 +130,17 @@ final class MountContainer {
         key newKey: _ViewKey,
         tx: inout _TransactionContext,
         makeNode: @escaping (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
-        patchNode: (AnyReconcilable, inout _TransactionContext) -> Void
+        patchNode: (inout AnyReconcilable, inout _TransactionContext) -> Void
     ) {
         pendingMakeNode = { _, viewContext, mountCtx in makeNode(viewContext, &mountCtx) }
 
-        patchPrepared(keys: CollectionOfOne(newKey).span, tx: &tx) { _, node, tx in patchNode(node, &tx) }
+        patchPrepared(keys: CollectionOfOne(newKey).span, tx: &tx) { _, node, tx in patchNode(&node, &tx) }
     }
 
     private func patchPrepared(
         keys: borrowing Span<_ViewKey>,
         tx: inout _TransactionContext,
-        patchNode: (Int, AnyReconcilable, inout _TransactionContext) -> Void
+        patchNode: (Int, inout AnyReconcilable, inout _TransactionContext) -> Void
     ) {
         prepareLaneCapacities(newCount: keys.count)
 
@@ -327,21 +327,21 @@ extension MountContainer {
             newKeyIndex: Int,
             tx: inout _TransactionContext,
             containerHandle: LayoutContainer.Handle?,
-            patchNode: (Int, AnyReconcilable, inout _TransactionContext) -> Void
+            patchNode: (Int, inout AnyReconcilable, inout _TransactionContext) -> Void
         ) {
             let state = takeState()
 
             switch consume state {
             case .pending:
                 setPending(transaction: tx.transaction, newKeyIndex: newKeyIndex)
-            case .mounted(let mounted):
-                patchNode(newKeyIndex, mounted.node, &tx)
+            case .mounted(var mounted):
+                patchNode(newKeyIndex, &mounted.node, &tx)
                 setMounted(mounted)
             case .reviving(var mounted):
                 mounted.transitionCoordinator?.cancelRemoval(tx: &tx)
                 mounted.didMove = true
                 Self.reportReenteringElements(of: mounted, handle: containerHandle, tx: &tx)
-                patchNode(newKeyIndex, mounted.node, &tx)
+                patchNode(newKeyIndex, &mounted.node, &tx)
                 setMounted(mounted)
             case .removed:
                 preconditionFailure("active lane contains removed slot")
