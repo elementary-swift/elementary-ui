@@ -1,27 +1,27 @@
 // TODO: either get rid of this protocol entirely, or turn it into a dedicated
 // mount lifecycle owner type.
-public protocol _Reconcilable {
+public protocol _Reconcilable: ~Copyable {
     consuming func unmount(_ context: inout _CommitContext)
 }
 
-struct AnyReconcilable {
+struct AnyReconcilable: ~Copyable {
     class _Box {
         func unmount(_ context: inout _CommitContext) {}
     }
 
-    final class _TypedBox<R: _Reconcilable>: _Box {
-        var node: R
+    final class _TypedBox<R: _Reconcilable & ~Copyable>: _Box {
+        var node: R?
 
-        init(_ node: consuming R) { self.node = node }
+        init(_ node: consuming R) { self.node = .some(node) }
 
         override func unmount(_ context: inout _CommitContext) {
-            node.unmount(&context)
+            node.take()?.unmount(&context)
         }
     }
 
     private var box: _Box
 
-    init<R: _Reconcilable>(_ node: R) {
+    init<R: _Reconcilable & ~Copyable>(_ node: consuming R) {
         self.box = _TypedBox(node)
 
     }
@@ -30,8 +30,8 @@ struct AnyReconcilable {
     }
 
     // TODO: make this mutating to prepare for ~Copyable all the way
-    func modify<R: _Reconcilable>(as type: R.Type = R.self, _ body: (inout R) -> Void) {
+    func modify<R: _Reconcilable & ~Copyable>(as type: R.Type = R.self, _ body: (inout R) -> Void) {
         let box = unsafeDowncast(self.box, to: _TypedBox<R>.self)
-        body(&box.node)
+        body(&box.node!)
     }
 }

@@ -1,18 +1,8 @@
 import BasicContainers
 
-struct AnyFunctionNode {
-    let identifier: ObjectIdentifier
-    let depthInTree: Int
-    let runUpdate: (inout _TransactionContext) -> Void
-}
-
 enum AnimationProgressResult {
     case stillRunning
     case completed
-}
-
-struct AnyAnimatable {
-    let progressAnimation: (inout _TransactionContext) -> AnimationProgressResult
 }
 
 enum CommitAction {
@@ -49,7 +39,7 @@ final class Scheduler {
     private var pendingUpdates: UniqueArray<(inout _TransactionContext) -> Void> = .init()
     private var pendingCommitActions: UniqueArray<CommitAction> = .init()
     private var pendingEffects: UniqueArray<() -> Void> = .init()
-    private var runningAnimations: [AnyAnimatable] = []
+    private var runningAnimations: [_SchedulableNode] = []
 
     // Scheduling state
     // True while an update cycle is either scheduled or currently running.
@@ -88,7 +78,7 @@ final class Scheduler {
 
     // MARK: - Public API
 
-    func invalidateFunction(_ function: AnyFunctionNode) {
+    func invalidateFunction(_ function: _SchedulableNode) {
         if ambientContext != nil {
             ambientContext!.addFunction(function)
             return
@@ -124,8 +114,8 @@ final class Scheduler {
         ensureUpdateCycleScheduled()
     }
 
-    func registerAnimation(_ animation: AnyAnimatable) {
-        runningAnimations.append(animation)
+    func registerAnimation(_ node: _SchedulableNode) {
+        runningAnimations.append(node)
         ensureAnimationFrameScheduled()
     }
 
@@ -286,8 +276,8 @@ final class Scheduler {
             transaction: transaction
         )
 
-        runningAnimations.removeAll(where: { animation in
-            let result = animation.progressAnimation(&context)
+        runningAnimations.removeAll(where: { node in
+            let result = node.progressAnimation(tx: &context)
             return result == .completed
         })
 

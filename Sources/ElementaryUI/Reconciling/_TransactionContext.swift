@@ -17,7 +17,7 @@ public struct _TransactionContext: ~Copyable {
         self.transaction = transaction ?? .init()
     }
 
-    mutating func addFunction(_ function: AnyFunctionNode) {
+    mutating func addFunction(_ function: _SchedulableNode) {
         pendingFunctions.registerFunctionForUpdate(function, transaction: transaction)
     }
 
@@ -32,7 +32,7 @@ public struct _TransactionContext: ~Copyable {
     consuming func drain() {
         while let (node, transaction) = pendingFunctions.next() {
             self.transaction = transaction ?? .init()
-            node.runUpdate(&self)
+            node.runUpdate(tx: &self)
         }
     }
 }

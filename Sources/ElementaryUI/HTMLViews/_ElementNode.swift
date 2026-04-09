@@ -3,7 +3,7 @@ enum _ElementAttributes {
     case modifier(_AttributeModifier)
 }
 
-public struct _ElementNode<Child: _Reconcilable>: _Reconcilable {
+public struct _ElementNode<Child: _Reconcilable & ~Copyable>: ~Copyable, _Reconcilable {
     private var child: Child
     private var attributes: _ElementAttributes
     private var mountedModifiers: [AnyUnmountable] = []

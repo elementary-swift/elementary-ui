@@ -58,7 +58,7 @@ public protocol View<Tag>: HTML & _Mountable where Body: HTML & _Mountable {
 }
 
 public protocol _Mountable {
-    associatedtype _MountedNode: _Reconcilable
+    associatedtype _MountedNode: _Reconcilable & ~Copyable
 
     static func _makeNode(
         _ view: consuming Self,

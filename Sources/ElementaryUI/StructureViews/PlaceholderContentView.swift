@@ -43,7 +43,7 @@ extension PlaceholderContentView: _Mountable {
 public final class _PlaceholderNode: _Reconcilable {
     var node: AnyReconcilable
 
-    init(node: AnyReconcilable) {
+    init(node: consuming AnyReconcilable) {
         self.node = node
     }
 

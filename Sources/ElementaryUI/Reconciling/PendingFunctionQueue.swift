@@ -1,12 +1,12 @@
 import BasicContainers
 
 struct PendingFunctionQueue: ~Copyable {
-    private var functionsToRun: UniqueArray<(AnyFunctionNode, Transaction?)> = .init()
+    private var functionsToRun: UniqueArray<(_SchedulableNode, Transaction?)> = .init()
 
     var isEmpty: Bool { functionsToRun.isEmpty }
 
     // TODO: add transaction here?
-    mutating func registerFunctionForUpdate(_ node: AnyFunctionNode, transaction: Transaction?) {
+    mutating func registerFunctionForUpdate(_ node: _SchedulableNode, transaction: Transaction?) {
         logTrace("registering function run \(node.identifier)")
         // sorted insert by depth in reverse order, avoiding duplicates
         var inserted = false
@@ -30,7 +30,7 @@ struct PendingFunctionQueue: ~Copyable {
         }
     }
 
-    mutating func next() -> (AnyFunctionNode, Transaction?)? {
+    mutating func next() -> (_SchedulableNode, Transaction?)? {
         functionsToRun.popLast()
     }
 

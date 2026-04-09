@@ -1,4 +1,4 @@
-struct ReactivePropertyAccessList: Sendable {
+package struct ReactivePropertyAccessList: Sendable {
     struct Entry: Sendable {
         var tracker: ReactivityTracker
         var properties: Set<PropertyID> = []
@@ -26,7 +26,7 @@ struct ReactivePropertyAccessList: Sendable {
     }
 }
 
-struct ReactiveTrackingSession: Sendable {
+package struct ReactiveTrackingSession: Sendable {
     private struct State {
         var subscriptions: [ReactivityTracker.SubscriptionToken] = []
         var isCancelled = false
@@ -55,7 +55,7 @@ struct ReactiveTrackingSession: Sendable {
     }
 }
 
-private func withAccessTracking<T>(_ block: () -> T) -> (T, ReactivePropertyAccessList?) {
+package func withAccessTracking<T>(_ block: () -> T) -> (T, ReactivePropertyAccessList?) {
     var accessList: ReactivePropertyAccessList?
 
     let result = withUnsafeMutablePointer(to: &accessList) { ptr in
@@ -78,7 +78,7 @@ private func withAccessTracking<T>(_ block: () -> T) -> (T, ReactivePropertyAcce
 }
 
 extension ReactiveTrackingSession {
-    func trackWillSet(for accessList: consuming ReactivePropertyAccessList, _ observer: @Sendable @escaping (PropertyID) -> Void) {
+    package func trackWillSet(for accessList: consuming ReactivePropertyAccessList, _ observer: @Sendable @escaping (PropertyID) -> Void) {
         add(
             subscriptions: accessList.entries.values.map { entry in
                 entry.tracker.registerTracking(for: entry.properties, willSet: observer)
@@ -154,7 +154,7 @@ package struct TrackingSession {
 
     init() {}
 
-    init(_ cancel: @escaping () -> Void) {
+    package init(_ cancel: @escaping () -> Void) {
         _cancel = cancel
     }
 

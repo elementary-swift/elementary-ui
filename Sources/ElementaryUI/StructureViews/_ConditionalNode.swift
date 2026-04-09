@@ -1,10 +1,10 @@
 private let keyA = _ViewKey(0)
 private let keyB = _ViewKey(1)
 
-public struct _ConditionalNode: _Reconcilable {
+public struct _ConditionalNode: ~Copyable, _Reconcilable {
     let container: MountContainer
 
-    init<Node: _Reconcilable>(
+    init<Node: _Reconcilable & ~Copyable>(
         isA: Bool,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
@@ -20,7 +20,7 @@ public struct _ConditionalNode: _Reconcilable {
         ctx.appendContainer(container)
     }
 
-    mutating func patchWithA<NodeA: _Reconcilable>(
+    mutating func patchWithA<NodeA: _Reconcilable & ~Copyable>(
         tx: inout _TransactionContext,
         makeNode: @escaping (borrowing _ViewContext, inout _MountContext) -> NodeA,
         updateNode: (inout NodeA, inout _TransactionContext) -> Void
@@ -33,7 +33,7 @@ public struct _ConditionalNode: _Reconcilable {
         )
     }
 
-    mutating func patchWithB<NodeB: _Reconcilable>(
+    mutating func patchWithB<NodeB: _Reconcilable & ~Copyable>(
         tx: inout _TransactionContext,
         makeNode: @escaping (borrowing _ViewContext, inout _MountContext) -> NodeB,
         updateNode: (inout NodeB, inout _TransactionContext) -> Void
@@ -52,7 +52,7 @@ public struct _ConditionalNode: _Reconcilable {
 }
 
 private extension _ConditionalNode {
-    mutating func patchBranch<Node: _Reconcilable>(
+    mutating func patchBranch<Node: _Reconcilable & ~Copyable>(
         key: _ViewKey,
         tx: inout _TransactionContext,
         makeNode: @escaping (borrowing _ViewContext, inout _MountContext) -> Node,

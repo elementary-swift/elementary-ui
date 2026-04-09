@@ -95,7 +95,7 @@ enum LifecycleHook {
     case onAppearReturningCancelFunction(() -> () -> Void)
 }
 
-struct _LifecycleEventView<Wrapped: View>: View {
+struct _LifecycleEventView<Wrapped: View>: View, _Mountable {
     typealias Tag = Wrapped.Tag
     typealias _MountedNode = _StatefulNode<LifecycleState, Wrapped._MountedNode>
 
