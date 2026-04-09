@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775719043633,
+  "lastUpdate": 1775766705885,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -3195,6 +3195,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 209.17,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8a4474f7c7db856844fb2deb64dc566f83d05288",
+          "message": "Noncopyable node types (#94)\n\n* WIP: non-copyable nodes\n\n* WIP: noncopyable nodes\n\n* noncopyable function node",
+          "timestamp": "2026-04-09T22:28:51+02:00",
+          "tree_id": "11139caeafe50e95726c41be4a0a123b801f730b",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/8a4474f7c7db856844fb2deb64dc566f83d05288"
+        },
+        "date": 1775766705370,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 200.95,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 167.65,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 147.39,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 205.59,
             "unit": "kB"
           }
         ]
