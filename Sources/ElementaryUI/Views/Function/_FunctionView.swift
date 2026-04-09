@@ -19,11 +19,7 @@ public extension __FunctionView {
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) -> _FunctionNode<Self> {
-        _FunctionNode(
-            value: view,
-            context: context,
-            ctx: &ctx
-        )
+        _FunctionNode(value: view, context: context, ctx: &ctx)
     }
 
     static func _patchNode(

@@ -1,142 +1,196 @@
 import Reactivity
 
-// TODO: find a better name for this, "function node" is weird terminology
+// FIXME EMBEDDED: this is a hack to get the goshdarn Value.Body._MountedNode to work in embedded
+// TODO: report swiftlang github issue
+public typealias _FunctionNode<Value: __FunctionView> = __FunctionNode<Value, Value.Body._MountedNode>
 
-// NOTE: ChildNode must be specified as extra argument to avoid a compiler error in embedded
-// FIXME: embedded - try with embedded main-snapshot build, revert extra argument if it works
-public final class _FunctionNode<Value>
-where Value: __FunctionView {
-    private var state: Value.__ViewState?
-    private var value: Value?
-    private var context: _ViewContext?
-    private var animatedValue: AnimatedValue<AnimatableVector>
-    private var trackingSession: TrackingSession? = nil
+public struct __FunctionNode<Value: __FunctionView, ChildNode: _Reconcilable & ~Copyable>: ~Copyable, _Reconcilable
+where ChildNode == Value.Body._MountedNode {
+    let context: _ViewContext
+    let depthInTree: Int
+    var state: Value.__ViewState
+    var lastValue: Value
 
-    public var depthInTree: Int
+    var storage: Storage
 
-    var asFunctionNode: AnyFunctionNode!
-
-    public var identifier: String {
-        "\(depthInTree):\(ObjectIdentifier(self).hashValue)"
+    enum Storage: ~Copyable {
+        case inline(ChildNode)
+        case box(SchedulableFunction<Value, Value.Body, ChildNode>)
     }
 
-    var child: Value.Body._MountedNode?
-
-    init(
-        value: consuming Value,
-        context: borrowing _ViewContext,
-        ctx: inout _MountContext
-    ) {
+    init(value: consuming Value, context: borrowing _ViewContext, ctx: inout _MountContext) {
         self.depthInTree = context.functionDepth
-
         self.state = Value.__initializeState(from: value)
-        self.animatedValue = AnimatedValue(value: Value.__getAnimatableData(from: value))
+
+        // TODO: make this better, this is weird
+        var childContext = copy context
+        childContext.functionDepth += 1
+        self.context = childContext
+
         Value.__applyContext(context, to: &value)
-        Value.__restoreState(state!, in: &value)
+        Value.__restoreState(self.state, in: &value)
 
-        self.value = copy value
-        self.context = copy context
-        self.context!.functionDepth += 1
+        let (body, accessList) = withAccessTracking { value.body }
 
-        self.asFunctionNode = AnyFunctionNode(self)
+        self.lastValue = consume value
 
-        logTrace("added function \(identifier)")
+        let childNode = Value.Body._makeNode(body, context: self.context, ctx: &ctx)
 
-        let (newContent, session) = withReactiveTrackingSession {
-            value.body
-        } onWillSet: { [scheduler = ctx.scheduler, asFunctionNode = asFunctionNode!] in
-            scheduler.invalidateFunction(asFunctionNode)
+        let animatableData = Value.__getAnimatableData(from: self.lastValue)
+        if accessList != nil || !animatableData.isEmpty {
+            let s = Storage.makeBox(
+                child: childNode,
+                value: self.lastValue,
+                depthInTree: self.depthInTree,
+                accessList: accessList,
+                animatableData: animatableData,
+                scheduler: ctx.scheduler
+            )
+            self.storage = .box(s)
+        } else {
+            self.storage = .inline(childNode)
+        }
+    }
+
+    mutating func patch(_ newValue: consuming Value, tx: inout _TransactionContext) {
+        guard !Value.__areEqual(a: newValue, b: lastValue) else {
+            return
         }
 
-        self.trackingSession = session
-        self.child = Value.Body._makeNode(newContent, context: self.context!, ctx: &ctx)
-        self.value = value
+        Value.__applyContext(self.context, to: &newValue)
+        Value.__restoreState(self.state, in: &newValue)
+
+        storage.patch(newValue, depthInTree: depthInTree, tx: &tx)
+
+        lastValue = consume newValue
     }
 
-    func patch(_ value: consuming Value, tx: inout _TransactionContext) {
-        precondition(self.value != nil, "value must be set")
-        precondition(self.context != nil, "context must be set")
+    public consuming func unmount(_ context: inout _CommitContext) {
+        switch storage {
+        case .inline(var child):
+            child.unmount(&context)
+        case .box(let s):
+            s.trackingSession.take()?.cancel()
+            s.unmountChild(&context)
+            s.animatedValue.cancelAnimation()
+        }
+    }
+}
 
-        let needsRerender = !Value.__areEqual(a: value, b: self.value!)
+// MARK: - Storage
 
-        // NOTE: the idea is that way always store a "wired-up" value, so that we can re-run the function for free
-        // the equality check is generated to exclude State and Context from the equality check
-        Value.__applyContext(self.context!, to: &value)
-        Value.__restoreState(state!, in: &value)
-        self.value = value
+extension __FunctionNode.Storage where ChildNode: ~Copyable {
+    static func makeBox(
+        child: consuming ChildNode,
+        value: borrowing Value,
+        depthInTree: Int,
+        accessList: ReactivePropertyAccessList?,
+        animatableData: AnimatableVector,
+        scheduler: Scheduler
+    ) -> SchedulableFunction<Value, Value.Body, ChildNode> {
+        let s = SchedulableFunction(
+            child: child,
+            animatedValue: AnimatedValue(value: animatableData),
+            wiredValue: copy value,
+            depthInTree: depthInTree
+        )
+        if let accessList {
+            s.startTracking(for: accessList, scheduler: scheduler)
+        }
+        return s
+    }
 
-        if needsRerender {
-            let didStartAnimation = animatedValue.setValueAndReturnIfAnimationWasStarted(
-                Value.__getAnimatableData(from: self.value!),
-                transaction: tx.transaction,
-                frameTime: tx.currentFrameTime
-            )
+    mutating func patch(
+        _ value: borrowing Value,
+        depthInTree: Int,
+        tx: inout _TransactionContext
+    ) {
+        switch self {
+        case .inline(var child):
+            let v = copy value
+            let (body, accessList) = withAccessTracking { v.body }
+            Value.Body._patchNode(body, node: &child, tx: &tx)
 
-            if didStartAnimation == true {
-                tx.scheduler.registerAnimation(.init(progressAnimation: self.progressAnimation(_:)))
+            let animatableData = Value.__getAnimatableData(from: value)
+            if accessList != nil || !animatableData.isEmpty {
+                let s = Self.makeBox(
+                    child: child,
+                    value: value,
+                    depthInTree: depthInTree,
+                    accessList: accessList,
+                    animatableData: animatableData,
+                    scheduler: tx.scheduler
+                )
+                self = .box(s)
+            } else {
+                self = .inline(child)
             }
 
-            tx.addFunction(asFunctionNode)
+        case .box(let s):
+            s.trackingSession.take()?.cancel()
+
+            let didStartAnimation = s.animatedValue
+                .setValueAndReturnIfAnimationWasStarted(
+                    Value.__getAnimatableData(from: value),
+                    transaction: tx.transaction,
+                    frameTime: tx.currentFrameTime
+                )
+            if didStartAnimation {
+                tx.scheduler.registerAnimation(s)
+            }
+
+            s.wiredValue = copy value
+            s.runUpdate(tx: &tx)
+            self = .box(s)
         }
     }
+}
 
-    func progressAnimation(_ tx: inout _TransactionContext) -> AnimationProgressResult {
-        assert(!animatedValue.model.isEmpty, "animation should never be called without an animatable value")
+final class SchedulableFunction<
+    Value: __FunctionView,
+    Child: _Mountable,
+    ChildNode: _Reconcilable & ~Copyable
+>: _SchedulableNode
+where Child == Value.Body, ChildNode == Child._MountedNode {
+    var child: ChildNode?
+    var animatedValue: AnimatedValue<AnimatableVector>
+    var wiredValue: Value
+    var patchChild: (consuming Child, inout ChildNode, inout _TransactionContext) -> Void
+
+    init(
+        child: consuming ChildNode,
+        animatedValue: consuming AnimatedValue<AnimatableVector>,
+        wiredValue: Value,
+        depthInTree: Int
+    ) {
+        self.child = .some(child)
+        self.animatedValue = animatedValue
+        self.wiredValue = wiredValue
+        self.patchChild = Child._patchNode
+        super.init(depthInTree: depthInTree)
+    }
+
+    override func runUpdate(tx: inout _TransactionContext) {
+        var v = wiredValue
+        if !animatedValue.model.isEmpty {
+            Value.__setAnimatableData(animatedValue.presentation.animatableVector, to: &v)
+        }
+        let (body, accessList) = withAccessTracking { v.body }
+        if let accessList {
+            startTracking(for: accessList, scheduler: tx.scheduler)
+        }
+        patchChild(body, &child!, &tx)
+    }
+
+    override func progressAnimation(tx: inout _TransactionContext) -> AnimationProgressResult {
         guard animatedValue.isAnimating else { return .completed }
-
         animatedValue.progressToTime(tx.currentFrameTime)
-        runFunction(tx: &tx)
-
+        trackingSession.take()?.cancel()
+        runUpdate(tx: &tx)
         return animatedValue.isAnimating ? .stillRunning : .completed
     }
 
-    func runFunction(tx: inout _TransactionContext) {
-        logTrace("running function \(identifier)")
-
-        precondition(self.value != nil, "value must be set")
-        precondition(self.context != nil, "context must be set")
-
-        // create a copy of the value to avoid mutating the original value, especially for animations
-        var value = self.value!
-
-        if !animatedValue.model.isEmpty {
-            Value.__setAnimatableData(animatedValue.presentation.animatableVector, to: &value)
-        }
-
-        self.trackingSession.take()?.cancel()
-
-        let (newContent, session) = withReactiveTrackingSession {
-            value.body
-        } onWillSet: { [scheduler = tx.scheduler, asFunctionNode = asFunctionNode!] in
-            scheduler.invalidateFunction(asFunctionNode)
-        }
-
-        self.trackingSession = session
-
-        precondition(child != nil, "function child is missing during transaction update")
-        Value.Body._patchNode(newContent, node: &child!, tx: &tx)
-    }
-}
-
-extension _FunctionNode: _Reconcilable {
-    public consuming func unmount(_ context: inout _CommitContext) {
-        self.trackingSession.take()?.cancel()
-
-        let c = self.child.take()
-        c?.unmount(&context)
-
-        self.animatedValue.cancelAnimation()
-        self.state = nil
-        self.value = nil
-        self.context = nil
-        self.asFunctionNode = nil
-    }
-}
-
-extension AnyFunctionNode {
-    init(_ function: _FunctionNode<some __FunctionView>) {
-        self.identifier = ObjectIdentifier(function)
-        self.depthInTree = function.depthInTree
-        self.runUpdate = function.runFunction
+    func unmountChild(_ context: inout _CommitContext) {
+        child.take()?.unmount(&context)
     }
 }

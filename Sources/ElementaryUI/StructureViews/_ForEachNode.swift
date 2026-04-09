@@ -2,13 +2,11 @@ import BasicContainers
 import Reactivity
 
 // TODO: refactor this entire thing - we need to make the key list without the views, and the resolve the views just off the data....
-public final class _ForEachNode<Data, Content>: _Reconcilable
+public final class _ForEachNode<Data, Content>: _SchedulableNode, _Reconcilable
 where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
     private var data: Data
     private var contentBuilder: @Sendable (Data.Element) -> Content
-    private var trackingSession: TrackingSession? = nil
     private var container: MountContainer!
-    private var asFunctionNode: AnyFunctionNode!
 
     private var keysScratch: UniqueArray<_ViewKey> = .init()
     private var viewsScratch: [Content] = .init()  // TODO: remove this once we refactored everything
@@ -22,7 +20,7 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
         self.data = data
         self.contentBuilder = contentBuilder
 
-        self.asFunctionNode = AnyFunctionNode(self, depthInTree: context.functionDepth)
+        super.init(depthInTree: context.functionDepth)
 
         let session = evaluateViewsAndKeys(scheduler: ctx.scheduler)
 
@@ -50,7 +48,11 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
         runFunction(tx: &tx)
     }
 
-    borrowing func runFunction(tx: inout _TransactionContext) {
+    override func runUpdate(tx: inout _TransactionContext) {
+        runFunction(tx: &tx)
+    }
+
+    func runFunction(tx: inout _TransactionContext) {
         self.trackingSession.take()?.cancel()
 
         let session = evaluateViewsAndKeys(
@@ -59,6 +61,10 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
 
         self.trackingSession = session
 
+        patchContainer(tx: &tx)
+    }
+
+    private borrowing func patchContainer(tx: inout _TransactionContext) {
         container.patch(
             keys: self.keysScratch.span,
             tx: &tx,
@@ -96,18 +102,10 @@ where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
                 self.viewsScratch.append(view)
                 self.keysScratch.append(view._key)
             }
-        } onWillSet: { [scheduler, asFunctionNode] in
-            scheduler.invalidateFunction(asFunctionNode)
+        } onWillSet: { [scheduler, self] in
+            scheduler.invalidateFunction(self)
         }
 
         return session
-    }
-}
-
-extension AnyFunctionNode {
-    init(_ node: _ForEachNode<some Collection, some _KeyReadableView>, depthInTree: Int) {
-        self.identifier = ObjectIdentifier(node)
-        self.depthInTree = depthInTree
-        self.runUpdate = node.runFunction
     }
 }
