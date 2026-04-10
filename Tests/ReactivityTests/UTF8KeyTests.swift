@@ -1,5 +1,5 @@
-import _UTF8Internals
 import Testing
+import _UTF8Internals
 
 @Suite
 struct UTF8KeyTests {

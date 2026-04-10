@@ -1,5 +1,5 @@
-import _UTF8Internals
 import Reactivity
+import _UTF8Internals
 
 public extension View {
     /// Sets an environment value for this view and its descendants.
