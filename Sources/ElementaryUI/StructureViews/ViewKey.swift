@@ -23,14 +23,4 @@ public struct _ViewKey: Equatable, Hashable, CustomStringConvertible {
     public var description: String {
         propertyID.description
     }
-
-    @inlinable
-    public static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.propertyID == rhs.propertyID
-    }
-
-    @inlinable
-    public func hash(into hasher: inout Hasher) {
-        propertyID.hash(into: &hasher)
-    }
 }

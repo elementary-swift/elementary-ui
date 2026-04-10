@@ -18,12 +18,8 @@ package func _withUTF8Buffer<R>(
     _ string: borrowing String,
     _ body: (UnsafeBufferPointer<UInt8>) -> R
 ) -> R {
-    if string.isContiguousUTF8 {
-        return string.utf8.withContiguousStorageIfAvailable(body)!
-    }
-
-    let copy = Array(string.utf8)
-    return copy.withUnsafeBufferPointer(body)
+    precondition(string.isContiguousUTF8, "Non-contiguous strings are not supported")
+    return string.utf8.withContiguousStorageIfAvailable(body)!
 }
 
 @inline(__always)
@@ -32,12 +28,7 @@ package func _withUTF8Buffer<R>(
     _ utf8: Substring.UTF8View,
     _ body: (UnsafeBufferPointer<UInt8>) -> R
 ) -> R {
-    if let result = utf8.withContiguousStorageIfAvailable(body) {
-        return result
-    }
-
-    let copy = Array(utf8)
-    return copy.withUnsafeBufferPointer(body)
+    utf8.withContiguousStorageIfAvailable(body)!
 }
 
 @inline(__always)
@@ -51,25 +42,20 @@ package func _utf8BuffersEqual(
     return memcmp(lhs.baseAddress!, rhs.baseAddress!, lhs.count) == 0
 }
 
-@inline(__always)
-@inlinable
-package func _hashUTF8Buffer(
-    _ buffer: UnsafeBufferPointer<UInt8>,
-    into hasher: inout Hasher
-) {
-    let rawBuffer = UnsafeRawBufferPointer(start: buffer.baseAddress, count: buffer.count)
-    hasher.combine(bytes: rawBuffer)
-}
+extension Hasher {
+    @inline(__always)
+    @inlinable
+    package mutating func combine(utf8Bytes: borrowing String) {
+        _withUTF8Buffer(utf8Bytes) { bytes in
+            combine(bytes: UnsafeRawBufferPointer(start: bytes.baseAddress, count: bytes.count))
+        }
+    }
 
-@inline(__always)
-@inlinable
-package func _utf8Equals(
-    _ lhs: borrowing String,
-    _ rhs: borrowing Substring.UTF8View
-) -> Bool {
-    _withUTF8Buffer(lhs) { lhsBuffer in
-        _withUTF8Buffer(rhs) { rhsBuffer in
-            _utf8BuffersEqual(lhsBuffer, rhsBuffer)
+    @inline(__always)
+    @inlinable
+    package mutating func combine(utf8Bytes: borrowing Substring.UTF8View) {
+        _withUTF8Buffer(utf8Bytes) { bytes in
+            combine(bytes: UnsafeRawBufferPointer(start: bytes.baseAddress, count: bytes.count))
         }
     }
 }
@@ -110,7 +96,7 @@ extension String? {
 extension Substring.UTF8View {
     @inline(__always)
     @inlinable
-    package func _utf8Equals(_ other: borrowing Substring.UTF8View) -> Bool {
+    package func utf8Equals(_ other: borrowing Substring.UTF8View) -> Bool {
         _withUTF8Buffer(self) { lhsBuffer in
             _withUTF8Buffer(other) { rhsBuffer in
                 _utf8BuffersEqual(lhsBuffer, rhsBuffer)

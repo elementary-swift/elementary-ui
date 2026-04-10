@@ -24,8 +24,6 @@ package struct UTF8Key: Hashable, Sendable {
     @inline(__always)
     @inlinable
     package func hash(into hasher: inout Hasher) {
-        _withUTF8Buffer(string) { buffer in
-            _hashUTF8Buffer(buffer, into: &hasher)
-        }
+        hasher.combine(utf8Bytes: string)
     }
 }

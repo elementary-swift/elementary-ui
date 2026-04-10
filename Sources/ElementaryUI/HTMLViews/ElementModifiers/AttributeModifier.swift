@@ -1,31 +1,5 @@
 import _UTF8Internals
 
-private struct _StyleUTF8Key: Hashable {
-    let raw: Substring.UTF8View
-
-    @inline(__always)
-    init(_ raw: Substring.UTF8View) {
-        self.raw = raw
-    }
-
-    @inline(__always)
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.raw._utf8Equals(rhs.raw)
-    }
-
-    @inline(__always)
-    func hash(into hasher: inout Hasher) {
-        _withUTF8Buffer(raw) { buffer in
-            _hashUTF8Buffer(buffer, into: &hasher)
-        }
-    }
-
-    @inline(__always)
-    var stringValue: String {
-        String(decoding: raw, as: UTF8.self)
-    }
-}
-
 public final class _AttributeModifier: DOMElementModifier, Invalidateable {
     typealias Value = _AttributeStorage
 
@@ -252,7 +226,7 @@ extension DOM.Interactor {
 
             switch (oldNext, newNext) {
             case let (.some(oldPair), .some(newPair)):
-                guard oldPair.key._utf8Equals(newPair.key) else {
+                guard oldPair.key.utf8Equals(newPair.key) else {
                     applyStylesSlowPath(
                         node,
                         firstOld: oldPair,
@@ -263,7 +237,7 @@ extension DOM.Interactor {
                     return
                 }
 
-                if !oldPair.value._utf8Equals(newPair.value) {
+                if !oldPair.value.utf8Equals(newPair.value) {
                     setStyleProperty(
                         node,
                         name: String(Substring(newPair.key)),
@@ -302,7 +276,7 @@ extension DOM.Interactor {
 
         func apply(_ pair: StylePair) {
             let key = _StyleUTF8Key(pair.key)
-            if let oldValue = oldByKey.removeValue(forKey: key), oldValue._utf8Equals(pair.value) { return }
+            if let oldValue = oldByKey.removeValue(forKey: key), oldValue.utf8Equals(pair.value) { return }
             setStyleProperty(node, name: key.stringValue, value: String(decoding: pair.value, as: UTF8.self))
         }
 
@@ -316,5 +290,30 @@ extension DOM.Interactor {
         for remainingKey in oldByKey.keys {
             removeStyleProperty(node, name: remainingKey.stringValue)
         }
+    }
+}
+
+// TODO: get rid of this Substring stuff, properly fix this in elementary
+private struct _StyleUTF8Key: Hashable {
+    let raw: Substring.UTF8View
+
+    @inline(__always)
+    init(_ raw: Substring.UTF8View) {
+        self.raw = raw
+    }
+
+    @inline(__always)
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.raw.utf8Equals(rhs.raw)
+    }
+
+    @inline(__always)
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(utf8Bytes: raw)
+    }
+
+    @inline(__always)
+    var stringValue: String {
+        String(decoding: raw, as: UTF8.self)
     }
 }
