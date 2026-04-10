@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775805731621,
+  "lastUpdate": 1775823821894,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -3281,6 +3281,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 205.59,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9ae1406e54ac55d7697c0b6757bb07a4a24be7b9",
+          "message": "Improved string handling (#95)\n\n* WIP: string utf8 handling\n\n* a bit of clean up\n\n* format",
+          "timestamp": "2026-04-10T14:20:52+02:00",
+          "tree_id": "09fac4badfe8397b364e592a60cc0a9ceb860e77",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/9ae1406e54ac55d7697c0b6757bb07a4a24be7b9"
+        },
+        "date": 1775823821600,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 195.74,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 162.19,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 144.86,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 201.6,
             "unit": "kB"
           }
         ]
