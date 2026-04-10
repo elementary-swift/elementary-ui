@@ -18,6 +18,7 @@ let package = Package(
         .package(url: "https://github.com/swiftlang/swift-syntax", "600.0.0"..<"604.0.0"),
     ],
     targets: [
+        .target(name: "_UTF8Internals"),
         .target(
             name: "ElementaryUI",
             dependencies: [
@@ -27,6 +28,7 @@ let package = Package(
                 .product(name: "ContainersPreview", package: "swift-collections"),
                 .target(name: "BrowserInterop"),
                 .target(name: "ElementaryUIMacros"),
+                .target(name: "_UTF8Internals"),
                 .target(name: "Reactivity"),
                 .target(name: "_ElementaryMath"),
             ],
@@ -78,7 +80,7 @@ let package = Package(
         /// --- REACTIVITY ---
         .target(
             name: "Reactivity",
-            dependencies: ["ReactivityMacros"]
+            dependencies: ["ReactivityMacros", "_UTF8Internals"]
         ),
         .macro(
             name: "ReactivityMacros",
@@ -91,7 +93,7 @@ let package = Package(
         ),
         .testTarget(
             name: "ReactivityTests",
-            dependencies: ["Reactivity"]
+            dependencies: ["Reactivity", "_UTF8Internals"]
         ),
     ]
 )

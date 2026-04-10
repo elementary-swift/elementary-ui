@@ -1,4 +1,4 @@
-import struct Reactivity.HashableUTF8View
+import _UTF8Internals
 
 public final class _AttributeModifier: DOMElementModifier, Invalidateable {
     typealias Value = _AttributeStorage
@@ -155,16 +155,16 @@ extension DOM.Interactor {
         firstNew: _StoredAttribute?,
         newIterator: inout _MergedAttributes.Iterator
     ) {
-        var oldByKey: [HashableUTF8View: _StoredAttribute] = [:]
+        var oldByKey: [UTF8Key: _StoredAttribute] = [:]
         if let firstOld {
-            oldByKey[HashableUTF8View(firstOld.name)] = firstOld
+            oldByKey[UTF8Key(firstOld.name)] = firstOld
         }
         while let old = oldIterator.next() {
-            oldByKey[HashableUTF8View(old.name)] = old
+            oldByKey[UTF8Key(old.name)] = old
         }
 
         func apply(_ new: _StoredAttribute) {
-            let key = HashableUTF8View(new.name)
+            let key = UTF8Key(new.name)
             let old = oldByKey.removeValue(forKey: key)
             let oldStyle = old?._styleKeyValuePairs
             let newStyle = new._styleKeyValuePairs
@@ -226,7 +226,7 @@ extension DOM.Interactor {
 
             switch (oldNext, newNext) {
             case let (.some(oldPair), .some(newPair)):
-                guard oldPair.key.elementsEqual(newPair.key) else {
+                guard oldPair.key.utf8Equals(newPair.key) else {
                     applyStylesSlowPath(
                         node,
                         firstOld: oldPair,
@@ -237,7 +237,7 @@ extension DOM.Interactor {
                     return
                 }
 
-                if !oldPair.value.elementsEqual(newPair.value) {
+                if !oldPair.value.utf8Equals(newPair.value) {
                     setStyleProperty(
                         node,
                         name: String(Substring(newPair.key)),
@@ -266,17 +266,17 @@ extension DOM.Interactor {
         firstNew: StylePair?,
         newIterator: inout _StoredAttribute._StyleKeyValuePairs.Iterator
     ) {
-        var oldByKey: [HashableUTF8View: Substring.UTF8View] = [:]
+        var oldByKey: [_StyleUTF8Key: Substring.UTF8View] = [:]
         if let firstOld {
-            oldByKey[HashableUTF8View(firstOld.key)] = firstOld.value
+            oldByKey[_StyleUTF8Key(firstOld.key)] = firstOld.value
         }
         while let pair = oldIterator.next() {
-            oldByKey[HashableUTF8View(pair.key)] = pair.value
+            oldByKey[_StyleUTF8Key(pair.key)] = pair.value
         }
 
         func apply(_ pair: StylePair) {
-            let key = HashableUTF8View(pair.key)
-            if let oldValue = oldByKey.removeValue(forKey: key), oldValue.elementsEqual(pair.value) { return }
+            let key = _StyleUTF8Key(pair.key)
+            if let oldValue = oldByKey.removeValue(forKey: key), oldValue.utf8Equals(pair.value) { return }
             setStyleProperty(node, name: key.stringValue, value: String(decoding: pair.value, as: UTF8.self))
         }
 
@@ -290,5 +290,30 @@ extension DOM.Interactor {
         for remainingKey in oldByKey.keys {
             removeStyleProperty(node, name: remainingKey.stringValue)
         }
+    }
+}
+
+// TODO: get rid of this Substring stuff, properly fix this in elementary
+private struct _StyleUTF8Key: Hashable {
+    let raw: Substring.UTF8View
+
+    @inline(__always)
+    init(_ raw: Substring.UTF8View) {
+        self.raw = raw
+    }
+
+    @inline(__always)
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.raw.utf8Equals(rhs.raw)
+    }
+
+    @inline(__always)
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(utf8Bytes: raw)
+    }
+
+    @inline(__always)
+    var stringValue: String {
+        String(decoding: raw, as: UTF8.self)
     }
 }

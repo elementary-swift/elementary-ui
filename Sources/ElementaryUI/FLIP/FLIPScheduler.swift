@@ -1,3 +1,5 @@
+import _UTF8Internals
+
 final class FLIPScheduler {
     private var dom: any DOM.Interactor
 
