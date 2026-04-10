@@ -1,3 +1,5 @@
+import _UTF8Internals
+
 /// A unique identifier for a reactive property.
 ///
 /// `PropertyID` is used by the reactivity system to track which properties
@@ -10,7 +12,7 @@ public struct PropertyID: Hashable, Sendable, CustomStringConvertible {
     @usableFromInline
     enum _Storage: Hashable, Sendable {
         case index(Int)
-        case name(HashableUTF8View)
+        case name(UTF8Key)
         case objectIdentifier(ObjectIdentifier)
     }
 
@@ -22,7 +24,7 @@ public struct PropertyID: Hashable, Sendable, CustomStringConvertible {
     /// - Parameter name: A unique string identifier for the property.
     @inlinable
     public init(_ name: String) {
-        id = .name(HashableUTF8View(name))
+        id = .name(UTF8Key(name))
     }
 
     /// Creates a property identifier using an integer index.

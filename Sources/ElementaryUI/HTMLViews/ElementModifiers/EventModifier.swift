@@ -1,3 +1,5 @@
+import _UTF8Internals
+
 public protocol _DOMEventHandlerConfig {
     static var name: String { get }
     associatedtype Event: _TypedDOMEvent

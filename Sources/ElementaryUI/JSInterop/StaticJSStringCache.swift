@@ -1,10 +1,9 @@
 import JavaScriptKit
-
-import struct Reactivity.HashableUTF8View
+import _UTF8Internals
 
 /// A never-expiring cache of static JS strings.
 final class StaticJSStringCache {
-    private var cache = [HashableUTF8View: JSString]()
+    private var cache = [UTF8Key: JSString]()
     private var hasWarned = false
 
     var count: Int {
@@ -14,7 +13,7 @@ final class StaticJSStringCache {
     init() {}
 
     func getOrAddStaticString(_ string: String) -> JSString {
-        let key = HashableUTF8View(string)
+        let key = UTF8Key(string)
 
         if let cached = cache[key] {
             return cached

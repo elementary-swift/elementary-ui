@@ -1,3 +1,5 @@
+import _UTF8Internals
+
 public struct _TextNode: _Reconcilable {
     let domNode: DOM.Node
     var value: String
