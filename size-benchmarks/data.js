@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775890651920,
+  "lastUpdate": 1775977780574,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -3347,6 +3347,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/elementary-swift/elementary-ui/commit/9ae1406e54ac55d7697c0b6757bb07a4a24be7b9"
         },
         "date": 1775890651078,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 195.74,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 162.19,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 144.86,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 201.6,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "9ae1406e54ac55d7697c0b6757bb07a4a24be7b9",
+          "message": "Improved string handling (#95)\n\n* WIP: string utf8 handling\n\n* a bit of clean up\n\n* format",
+          "timestamp": "2026-04-10T12:20:52Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/9ae1406e54ac55d7697c0b6757bb07a4a24be7b9"
+        },
+        "date": 1775977779972,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
