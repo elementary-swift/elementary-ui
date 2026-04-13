@@ -406,6 +406,39 @@ struct DOMPatchingTests {
     }
 
     @Test
+    func patchesNestedConditionals() {
+        let state = StringListState([])
+        let ops = patchOps {
+            ForEach(state.items, key: \.self) { item in
+                p {
+                    if true {
+                        item
+                    }
+                }
+            }
+        } toggle: {
+            state.items = ["B", "C", "D"]
+        }
+
+        #expect(
+            ops == [
+                .createElement("p"),
+                .createText("B"),
+                .addChild(parent: "<p>", child: "B"),
+                .createElement("p"),
+                .createText("C"),
+                .addChild(parent: "<p>", child: "C"),
+                .createElement("p"),
+                .createText("D"),
+                .addChild(parent: "<p>", child: "D"),
+                .addChild(parent: "<>", child: "<p>"),
+                .addChild(parent: "<>", child: "<p>"),
+                .addChild(parent: "<>", child: "<p>"),
+            ]
+        )
+    }
+
+    @Test
     func countsUp() {
         let state = CounterState()
 

@@ -34,7 +34,7 @@ public struct _KeyedNode: ~Copyable, _Reconcilable {
     mutating func patch(
         key: _ViewKey,
         context: inout _TransactionContext,
-        makeNode: @escaping (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
+        makeNode: (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
         patchNode: (inout AnyReconcilable, inout _TransactionContext) -> Void
     ) {
         container.patch(
@@ -48,7 +48,7 @@ public struct _KeyedNode: ~Copyable, _Reconcilable {
     mutating func patch(
         _ newKeys: borrowing Span<_ViewKey>,
         context: inout _TransactionContext,
-        makeNode: @escaping (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
+        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
         patchNode: (Int, inout AnyReconcilable, inout _TransactionContext) -> Void
     ) {
         container.patch(

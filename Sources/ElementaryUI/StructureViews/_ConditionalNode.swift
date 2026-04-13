@@ -22,7 +22,7 @@ public struct _ConditionalNode: ~Copyable, _Reconcilable {
 
     mutating func patchWithA<NodeA: _Reconcilable & ~Copyable>(
         tx: inout _TransactionContext,
-        makeNode: @escaping (borrowing _ViewContext, inout _MountContext) -> NodeA,
+        makeNode: (borrowing _ViewContext, inout _MountContext) -> NodeA,
         updateNode: (inout NodeA, inout _TransactionContext) -> Void
     ) {
         patchBranch(
@@ -35,7 +35,7 @@ public struct _ConditionalNode: ~Copyable, _Reconcilable {
 
     mutating func patchWithB<NodeB: _Reconcilable & ~Copyable>(
         tx: inout _TransactionContext,
-        makeNode: @escaping (borrowing _ViewContext, inout _MountContext) -> NodeB,
+        makeNode: (borrowing _ViewContext, inout _MountContext) -> NodeB,
         updateNode: (inout NodeB, inout _TransactionContext) -> Void
     ) {
         patchBranch(
@@ -55,7 +55,7 @@ private extension _ConditionalNode {
     mutating func patchBranch<Node: _Reconcilable & ~Copyable>(
         key: _ViewKey,
         tx: inout _TransactionContext,
-        makeNode: @escaping (borrowing _ViewContext, inout _MountContext) -> Node,
+        makeNode: (borrowing _ViewContext, inout _MountContext) -> Node,
         updateNode: (inout Node, inout _TransactionContext) -> Void
     ) {
         container.patch(

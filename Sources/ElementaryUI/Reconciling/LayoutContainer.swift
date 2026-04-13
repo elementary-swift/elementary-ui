@@ -18,7 +18,7 @@ final class LayoutContainer {
         self.layoutObservers = layoutObservers
     }
 
-    func mountInitial(_ context: inout _CommitContext) {
+    func commitInitialLayout(_ context: inout _CommitContext) {
         context.scheduler.scratch.withLayoutEntryScratchFrame { scratch in
             var ops = LayoutPass(layoutContainer: self, scratch: consume scratch)
             layoutNodes.collect(into: &ops, context: &context, op: .added)
