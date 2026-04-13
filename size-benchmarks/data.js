@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776067026449,
+  "lastUpdate": 1776100668603,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -3451,6 +3451,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 201.6,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a6735535ef44f909dd47f10c984af3f02100bf00",
+          "message": "Improved conditional mounting (fixes access violation bug) (#97)\n\n* fixed mount/layout commit timing\n\n* format",
+          "timestamp": "2026-04-13T19:15:04+02:00",
+          "tree_id": "ec4dfbeed4fd8147b38414d9d8dcb6a3e918c9e4",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/a6735535ef44f909dd47f10c984af3f02100bf00"
+        },
+        "date": 1776100668056,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 189.32,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 160.31,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 142.89,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 199.59,
             "unit": "kB"
           }
         ]
