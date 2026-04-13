@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775823866628,
+  "lastUpdate": 1776100726759,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -1968,6 +1968,85 @@ window.BENCHMARK_DATA = {
           {
             "name": "25_run-clear-memory",
             "value": 1.17,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a6735535ef44f909dd47f10c984af3f02100bf00",
+          "message": "Improved conditional mounting (fixes access violation bug) (#97)\n\n* fixed mount/layout commit timing\n\n* format",
+          "timestamp": "2026-04-13T19:15:04+02:00",
+          "tree_id": "ec4dfbeed4fd8147b38414d9d8dcb6a3e918c9e4",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/a6735535ef44f909dd47f10c984af3f02100bf00"
+        },
+        "date": 1776100726425,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 115.74,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 138.88,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 226.56,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 30.14,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 70.1,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 44.55,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 170.57,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 75.12,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.04,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.4,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.16,
             "unit": "MB"
           }
         ]
