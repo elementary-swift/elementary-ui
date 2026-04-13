@@ -128,10 +128,9 @@ final class MountContainer {
         patchPrepared(
             keys: CollectionOfOne(newKey).span,
             tx: &tx,
-            makeNode: { _, viewContext, mountCtx in makeNode(viewContext, &mountCtx) }
-        ) { _, node, tx in
-            patchNode(&node, &tx)
-        }
+            makeNode: { _, viewContext, mountCtx in makeNode(viewContext, &mountCtx) },
+            patchNode: { _, node, tx in patchNode(&node, &tx) }
+        )
     }
 
     private func patchPrepared(
