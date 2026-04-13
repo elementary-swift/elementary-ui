@@ -18,22 +18,19 @@ final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
                 $0.disablesAnimation = true
             } run: { tx in
 
-                tx.scheduler.addCommitAction { [self, transaction = tx.transaction, rootView] ctx in
-                    self.rootNode =
-                        ctx.withMountContext(transaction: transaction) {
-                            (mountCtx: consuming _MountContext) in
-                            let node = _ConditionalNode(
-                                isA: true,
-                                context: _ViewContext(),
-                                ctx: &mountCtx,
-                                makeActive: { viewContext, mountCtx in
-                                    RootView._makeNode(rootView, context: viewContext, ctx: &mountCtx)
-                                }
-                            )
-
-                            _ = mountCtx.mountInDOMNode(domRoot, observers: [])
-                            return node
+                self.rootNode = scheduler.withMountContext(tx: &tx) {
+                    (mountCtx: consuming _MountContext) in
+                    let node = _ConditionalNode(
+                        isA: true,
+                        context: _ViewContext(),
+                        ctx: &mountCtx,
+                        makeActive: { viewContext, mountCtx in
+                            RootView._makeNode(rootView, context: viewContext, ctx: &mountCtx)
                         }
+                    )
+
+                    _ = mountCtx.mountInDOMNode(domRoot, isRoot: true)
+                    return node
                 }
             }
         }

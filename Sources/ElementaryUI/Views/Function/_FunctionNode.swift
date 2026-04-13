@@ -68,6 +68,7 @@ where ChildNode == Value.Body._MountedNode {
     public consuming func unmount(_ context: inout _CommitContext) {
         switch storage {
         case .inline(var child):
+            __noOpModifyForStupidWarning(&child)
             child.unmount(&context)
         case .box(let s):
             s.trackingSession.take()?.cancel()
@@ -193,4 +194,9 @@ where Child == Value.Body, ChildNode == Child._MountedNode {
     func unmountChild(_ context: inout _CommitContext) {
         child.take()?.unmount(&context)
     }
+}
+
+@_transparent
+private func __noOpModifyForStupidWarning<R: ~Copyable>(_ value: inout R) {
+    // do nothing
 }

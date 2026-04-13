@@ -126,6 +126,24 @@ final class Scheduler {
         context = ambientContext.take()!
     }
 
+    func withMountContext<R: ~Copyable>(
+        tx: inout _TransactionContext,
+        _ body: (consuming _MountContext) -> R
+    ) -> R {
+        self.scratch.withLayoutNodeScratchFrame { scratch in
+            body(
+                _MountContext(
+                    nodeStack: scratch,
+                    dom: dom,
+                    scheduler: self,
+                    currentFrameTime: tx.currentFrameTime,
+                    transaction: tx.transaction,
+                    isRoot: true
+                )
+            )
+        }
+    }
+
     // MARK: - Scheduling
 
     private func ensureUpdateCycleScheduled() {

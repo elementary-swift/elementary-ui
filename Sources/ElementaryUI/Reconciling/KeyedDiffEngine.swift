@@ -22,7 +22,7 @@ struct KeyedDiffEngine: ~Copyable {
         leavingSlots: inout UniqueArray<MountContainer.Slot>,
         removedSlots: inout UniqueArray<MountContainer.Slot>,
         keys: borrowing Span<_ViewKey>,
-        transaction: Transaction
+        makeNewSlot: (Int, _ViewKey) -> MountContainer.Slot
     ) -> Bool {
         let oldCount = activeSlots.count
         let newCount = keys.count
@@ -72,25 +72,22 @@ struct KeyedDiffEngine: ~Copyable {
                         outputSpan.append(self.takeActiveCell(at: source))
                     } else if source == KeyedDiffSource.new {
                         outputSpan.append(
-                            .pending(
-                                key: newMiddleKeys[unchecked: middleOffset],
-                                transaction: transaction,
-                                newKeyIndex: prefixCount + middleOffset
+                            makeNewSlot(
+                                prefixCount + middleOffset,
+                                newMiddleKeys[unchecked: middleOffset]
                             )
                         )
                     } else {
                         let leavingIndex = KeyedDiffSource.decodeRevive(source)
                         if leavingIndex >= 0 && leavingIndex < self.leavingCells.count,
-                            var revived = self.leavingCells[leavingIndex].take()
+                            let revived = self.leavingCells[leavingIndex].take()
                         {
-                            revived.markReviving()
                             outputSpan.append(revived)
                         } else {
                             outputSpan.append(
-                                .pending(
-                                    key: newMiddleKeys[unchecked: middleOffset],
-                                    transaction: transaction,
-                                    newKeyIndex: prefixCount + middleOffset
+                                makeNewSlot(
+                                    prefixCount + middleOffset,
+                                    newMiddleKeys[unchecked: middleOffset]
                                 )
                             )
                         }

@@ -15,7 +15,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
     let transaction: Transaction
 
     @_lifetime(copy nodeStack)
-    fileprivate init(
+    init(
         nodeStack: consuming ScratchStack<LayoutNode>,
         dom: any DOM.Interactor,
         scheduler: Scheduler,
@@ -99,21 +99,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
         return body(&commitContext)
     }
 
-    consuming func consumeAsLayoutContainer(
-        domNode: DOM.Node,
-        observers: [any DOMLayoutObserver]
-    ) -> LayoutContainer {
-        let scheduler = self.scheduler
-        let layoutNodes = takeMaterializedLayoutNodes()
-        return LayoutContainer(
-            domNode: domNode,
-            scheduler: scheduler,
-            layoutNodes: consume layoutNodes,
-            layoutObservers: observers
-        )
-    }
-
-    consuming func consumeAsMountedState(
+    consuming func makeMountedSlot(
         newKeyIndex: Int,
         viewContext: borrowing _ViewContext,
         makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
@@ -124,12 +110,15 @@ public struct _MountContext: ~Copyable, ~Escapable {
         return MountContainer.Slot.Mounted(
             node: node,
             layoutNodes: takeMaterializedLayoutNodes(),
-            didMove: false,
+            placement: .unchanged,
             transitionCoordinator: transitionCoordinator
         )
     }
 
-    consuming func mountInDOMNode(_ domNode: DOM.Node, observers: [any DOMLayoutObserver]) -> LayoutContainer? {
+    consuming func mountInDOMNode(_ domNode: DOM.Node, observers: [any DOMLayoutObserver] = [], isRoot: Bool = false) -> LayoutContainer? {
+        // only allow root node to be mounted directly, otherwise we need to always do this in a stacked context
+        assert(!self.isRoot || isRoot, "only root node can be mounted directly")
+
         if isStatic {
             let dom = dom
             nodeStack.consume { span in
@@ -143,13 +132,20 @@ public struct _MountContext: ~Copyable, ~Escapable {
         let dom = dom
         let scheduler = scheduler
         let currentFrameTime = currentFrameTime
-        let container = consumeAsLayoutContainer(domNode: domNode, observers: observers)
+        let container = LayoutContainer(
+            domNode: domNode,
+            scheduler: scheduler,
+            layoutNodes: takeMaterializedLayoutNodes(),
+            layoutObservers: observers
+        )
+
         var commit = _CommitContext(
             dom: dom,
             scheduler: scheduler,
             currentFrameTime: currentFrameTime
         )
-        container.mountInitial(&commit)
+
+        container.commitInitialLayout(&commit)
         return container
     }
 
@@ -172,26 +168,6 @@ private extension LayoutNode {
         switch self {
         case .elementNode(let node), .textNode(let node): node
         case .container: fatalError("dynamic container in static node list")
-        }
-    }
-}
-
-extension _CommitContext {
-    func withMountContext<R: ~Copyable>(
-        transaction: Transaction,
-        _ body: (consuming _MountContext) -> R
-    ) -> R {
-        scheduler.scratch.withLayoutNodeScratchFrame { scratch in
-            body(
-                _MountContext(
-                    nodeStack: scratch,
-                    dom: dom,
-                    scheduler: scheduler,
-                    currentFrameTime: currentFrameTime,
-                    transaction: transaction,
-                    isRoot: true
-                )
-            )
         }
     }
 }
