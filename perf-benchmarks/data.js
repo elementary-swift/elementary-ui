@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776100726759,
+  "lastUpdate": 1776325412740,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -2032,6 +2032,85 @@ window.BENCHMARK_DATA = {
           {
             "name": "09_clear1k_x8",
             "value": 75.12,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.04,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.4,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.16,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ef83875ba3adb89e84a03309cf4eb3c7d18fa9ab",
+          "message": "Fixes stale state tracking issue (optional unwrap crasher) (#100)",
+          "timestamp": "2026-04-16T09:39:39+02:00",
+          "tree_id": "ec0b529081f39716d1c605cb770b4da643a0ed7c",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/ef83875ba3adb89e84a03309cf4eb3c7d18fa9ab"
+        },
+        "date": 1776325411813,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 121.56,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 149.78,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 255.47,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 29.71,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 70.35,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 50.14,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 159.3,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 73.51,
             "unit": "ms"
           },
           {
