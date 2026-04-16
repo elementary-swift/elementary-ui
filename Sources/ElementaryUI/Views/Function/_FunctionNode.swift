@@ -172,6 +172,8 @@ where Child == Value.Body, ChildNode == Child._MountedNode {
     }
 
     override func runUpdate(tx: inout _TransactionContext) {
+        trackingSession.take()?.cancel()
+
         var v = wiredValue
         if !animatedValue.model.isEmpty {
             Value.__setAnimatableData(animatedValue.presentation.animatableVector, to: &v)

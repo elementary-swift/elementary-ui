@@ -71,6 +71,28 @@ struct ReconcilerUpdateTests {
         #expect(!dom.hasWorkScheduled)
         #expect(dom.ops == [.removeChild(parent: "<>", child: "<p>")])
     }
+
+    @Test
+    func doesNotCrashWhenParentAndChildShareEnvironmentAcrossConditionalUnmount() {
+        // https://github.com/elementary-swift/elementary-ui/issues/99
+        let state = State()
+        let dom = TestDOM()
+        state.toggle = true
+
+        dom.mount {
+            ConditionalParentView(state: state)
+        }
+        dom.runNextFrame()
+        #expect(!dom.hasWorkScheduled)
+
+        state.toggle = false
+        dom.runNextFrame()
+        #expect(!dom.hasWorkScheduled)
+
+        state.toggle = true
+        dom.runNextFrame()
+        #expect(!dom.hasWorkScheduled)
+    }
 }
 
 @Reactive
@@ -111,6 +133,29 @@ private struct ValueView {
     var body: some View {
         Track(name: "value: \(value)") {
         }
+    }
+}
+
+@View
+private struct ConditionalParentView {
+    let state: State
+
+    var body: some View {
+        div {
+            if state.toggle {
+                ConditionalDetailView()
+            }
+        }
+        .environment(state)
+    }
+}
+
+@View
+private struct ConditionalDetailView {
+    @Environment(State.self) var state
+
+    var body: some View {
+        p { "\(state.toggle)" }
     }
 }
 
