@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776842829193,
+  "lastUpdate": 1776929424404,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -3870,6 +3870,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "HelloWorld",
             "value": 142.89,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 199.6,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "ef83875ba3adb89e84a03309cf4eb3c7d18fa9ab",
+          "message": "Fixes stale state tracking issue (optional unwrap crasher) (#100)",
+          "timestamp": "2026-04-16T07:39:39Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/ef83875ba3adb89e84a03309cf4eb3c7d18fa9ab"
+        },
+        "date": 1776929423957,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 189.33,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 160.34,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 142.88,
             "unit": "kB"
           },
           {
