@@ -131,14 +131,3 @@ public extension JSElement {
         self.init(unsafelyWrapping: node.jsObject)
     }
 }
-
-extension JSNode? {
-    func bridgeJSLowerParameter() -> (Int32, Int32) {
-        if let node = self {
-            return (1, node.jsObject.bridgeJSLowerParameter())
-        } else {
-            return (0, 0)
-        }
-    }
-
-}

@@ -55,7 +55,7 @@ extension GlobalDocument {
                 fatalError("failed to get document")
             }
 
-            let closure = JSEventCallback.make { event in
+            let closure = JSEventCallback { event in
                 callback(Event(__jsObject: event.jsObject)!)
             }
 

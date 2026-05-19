@@ -171,8 +171,10 @@
         ],
         "types" : [
           {
+            "accessLevel" : "public",
             "getters" : [
               {
+                "accessLevel" : "public",
                 "name" : "body",
                 "type" : {
                   "jsObject" : {
@@ -184,6 +186,7 @@
             "jsName" : "Document",
             "methods" : [
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -207,6 +210,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -230,6 +234,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -253,6 +258,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -303,6 +309,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -362,8 +369,10 @@
             ]
           },
           {
+            "accessLevel" : "public",
             "getters" : [
               {
+                "accessLevel" : "public",
                 "name" : "scrollX",
                 "type" : {
                   "double" : {
@@ -372,6 +381,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "scrollY",
                 "type" : {
                   "double" : {
@@ -383,6 +393,7 @@
             "jsName" : "Window",
             "methods" : [
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -415,12 +426,14 @@
             ]
           },
           {
+            "accessLevel" : "public",
             "getters" : [
 
             ],
             "jsName" : "Performance",
             "methods" : [
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -446,6 +459,7 @@
             ]
           },
           {
+            "accessLevel" : "public",
             "getters" : [
 
             ],
@@ -456,6 +470,7 @@
             "name" : "JSNode",
             "setters" : [
               {
+                "accessLevel" : "public",
                 "functionName" : "textContent_set",
                 "name" : "textContent",
                 "type" : {
@@ -470,8 +485,10 @@
             ]
           },
           {
+            "accessLevel" : "public",
             "getters" : [
               {
+                "accessLevel" : "public",
                 "name" : "style",
                 "type" : {
                   "jsObject" : {
@@ -480,6 +497,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "offsetParent",
                 "type" : {
                   "jsObject" : {
@@ -491,6 +509,7 @@
             "jsName" : "Element",
             "methods" : [
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -522,6 +541,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -545,6 +565,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -568,6 +589,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -591,6 +613,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -622,6 +645,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -638,6 +662,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -654,6 +679,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -704,6 +730,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -754,6 +781,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -770,6 +798,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -786,6 +815,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -826,12 +856,14 @@
             ]
           },
           {
+            "accessLevel" : "public",
             "getters" : [
 
             ],
             "jsName" : "CSSStyleDeclaration",
             "methods" : [
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -855,6 +887,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -886,6 +919,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -918,8 +952,10 @@
             ]
           },
           {
+            "accessLevel" : "public",
             "getters" : [
               {
+                "accessLevel" : "public",
                 "name" : "x",
                 "type" : {
                   "double" : {
@@ -928,6 +964,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "y",
                 "type" : {
                   "double" : {
@@ -936,6 +973,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "width",
                 "type" : {
                   "double" : {
@@ -944,6 +982,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "height",
                 "type" : {
                   "double" : {
@@ -965,8 +1004,10 @@
             ]
           },
           {
+            "accessLevel" : "public",
             "getters" : [
               {
+                "accessLevel" : "public",
                 "name" : "effect",
                 "type" : {
                   "jsObject" : {
@@ -978,6 +1019,7 @@
             "jsName" : "Animation",
             "methods" : [
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -994,6 +1036,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -1010,6 +1053,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -1026,6 +1070,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -1045,6 +1090,7 @@
             "name" : "JSAnimation",
             "setters" : [
               {
+                "accessLevel" : "public",
                 "functionName" : "currentTime_set",
                 "name" : "currentTime",
                 "type" : {
@@ -1054,6 +1100,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "functionName" : "onfinish_set",
                 "name" : "onfinish",
                 "type" : {
@@ -1083,12 +1130,14 @@
             ]
           },
           {
+            "accessLevel" : "public",
             "getters" : [
 
             ],
             "jsName" : "AnimationEffect",
             "methods" : [
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -1112,6 +1161,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "effects" : {
                   "isAsync" : false,
                   "isStatic" : false,
@@ -1151,8 +1201,10 @@
         ],
         "types" : [
           {
+            "accessLevel" : "public",
             "getters" : [
               {
+                "accessLevel" : "public",
                 "name" : "type",
                 "type" : {
                   "string" : {
@@ -1161,6 +1213,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "target",
                 "type" : {
                   "jsObject" : {
@@ -1182,8 +1235,10 @@
             ]
           },
           {
+            "accessLevel" : "public",
             "getters" : [
               {
+                "accessLevel" : "public",
                 "name" : "key",
                 "type" : {
                   "string" : {
@@ -1205,8 +1260,10 @@
             ]
           },
           {
+            "accessLevel" : "public",
             "getters" : [
               {
+                "accessLevel" : "public",
                 "name" : "altKey",
                 "type" : {
                   "bool" : {
@@ -1215,6 +1272,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "button",
                 "type" : {
                   "integer" : {
@@ -1226,6 +1284,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "buttons",
                 "type" : {
                   "integer" : {
@@ -1237,6 +1296,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "clientX",
                 "type" : {
                   "double" : {
@@ -1245,6 +1305,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "clientY",
                 "type" : {
                   "double" : {
@@ -1253,6 +1314,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "ctrlKey",
                 "type" : {
                   "bool" : {
@@ -1261,6 +1323,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "metaKey",
                 "type" : {
                   "bool" : {
@@ -1269,6 +1332,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "movementX",
                 "type" : {
                   "double" : {
@@ -1277,6 +1341,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "movementY",
                 "type" : {
                   "double" : {
@@ -1285,6 +1350,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "offsetX",
                 "type" : {
                   "double" : {
@@ -1293,6 +1359,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "offsetY",
                 "type" : {
                   "double" : {
@@ -1301,6 +1368,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "pageX",
                 "type" : {
                   "double" : {
@@ -1309,6 +1377,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "pageY",
                 "type" : {
                   "double" : {
@@ -1317,6 +1386,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "screenX",
                 "type" : {
                   "double" : {
@@ -1325,6 +1395,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "screenY",
                 "type" : {
                   "double" : {
@@ -1333,6 +1404,7 @@
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "shiftKey",
                 "type" : {
                   "bool" : {
@@ -1354,16 +1426,24 @@
             ]
           },
           {
+            "accessLevel" : "public",
             "getters" : [
               {
+                "accessLevel" : "public",
                 "name" : "data",
                 "type" : {
-                  "string" : {
+                  "nullable" : {
+                    "_0" : {
+                      "string" : {
 
+                      }
+                    },
+                    "_1" : "null"
                   }
                 }
               },
               {
+                "accessLevel" : "public",
                 "name" : "target",
                 "type" : {
                   "jsObject" : {
@@ -1389,6 +1469,7 @@
       {
         "functions" : [
           {
+            "accessLevel" : "public",
             "effects" : {
               "isAsync" : false,
               "isStatic" : false,
@@ -1432,6 +1513,7 @@
             }
           },
           {
+            "accessLevel" : "public",
             "effects" : {
               "isAsync" : false,
               "isStatic" : false,
@@ -1456,6 +1538,7 @@
             }
           },
           {
+            "accessLevel" : "public",
             "effects" : {
               "isAsync" : false,
               "isStatic" : false,
@@ -1495,6 +1578,7 @@
             }
           },
           {
+            "accessLevel" : "public",
             "effects" : {
               "isAsync" : false,
               "isStatic" : false,
@@ -1544,6 +1628,7 @@
         ],
         "globalGetters" : [
           {
+            "accessLevel" : "public",
             "from" : "global",
             "name" : "window",
             "type" : {
@@ -1553,6 +1638,7 @@
             }
           },
           {
+            "accessLevel" : "public",
             "from" : "global",
             "name" : "document",
             "type" : {
@@ -1562,6 +1648,7 @@
             }
           },
           {
+            "accessLevel" : "public",
             "from" : "global",
             "name" : "performance",
             "type" : {
@@ -1577,5 +1664,8 @@
       }
     ]
   },
-  "moduleName" : "BrowserInterop"
+  "moduleName" : "BrowserInterop",
+  "usedExternalModules" : [
+
+  ]
 }

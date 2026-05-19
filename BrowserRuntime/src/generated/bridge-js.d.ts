@@ -117,7 +117,7 @@ export interface JSMouseEvent {
     readonly shiftKey: boolean;
 }
 export interface JSInputEvent {
-    readonly data: string;
+    readonly data: string | null;
     readonly target: any;
 }
 export type Exports = {

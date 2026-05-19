@@ -31,7 +31,7 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
     }
 
     func makeEventSink(_ handler: @escaping (String, DOM.Event) -> Void) -> DOM.EventSink {
-        let closure = JSEventCallback.make { e in
+        let closure = JSEventCallback { e in
             handler(try! e.type, DOM.Event(e.jsObject))
         }
 
@@ -71,13 +71,13 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
     func makeFocusAccessor(_ node: DOM.Node, onEvent: @escaping (DOM.FocusEvent) -> Void) -> DOM.FocusAccessor {
         let focusSink = DOM.EventSink(
             js:
-                JSEventCallback.make { _ in
+                JSEventCallback { _ in
                     onEvent(.focus)
                 }
         )
 
         let blurSink = DOM.EventSink(
-            js: JSEventCallback.make { _ in
+            js: JSEventCallback { _ in
                 onEvent(.blur)
             }
         )
