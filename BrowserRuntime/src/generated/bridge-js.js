@@ -39,6 +39,7 @@ export async function createInstantiator(options, swift) {
     let f32Stack = [];
     let f64Stack = [];
     let ptrStack = [];
+    let taStack = [];
     const enumHelpers = {};
     const structHelpers = {};
 
@@ -164,6 +165,13 @@ export async function createInstantiator(options, swift) {
             }
             bjs["swift_js_pop_i64"] = function() {
                 return i64Stack.pop();
+            }
+            const taCtors = [Int8Array, Uint8Array, Int16Array, Uint16Array, Int32Array, Uint32Array, Float32Array, Float64Array];
+            bjs["swift_js_push_typed_array"] = function(kind, ptr, count) {
+                const Ctor = taCtors[kind];
+                const byteLen = count * Ctor.BYTES_PER_ELEMENT;
+                const copy = memory.buffer.slice(ptr, ptr + byteLen);
+                taStack.push(Array.from(new Ctor(copy)));
             }
             bjs["swift_js_struct_lower_JSKeyframeEffectOptions"] = function(objectId) {
                 structHelpers.JSKeyframeEffectOptions.lower(swift.memory.getObject(objectId));
@@ -850,8 +858,8 @@ export async function createInstantiator(options, swift) {
             BrowserInterop["bjs_JSInputEvent_data_get"] = function bjs_JSInputEvent_data_get(self) {
                 try {
                     let ret = swift.memory.getObject(self).data;
-                    tmpRetBytes = textEncoder.encode(ret);
-                    return tmpRetBytes.length;
+                    const isSome = ret != null;
+                    tmpRetString = isSome ? ret : null;
                 } catch (error) {
                     setException(error);
                 }
