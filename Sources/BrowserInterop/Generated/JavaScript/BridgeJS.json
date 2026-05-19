@@ -1432,8 +1432,13 @@
                 "accessLevel" : "public",
                 "name" : "data",
                 "type" : {
-                  "string" : {
+                  "nullable" : {
+                    "_0" : {
+                      "string" : {
 
+                      }
+                    },
+                    "_1" : "null"
                   }
                 }
               },

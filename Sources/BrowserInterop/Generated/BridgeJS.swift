@@ -1587,13 +1587,13 @@ func _$JSMouseEvent_shiftKey_get(_ self: JSObject) throws(JSException) -> Bool {
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSInputEvent_data_get")
-fileprivate func bjs_JSInputEvent_data_get_extern(_ self: Int32) -> Int32
+fileprivate func bjs_JSInputEvent_data_get_extern(_ self: Int32) -> Void
 #else
-fileprivate func bjs_JSInputEvent_data_get_extern(_ self: Int32) -> Int32 {
+fileprivate func bjs_JSInputEvent_data_get_extern(_ self: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSInputEvent_data_get(_ self: Int32) -> Int32 {
+@inline(never) fileprivate func bjs_JSInputEvent_data_get(_ self: Int32) -> Void {
     return bjs_JSInputEvent_data_get_extern(self)
 }
 
@@ -1609,13 +1609,13 @@ fileprivate func bjs_JSInputEvent_target_get_extern(_ self: Int32) -> Int32 {
     return bjs_JSInputEvent_target_get_extern(self)
 }
 
-func _$JSInputEvent_data_get(_ self: JSObject) throws(JSException) -> String {
+func _$JSInputEvent_data_get(_ self: JSObject) throws(JSException) -> Optional<String> {
     let selfValue = self.bridgeJSLowerParameter()
-    let ret = bjs_JSInputEvent_data_get(selfValue)
+    bjs_JSInputEvent_data_get(selfValue)
     if let error = _swift_js_take_exception() {
         throw error
     }
-    return String.bridgeJSLiftReturn(ret)
+    return Optional<String>.bridgeJSLiftReturnFromSideChannel()
 }
 
 func _$JSInputEvent_target_get(_ self: JSObject) throws(JSException) -> JSObject {

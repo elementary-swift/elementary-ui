@@ -858,8 +858,8 @@ export async function createInstantiator(options, swift) {
             BrowserInterop["bjs_JSInputEvent_data_get"] = function bjs_JSInputEvent_data_get(self) {
                 try {
                     let ret = swift.memory.getObject(self).data;
-                    tmpRetBytes = textEncoder.encode(ret);
-                    return tmpRetBytes.length;
+                    const isSome = ret != null;
+                    tmpRetString = isSome ? ret : null;
                 } catch (error) {
                     setException(error);
                 }
