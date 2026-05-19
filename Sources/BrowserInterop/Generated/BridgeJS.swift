@@ -1,6 +1,5 @@
-// swift-format-ignore-file
-
 // bridge-js: skip
+// swift-format-ignore-file
 // NOTICE: This is auto-generated code by BridgeJS from JavaScriptKit,
 // DO NOT EDIT.
 //
@@ -49,7 +48,7 @@ private enum _BJS_Closure_14BrowserInterop7JSEventC_y {
 }
 
 extension JSTypedClosure where Signature == (JSEvent) -> Void {
-    init(fileID: StaticString = #fileID, line: UInt32 = #line, _ body: @escaping (JSEvent) -> Void) {
+    public init(fileID: StaticString = #fileID, line: UInt32 = #line, _ body: @escaping (JSEvent) -> Void) {
         self.init(
             makeClosure: make_swift_closure_BrowserInterop_14BrowserInterop7JSEventC_y,
             body: body,
@@ -110,7 +109,7 @@ private enum _BJS_Closure_14BrowserInteropSd_y {
 }
 
 extension JSTypedClosure where Signature == (Double) -> Void {
-    init(fileID: StaticString = #fileID, line: UInt32 = #line, _ body: @escaping (Double) -> Void) {
+    public init(fileID: StaticString = #fileID, line: UInt32 = #line, _ body: @escaping (Double) -> Void) {
         self.init(
             makeClosure: make_swift_closure_BrowserInterop_14BrowserInteropSd_y,
             body: body,
@@ -170,7 +169,7 @@ private enum _BJS_Closure_14BrowserInteropy_y {
 }
 
 extension JSTypedClosure where Signature == () -> Void {
-    init(fileID: StaticString = #fileID, line: UInt32 = #line, _ body: @escaping () -> Void) {
+    public init(fileID: StaticString = #fileID, line: UInt32 = #line, _ body: @escaping () -> Void) {
         self.init(
             makeClosure: make_swift_closure_BrowserInterop_14BrowserInteropy_y,
             body: body,

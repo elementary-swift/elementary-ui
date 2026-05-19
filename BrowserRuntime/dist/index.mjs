@@ -172,46 +172,75 @@ function deserializeError(error) {
 	return error.value;
 }
 const globalVariable = globalThis;
+const SLOT_BITS = 24;
+const SLOT_MASK = (1 << SLOT_BITS) - 1;
+const GEN_MASK = (1 << 32 - SLOT_BITS) - 1;
 var JSObjectSpace = class {
 	constructor() {
-		this._heapValueById = /* @__PURE__ */ new Map();
-		this._heapValueById.set(1, globalVariable);
-		this._heapEntryByValue = /* @__PURE__ */ new Map();
-		this._heapEntryByValue.set(globalVariable, {
-			id: 1,
-			rc: 1
-		});
-		this._heapNextKey = 2;
+		this._slotByValue = /* @__PURE__ */ new Map();
+		this._values = [];
+		this._stateBySlot = [];
+		this._freeSlotStack = [];
+		this._values[0] = void 0;
+		this._values[1] = globalVariable;
+		this._slotByValue.set(globalVariable, 1);
+		this._stateBySlot[1] = 1;
 	}
 	retain(value) {
-		const entry = this._heapEntryByValue.get(value);
-		if (entry) {
-			entry.rc++;
-			return entry.id;
+		const slot = this._slotByValue.get(value);
+		if (slot !== void 0) {
+			const nextState = this._stateBySlot[slot] + 1 >>> 0;
+			if ((nextState & SLOT_MASK) === 0) throw new RangeError(`Reference count overflow at slot ${slot}`);
+			this._stateBySlot[slot] = nextState;
+			return (nextState & ~SLOT_MASK | slot) >>> 0;
 		}
-		const id = this._heapNextKey++;
-		this._heapValueById.set(id, value);
-		this._heapEntryByValue.set(value, {
-			id,
-			rc: 1
-		});
-		return id;
+		let newSlot;
+		let state;
+		if (this._freeSlotStack.length > 0) {
+			newSlot = this._freeSlotStack.pop();
+			state = (this._stateBySlot[newSlot] >>> SLOT_BITS << SLOT_BITS | 1) >>> 0;
+		} else {
+			newSlot = this._values.length;
+			if (newSlot > SLOT_MASK) throw new RangeError(`Reference slot overflow: ${newSlot} exceeds ${SLOT_MASK}`);
+			state = 1;
+		}
+		this._stateBySlot[newSlot] = state;
+		this._values[newSlot] = value;
+		this._slotByValue.set(value, newSlot);
+		return (state & ~SLOT_MASK | newSlot) >>> 0;
 	}
-	retainByRef(ref) {
-		return this.retain(this.getObject(ref));
+	retainByRef(reference) {
+		const state = this._getValidatedSlotState(reference);
+		const slot = reference & SLOT_MASK;
+		const nextState = state + 1 >>> 0;
+		if ((nextState & SLOT_MASK) === 0) throw new RangeError(`Reference count overflow at slot ${slot}`);
+		this._stateBySlot[slot] = nextState;
+		return reference;
 	}
-	release(ref) {
-		const value = this._heapValueById.get(ref);
-		const entry = this._heapEntryByValue.get(value);
-		entry.rc--;
-		if (entry.rc != 0) return;
-		this._heapEntryByValue.delete(value);
-		this._heapValueById.delete(ref);
+	release(reference) {
+		const state = this._getValidatedSlotState(reference);
+		const slot = reference & SLOT_MASK;
+		if ((state & SLOT_MASK) > 1) {
+			this._stateBySlot[slot] = state - 1 >>> 0;
+			return;
+		}
+		this._slotByValue.delete(this._values[slot]);
+		this._values[slot] = void 0;
+		const nextGen = (state >>> SLOT_BITS) + 1 & GEN_MASK;
+		this._stateBySlot[slot] = nextGen << SLOT_BITS >>> 0;
+		this._freeSlotStack.push(slot);
 	}
-	getObject(ref) {
-		const value = this._heapValueById.get(ref);
-		if (value === void 0) throw new ReferenceError("Attempted to read invalid reference " + ref);
-		return value;
+	getObject(reference) {
+		this._getValidatedSlotState(reference);
+		return this._values[reference & SLOT_MASK];
+	}
+	_getValidatedSlotState(reference) {
+		const slot = reference & SLOT_MASK;
+		if (slot === 0) throw new ReferenceError(`Attempted to use invalid reference ${reference}`);
+		const state = this._stateBySlot[slot];
+		if (state === void 0 || (state & SLOT_MASK) === 0) throw new ReferenceError(`Attempted to use invalid reference ${reference}`);
+		if (state >>> SLOT_BITS !== reference >>> SLOT_BITS) throw new ReferenceError(`Attempted to use stale reference ${reference}`);
+		return state;
 	}
 };
 var SwiftRuntime = class {
@@ -732,6 +761,7 @@ async function createInstantiator(options, swift) {
 	let f32Stack = [];
 	let f64Stack = [];
 	let ptrStack = [];
+	let taStack = [];
 	const structHelpers = {};
 	let bjs = null;
 	const swiftClosureRegistry = typeof FinalizationRegistry === "undefined" ? {
@@ -857,6 +887,22 @@ async function createInstantiator(options, swift) {
 			};
 			bjs["swift_js_pop_i64"] = function() {
 				return i64Stack.pop();
+			};
+			const taCtors = [
+				Int8Array,
+				Uint8Array,
+				Int16Array,
+				Uint16Array,
+				Int32Array,
+				Uint32Array,
+				Float32Array,
+				Float64Array
+			];
+			bjs["swift_js_push_typed_array"] = function(kind, ptr, count) {
+				const Ctor = taCtors[kind];
+				const byteLen = count * Ctor.BYTES_PER_ELEMENT;
+				const copy = memory.buffer.slice(ptr, ptr + byteLen);
+				taStack.push(Array.from(new Ctor(copy)));
 			};
 			bjs["swift_js_struct_lower_JSKeyframeEffectOptions"] = function(objectId) {
 				structHelpers.JSKeyframeEffectOptions.lower(swift.memory.getObject(objectId));
