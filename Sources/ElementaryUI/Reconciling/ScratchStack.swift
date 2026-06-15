@@ -2,13 +2,13 @@ import BasicContainers
 import ContainersPreview
 
 struct ScratchStack<Element: ~Copyable>: ~Copyable, ~Escapable {
-    var storage: Inout<UniqueArray<Element>>
+    var storage: MutableRef<UniqueArray<Element>>
     private let startIndex: Int
 
     @_lifetime(&storage)
     init(storage: inout UniqueArray<Element>) {
         let startIndex = storage.count
-        self.storage = Inout(&storage)
+        self.storage = MutableRef(&storage)
         self.startIndex = startIndex
     }
 
@@ -49,7 +49,7 @@ struct ScratchStackSource<Element: ~Copyable>: ~Copyable {
     private var storage: UniqueArray<Element>
 
     init(initialCapacity: Int) {
-        storage = UniqueArray(capacity: initialCapacity)
+        storage = UniqueArray(minimumCapacity: initialCapacity)
     }
 
     mutating func withStack<R: ~Copyable>(
