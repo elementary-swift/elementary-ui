@@ -119,11 +119,7 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
 
     func setAttribute(_ node: DOM.Node, name: String, value: String?) {
         let element = node.jsElement
-        if let value {
-            _ = try? element.setAttribute(name, value)
-        } else {
-            _ = try? element.removeAttribute(name)
-        }
+        _ = try? element.setAttribute(name, value ?? "")
     }
 
     func removeAttribute(_ node: DOM.Node, name: String) {
