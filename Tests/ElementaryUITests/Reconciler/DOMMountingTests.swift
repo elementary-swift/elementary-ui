@@ -19,18 +19,20 @@ struct DOMMountingTests {
     @Test
     func setsAttributes() {
         let ops = mountOps {
-            img(.id("not-foo"), .src("bar"))
-                .attributes(.hidden, .id("foo"), when: true)
+            input(.id("not-foo"), .type(.checkbox), .checked)
+                .attributes(.hidden, .autofocus, .id("foo"), when: true)
                 .attributes(.inert, when: false)
         }
 
         #expect(
             ops == [
-                .createElement("img"),
-                .setAttr(node: "<img>", name: "id", value: "foo"),
-                .setAttr(node: "<img>", name: "src", value: "bar"),
-                .setAttr(node: "<img>", name: "hidden", value: nil),
-                .addChild(parent: "<>", child: "<img>"),
+                .createElement("input"),
+                .setAttr(node: "<input>", name: "id", value: "foo"),
+                .setAttr(node: "<input>", name: "type", value: "checkbox"),
+                .setAttr(node: "<input>", name: "checked", value: nil),
+                .setAttr(node: "<input>", name: "hidden", value: nil),
+                .setAttr(node: "<input>", name: "autofocus", value: nil),
+                .addChild(parent: "<>", child: "<input>"),
             ]
         )
     }
