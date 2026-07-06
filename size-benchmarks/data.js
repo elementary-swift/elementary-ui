@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1783241646302,
+  "lastUpdate": 1783332902818,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -7141,6 +7141,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/elementary-swift/elementary-ui/commit/99d48adb0e6cf776506bc9133001c98df94ab5ca"
         },
         "date": 1783241645393,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 188.61,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 159.89,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 142.75,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 199.69,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "99d48adb0e6cf776506bc9133001c98df94ab5ca",
+          "message": "fix attributes without values (#110)",
+          "timestamp": "2026-06-19T06:27:59Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/99d48adb0e6cf776506bc9133001c98df94ab5ca"
+        },
+        "date": 1783332901808,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
