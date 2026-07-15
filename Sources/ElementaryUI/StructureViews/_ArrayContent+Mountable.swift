@@ -1,6 +1,6 @@
 import BasicContainers
 
-extension _HTMLArray: _Mountable, View where Element: View {
+extension _ArrayContent: _Mountable, View where Element: View {
     public typealias _MountedNode = _KeyedNode
 
     public static func _makeNode(

@@ -1,5 +1,5 @@
-extension _HTMLConditional: View where TrueContent: View, FalseContent: View {}
-extension _HTMLConditional: _Mountable where TrueContent: _Mountable, FalseContent: _Mountable {
+extension _ConditionalContent: View where TrueContent: View, FalseContent: View {}
+extension _ConditionalContent: _Mountable where TrueContent: _Mountable, FalseContent: _Mountable {
     public typealias _MountedNode = _ConditionalNode
 
     public static func _makeNode(

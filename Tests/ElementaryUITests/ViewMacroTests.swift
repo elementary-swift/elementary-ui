@@ -16,21 +16,21 @@ struct ViewMacroTests {
     @Test
     func viewMacroWithPublicAccess() {
         let view = PublicMacroView(number: 7)
-        let body = view.body as! HTMLText
+        let body = view.body as! StringContent
         #expect(body.text == "Hello 7")
     }
 
     @Test
     func viewMacroWithPackageAccess() {
         let view = PackageMacroView(number: 11)
-        let body = view.body as! HTMLText
+        let body = view.body as! StringContent
         #expect(body.text == "Hello 11")
     }
 
     @Test
     func viewMacroWithInternalAccess() {
         let view = MyInternalView(number: 3)
-        let body = view.body as! HTMLText
+        let body = view.body as! StringContent
         #expect(body.text == "Hello 3")
     }
 }

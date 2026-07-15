@@ -3,7 +3,7 @@ extension ForEach: _Mountable, View where Content: _KeyReadableView, Data: Colle
 
     public init<V: View>(
         _ data: Data,
-        @HTMLBuilder content: @escaping @Sendable (Data.Element) -> V
+        @ContentBuilder content: @escaping @Sendable (Data.Element) -> V
     ) where Content == _KeyedView<V>, Data.Element: Identifiable, Data.Element.ID: LosslessStringConvertible {
         self.init(
             data,
@@ -14,7 +14,7 @@ extension ForEach: _Mountable, View where Content: _KeyReadableView, Data: Colle
     public init<ID: LosslessStringConvertible, V: View>(
         _ data: Data,
         key: @escaping @Sendable (Data.Element) -> ID,
-        @HTMLBuilder content: @escaping @Sendable (Data.Element) -> V
+        @ContentBuilder content: @escaping @Sendable (Data.Element) -> V
     ) where Content == _KeyedView<V> {
         self.init(
             data,

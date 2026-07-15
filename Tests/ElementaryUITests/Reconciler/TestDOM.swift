@@ -375,14 +375,14 @@ extension TestDOM.NodeRef.Kind: Equatable {
     }
 }
 
-func mountOps(@HTMLBuilder _ view: @escaping () -> some View) -> [TestDOM.Op] {
+func mountOps(@ContentBuilder _ view: @escaping () -> some View) -> [TestDOM.Op] {
     let dom = TestDOM()
     dom.mount(view)
     dom.runNextFrame()
     return dom.ops
 }
 
-func patchOps(@HTMLBuilder _ view: @escaping () -> some View, toggle: () -> Void) -> [TestDOM.Op] {
+func patchOps(@ContentBuilder _ view: @escaping () -> some View, toggle: () -> Void) -> [TestDOM.Op] {
     let dom = TestDOM()
     dom.mount(view)
     dom.runNextFrame()
@@ -393,7 +393,7 @@ func patchOps(@HTMLBuilder _ view: @escaping () -> some View, toggle: () -> Void
     return dom.ops
 }
 
-func trackMounting(@HTMLBuilder _ view: @escaping () -> some View) -> [String] {
+func trackMounting(@ContentBuilder _ view: @escaping () -> some View) -> [String] {
     let dom = TestDOM()
     let tracker = RenderTracker()
     dom.mount { view().environment(#Key(\.tracker), tracker) }
@@ -401,7 +401,7 @@ func trackMounting(@HTMLBuilder _ view: @escaping () -> some View) -> [String] {
     return tracker.calls
 }
 
-func trackUpdating(@HTMLBuilder _ view: @escaping () -> some View, toggle: () -> Void) -> [String] {
+func trackUpdating(@ContentBuilder _ view: @escaping () -> some View, toggle: () -> Void) -> [String] {
     let dom = TestDOM()
     let tracker = RenderTracker()
     dom.mount { view().environment(#Key(\.tracker), tracker) }

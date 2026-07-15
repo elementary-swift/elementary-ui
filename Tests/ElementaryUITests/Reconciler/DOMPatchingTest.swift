@@ -7,7 +7,7 @@ struct DOMPatchingTests {
     func patchesText() {
         let state = ToggleState()
         let ops = patchOps {
-            HTMLText("\(state.value)")
+            StringContent("\(state.value)")
         } toggle: {
             state.toggle()
         }
@@ -474,7 +474,7 @@ struct DOMPatchingTests {
         _ = patchOps {
             div {
                 if state.value {
-                    EmptyHTML()
+                    EmptyContent()
                 } else {
                     DeinitSnifferView {
                         deinitCount += 1

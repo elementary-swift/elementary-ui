@@ -44,7 +44,7 @@ public protocol Transition {
     ///   - content: The view to apply the transition to.
     ///   - phase: The current phase of the transition.
     /// - Returns: A view with the transition effects applied.
-    @HTMLBuilder func body(content: Content, phase: TransitionPhase) -> Body
+    @ContentBuilder func body(content: Content, phase: TransitionPhase) -> Body
 }
 
 /// The phase of a view transition.

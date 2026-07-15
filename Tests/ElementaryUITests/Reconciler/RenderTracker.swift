@@ -25,7 +25,7 @@ extension EnvironmentValues {
 struct Track<Wrapped: View> {
     @Environment(#Key(\.tracker)) var tracker
     var name: String
-    @HTMLBuilder let wrapped: Wrapped
+    @ContentBuilder let wrapped: Wrapped
 
     var body: some View {
         let _ = tracker.record(name)

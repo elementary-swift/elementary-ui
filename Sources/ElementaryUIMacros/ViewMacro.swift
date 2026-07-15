@@ -157,7 +157,7 @@ extension ViewMacro: MemberAttributeMacro {
             return []
         }
 
-        return [AttributeSyntax("@HTMLBuilder")]
+        return [AttributeSyntax("@ContentBuilder")]
     }
 }
 

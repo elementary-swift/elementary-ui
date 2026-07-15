@@ -1,5 +1,5 @@
-extension _HTMLTuple2: View where V0: View, V1: View {}
-extension _HTMLTuple2: _Mountable where V0: _Mountable, V1: _Mountable {
+extension _TupleContent2: View where V0: View, V1: View {}
+extension _TupleContent2: _Mountable where V0: _Mountable, V1: _Mountable {
     public typealias _MountedNode = _TupleNode2<V0._MountedNode, V1._MountedNode>
 
     public static func _makeNode(
@@ -23,8 +23,8 @@ extension _HTMLTuple2: _Mountable where V0: _Mountable, V1: _Mountable {
     }
 }
 
-extension _HTMLTuple3: View where V0: View, V1: View, V2: View {}
-extension _HTMLTuple3: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mountable {
+extension _TupleContent3: View where V0: View, V1: View, V2: View {}
+extension _TupleContent3: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mountable {
     public typealias _MountedNode = _TupleNode3<V0._MountedNode, V1._MountedNode, V2._MountedNode>
 
     public static func _makeNode(
@@ -50,8 +50,8 @@ extension _HTMLTuple3: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mou
     }
 }
 
-extension _HTMLTuple4: View where V0: View, V1: View, V2: View, V3: View {}
-extension _HTMLTuple4: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mountable, V3: _Mountable {
+extension _TupleContent4: View where V0: View, V1: View, V2: View, V3: View {}
+extension _TupleContent4: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mountable, V3: _Mountable {
     public typealias _MountedNode = _TupleNode4<V0._MountedNode, V1._MountedNode, V2._MountedNode, V3._MountedNode>
 
     public static func _makeNode(
@@ -79,8 +79,8 @@ extension _HTMLTuple4: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mou
     }
 }
 
-extension _HTMLTuple5: View where V0: View, V1: View, V2: View, V3: View, V4: View {}
-extension _HTMLTuple5: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mountable, V3: _Mountable, V4: _Mountable {
+extension _TupleContent5: View where V0: View, V1: View, V2: View, V3: View, V4: View {}
+extension _TupleContent5: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mountable, V3: _Mountable, V4: _Mountable {
     public typealias _MountedNode = _TupleNode5<V0._MountedNode, V1._MountedNode, V2._MountedNode, V3._MountedNode, V4._MountedNode>
 
     public static func _makeNode(
@@ -110,8 +110,8 @@ extension _HTMLTuple5: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mou
     }
 }
 
-extension _HTMLTuple6: View where V0: View, V1: View, V2: View, V3: View, V4: View, V5: View {}
-extension _HTMLTuple6: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mountable, V3: _Mountable, V4: _Mountable, V5: _Mountable {
+extension _TupleContent6: View where V0: View, V1: View, V2: View, V3: View, V4: View, V5: View {}
+extension _TupleContent6: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mountable, V3: _Mountable, V4: _Mountable, V5: _Mountable {
     public typealias _MountedNode = _TupleNode6<
         V0._MountedNode, V1._MountedNode, V2._MountedNode, V3._MountedNode, V4._MountedNode, V5._MountedNode
     >
@@ -147,8 +147,8 @@ extension _HTMLTuple6: _Mountable where V0: _Mountable, V1: _Mountable, V2: _Mou
 
 #if false  // non-copyable + tuples no bueno for now
 // Generic variadic tuple support using parameter packs
-extension _HTMLTuple: View where repeat each Child: View {}
-extension _HTMLTuple: _Mountable where repeat each Child: _Mountable {
+extension _TupleContent: View where repeat each Child: View {}
+extension _TupleContent: _Mountable where repeat each Child: _Mountable {
     public typealias _MountedNode = _TupleNode<repeat (each Child)._MountedNode>
 
     public static func _makeNode(
