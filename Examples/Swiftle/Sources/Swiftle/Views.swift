@@ -13,10 +13,10 @@ struct GameView {
         FlexColumn(align: .center, gap: 20) {
 
             FlexRow(align: .center, gap: 16) {
-                SwiftLogo()
+                SwiftLogo(id: "swift-logo-left")
                 Heading("SWIFTLE")
                     .style(.fontSize(.xxl), .fontFamily(.serif), .letterSpacing(.em(0.1)))
-                SwiftLogo()
+                SwiftLogo(id: "swift-logo-right")
             }
 
             FlexColumn(gap: 4) {
@@ -51,14 +51,6 @@ struct GameView {
             guard let key = EnteredKey(event) else { return }
             onKeyPressed(key)
         }
-    }
-}
-
-@View
-struct SwiftLogo {
-    var body: some View {
-        img(.src("swift-bird.svg"))
-            .style(.height(40))
     }
 }
 
@@ -149,9 +141,7 @@ struct EnterKeyView {
 
     var body: some View {
         button {
-            img(.src("enter.svg")).style(
-                .maxWidth("100%")
-            )
+            EnterIcon()
         }
         .style(
             .width(48),
@@ -176,9 +166,7 @@ struct BackspaceKeyView {
 
     var body: some View {
         button {
-            img(.src("backspace.svg")).style(
-                .maxWidth("100%")
-            )
+            BackspaceIcon()
         }
         .style(
             .width(48),
@@ -229,7 +217,7 @@ struct GameEndOverlay {
 }
 
 extension View where Tag == HTMLTag.button {
-    func enabledMobileActive() -> _AttributedElement<Self> {
+    func enabledMobileActive() -> some View<Tag> {
         attributes(.custom(name: "ontouchstart", value: ""))
     }
 }
