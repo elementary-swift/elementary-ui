@@ -56,6 +56,38 @@
 /// ```
 public protocol View<Tag>: HTML & _Mountable where Body: HTML & _Mountable {}
 
+/// A type that represents reusable SVG content that can participate in reactive rendering.
+///
+/// SVG views are the SVG counterpart to ``View``. Use them for components that are meant to
+/// be nested inside ``SVG/svg`` or another SVG element and whose `body` returns SVG content.
+/// Like HTML views, SVG views can use state, environment values, reactive reads, and the view
+/// lifecycle infrastructure provided by the ``View()-macro`` macro.
+///
+/// ## Creating SVG Views
+///
+/// Create SVG views by applying the `@View` macro to a struct and conforming to `SVGView`.
+///
+/// ```swift
+/// @View
+/// struct CheckmarkIcon: SVGView {
+///     var body: some SVGView {
+///         SVG.path(.d("M20 6 9 17l-5-5"))
+///     }
+/// }
+/// ```
+///
+/// ## Using SVG Views
+///
+/// SVG views are intended to be used inside an SVG root or SVG container.
+///
+/// ```swift
+/// SVG.svg(.viewBox(0, 0, 24, 24)) {
+///     CheckmarkIcon()
+/// }
+/// ```
+///
+/// - Important: `SVGView` is for SVG content. Use ``View`` for HTML content and wrap SVG
+///   components in ``SVG/svg`` when placing them in an HTML view hierarchy.
 public protocol SVGView<Tag>: SVGContent & _Mountable where Body: SVGContent & _Mountable {}
 
 public protocol _Mountable {
