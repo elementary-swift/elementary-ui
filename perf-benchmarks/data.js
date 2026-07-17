@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1783337949055,
+  "lastUpdate": 1784295699178,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -2585,6 +2585,85 @@ window.BENCHMARK_DATA = {
           {
             "name": "09_clear1k_x8",
             "value": 64.95,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.04,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.07,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.35,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "91fe191af532ea29c0f3330f0a2ad07eba1b1b76",
+          "message": "add support for SVG (#112)\n\n* adjusted for deprecations and renames\n\n* added basic SVG mounting\n\n* added embedded SVGs to Swiftle example\n\n* elementary 0.8\n\n* docc comment",
+          "timestamp": "2026-07-17T15:31:09+02:00",
+          "tree_id": "b494474b5c53e1f9c240aafc3d629e31681e5812",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/91fe191af532ea29c0f3330f0a2ad07eba1b1b76"
+        },
+        "date": 1784295698676,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 120.11,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 141,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 228.26,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 28.61,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 64.66,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 42.55,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 146.01,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 65.36,
             "unit": "ms"
           },
           {
