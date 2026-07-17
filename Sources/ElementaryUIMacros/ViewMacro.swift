@@ -29,11 +29,17 @@ extension ViewMacro: ExtensionMacro {
         var result: [ExtensionDeclSyntax] = []
 
         let needsFunctionView = protocols.contains { $0.trimmed.description == "__FunctionView" }
+        let needsView = protocols.contains { $0.trimmed.description == "View" }
+        let needsSVGView = protocols.contains { $0.trimmed.description == "SVGView" }
         let needsViewEquatable = protocols.contains { $0.trimmed.description == "__ViewEquatable" }
         let members = declaration.memberBlock.members.compactMap { $0.decl.as(VariableDeclSyntax.self) }
         let access = declaration.modifiers.first {
             $0.detail == nil && ($0.name.tokenKind == .keyword(.public) || $0.name.tokenKind == .keyword(.package))
         }
+        let shouldGenerateSVGView =
+            declaration.inherits(named: "SVGView")
+            || members.contains { $0.bodyReturnTypeContains("SVGView") }
+        let shouldGenerateHTMLView = !shouldGenerateSVGView && !declaration.inherits(named: "View")
 
         // add _StatefulView conformance if any @State member is declared
         if needsFunctionView {
@@ -102,8 +108,15 @@ extension ViewMacro: ExtensionMacro {
                 )
             }
 
+            var conformances = ["__FunctionView"]
+            if shouldGenerateSVGView, needsSVGView, !declaration.inherits(named: "SVGView") {
+                conformances.append("SVGView")
+            } else if shouldGenerateHTMLView, needsView {
+                conformances.append("View")
+            }
+
             let extensionDecl: DeclSyntax = """
-                extension \(raw: type.trimmedDescription): __FunctionView {
+                extension \(raw: type.trimmedDescription): \(raw: conformances.joined(separator: ", ")) {
                     \(raw: decls.map { $0.description }.joined(separator: "\n"))
                 }
                 """
@@ -172,6 +185,13 @@ extension VariableDeclSyntax {
         return trimmedIdentifier.text == "body"
     }
 
+    func bodyReturnTypeContains(_ text: String) -> Bool {
+        guard isBodyProperty else { return false }
+        return bindings.contains { binding in
+            binding.typeAnnotation?.type.trimmed.description.contains(text) ?? false
+        }
+    }
+
     var trimmedIdentifier: TokenSyntax? {
         bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.trimmed
     }
@@ -235,6 +255,22 @@ extension VariableDeclSyntax {
 
     func hasAnyAttribute(named name: Set<String>) -> Bool {
         attributes.contains { a in name.contains(a.as(AttributeSyntax.self)?.trimmedName ?? "") }
+    }
+}
+
+extension DeclGroupSyntax {
+    func inherits(named name: String) -> Bool {
+        guard
+            let inheritanceClause = self.as(StructDeclSyntax.self)?.inheritanceClause
+                ?? self.as(ClassDeclSyntax.self)?.inheritanceClause
+                ?? self.as(EnumDeclSyntax.self)?.inheritanceClause
+        else {
+            return false
+        }
+
+        return inheritanceClause.inheritedTypes.contains { inheritedType in
+            inheritedType.type.trimmed.description.hasPrefix(name)
+        }
     }
 }
 

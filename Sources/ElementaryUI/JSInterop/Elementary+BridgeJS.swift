@@ -117,6 +117,11 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
         return .init(ref: node.jsObject)
     }
 
+    func createElementNS(namespaceURI: String, element: String) -> DOM.Node {
+        let node = try! _document.createElementNS(namespaceURI, element)
+        return .init(ref: node.jsObject)
+    }
+
     func setAttribute(_ node: DOM.Node, name: String, value: String?) {
         let element = node.jsElement
         _ = try? element.setAttribute(name, value ?? "")

@@ -27,6 +27,8 @@
 @attached(
     extension,
     conformances: __FunctionView,
+    View,
+    SVGView,
     __ViewEquatable,
     names: named(__initializeState),
     named(__restoreState),

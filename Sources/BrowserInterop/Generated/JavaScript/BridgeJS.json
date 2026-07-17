@@ -219,6 +219,38 @@
                   "isStatic" : false,
                   "isThrows" : true
                 },
+                "name" : "createElementNS",
+                "parameters" : [
+                  {
+                    "name" : "namespaceURI",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  },
+                  {
+                    "name" : "qualifiedName",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "jsObject" : {
+                    "_0" : "JSElement"
+                  }
+                }
+              },
+              {
+                "accessLevel" : "public",
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
                 "name" : "createTextNode",
                 "parameters" : [
                   {

@@ -1,4 +1,5 @@
 extension _AttributedContent: View where Content: View {}
+extension _AttributedContent: SVGView where Content: SVGView {}
 extension _AttributedContent: _Mountable where Content: _Mountable {
     public typealias _MountedNode = _StatefulNode<_AttributeModifier, Content._MountedNode>
 

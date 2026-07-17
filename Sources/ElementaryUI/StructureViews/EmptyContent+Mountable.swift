@@ -1,4 +1,4 @@
-extension EmptyContent: _Mountable, View {
+extension EmptyContent: _Mountable, View, SVGView {
     public typealias _MountedNode = _EmptyNode
 
     public static func _makeNode(

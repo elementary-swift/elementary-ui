@@ -24,6 +24,7 @@ private extension DOM.Node {
 final class TestDOM: DOM.Interactor {
     enum Op: Equatable, CustomStringConvertible {
         case createElement(String)
+        case createElementNS(namespaceURI: String, element: String)
         case createText(String)
         case setAttr(node: String, name: String, value: String?)
         case removeAttr(node: String, name: String)
@@ -40,6 +41,8 @@ final class TestDOM: DOM.Interactor {
             switch self {
             case let .createElement(tag):
                 "create <\(tag)>"
+            case let .createElementNS(namespaceURI, element):
+                "create <\(element)> in \(namespaceURI)"
             case let .createText(text):
                 "create '\(text)'"
             case let .setAttr(node, name, value):
@@ -197,6 +200,11 @@ final class TestDOM: DOM.Interactor {
 
     func createElement(_ element: String) -> DOM.Node {
         ops.append(.createElement(element))
+        return DOM.Node(NodeRef(kind: .element(ElementData(tag: element))))
+    }
+
+    func createElementNS(namespaceURI: String, element: String) -> DOM.Node {
+        ops.append(.createElementNS(namespaceURI: namespaceURI, element: element))
         return DOM.Node(NodeRef(kind: .element(ElementData(tag: element))))
     }
 

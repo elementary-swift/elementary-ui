@@ -20,6 +20,7 @@ public enum DOM {
 
         func createText(_ text: String) -> Node
         func createElement(_ element: String) -> Node
+        func createElementNS(namespaceURI: String, element: String) -> Node
 
         // Low-level DOM-like attribute APIs
         func setAttribute(_ node: Node, name: String, value: String?)

@@ -1,4 +1,4 @@
-public protocol __FunctionView: _Mountable, View {
+public protocol __FunctionView: _Mountable, MarkupContent where Body: _Mountable {
     associatedtype __ViewState
 
     static func __initializeState(from view: borrowing Self) -> __ViewState

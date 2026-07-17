@@ -3,7 +3,7 @@ import Reactivity
 
 // TODO: refactor this entire thing - we need to make the key list without the views, and the resolve the views just off the data....
 public final class _ForEachNode<Data, Content>: _SchedulableNode, _Reconcilable
-where Data: Collection, Content: _KeyReadableView, Content.Value: _Mountable {
+where Data: Collection, Content: _KeyReadableContent {
     private var data: Data
     private var contentBuilder: @Sendable (Data.Element) -> Content
     private var container: MountContainer!

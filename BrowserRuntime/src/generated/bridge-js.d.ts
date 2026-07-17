@@ -34,6 +34,7 @@ export type JSFillModeObject = typeof JSFillModeValues;
 
 export interface JSDocument {
     createElement(tagName: string): JSElement;
+    createElementNS(namespaceURI: string, qualifiedName: string): JSElement;
     createTextNode(text: string): JSNode;
     querySelector(selector: string): JSElement;
     addEventListener(type: string, listener: (arg0: JSEvent) => void): void;

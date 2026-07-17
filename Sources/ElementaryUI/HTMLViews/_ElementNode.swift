@@ -10,12 +10,18 @@ public struct _ElementNode<Child: _Reconcilable & ~Copyable>: ~Copyable, _Reconc
 
     init(
         tag: String,
+        namespaceURI: String? = nil,
         attributes: _AttributeStorage,
         viewContext: borrowing _ViewContext,
         ctx: inout _MountContext,
         makeChild: (borrowing _ViewContext, inout _MountContext) -> Child
     ) {
-        let domNode = ctx.dom.createElement(tag)
+        let domNode: DOM.Node
+        if let namespaceURI {
+            domNode = ctx.dom.createElementNS(namespaceURI: namespaceURI, element: tag)
+        } else {
+            domNode = ctx.dom.createElement(tag)
+        }
 
         ctx.appendStaticElement(domNode)
 

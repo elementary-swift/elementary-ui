@@ -54,8 +54,9 @@
 ///     }
 /// }
 /// ```
-public protocol View<Tag>: HTML & _Mountable where Body: HTML & _Mountable {
-}
+public protocol View<Tag>: HTML & _Mountable where Body: HTML & _Mountable {}
+
+public protocol SVGView<Tag>: SVGContent & _Mountable where Body: SVGContent & _Mountable {}
 
 public protocol _Mountable {
     associatedtype _MountedNode: _Reconcilable & ~Copyable

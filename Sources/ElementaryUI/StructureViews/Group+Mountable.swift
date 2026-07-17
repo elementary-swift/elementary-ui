@@ -1,4 +1,5 @@
 extension Group: View where Content: View {}
+extension Group: SVGView where Content: SVGView {}
 extension Group: _Mountable where Content: _Mountable {
     public typealias _MountedNode = Self.Content._MountedNode
 

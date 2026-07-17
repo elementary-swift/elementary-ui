@@ -1,4 +1,5 @@
 extension _ConditionalContent: View where TrueContent: View, FalseContent: View {}
+extension _ConditionalContent: SVGView where TrueContent: SVGView, FalseContent: SVGView {}
 extension _ConditionalContent: _Mountable where TrueContent: _Mountable, FalseContent: _Mountable {
     public typealias _MountedNode = _ConditionalNode
 

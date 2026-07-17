@@ -1,6 +1,8 @@
 import BasicContainers
 
-extension _ArrayContent: _Mountable, View where Element: View {
+extension _ArrayContent: View where Element: View {}
+extension _ArrayContent: SVGView where Element: SVGView {}
+extension _ArrayContent: _Mountable where Element: _Mountable {
     public typealias _MountedNode = _KeyedNode
 
     public static func _makeNode(

@@ -317,6 +317,18 @@ fileprivate func bjs_JSDocument_createElement_extern(_ self: Int32, _ tagNameByt
 }
 
 #if arch(wasm32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_createElementNS")
+fileprivate func bjs_JSDocument_createElementNS_extern(_ self: Int32, _ namespaceURIBytes: Int32, _ namespaceURILength: Int32, _ qualifiedNameBytes: Int32, _ qualifiedNameLength: Int32) -> Int32
+#else
+fileprivate func bjs_JSDocument_createElementNS_extern(_ self: Int32, _ namespaceURIBytes: Int32, _ namespaceURILength: Int32, _ qualifiedNameBytes: Int32, _ qualifiedNameLength: Int32) -> Int32 {
+    fatalError("Only available on WebAssembly")
+}
+#endif
+@inline(never) fileprivate func bjs_JSDocument_createElementNS(_ self: Int32, _ namespaceURIBytes: Int32, _ namespaceURILength: Int32, _ qualifiedNameBytes: Int32, _ qualifiedNameLength: Int32) -> Int32 {
+    return bjs_JSDocument_createElementNS_extern(self, namespaceURIBytes, namespaceURILength, qualifiedNameBytes, qualifiedNameLength)
+}
+
+#if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_createTextNode")
 fileprivate func bjs_JSDocument_createTextNode_extern(_ self: Int32, _ textBytes: Int32, _ textLength: Int32) -> Int32
 #else
@@ -378,6 +390,22 @@ func _$JSDocument_createElement(_ self: JSObject, _ tagName: String) throws(JSEx
     let ret0 = tagName.bridgeJSWithLoweredParameter { (tagNameBytes, tagNameLength) in
         let ret = bjs_JSDocument_createElement(selfValue, tagNameBytes, tagNameLength)
         return ret
+    }
+    let ret = ret0
+    if let error = _swift_js_take_exception() {
+        throw error
+    }
+    return JSElement.bridgeJSLiftReturn(ret)
+}
+
+func _$JSDocument_createElementNS(_ self: JSObject, _ namespaceURI: String, _ qualifiedName: String) throws(JSException) -> JSElement {
+    let selfValue = self.bridgeJSLowerParameter()
+    let ret0 = namespaceURI.bridgeJSWithLoweredParameter { (namespaceURIBytes, namespaceURILength) in
+        let ret1 = qualifiedName.bridgeJSWithLoweredParameter { (qualifiedNameBytes, qualifiedNameLength) in
+            let ret = bjs_JSDocument_createElementNS(selfValue, namespaceURIBytes, namespaceURILength, qualifiedNameBytes, qualifiedNameLength)
+            return ret
+        }
+        return ret1
     }
     let ret = ret0
     if let error = _swift_js_take_exception() {

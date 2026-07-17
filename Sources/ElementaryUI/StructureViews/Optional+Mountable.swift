@@ -1,4 +1,5 @@
 extension Optional: View where Wrapped: View {}
+extension Optional: SVGView where Wrapped: SVGView {}
 extension Optional: _Mountable where Wrapped: _Mountable {
     public typealias _MountedNode = _ConditionalNode
 

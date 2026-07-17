@@ -4,6 +4,7 @@
 public struct JSDocument {
     @JSGetter public var body: JSElement
     @JSFunction public func createElement(_ tagName: String) throws(JSException) -> JSElement
+    @JSFunction public func createElementNS(_ namespaceURI: String, _ qualifiedName: String) throws(JSException) -> JSElement
     @JSFunction public func createTextNode(_ text: String) throws(JSException) -> JSNode
     @JSFunction public func querySelector(_ selector: String) throws(JSException) -> JSElement
     @JSFunction public func addEventListener(_ type: String, _ listener: JSTypedClosure<(JSEvent) -> Void>) throws(JSException)

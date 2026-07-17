@@ -1,5 +1,6 @@
-public struct _KeyedView<Value: View>: View {
+public struct _KeyedView<Value: MarkupContent & _Mountable>: _Mountable {
     public typealias Tag = Value.Tag
+    public typealias Body = Never
     public typealias _MountedNode = _KeyedNode
 
     var key: _ViewKey
@@ -42,20 +43,56 @@ public struct _KeyedView<Value: View>: View {
     }
 }
 
+extension _KeyedView: MarkupContent {}
+extension _KeyedView: HTML where Value: HTML {}
+extension _KeyedView: View where Value: View {}
+extension _KeyedView: SVGContent where Value: SVGView {}
+extension _KeyedView: SVGView where Value: SVGView {}
+
+#if !hasFeature(Embedded)
+extension _KeyedView: _Renderable {
+    public static func _render<Renderer: _HTMLRendering>(
+        _ html: consuming Self,
+        into renderer: inout Renderer,
+        with context: consuming _RenderingContext
+    ) {
+        Value._render(html.value, into: &renderer, with: context)
+    }
+
+    public static func _render<Renderer: _AsyncHTMLRendering>(
+        _ html: consuming Self,
+        into renderer: inout Renderer,
+        with context: consuming _RenderingContext
+    ) async throws {
+        try await Value._render(html.value, into: &renderer, with: context)
+    }
+}
+#endif
+
 public extension View {
     func key<K: LosslessStringConvertible>(_ key: K) -> some View<Tag> & _KeyReadableView {
         _KeyedView(key: _ViewKey(key), value: self)
     }
 }
 
-public protocol _KeyReadableView: View {
-    associatedtype Value: View
+public extension SVGView {
+    func key<K: LosslessStringConvertible>(_ key: K) -> some SVGView<Tag> & _KeyReadableSVGView {
+        _KeyedView(key: _ViewKey(key), value: self)
+    }
+}
+
+public protocol _KeyReadableContent: _Mountable {
+    associatedtype Value: MarkupContent & _Mountable
 
     var _key: _ViewKey { get }
     var _value: Value { get }
 }
 
-extension _KeyedView: _KeyReadableView {
+public protocol _KeyReadableView: _KeyReadableContent, View where Value: View {}
+
+public protocol _KeyReadableSVGView: _KeyReadableContent, SVGView where Value: SVGView {}
+
+extension _KeyedView: _KeyReadableContent {
     public var _key: _ViewKey {
         key
     }
@@ -64,3 +101,6 @@ extension _KeyedView: _KeyReadableView {
         value
     }
 }
+
+extension _KeyedView: _KeyReadableView where Value: View {}
+extension _KeyedView: _KeyReadableSVGView where Value: SVGView {}

@@ -1,4 +1,5 @@
 extension StringContent: View {}
+extension StringContent: SVGView {}
 extension StringContent: _Mountable {
     public typealias _MountedNode = _TextNode
 

@@ -1,7 +1,10 @@
 import ElementaryUI
+import Reactivity
 import Testing
 
 struct DOMMountingTests {
+    let svgNamespaceURI = "http://www.w3.org/2000/svg"
+
     @Test
     func mountsAnElement() {
         let ops = mountOps { div { "Hello" } }
@@ -140,6 +143,68 @@ struct DOMMountingTests {
     }
 
     @Test
+    func mountsSVGElementsWithNamespace() {
+        let ops = mountOps {
+            SVG.svg(.viewBox(0, 0, 24, 24)) {
+                SVG.rect(.x(1), .y(2), .width(10), .height(11), .fill("red"))
+            }
+        }
+
+        #expect(
+            ops == [
+                .createElementNS(namespaceURI: svgNamespaceURI, element: "svg"),
+                .setAttr(node: "<svg>", name: "viewBox", value: "0 0 24 24"),
+                .createElementNS(namespaceURI: svgNamespaceURI, element: "rect"),
+                .setAttr(node: "<rect>", name: "x", value: "1"),
+                .setAttr(node: "<rect>", name: "y", value: "2"),
+                .setAttr(node: "<rect>", name: "width", value: "10"),
+                .setAttr(node: "<rect>", name: "height", value: "11"),
+                .setAttr(node: "<rect>", name: "fill", value: "red"),
+                .addChild(parent: "<svg>", child: "<rect>"),
+                .addChild(parent: "<>", child: "<svg>"),
+            ]
+        )
+    }
+
+    @Test
+    func mountsNestedSVGContent() {
+        let ops = mountOps {
+            SVG.svg {
+                SVG.g {
+                    SVG.circle(.cx(4), .cy(5), .r(6))
+                    if true {
+                        SVG.text(.x(1), .y(2)) { "Hi" }
+                    }
+                    for index in [1, 2] {
+                        SVG.rect(.x(.init(index)), .y(0), .width(1), .height(1))
+                    }
+                }
+            }
+        }
+
+        #expect(ops.contains(.createElementNS(namespaceURI: svgNamespaceURI, element: "svg")))
+        #expect(ops.contains(.createElementNS(namespaceURI: svgNamespaceURI, element: "g")))
+        #expect(ops.contains(.createElementNS(namespaceURI: svgNamespaceURI, element: "circle")))
+        #expect(ops.contains(.createElementNS(namespaceURI: svgNamespaceURI, element: "text")))
+        #expect(ops.contains(.createText("Hi")))
+        #expect(ops.filter { if case .createElementNS(_, "rect") = $0 { true } else { false } }.count == 2)
+    }
+
+    @Test
+    func patchesSVGAttributesFromReactiveView() {
+        let state = SVGTestState()
+        let ops = patchOps {
+            SVG.svg {
+                ReactiveRect(state: state)
+            }
+        } toggle: {
+            state.isFilled = true
+        }
+
+        #expect(ops.contains(.setAttr(node: "<rect>", name: "fill", value: "red")))
+    }
+
+    @Test
     func mountsConditionals() {
         let ops = mountOps {
             div {
@@ -275,6 +340,20 @@ struct DOMMountingTests {
         }.count
 
         #expect(createdPCount == 2)
+    }
+}
+
+@Reactive
+private class SVGTestState {
+    var isFilled = false
+}
+
+@View
+private struct ReactiveRect: SVGView {
+    let state: SVGTestState
+
+    var body: some SVGView {
+        SVG.rect(.width(10), .height(10), .fill(state.isFilled ? "red" : "blue"))
     }
 }
 
