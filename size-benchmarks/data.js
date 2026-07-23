@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784708629312,
+  "lastUpdate": 1784795388232,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -7963,6 +7963,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 198.75,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "91fe191af532ea29c0f3330f0a2ad07eba1b1b76",
+          "message": "add support for SVG (#112)\n\n* adjusted for deprecations and renames\n\n* added basic SVG mounting\n\n* added embedded SVGs to Swiftle example\n\n* elementary 0.8\n\n* docc comment",
+          "timestamp": "2026-07-17T13:31:09Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/91fe191af532ea29c0f3330f0a2ad07eba1b1b76"
+        },
+        "date": 1784795387492,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 189.15,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 160.48,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 143.08,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 198.76,
             "unit": "kB"
           }
         ]
