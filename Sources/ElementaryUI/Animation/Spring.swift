@@ -51,7 +51,7 @@ public struct Spring {
 
         // Clamp damping to prevent over-damping if not allowed
         if !allowOverDamping {
-            let criticalDamping = 2.0 * sqrt(stiffness * mass)
+            let criticalDamping = 2.0 * (stiffness * mass).squareRoot()
             actualDamping = min(damping, criticalDamping)
         } else {
             actualDamping = damping
@@ -59,8 +59,8 @@ public struct Spring {
 
         // Calculate derived physics values
         self.init(
-            dampingRatio: actualDamping / (2.0 * sqrt(stiffness * mass)),
-            naturalFrequency: sqrt(stiffness / mass)
+            dampingRatio: actualDamping / (2.0 * (stiffness * mass).squareRoot()),
+            naturalFrequency: (stiffness / mass).squareRoot()
         )
     }
 
@@ -87,7 +87,7 @@ extension Spring {
 
         case .underdamped:
             // Underdamped: starts at 0, approaches target with oscillation
-            let omegaD = naturalFrequency * sqrt(1.0 - dampingRatio * dampingRatio)
+            let omegaD = naturalFrequency * (1.0 - dampingRatio * dampingRatio).squareRoot()
             let envelope = exp(-dampingRatio * naturalFrequency * time)
             let cosine = cos(omegaD * time)
             let sine = sin(omegaD * time)
@@ -99,7 +99,7 @@ extension Spring {
 
         case .overdamped:
             // Overdamped: starts at 0, approaches target without oscillation
-            let discriminant = sqrt(dampingRatio * dampingRatio - 1.0)
+            let discriminant = (dampingRatio * dampingRatio - 1.0).squareRoot()
             let r1 = -naturalFrequency * (dampingRatio + discriminant)
             let r2 = -naturalFrequency * (dampingRatio - discriminant)
 
@@ -119,7 +119,7 @@ extension Spring {
         switch regime {
         case .underdamped:
             // Underdamped velocity
-            let omegaD = naturalFrequency * sqrt(1.0 - dampingRatio * dampingRatio)
+            let omegaD = naturalFrequency * (1.0 - dampingRatio * dampingRatio).squareRoot()
             let envelope = exp(-dampingRatio * naturalFrequency * time)
             let cosine = cos(omegaD * time)
             let sine = sin(omegaD * time)
@@ -139,7 +139,7 @@ extension Spring {
 
         case .overdamped:
             // Overdamped velocity
-            let discriminant = sqrt(dampingRatio * dampingRatio - 1.0)
+            let discriminant = (dampingRatio * dampingRatio - 1.0).squareRoot()
             let r1 = -naturalFrequency * (dampingRatio + discriminant)
             let r2 = -naturalFrequency * (dampingRatio - discriminant)
 

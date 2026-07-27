@@ -29,7 +29,7 @@ final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
                         }
                     )
 
-                    _ = mountCtx.mountInDOMNode(domRoot, isRoot: true)
+                    _ = mountCtx.mountInDOMNode(domRoot)
                     return node
                 }
             }

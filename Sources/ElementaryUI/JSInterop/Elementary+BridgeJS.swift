@@ -19,7 +19,14 @@ extension DOM.EventSink {
     }
 }
 
-final class BridgeJSDOMInteractor: DOM.Interactor {
+// TODO: fix this with typealias refactoring
+#if os(WASI)
+private typealias BridgeDOMInteractorProtocol = DOM.Interactor
+#else
+private protocol BridgeDOMInteractorProtocol: DOM.LayoutAnimationInteractor {}
+#endif
+
+final class BridgeJSDOMInteractor: BridgeDOMInteractorProtocol {
     private let _document: JSDocument
     private let _window: JSWindow
     private let _performance: JSPerformance
@@ -131,35 +138,6 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
         _ = try? node.jsElement.removeAttribute(name)
     }
 
-    func animateElement(_ element: DOM.Node, _ effect: DOM.Animation.KeyframeEffect, onFinish: @escaping () -> Void) -> DOM.Animation {
-        guard let animation = try? element.jsElement.animate(effect.jsKeyframes, effect.jsEffectOptions) else {
-            return .init(_cancel: {}, _update: { _ in })
-        }
-
-        _ = try? animation.persist()
-
-        if effect.duration == 0 {
-            _ = try? animation.pause()
-        }
-
-        _ = try? animation.setOnfinish(onFinish)
-
-        return .init(
-            _cancel: {
-                _ = try? animation.cancel()
-            },
-            _update: { effect in
-                logTrace("updating animation with effect \(effect)")
-                _ = try? animation.effect.setKeyframes(effect.jsKeyframes)
-                _ = try? animation.effect.updateTiming(effect.jsTiming)
-                _ = try? animation.setCurrentTime(0)
-                if effect.duration > 0 {
-                    _ = try? animation.play()
-                }
-            }
-        )
-    }
-
     func addEventListener(_ node: DOM.Node, event: String, sink: borrowing DOM.EventSink) {
         _ = try? node.jsElement.addEventListener(event, sink.jsClosure)
     }
@@ -195,6 +173,67 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
         _ = try? parent.jsElement.replaceChildren()
     }
 
+    func queueMicrotask(_ callback: @escaping () -> Void) {
+        try! BrowserInterop.queueMicrotask(callback)
+    }
+
+    func setTimeout(_ callback: @escaping () -> Void, _ timeout: Double) {
+        try! BrowserInterop.setTimeout(callback, timeout)
+    }
+
+    func getCurrentTime() -> Double {
+        try! _performance.now() / 1000
+    }
+
+    func querySelector(_ selector: String) -> DOM.Node? {
+        guard let element = try? _document.querySelector(selector) else {
+            return nil
+        }
+        if element.jsObject.jsValue.isNull || element.jsObject.jsValue.isUndefined {
+            return nil
+        }
+        return DOM.Node(ref: element.jsObject)
+    }
+}
+
+extension BridgeJSDOMInteractor {
+    func requestAnimationFrame(_ callback: @escaping (Double) -> Void) {
+        _ = try! BrowserInterop.requestAnimationFrame(callback)
+    }
+
+    func animateElement(
+        _ element: DOM.Node,
+        _ effect: DOM.Animation.KeyframeEffect,
+        onFinish: @escaping () -> Void
+    ) -> DOM.Animation {
+        guard let animation = try? element.jsElement.animate(effect.jsKeyframes, effect.jsEffectOptions) else {
+            return .init(_cancel: {}, _update: { _ in })
+        }
+
+        _ = try? animation.persist()
+
+        if effect.duration == 0 {
+            _ = try? animation.pause()
+        }
+
+        _ = try? animation.setOnfinish(onFinish)
+
+        return .init(
+            _cancel: {
+                _ = try? animation.cancel()
+            },
+            _update: { effect in
+                logTrace("updating animation with effect \(effect)")
+                _ = try? animation.effect.setKeyframes(effect.jsKeyframes)
+                _ = try? animation.effect.updateTiming(effect.jsTiming)
+                _ = try? animation.setCurrentTime(0)
+                if effect.duration > 0 {
+                    _ = try? animation.play()
+                }
+            }
+        )
+    }
+
     func getBoundingClientRect(_ node: DOM.Node) -> DOM.Rect {
         guard let rect = try? node.jsElement.getBoundingClientRect() else {
             return DOM.Rect(x: 0, y: 0, width: 0, height: 0)
@@ -217,37 +256,11 @@ final class BridgeJSDOMInteractor: DOM.Interactor {
         return DOM.Node(ref: parent.jsObject)
     }
 
-    func requestAnimationFrame(_ callback: @escaping (Double) -> Void) {
-        _ = try! BrowserInterop.requestAnimationFrame(callback)
-    }
-
-    func queueMicrotask(_ callback: @escaping () -> Void) {
-        try! BrowserInterop.queueMicrotask(callback)
-    }
-
-    func setTimeout(_ callback: @escaping () -> Void, _ timeout: Double) {
-        try! BrowserInterop.setTimeout(callback, timeout)
-    }
-
-    func getCurrentTime() -> Double {
-        try! _performance.now() / 1000
-    }
-
     func getScrollOffset() -> (x: Double, y: Double) {
         (
             x: (try? _window.scrollX) ?? 0,
             y: (try? _window.scrollY) ?? 0
         )
-    }
-
-    func querySelector(_ selector: String) -> DOM.Node? {
-        guard let element = try? _document.querySelector(selector) else {
-            return nil
-        }
-        if element.jsObject.jsValue.isNull || element.jsObject.jsValue.isUndefined {
-            return nil
-        }
-        return DOM.Node(ref: element.jsObject)
     }
 }
 

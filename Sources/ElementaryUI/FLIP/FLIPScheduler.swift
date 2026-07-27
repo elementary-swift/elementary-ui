@@ -1,21 +1,45 @@
 import _UTF8Internals
 
+// TODO: currently this mixed ticking along animations with creating / committing initial FLIP animations
+// this should be split into two separate runs
+
 final class FLIPScheduler {
-    private var dom: any DOM.Interactor
+    // TODO: fix this with typealias refactoring
+    #if os(WASI)
+    private var dom: BridgeJSDOMInteractor
+    #else
+    private var dom: any DOM.LayoutAnimationInteractor
+    #endif
 
     // NOTE: extend this to support css properties as well - for now it is always the bounding rect stuff
     private var scheduledAnimations: [DOM.Node: ScheduledNode] = [:]
     private var runningAnimations: [DOM.Node: GeometryAnimation] = [:]
     private var absolutePositionOriginals: [DOM.Node: PreviousStyleValues] = [:]
     private var firstWindowScrollOffset: (x: Double, y: Double)? = nil
+    private var isLayoutEffectScheduled = false
 
-    /// Whether there is pending FLIP work that needs to be committed in RAF
-    var hasPendingWork: Bool {
-        !scheduledAnimations.isEmpty || !runningAnimations.isEmpty
-    }
-
-    init(dom: any DOM.Interactor) {
+    // TODO: fix this with typealias refactoring
+    #if os(WASI)
+    init(dom: BridgeJSDOMInteractor) {
         self.dom = dom
+    }
+    #else
+    init(dom: any DOM.LayoutAnimationInteractor) {
+        self.dom = dom
+    }
+    #endif
+
+    func scheduleLayoutEffect(on scheduler: Scheduler) {
+        guard !isLayoutEffectScheduled else { return }
+        isLayoutEffectScheduled = true
+
+        scheduler.addLayoutEffect { [self] context in
+            isLayoutEffectScheduled = false
+            if !scheduledAnimations.isEmpty {
+                commitScheduledAnimations(context: &context)
+            }
+            commitDirtyAnimations(context: &context)
+        }
     }
 
     func scheduleAnimationOf(_ nodes: [DOM.Node], inParent parentNode: DOM.Node, context: inout _TransactionContext) {
@@ -36,6 +60,7 @@ final class FLIPScheduler {
                 containerNode: parentNode
             )
         }
+        scheduleLayoutEffect(on: context.scheduler)
     }
 
     func scheduleAnimationOf(_ node: DOM.Node, context: inout _TransactionContext) {
@@ -48,10 +73,14 @@ final class FLIPScheduler {
             geometry: getNodeGeometry(node),
             containerNode: nil
         )
+        scheduleLayoutEffect(on: context.scheduler)
     }
 
     func markAsRemoved(_ node: DOM.Node) {
         scheduledAnimations.removeValue(forKey: node)
+        if scheduledAnimations.isEmpty {
+            firstWindowScrollOffset = nil
+        }
         absolutePositionOriginals.removeValue(forKey: node)
         let running = runningAnimations.removeValue(forKey: node)
         running?.cancelAll()
@@ -62,8 +91,8 @@ final class FLIPScheduler {
             scheduleAnimationOf(node, context: &context)
         }
 
-        if dom.needsAbsolutePositioning(node) {
-            let rect = dom.getAbsolutePositionCoordinates(node)
+        if needsAbsolutePositioning(node) {
+            let rect = getAbsolutePositionCoordinates(node)
             scheduledAnimations[node]?.layoutAction = .moveAbsolute(rect: rect)
         }
     }
@@ -90,8 +119,6 @@ final class FLIPScheduler {
         let windowScrollDelta = (x: lastWindowScroll.x - firstWindowScroll.x, y: lastWindowScroll.y - firstWindowScroll.y)
 
         measureLastAndCreateAnimations(windowScrollDelta: windowScrollDelta, context: &context)
-
-        progressAllAnimations(context: &context)
     }
 
     private func storeWindowScrollOffset() {
@@ -110,12 +137,12 @@ final class FLIPScheduler {
             case .moveAbsolute(let rect):
                 // Moving to absolute positioning requires fully cancelling
                 runningAnimations[node]?.cancelAll()
-                let previousValues = context.dom.fixAbsolutePosition(node, toRect: rect)
+                let previousValues = fixAbsolutePosition(node, toRect: rect)
                 absolutePositionOriginals[node] = previousValues
             case .undoMoveAbsolute(let style):
                 // Re-entering layout requires fully cancelling
                 runningAnimations[node]?.cancelAll()
-                context.dom.undoFixAbsolutePosition(node, style: style)
+                undoFixAbsolutePosition(node, style: style)
             }
         }
     }
@@ -142,6 +169,7 @@ final class FLIPScheduler {
 
             if let existingAnimation = runningAnimations[node] {
                 existingAnimation.updateAnimations(
+                    scheduler: self,
                     node: node,
                     first: scheduled.geometry,
                     last: lastGeometry,
@@ -153,6 +181,7 @@ final class FLIPScheduler {
             } else if let animation = scheduled.transaction.animation {
                 // No existing animation and we have a new animation - create
                 runningAnimations[node] = GeometryAnimation(
+                    scheduler: self,
                     node: node,
                     first: scheduled.geometry,
                     last: lastGeometry,
@@ -168,12 +197,12 @@ final class FLIPScheduler {
         scheduledAnimations.removeAll()
     }
 
-    private func progressAllAnimations(context: inout _CommitContext) {
-        // applies all changes of dirty animations and removes completed ones
-        // TODO: optimize
+    private func commitDirtyAnimations(context: inout _CommitContext) {
         var removedNodes: [DOM.Node] = []
         for (node, animation) in runningAnimations {
-            animation.applyChanges(context: &context)
+            if animation.hasPendingCommit {
+                animation.applyChanges(context: &context)
+            }
             if animation.isCompleted {
                 removedNodes.append(node)
             }
@@ -251,6 +280,12 @@ private extension FLIPScheduler {
             translation == nil && width == nil && height == nil
         }
 
+        var hasPendingCommit: Bool {
+            translation?.hasPendingCommit == true
+                || width?.hasPendingCommit == true
+                || height?.hasPendingCommit == true
+        }
+
         /// Check if this animation's target position matches (for translation)
         func targetPositionMatches(_ other: NodeGeometry) -> Bool {
             abs(targetGeometry.boundingClientRect.x - other.boundingClientRect.x) < positionEpsilon
@@ -263,6 +298,7 @@ private extension FLIPScheduler {
         }
 
         init(
+            scheduler: FLIPScheduler,
             node: DOM.Node,
             first: NodeGeometry,
             last: NodeGeometry,
@@ -277,6 +313,7 @@ private extension FLIPScheduler {
             self.height = nil
 
             updateAnimations(
+                scheduler: scheduler,
                 node: node,
                 first: first,
                 last: last,
@@ -292,6 +329,7 @@ private extension FLIPScheduler {
         /// - If target changed and animation provided: creates/retargets animation
         /// - If target changed and no animation: cancels existing animation
         func updateAnimations(
+            scheduler: FLIPScheduler,
             node: DOM.Node,
             first: NodeGeometry,
             last: NodeGeometry,
@@ -314,6 +352,7 @@ private extension FLIPScheduler {
                         )
                     } else {
                         self.translation = FLIPAnimation(
+                            scheduler: scheduler,
                             node: node,
                             first: CSSTransform.Translation(x: dx, y: dy),
                             last: CSSTransform.Translation(x: 0, y: 0),
@@ -338,6 +377,7 @@ private extension FLIPScheduler {
                         )
                     } else {
                         self.width = FLIPAnimation(
+                            scheduler: scheduler,
                             node: node,
                             first: CSSWidth(value: first.width),
                             last: CSSWidth(value: last.width),
@@ -359,6 +399,7 @@ private extension FLIPScheduler {
                         )
                     } else {
                         self.height = FLIPAnimation(
+                            scheduler: scheduler,
                             node: node,
                             first: CSSHeight(value: first.height),
                             last: CSSHeight(value: last.height),
@@ -426,44 +467,31 @@ fileprivate extension FLIPScheduler {
             height: height
         )
     }
-}
 
-/// Epsilon for comparing position equality (in pixels)
-private let positionEpsilon: Double = 2
-
-/// Epsilon for comparing size equality (in pixels)
-private let sizeEpsilon: Double = 2
-
-private func shouldAnimateSizeDelta(_ ds: Double) -> Bool {
-    ds > 1 || ds < -1
-}
-
-private func shouldAnimateTranslation(_ dx: Double, _ dy: Double) -> Bool {
-    dx > 1 || dx < -1 || dy > 1 || dy < -1
-}
-
-extension DOM.Interactor {
     func needsAbsolutePositioning(_ node: DOM.Node) -> Bool {
-        let computedStyle = makeComputedStyleAccessor(node)
+        let computedStyle = dom.makeComputedStyleAccessor(node)
         let position = computedStyle.get("position")
         return !position.utf8Equals("absolute") && !position.utf8Equals("fixed")
     }
 
     func getAbsolutePositionCoordinates(_ node: DOM.Node) -> DOM.Rect {
-        let nodeRect = getBoundingClientRect(node)
+        let nodeRect = dom.getBoundingClientRect(node)
 
-        if let positionedAncestor = getOffsetParent(node) {
+        if let positionedAncestor = dom.getOffsetParent(node) {
             logTrace("positioned ancestor: \(positionedAncestor)")
-            let ancestorRect = getBoundingClientRect(positionedAncestor)
+            let ancestorRect = dom.getBoundingClientRect(positionedAncestor)
             logTrace("ancestor rect: \(ancestorRect)")
-            return DOM.Rect(x: nodeRect.x - ancestorRect.x, y: nodeRect.y - ancestorRect.y, width: nodeRect.width, height: nodeRect.height)
+            return DOM.Rect(
+                x: nodeRect.x - ancestorRect.x,
+                y: nodeRect.y - ancestorRect.y,
+                width: nodeRect.width,
+                height: nodeRect.height
+            )
         }
 
         return nodeRect
     }
-}
 
-private extension DOM.Interactor {
     typealias PositionStyleAccessors = (
         position: DOM.StyleAccessor,
         left: DOM.StyleAccessor,
@@ -474,19 +502,17 @@ private extension DOM.Interactor {
 
     func makePositionStyleAccessors(_ node: DOM.Node) -> PositionStyleAccessors {
         (
-            position: makeStyleAccessor(node, cssName: "position"),
-            left: makeStyleAccessor(node, cssName: "left"),
-            top: makeStyleAccessor(node, cssName: "top"),
-            width: makeStyleAccessor(node, cssName: "width"),
-            height: makeStyleAccessor(node, cssName: "height")
+            position: dom.makeStyleAccessor(node, cssName: "position"),
+            left: dom.makeStyleAccessor(node, cssName: "left"),
+            top: dom.makeStyleAccessor(node, cssName: "top"),
+            width: dom.makeStyleAccessor(node, cssName: "width"),
+            height: dom.makeStyleAccessor(node, cssName: "height")
         )
     }
 
-    func fixAbsolutePosition(_ node: DOM.Node, toRect rect: DOM.Rect) -> FLIPScheduler.PreviousStyleValues {
+    func fixAbsolutePosition(_ node: DOM.Node, toRect rect: DOM.Rect) -> PreviousStyleValues {
         let styles = makePositionStyleAccessors(node)
-
-        // Extract previous style values for later reversal
-        let previousValues = FLIPScheduler.PreviousStyleValues(
+        let previousValues = PreviousStyleValues(
             position: styles.position.get(),
             left: styles.left.get(),
             top: styles.top.get(),
@@ -503,17 +529,29 @@ private extension DOM.Interactor {
         styles.top.set("\(rect.y)px")
         styles.width.set("\(rect.width)px")
         styles.height.set("\(rect.height)px")
-
         return previousValues
     }
 
-    func undoFixAbsolutePosition(_ node: DOM.Node, style: FLIPScheduler.PreviousStyleValues) {
+    func undoFixAbsolutePosition(_ node: DOM.Node, style: PreviousStyleValues) {
         let styles = makePositionStyleAccessors(node)
-
         styles.position.set(style.position)
         styles.left.set(style.left)
         styles.top.set(style.top)
         styles.width.set(style.width)
         styles.height.set(style.height)
     }
+}
+
+/// Epsilon for comparing position equality (in pixels)
+private let positionEpsilon: Double = 2
+
+/// Epsilon for comparing size equality (in pixels)
+private let sizeEpsilon: Double = 2
+
+private func shouldAnimateSizeDelta(_ ds: Double) -> Bool {
+    ds > 1 || ds < -1
+}
+
+private func shouldAnimateTranslation(_ dx: Double, _ dy: Double) -> Bool {
+    dx > 1 || dx < -1 || dy > 1 || dy < -1
 }

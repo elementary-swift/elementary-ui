@@ -1,96 +1,167 @@
-public final class _TransitionNode<T: Transition, V: View>: _Reconcilable {
-    private var value: _TransitionView<T, V>
-    // NOTE: stored as AnyReconcilable (not T.Body._MountedNode?) to avoid
-    // keeping a potentially struct-typed optional inline in this class, which
-    // causes an Embedded Swift IR field-offset assertion failure.
-    private var node: AnyReconcilable?
+// TODO-TRANSITION: simplify this, AI is too stupid
 
-    private var placeholderView: PlaceholderContentView<T>?
-    private var placeholderNode: _PlaceholderNode?
-    // a transition can theoretically duplicate the content node, but it will be rare
-    private var additionalPlaceholderNodes: [_PlaceholderNode] = []
+final class _AnyTransition {
+    private class Box {
+        var animation: Animation?
 
-    init(view: consuming _TransitionView<T, V>, context: borrowing _ViewContext, ctx: inout _MountContext) {
-        let view = view
-        self.value = view
-        self.placeholderView = PlaceholderContentView<T>(makeNodeFn: self.makePlaceholderNode)
-
-        let initialPhase = ctx.appendTransitionParticipant(self)
-        self.node = ctx.withTransitionBoundary { childCtx in
-            makeInitialNode(for: initialPhase, context: context, ctx: &childCtx)
+        init(animation: Animation?) {
+            self.animation = animation
         }
+
+        func makeNode(
+            phase: TransitionPhase,
+            context: borrowing _ViewContext,
+            ctx: inout _MountContext,
+            makePlaceholderNode: @escaping (borrowing _ViewContext, inout _MountContext) -> _PlaceholderNode
+        ) -> AnyReconcilable {
+            fatalError("override")
+        }
+
+        func patchPhase(
+            _ phase: TransitionPhase,
+            node: inout AnyReconcilable,
+            tx: inout _TransactionContext,
+            makePlaceholderNode: @escaping (borrowing _ViewContext, inout _MountContext) -> _PlaceholderNode
+        ) {
+            fatalError("override")
+        }
+
     }
 
-    func patchWrappedContent(_ view: consuming _TransitionView<T, V>, tx: inout _TransactionContext) {
-        self.value = view
+    private final class TypedBox<T: Transition>: Box {
+        var transition: T
 
-        if let placeholderNode {
-            placeholderNode.node.modify(as: V._MountedNode.self) { node in
-                V._patchNode(self.value.wrapped, node: &node, tx: &tx)
+        init(transition: T, animation: Animation?) {
+            self.transition = transition
+            super.init(animation: animation)
+        }
+
+        override func makeNode(
+            phase: TransitionPhase,
+            context: borrowing _ViewContext,
+            ctx: inout _MountContext,
+            makePlaceholderNode: @escaping (borrowing _ViewContext, inout _MountContext) -> _PlaceholderNode
+        ) -> AnyReconcilable {
+            let placeholder = PlaceholderContentView<T>(makeNodeFn: makePlaceholderNode)
+            return AnyReconcilable(
+                T.Body._makeNode(
+                    transition.body(content: placeholder, phase: phase),
+                    context: context,
+                    ctx: &ctx
+                )
+            )
+        }
+
+        override func patchPhase(
+            _ phase: TransitionPhase,
+            node: inout AnyReconcilable,
+            tx: inout _TransactionContext,
+            makePlaceholderNode: @escaping (borrowing _ViewContext, inout _MountContext) -> _PlaceholderNode
+        ) {
+            let placeholder = PlaceholderContentView<T>(makeNodeFn: makePlaceholderNode)
+            node.modify(as: T.Body._MountedNode.self) { node in
+                T.Body._patchNode(
+                    transition.body(content: placeholder, phase: phase),
+                    node: &node,
+                    tx: &tx
+                )
             }
         }
 
-        for placeholder in additionalPlaceholderNodes {
-            placeholder.node.modify(as: V._MountedNode.self) { node in
-                V._patchNode(self.value.wrapped, node: &node, tx: &tx)
-            }
-        }
     }
 
-    func patchTransitionPhase(_ phase: TransitionPhase, tx: inout _TransactionContext) {
-        guard let placeholderView else { return }
-        node?.modify(as: T.Body._MountedNode.self) { node in
-            T.Body._patchNode(
-                value.transition.body(content: placeholderView, phase: phase),
-                node: &node,
-                tx: &tx
-            )
-        }
+    private let box: Box
+
+    var animation: Animation? {
+        box.animation
     }
 
-    func makeInitialNode(
-        for phase: TransitionPhase,
-        context: borrowing _ViewContext,
-        ctx: inout _MountContext
-    ) -> AnyReconcilable {
-        AnyReconcilable(
-            T.Body._makeNode(
-                value.transition.body(content: placeholderView!, phase: phase),
-                context: context,
-                ctx: &ctx
-            )
+    private init(box: Box) {
+        self.box = box
+    }
+
+    static func make<T: Transition>(
+        _ transition: T,
+        animation: Animation?
+    ) -> _AnyTransition {
+        _AnyTransition(
+            box: TypedBox(transition: transition, animation: animation)
         )
     }
 
-    private func makePlaceholderNode(context: borrowing _ViewContext, ctx: inout _MountContext) -> _PlaceholderNode {
-        let node = _PlaceholderNode(node: AnyReconcilable(V._makeNode(value.wrapped, context: context, ctx: &ctx)))
-        if placeholderNode == nil {
-            placeholderNode = node
-        } else {
-            additionalPlaceholderNodes.append(node)
+    func update<T: Transition>(_ transition: T, animation: Animation?) {
+        guard let box = box as? TypedBox<T> else {
+            preconditionFailure("transition type changed while patching")
         }
-        return node
+        box.transition = transition
+        box.animation = animation
     }
 
-    public func unmount(_ context: inout _CommitContext) {
-        node?.unmount(&context)
-
-        node = nil
-        placeholderNode = nil
-        additionalPlaceholderNodes.removeAll()
+    func makeNode(
+        phase: TransitionPhase,
+        context: borrowing _ViewContext,
+        ctx: inout _MountContext,
+        makePlaceholderNode: @escaping (borrowing _ViewContext, inout _MountContext) -> _PlaceholderNode
+    ) -> AnyReconcilable {
+        box.makeNode(
+            phase: phase,
+            context: context,
+            ctx: &ctx,
+            makePlaceholderNode: makePlaceholderNode
+        )
     }
+
+    func patchPhase(
+        _ phase: TransitionPhase,
+        node: inout AnyReconcilable,
+        tx: inout _TransactionContext,
+        makePlaceholderNode: @escaping (borrowing _ViewContext, inout _MountContext) -> _PlaceholderNode
+    ) {
+        box.patchPhase(
+            phase,
+            node: &node,
+            tx: &tx,
+            makePlaceholderNode: makePlaceholderNode
+        )
+    }
+
 }
 
-extension _TransitionNode: MountRootTransitionParticipant {
-    var mountRootDefaultAnimation: Animation? {
-        value.animation
+public struct _TransitionNode<T: Transition, V: View>: ~Copyable, _Reconcilable {
+    private let transition: _AnyTransition
+    private var wrappedNode: V._MountedNode
+
+    init(
+        view: consuming _TransitionView<T, V>,
+        context: borrowing _ViewContext,
+        ctx: inout _MountContext
+    ) {
+        ctx.scheduler.installTransitionRemoval()
+
+        let transition = _AnyTransition.make(
+            view.transition,
+            animation: view.animation
+        )
+        var context = copy context
+        context.transition = transition
+
+        self.transition = transition
+        self.wrappedNode = V._makeNode(
+            view.wrapped,
+            context: context,
+            ctx: &ctx
+        )
     }
 
-    var mountRootIsMounted: Bool {
-        node != nil
+    mutating func patch(
+        _ view: consuming _TransitionView<T, V>,
+        tx: inout _TransactionContext
+    ) {
+        transition.update(view.transition, animation: view.animation)
+        V._patchNode(view.wrapped, node: &wrappedNode, tx: &tx)
     }
 
-    func mountRootPatchTransitionPhase(_ phase: TransitionPhase, tx: inout _TransactionContext) {
-        patchTransitionPhase(phase, tx: &tx)
+    public consuming func unmount(_ context: inout _CommitContext) {
+        wrappedNode.unmount(&context)
     }
 }

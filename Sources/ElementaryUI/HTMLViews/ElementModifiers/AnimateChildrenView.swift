@@ -11,8 +11,13 @@ struct AnimateContainerLayoutView<Wrapped: View>: View {
         ctx: inout _MountContext
     ) -> _MountedNode {
 
+        // TODO: make this nicer
+        let flipScheduler = ctx.scheduler.getOrAddExtension(FLIPScheduler.self) {
+            FLIPScheduler(dom: ctx.dom.layoutAnimationInteractor)
+        }
         let observer = FLIPLayoutObserver(
-            animateContainerSize: view.animateContainerSize
+            animateContainerSize: view.animateContainerSize,
+            scheduler: flipScheduler
         )
 
         var context = copy context

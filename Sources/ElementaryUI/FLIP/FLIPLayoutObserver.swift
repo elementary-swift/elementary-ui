@@ -2,16 +2,19 @@ final class FLIPLayoutObserver: DOMLayoutObserver {
     private var activeChildNodes: [DOM.Node] = []
     private var outOfBandLeavingNodes: [DOM.Node] = []
     private var animateContainerSize: Bool
+    private let scheduler: FLIPScheduler
 
-    init(animateContainerSize: Bool) {
+    init(animateContainerSize: Bool, scheduler: FLIPScheduler) {
         self.animateContainerSize = animateContainerSize
+        self.scheduler = scheduler
+        super.init()
     }
 
     func update(animateContainerSize: Bool) {
         self.animateContainerSize = animateContainerSize
     }
 
-    func willLayoutChildren(parent: DOM.Node, context: inout _TransactionContext) {
+    override func willLayoutChildren(parent: DOM.Node, context: inout _TransactionContext) {
         guard !context.transaction.shouldSkipFLIP else {
             logTrace("skipping FLIP for children of parent \(parent) because transaction should skip FLIP")
             return
@@ -25,27 +28,27 @@ final class FLIPLayoutObserver: DOMLayoutObserver {
             }
         }
 
-        context.scheduler.flip.scheduleAnimationOf(scheduledNodes, inParent: parent, context: &context)
+        scheduler.scheduleAnimationOf(scheduledNodes, inParent: parent, context: &context)
 
         if animateContainerSize {
-            context.scheduler.flip.scheduleAnimationOf(parent, context: &context)
+            scheduler.scheduleAnimationOf(parent, context: &context)
         }
     }
 
-    func setLeaveStatus(_ node: DOM.Node, isLeaving: Bool, context: inout _TransactionContext) {
+    override func setLeaveStatus(_ node: DOM.Node, isLeaving: Bool, context: inout _TransactionContext) {
         logTrace("setting leave status for node \(node) to \(isLeaving)")
         if isLeaving {
             if !outOfBandLeavingNodes.contains(where: { $0 == node }) {
                 outOfBandLeavingNodes.append(node)
             }
-            context.scheduler.flip.markAsLeaving(node, context: &context)
+            scheduler.markAsLeaving(node, context: &context)
         } else {
             outOfBandLeavingNodes.removeAll { $0 == node }
-            context.scheduler.flip.markAsReentering(node, context: &context)
+            scheduler.markAsReentering(node, context: &context)
         }
     }
 
-    func didLayoutChildren(parent: DOM.Node, entries: borrowing Span<LayoutPass.Entry>, context: inout _CommitContext) {
+    override func didLayoutChildren(parent: DOM.Node, entries: borrowing Span<LayoutPass.Entry>, context: inout _CommitContext) {
         activeChildNodes.removeAll(keepingCapacity: true)
         activeChildNodes.reserveCapacity(entries.count)
 
@@ -58,19 +61,19 @@ final class FLIPLayoutObserver: DOMLayoutObserver {
                 activeChildNodes.append(entry.reference)
                 outOfBandLeavingNodes.removeAll { $0 == entry.reference }
             case .removed:
-                context.scheduler.flip.markAsRemoved(entry.reference)
+                scheduler.markAsRemoved(entry.reference)
                 outOfBandLeavingNodes.removeAll { $0 == entry.reference }
             }
         }
     }
 
-    func unmount(_ context: inout _CommitContext) {
+    override func unmount(_ context: inout _CommitContext) {
         var seen: Set<DOM.Node> = []
         for node in activeChildNodes where seen.insert(node).inserted {
-            context.scheduler.flip.markAsRemoved(node)
+            scheduler.markAsRemoved(node)
         }
         for node in outOfBandLeavingNodes where seen.insert(node).inserted {
-            context.scheduler.flip.markAsRemoved(node)
+            scheduler.markAsRemoved(node)
         }
         activeChildNodes = []
         outOfBandLeavingNodes = []

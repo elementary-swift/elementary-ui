@@ -26,20 +26,36 @@ enum CommitAction {
 }
 
 final class Scheduler {
+    class TransitionRemoval {
+        class func begin(
+            mounted: borrowing MountContainer.Slot.Mounted,
+            handle: LayoutContainer.Handle?,
+            tx: inout _TransactionContext
+        ) -> _TransitionRemoval? {
+            nil
+        }
+    }
+
     private let dom: any DOM.Interactor
+
+    // Transition views install this metatype without allocating a runtime
+    // object. Keeping the call indirect lets transition-free Wasm builds
+    // strip the recursive removal and animation implementation.
+    var transitionRemoval: TransitionRemoval.Type?
 
     let scratch = ScratchStorage()
 
-    // TODO: ideally this could be a completely decoupled extensions-style thing
-    // TODO: make this more pluggable / strippable
-    let flip: FLIPScheduler
+    // Scheduler extensions are few and accessed off the patch/frame hot paths.
+    // A small linear list avoids pulling dictionary machinery into Wasm builds.
+    private var extensions: UniqueArray<AnyObject> = .init()
 
     // Work queues
     private var pendingFunctions: PendingFunctionQueue = .init()
     private var pendingUpdates: UniqueArray<(inout _TransactionContext) -> Void> = .init()
     private var pendingCommitActions: UniqueArray<CommitAction> = .init()
     private var pendingEffects: UniqueArray<() -> Void> = .init()
-    private var runningAnimations: [_SchedulableNode] = []
+    private var pendingLayoutEffects: UniqueArray<(inout _CommitContext) -> Void> = .init()
+    private var runningAnimations: UniqueArray<_SchedulableNode> = .init()
 
     // Scheduling state
     // True while an update cycle is either scheduled or currently running.
@@ -68,12 +84,11 @@ final class Scheduler {
     }
 
     private var needsAnimationFrame: Bool {
-        flip.hasPendingWork || !runningAnimations.isEmpty
+        !runningAnimations.isEmpty
     }
 
     init(dom: any DOM.Interactor) {
         self.dom = dom
-        self.flip = FLIPScheduler(dom: dom)
     }
 
     // MARK: - Public API
@@ -114,6 +129,13 @@ final class Scheduler {
         ensureUpdateCycleScheduled()
     }
 
+    /// Runs after reconciliation and all DOM commit work for this update has
+    /// stabilized, while the resulting layout can be observed before paint.
+    func addLayoutEffect(_ callback: @escaping (inout _CommitContext) -> Void) {
+        precondition(isUpdateCycleActive)
+        pendingLayoutEffects.append(callback)
+    }
+
     func registerAnimation(_ node: _SchedulableNode) {
         runningAnimations.append(node)
         ensureAnimationFrameScheduled()
@@ -137,11 +159,22 @@ final class Scheduler {
                     dom: dom,
                     scheduler: self,
                     currentFrameTime: tx.currentFrameTime,
-                    transaction: tx.transaction,
-                    isRoot: true
+                    transaction: tx.transaction
                 )
             )
         }
+    }
+
+    func getOrAddExtension<Value: AnyObject>(_ type: Value.Type, make: () -> Value) -> Value {
+        // TODO: think about how to do this more efficiently
+        for index in extensions.indices {
+            if let value = extensions[index] as? Value {
+                return value
+            }
+        }
+        let value = make()
+        extensions.append(value)
+        return value
     }
 
     // MARK: - Scheduling
@@ -164,7 +197,9 @@ final class Scheduler {
     private func ensureAnimationFrameScheduled() {
         guard !isAnimationFramePending && needsAnimationFrame else { return }
         isAnimationFramePending = true
-        dom.requestAnimationFrame { [self] rafTime in runAnimationFrame(rafTime / 1000) }
+        dom.animationFrameInteractor.requestAnimationFrame {
+            [self] rafTime in runAnimationFrame(rafTime / 1000)
+        }
     }
 
     // MARK: - Update Cycle
@@ -191,13 +226,14 @@ final class Scheduler {
             drainAllWork(frameTime: now)
         }
 
+        runLayoutEffects()
+
         isUpdateCycleActive = false
         currentTransaction = nil
 
         if !pendingEffects.isEmpty {
             ensureUpdateCycleScheduled(afterPaint: true)
         }
-        ensureAnimationFrameScheduled()
     }
 
     private func runAnimationFrame(_ frameTime: Double) {
@@ -208,10 +244,8 @@ final class Scheduler {
         isUpdateCycleActive = true
         tickAnimations(frameTime: frameTime)
         drainAllWork(frameTime: frameTime)
+        runLayoutEffects(frameTime: frameTime)
         isUpdateCycleActive = wasUpdateCycleActive
-
-        // FLIP should not trigger any work - but if it would it would be outside
-        commitFLIPAnimations(frameTime: frameTime)
 
         // if animations trigger effects - move the out of rAF
         if !pendingEffects.isEmpty {
@@ -274,13 +308,25 @@ final class Scheduler {
         }
     }
 
-    // MARK: - Animations
+    // MARK: - Layout Effects
 
-    private func commitFLIPAnimations(frameTime: Double) {
-        guard flip.hasPendingWork else { return }
-        var context = _CommitContext(dom: dom, scheduler: self, currentFrameTime: frameTime)
-        flip.commitScheduledAnimations(context: &context)
+    private func runLayoutEffects() {
+        guard !pendingLayoutEffects.isEmpty else { return }
+        runLayoutEffects(frameTime: dom.getCurrentTime())
     }
+
+    private func runLayoutEffects(frameTime: Double) {
+        guard !pendingLayoutEffects.isEmpty else { return }
+
+        var effects: UniqueArray<(inout _CommitContext) -> Void> = .init()
+        swap(&effects, &pendingLayoutEffects)
+        var context = _CommitContext(dom: dom, scheduler: self, currentFrameTime: frameTime)
+        for index in effects.indices {
+            effects[index](&context)
+        }
+    }
+
+    // MARK: - Animations
 
     private func tickAnimations(frameTime: Double) {
         guard !runningAnimations.isEmpty else { return }
@@ -294,10 +340,14 @@ final class Scheduler {
             transaction: transaction
         )
 
-        runningAnimations.removeAll(where: { node in
-            let result = node.progressAnimation(tx: &context)
-            return result == .completed
-        })
+        var index = 0
+        while index < runningAnimations.count {
+            if runningAnimations[index].progressAnimation(tx: &context) == .completed {
+                runningAnimations.remove(at: index)
+            } else {
+                index += 1
+            }
+        }
 
         context.drain()
     }

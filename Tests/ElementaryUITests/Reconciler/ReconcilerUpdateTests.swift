@@ -1,6 +1,7 @@
-import ElementaryUI
 import Reactivity
 import Testing
+
+@testable import ElementaryUI
 
 struct ReconcilerUpdateTests {
     @Test
@@ -93,7 +94,53 @@ struct ReconcilerUpdateTests {
         dom.runNextFrame()
         #expect(!dom.hasWorkScheduled)
     }
+
+    @Test
+    func runsLayoutEffectsAfterCommitInRegistrationOrder() {
+        let dom = TestDOM()
+        let scheduler = Scheduler(dom: dom)
+        var didCommit = false
+        var calls: [Int] = []
+
+        scheduler.scheduleUpdate { context in
+            context.scheduler.addCommitAction { _ in
+                didCommit = true
+            }
+            context.scheduler.addLayoutEffect { _ in
+                #expect(didCommit)
+                calls.append(1)
+            }
+            context.scheduler.addLayoutEffect { _ in
+                #expect(didCommit)
+                calls.append(2)
+            }
+        }
+        dom.flushMicrotasks()
+
+        #expect(calls == [1, 2])
+        #expect(dom.rafCallbacks.isEmpty)
+    }
+
+    @Test
+    func lazilyCreatesTypedSchedulerExtensionsOnce() {
+        let scheduler = Scheduler(dom: TestDOM())
+        var creationCount = 0
+
+        let first = scheduler.getOrAddExtension(RecordingSchedulerExtension.self) {
+            creationCount += 1
+            return RecordingSchedulerExtension()
+        }
+        let second = scheduler.getOrAddExtension(RecordingSchedulerExtension.self) {
+            creationCount += 1
+            return RecordingSchedulerExtension()
+        }
+
+        #expect(first === second)
+        #expect(creationCount == 1)
+    }
 }
+
+private final class RecordingSchedulerExtension {}
 
 @Reactive
 private class State {

@@ -5,8 +5,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
     private var nodeStack: ScratchStack<LayoutNode>
     private(set) var isStatic: Bool = true
 
-    private var transitionCoordinator: MountRootTransitionCoordinator?
-    private var isRoot: Bool
+    private(set) var mountRoot: _MountRoot?
 
     // NOTE: we could use a fancy Inout<_CommitContext> here.. but maybe not worth it
     let scheduler: Scheduler
@@ -21,14 +20,14 @@ public struct _MountContext: ~Copyable, ~Escapable {
         scheduler: Scheduler,
         currentFrameTime: Double,
         transaction: Transaction,
-        isRoot: Bool
+        mountRoot: consuming _MountRoot? = nil
     ) {
         self.nodeStack = consume nodeStack
         self.dom = dom
         self.scheduler = scheduler
         self.currentFrameTime = currentFrameTime
         self.transaction = transaction
-        self.isRoot = isRoot
+        self.mountRoot = consume mountRoot
     }
 
     mutating func appendStaticElement(_ node: DOM.Node) {
@@ -43,16 +42,20 @@ public struct _MountContext: ~Copyable, ~Escapable {
         appendLayoutNode(.container(container))
     }
 
-    mutating func appendTransitionParticipant(_ participant: any MountRootTransitionParticipant) -> TransitionPhase {
-        guard isRoot else { return .identity }
-
-        let coordinator = transitionCoordinator ?? MountRootTransitionCoordinator(mountTransaction: transaction)
-        let phase = coordinator.register(participant)
-        self.transitionCoordinator = coordinator
-        return phase
+    mutating func registerTransition(
+        _ transitionedElement: _TransitionedElement,
+        initialPhase: TransitionPhase
+    ) {
+        precondition(mountRoot != nil)
+        mountRoot!.register(
+            transitionedElement,
+            initialPhase: initialPhase
+        )
     }
 
-    mutating func withMountRootContext<R: ~Copyable>(_ body: (consuming _MountContext) -> R) -> R {
+    mutating func withMountedSlotContext<R: ~Copyable>(
+        _ body: (consuming _MountContext) -> R
+    ) -> R {
         nodeStack.withNestedStack { childScratch in
             let childContext = _MountContext(
                 nodeStack: consume childScratch,
@@ -60,19 +63,10 @@ public struct _MountContext: ~Copyable, ~Escapable {
                 scheduler: scheduler,
                 currentFrameTime: currentFrameTime,
                 transaction: transaction,
-                isRoot: true
+                mountRoot: _MountRoot()
             )
-            let result = body(childContext)
-            return result
+            return body(childContext)
         }
-    }
-
-    mutating func withTransitionBoundary<R: ~Copyable>(_ body: (inout _MountContext) -> R) -> R {
-        let previousIsRoot = isRoot
-        isRoot = false
-        let result = body(&self)
-        isRoot = previousIsRoot
-        return result
     }
 
     mutating func withChildContext<R: ~Copyable>(_ body: (consuming _MountContext) -> R) -> R {
@@ -84,7 +78,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
                     scheduler: scheduler,
                     currentFrameTime: currentFrameTime,
                     transaction: transaction,
-                    isRoot: false
+                    mountRoot: nil
                 )
             )
         }
@@ -105,20 +99,22 @@ public struct _MountContext: ~Copyable, ~Escapable {
         makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
     ) -> MountContainer.Slot.Mounted {
         let node = makeNode(newKeyIndex, viewContext, &self)
-        let transitionCoordinator = self.transitionCoordinator
+        var mountRoot = self.mountRoot.take()!
+        mountRoot.scheduleEnterIdentityIfNeeded(
+            scheduler: scheduler,
+            transaction: transaction
+        )
 
         return MountContainer.Slot.Mounted(
             node: node,
             layoutNodes: takeMaterializedLayoutNodes(),
             placement: .unchanged,
-            transitionCoordinator: transitionCoordinator
+            mountRoot: consume mountRoot,
+            transitionRemoval: nil
         )
     }
 
-    consuming func mountInDOMNode(_ domNode: DOM.Node, observers: [any DOMLayoutObserver] = [], isRoot: Bool = false) -> LayoutContainer? {
-        // only allow root node to be mounted directly, otherwise we need to always do this in a stacked context
-        assert(!self.isRoot || isRoot, "only root node can be mounted directly")
-
+    consuming func mountInDOMNode(_ domNode: DOM.Node, observers: [DOMLayoutObserver] = []) -> LayoutContainer? {
         if isStatic {
             let dom = dom
             nodeStack.consume { span in

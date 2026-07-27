@@ -1805,3 +1805,109 @@ func _$setTimeout(_ callback: @escaping () -> Void, _ timeout: Double) throws(JS
         throw error
     }
 }
+
+#if arch(wasm32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMath_cos_static")
+fileprivate func bjs_JSMath_cos_static_extern(_ value: Float64) -> Float64
+#else
+fileprivate func bjs_JSMath_cos_static_extern(_ value: Float64) -> Float64 {
+    fatalError("Only available on WebAssembly")
+}
+#endif
+@inline(never) fileprivate func bjs_JSMath_cos_static(_ value: Float64) -> Float64 {
+    return bjs_JSMath_cos_static_extern(value)
+}
+
+#if arch(wasm32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMath_sin_static")
+fileprivate func bjs_JSMath_sin_static_extern(_ value: Float64) -> Float64
+#else
+fileprivate func bjs_JSMath_sin_static_extern(_ value: Float64) -> Float64 {
+    fatalError("Only available on WebAssembly")
+}
+#endif
+@inline(never) fileprivate func bjs_JSMath_sin_static(_ value: Float64) -> Float64 {
+    return bjs_JSMath_sin_static_extern(value)
+}
+
+#if arch(wasm32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMath_pow_static")
+fileprivate func bjs_JSMath_pow_static_extern(_ base: Float64, _ exponent: Float64) -> Float64
+#else
+fileprivate func bjs_JSMath_pow_static_extern(_ base: Float64, _ exponent: Float64) -> Float64 {
+    fatalError("Only available on WebAssembly")
+}
+#endif
+@inline(never) fileprivate func bjs_JSMath_pow_static(_ base: Float64, _ exponent: Float64) -> Float64 {
+    return bjs_JSMath_pow_static_extern(base, exponent)
+}
+
+#if arch(wasm32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMath_exp_static")
+fileprivate func bjs_JSMath_exp_static_extern(_ value: Float64) -> Float64
+#else
+fileprivate func bjs_JSMath_exp_static_extern(_ value: Float64) -> Float64 {
+    fatalError("Only available on WebAssembly")
+}
+#endif
+@inline(never) fileprivate func bjs_JSMath_exp_static(_ value: Float64) -> Float64 {
+    return bjs_JSMath_exp_static_extern(value)
+}
+
+#if arch(wasm32)
+@_extern(wasm, module: "BrowserInterop", name: "bjs_JSMath_log_static")
+fileprivate func bjs_JSMath_log_static_extern(_ value: Float64) -> Float64
+#else
+fileprivate func bjs_JSMath_log_static_extern(_ value: Float64) -> Float64 {
+    fatalError("Only available on WebAssembly")
+}
+#endif
+@inline(never) fileprivate func bjs_JSMath_log_static(_ value: Float64) -> Float64 {
+    return bjs_JSMath_log_static_extern(value)
+}
+
+func _$JSMath_cos(_ value: Double) throws(JSException) -> Double {
+    let valueValue = value.bridgeJSLowerParameter()
+    let ret = bjs_JSMath_cos_static(valueValue)
+    if let error = _swift_js_take_exception() {
+        throw error
+    }
+    return Double.bridgeJSLiftReturn(ret)
+}
+
+func _$JSMath_sin(_ value: Double) throws(JSException) -> Double {
+    let valueValue = value.bridgeJSLowerParameter()
+    let ret = bjs_JSMath_sin_static(valueValue)
+    if let error = _swift_js_take_exception() {
+        throw error
+    }
+    return Double.bridgeJSLiftReturn(ret)
+}
+
+func _$JSMath_pow(_ base: Double, _ exponent: Double) throws(JSException) -> Double {
+    let baseValue = base.bridgeJSLowerParameter()
+    let exponentValue = exponent.bridgeJSLowerParameter()
+    let ret = bjs_JSMath_pow_static(baseValue, exponentValue)
+    if let error = _swift_js_take_exception() {
+        throw error
+    }
+    return Double.bridgeJSLiftReturn(ret)
+}
+
+func _$JSMath_exp(_ value: Double) throws(JSException) -> Double {
+    let valueValue = value.bridgeJSLowerParameter()
+    let ret = bjs_JSMath_exp_static(valueValue)
+    if let error = _swift_js_take_exception() {
+        throw error
+    }
+    return Double.bridgeJSLiftReturn(ret)
+}
+
+func _$JSMath_log(_ value: Double) throws(JSException) -> Double {
+    let valueValue = value.bridgeJSLowerParameter()
+    let ret = bjs_JSMath_log_static(valueValue)
+    if let error = _swift_js_take_exception() {
+        throw error
+    }
+    return Double.bridgeJSLiftReturn(ret)
+}

@@ -121,6 +121,8 @@ export interface JSInputEvent {
     readonly data: string | null;
     readonly target: any;
 }
+export interface JSMath {
+}
 export type Exports = {
     JSCompositeOperation: JSCompositeOperationObject
     JSFillMode: JSFillModeObject

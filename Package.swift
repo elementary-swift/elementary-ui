@@ -60,6 +60,7 @@ let package = Package(
         ),
         .target(
             name: "_ElementaryMath",
+            dependencies: ["BrowserInterop"],
             swiftSettings: [
                 .enableExperimentalFeature("Extern")
             ]

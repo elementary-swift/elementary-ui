@@ -21,7 +21,11 @@ private extension DOM.Node {
     var value: TestDOM.NodeRef { ref as! TestDOM.NodeRef }
 }
 
-final class TestDOM: DOM.Interactor {
+final class TestDOM:
+    DOM.Interactor,
+    DOM.AnimationInteractor,
+    DOM.LayoutAnimationInteractor
+{
     enum Op: Equatable, CustomStringConvertible {
         case createElement(String)
         case createElementNS(namespaceURI: String, element: String)
@@ -137,6 +141,12 @@ final class TestDOM: DOM.Interactor {
     private(set) var rafCallbacks: [(Double) -> Void] = []
     private(set) var timeoutCallbacks: [(() -> Void, Double)] = []
     private(set) var queueMicrotaskCallbacks: [() -> Void] = []
+    private(set) var startedAnimationCount = 0
+    private(set) var canceledAnimationCount = 0
+    private var animationFinishCallbacks: [() -> Void] = []
+    private var currentTime: Double = 0
+
+    var boundingRectProvider: ((DOM.Node) -> DOM.Rect)?
 
     var hasWorkScheduled: Bool { !rafCallbacks.isEmpty }
 
@@ -221,13 +231,14 @@ final class TestDOM: DOM.Interactor {
     }
 
     func animateElement(_ node: DOM.Node, _ effect: DOM.Animation.KeyframeEffect, onFinish: @escaping () -> Void) -> DOM.Animation {
-        .init(
-            _cancel: {
-                // TODO: implement
-                print("TESTDOM: cancel animation")
+        startedAnimationCount += 1
+        animationFinishCallbacks.append(onFinish)
+
+        return .init(
+            _cancel: { [weak self] in
+                self?.canceledAnimationCount += 1
             },
             _update: { effect in
-                // TODO: implement
                 print("TESTDOM: update animation \(effect)")
             }
         )
@@ -237,6 +248,9 @@ final class TestDOM: DOM.Interactor {
     var mockBoundingRects: [ObjectIdentifier: DOM.Rect] = [:]
 
     func getBoundingClientRect(_ node: DOM.Node) -> DOM.Rect {
+        if let boundingRectProvider {
+            return boundingRectProvider(node)
+        }
         let id = ObjectIdentifier(node.value)
         return mockBoundingRects[id] ?? DOM.Rect(x: 0, y: 0, width: 0, height: 0)
     }
@@ -244,6 +258,18 @@ final class TestDOM: DOM.Interactor {
     /// Helper to set mock bounding rect for a node (for testing)
     func setMockBoundingRect(_ node: DOM.Node, rect: DOM.Rect) {
         mockBoundingRects[ObjectIdentifier(node.value)] = rect
+    }
+
+    func useChildIndexBoundingRects() {
+        boundingRectProvider = { node in
+            guard
+                let parent = node.value.parent,
+                let index = parent.children.firstIndex(where: { $0 === node.value })
+            else {
+                return DOM.Rect(x: 0, y: 0, width: 10, height: 10)
+            }
+            return DOM.Rect(x: Double(index * 20), y: 0, width: 10, height: 10)
+        }
     }
 
     func addEventListener(_ node: DOM.Node, event: String, sink: borrowing DOM.EventSink) {
@@ -314,7 +340,7 @@ final class TestDOM: DOM.Interactor {
         queueMicrotaskCallbacks.append(callback)
     }
 
-    func getCurrentTime() -> Double { 0 }
+    func getCurrentTime() -> Double { currentTime }
 
     func getScrollOffset() -> (x: Double, y: Double) {
         (x: 0, y: 0)
@@ -330,8 +356,17 @@ final class TestDOM: DOM.Interactor {
         runAllScheduledWork()
         guard let callback = rafCallbacks.first else { return }
         rafCallbacks.removeFirst()
-        callback(0)
+        callback(currentTime * 1000)
         runAllScheduledWork()
+    }
+
+    func finishAnimations() {
+        currentTime += 10
+        let callbacks = animationFinishCallbacks
+        animationFinishCallbacks.removeAll()
+        for callback in callbacks {
+            callback()
+        }
     }
 
     private func runAllScheduledWork() {

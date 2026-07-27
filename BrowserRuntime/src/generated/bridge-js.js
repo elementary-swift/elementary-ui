@@ -948,6 +948,51 @@ export async function createInstantiator(options, swift) {
                     setException(error);
                 }
             }
+            BrowserInterop["bjs_JSMath_cos_static"] = function bjs_JSMath_cos_static(value) {
+                try {
+                    let ret = globalThis.Math.cos(value);
+                    return ret;
+                } catch (error) {
+                    setException(error);
+                    return 0
+                }
+            }
+            BrowserInterop["bjs_JSMath_sin_static"] = function bjs_JSMath_sin_static(value) {
+                try {
+                    let ret = globalThis.Math.sin(value);
+                    return ret;
+                } catch (error) {
+                    setException(error);
+                    return 0
+                }
+            }
+            BrowserInterop["bjs_JSMath_pow_static"] = function bjs_JSMath_pow_static(base, exponent) {
+                try {
+                    let ret = globalThis.Math.pow(base, exponent);
+                    return ret;
+                } catch (error) {
+                    setException(error);
+                    return 0
+                }
+            }
+            BrowserInterop["bjs_JSMath_exp_static"] = function bjs_JSMath_exp_static(value) {
+                try {
+                    let ret = globalThis.Math.exp(value);
+                    return ret;
+                } catch (error) {
+                    setException(error);
+                    return 0
+                }
+            }
+            BrowserInterop["bjs_JSMath_log_static"] = function bjs_JSMath_log_static(value) {
+                try {
+                    let ret = globalThis.Math.log(value);
+                    return ret;
+                } catch (error) {
+                    setException(error);
+                    return 0
+                }
+            }
         },
         setInstance: (i) => {
             instance = i;

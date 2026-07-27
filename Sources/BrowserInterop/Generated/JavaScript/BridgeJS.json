@@ -1696,6 +1696,158 @@
         "types" : [
 
         ]
+      },
+      {
+        "functions" : [
+
+        ],
+        "types" : [
+          {
+            "accessLevel" : "public",
+            "from" : "global",
+            "getters" : [
+
+            ],
+            "jsName" : "Math",
+            "methods" : [
+
+            ],
+            "name" : "JSMath",
+            "setters" : [
+
+            ],
+            "staticMethods" : [
+              {
+                "accessLevel" : "public",
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
+                "name" : "cos",
+                "parameters" : [
+                  {
+                    "name" : "value",
+                    "type" : {
+                      "double" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "accessLevel" : "public",
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
+                "name" : "sin",
+                "parameters" : [
+                  {
+                    "name" : "value",
+                    "type" : {
+                      "double" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "accessLevel" : "public",
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
+                "name" : "pow",
+                "parameters" : [
+                  {
+                    "name" : "base",
+                    "type" : {
+                      "double" : {
+
+                      }
+                    }
+                  },
+                  {
+                    "name" : "exponent",
+                    "type" : {
+                      "double" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "accessLevel" : "public",
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
+                "name" : "exp",
+                "parameters" : [
+                  {
+                    "name" : "value",
+                    "type" : {
+                      "double" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "double" : {
+
+                  }
+                }
+              },
+              {
+                "accessLevel" : "public",
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
+                "name" : "log",
+                "parameters" : [
+                  {
+                    "name" : "value",
+                    "type" : {
+                      "double" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "double" : {
+
+                  }
+                }
+              }
+            ]
+          }
+        ]
       }
     ]
   },

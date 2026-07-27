@@ -1,3 +1,5 @@
+// TODO-TRANSITION: simplify this, AI is too stupid
+
 extension View {
     public func transition<T: Transition>(_ transition: T, animation: Animation? = nil) -> _TransitionView<T, Self> {
         _TransitionView(transition: transition, animation: animation, wrapped: self)
@@ -25,6 +27,6 @@ public struct _TransitionView<T: Transition, V: View>: View {
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        node.patchWrappedContent(view, tx: &tx)
+        node.patch(view, tx: &tx)
     }
 }

@@ -2,8 +2,8 @@ import BasicContainers
 
 final class MountContainer {
     private let viewContext: _ViewContext
-    private var activeSlots: UniqueArray<Slot>
-    private var leavingSlots: UniqueArray<Slot> = .init()
+    var activeSlots: UniqueArray<Slot>
+    var leavingSlots: UniqueArray<Slot> = .init()
     private var removedNodes: UniqueArray<RemovedNode> = .init()
 
     var containerHandle: LayoutContainer.Handle?
@@ -26,19 +26,15 @@ final class MountContainer {
         self.init(
             context: context,
             slots: UniqueArray<Slot>(capacity: 1) { span in
-                let mountedSlot = ctx.withMountRootContext { rootCtx in
-                    Slot.mounted(
-                        key: key,
-                        mounted: rootCtx.makeMountedSlot(
-                            newKeyIndex: 0,
-                            viewContext: context,
-                            makeNode: { _, viewContext, mountCtx in
-                                AnyReconcilable(makeNode(viewContext, &mountCtx))
-                            }
-                        )
-                    )
-                }
-                span.append(mountedSlot)
+                let mounted = Self.makeMountedSlot(
+                    newKeyIndex: 0,
+                    viewContext: context,
+                    ctx: &ctx,
+                    makeNode: { _, viewContext, mountCtx in
+                        AnyReconcilable(makeNode(viewContext, &mountCtx))
+                    }
+                )
+                span.append(.mounted(key: key, mounted: mounted))
             }
         )
     }
@@ -53,19 +49,15 @@ final class MountContainer {
             context: context,
             slots: UniqueArray<Slot>(capacity: keys.count) { span in
                 for index in keys.indices {
-                    let mountedSlot = ctx.withMountRootContext { rootCtx in
-                        Slot.mounted(
-                            key: keys[unchecked: index],
-                            mounted: rootCtx.makeMountedSlot(
-                                newKeyIndex: index,
-                                viewContext: context,
-                                makeNode: { index, viewContext, mountCtx in
-                                    AnyReconcilable(makeNode(index, viewContext, &mountCtx))
-                                }
-                            )
-                        )
-                    }
-                    span.append(mountedSlot)
+                    let mounted = Self.makeMountedSlot(
+                        newKeyIndex: index,
+                        viewContext: context,
+                        ctx: &ctx,
+                        makeNode: { index, viewContext, mountCtx in
+                            AnyReconcilable(makeNode(index, viewContext, &mountCtx))
+                        }
+                    )
+                    span.append(.mounted(key: keys[unchecked: index], mounted: mounted))
                 }
             }
         )
@@ -150,14 +142,15 @@ final class MountContainer {
                 removedSlots: &removedMiddleSlots,
                 keys: keys,
                 makeNewSlot: { [viewContext] newKeyIndex, key in
-                    var mounted = tx.scheduler.withMountContext(tx: &tx) { mountCtx in
-                        mountCtx.makeMountedSlot(
+                    var mounted = tx.scheduler.withMountContext(tx: &tx) { (mountCtx: consuming _MountContext) in
+                        var mountCtx = mountCtx
+                        return Self.makeMountedSlot(
                             newKeyIndex: newKeyIndex,
                             viewContext: viewContext,
+                            ctx: &mountCtx,
                             makeNode: makeNode
                         )
                     }
-                    mounted.transitionCoordinator?.scheduleEnterIdentityIfNeeded(scheduler: tx.scheduler)
                     mounted.placement = .added
                     return .mounted(key: key, mounted: mounted)
                 }
@@ -215,6 +208,22 @@ final class MountContainer {
 }
 
 extension MountContainer {
+    private static func makeMountedSlot(
+        newKeyIndex: Int,
+        viewContext: borrowing _ViewContext,
+        ctx: inout _MountContext,
+        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
+    ) -> Slot.Mounted {
+        let mounted = ctx.withMountedSlotContext { slotCtx in
+            slotCtx.makeMountedSlot(
+                newKeyIndex: newKeyIndex,
+                viewContext: viewContext,
+                makeNode: makeNode
+            )
+        }
+        return mounted
+    }
+
     struct Slot: ~Copyable {
         struct Mounted: ~Copyable {
             enum Placement {
@@ -226,7 +235,8 @@ extension MountContainer {
             var node: AnyReconcilable
             var layoutNodes: RigidArray<LayoutNode>
             var placement: Placement
-            var transitionCoordinator: MountRootTransitionCoordinator?
+            var mountRoot: _MountRoot
+            var transitionRemoval: _TransitionRemoval?
 
             deinit {
                 // NOTE: this is a load-bearing deinit
@@ -271,34 +281,15 @@ extension MountContainer {
             self.storage = .mounted(mounted)
         }
 
-        @inline(__always)
-        private static func reportLeavingElements(
-            of mounted: borrowing Mounted,
-            handle: LayoutContainer.Handle?,
-            tx: inout _TransactionContext
+        mutating func withMounted(
+            _ body: (borrowing Mounted) -> Void
         ) {
-            let nodes = mounted.layoutNodes.span
-            for index in nodes.indices {
-                if case let .elementNode(element) = nodes[unchecked: index] {
-                    handle?.reportLeavingElement(element, &tx)
-                }
-            }
+            let mounted = takeMounted()
+            body(mounted)
+            putMounted(consume mounted)
         }
 
         @inline(__always)
-        private static func reportReenteringElements(
-            of mounted: borrowing Mounted,
-            handle: LayoutContainer.Handle?,
-            tx: inout _TransactionContext
-        ) {
-            let nodes = mounted.layoutNodes.span
-            for index in nodes.indices {
-                if case let .elementNode(element) = nodes[unchecked: index] {
-                    handle?.reportReenteringElement(element, &tx)
-                }
-            }
-        }
-
         mutating func patchInActiveLane(
             newKeyIndex: Int,
             tx: inout _TransactionContext,
@@ -307,9 +298,9 @@ extension MountContainer {
         ) {
             var mounted = takeMounted()
 
-            if mounted.transitionCoordinator?.isRemovalInFlight == true {
-                mounted.transitionCoordinator?.cancelRemoval(tx: &tx)
-                Self.reportReenteringElements(of: mounted, handle: containerHandle, tx: &tx)
+            if let removal = mounted.transitionRemoval {
+                removal.cancel(tx: &tx)
+                mounted.transitionRemoval = nil
                 mounted.placement = .moved
             }
 
@@ -330,17 +321,21 @@ extension MountContainer {
             tx: inout _TransactionContext,
             handle: LayoutContainer.Handle?
         ) -> RemovalForDiff {
-            let mounted = takeMounted()
+            var mounted = takeMounted()
 
             if mounted.placement == .added {
                 return .removed(.init(mounted: mounted, shouldCollectLayout: false))
             }
 
-            let shouldDeferRemoval = mounted.transitionCoordinator?.beginRemoval(tx: &tx, handle: handle) ?? false
-
-            if shouldDeferRemoval {
-                Self.reportLeavingElements(of: mounted, handle: handle, tx: &tx)
-                return .leaving(.mounted(key: key, mounted: mounted))
+            if let transitionRemoval = tx.scheduler.transitionRemoval {
+                if let removal = transitionRemoval.begin(
+                    mounted: mounted,
+                    handle: handle,
+                    tx: &tx
+                ) {
+                    mounted.transitionRemoval = removal
+                    return .leaving(.mounted(key: key, mounted: mounted))
+                }
             }
 
             return .removed(.init(mounted: mounted))
@@ -349,7 +344,7 @@ extension MountContainer {
         mutating func consumeRemovedIfReadyFromLeaving() -> MountContainer.RemovedNode? {
             let mounted = takeMounted()
 
-            if mounted.transitionCoordinator?.consumeDeferredRemovalReadySignal() == true {
+            if mounted.transitionRemoval?.isReady == true {
                 return .init(mounted: mounted)
             }
 

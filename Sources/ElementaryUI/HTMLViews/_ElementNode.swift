@@ -3,7 +3,10 @@ enum _ElementAttributes {
     case modifier(_AttributeModifier)
 }
 
-public struct _ElementNode<Child: _Reconcilable & ~Copyable>: ~Copyable, _Reconcilable {
+public struct _ElementNode<Child: _Reconcilable & ~Copyable>:
+    ~Copyable,
+    _Reconcilable
+{
     private var child: Child
     private var attributes: _ElementAttributes
     private var mountedModifiers: [AnyUnmountable] = []
@@ -18,7 +21,10 @@ public struct _ElementNode<Child: _Reconcilable & ~Copyable>: ~Copyable, _Reconc
     ) {
         let domNode: DOM.Node
         if let namespaceURI {
-            domNode = ctx.dom.createElementNS(namespaceURI: namespaceURI, element: tag)
+            domNode = ctx.dom.createElementNS(
+                namespaceURI: namespaceURI,
+                element: tag
+            )
         } else {
             domNode = ctx.dom.createElement(tag)
         }
@@ -26,10 +32,13 @@ public struct _ElementNode<Child: _Reconcilable & ~Copyable>: ~Copyable, _Reconc
         ctx.appendStaticElement(domNode)
 
         guard !viewContext.hasNoUpstreamModifiers else {
-            // no upstream: apply attributes directly, skip context copy and _AttributeModifier check
             ctx.dom.addHTMLAttributes(domNode, attributes)
-            self.attributes = .inline(node: domNode, lastApplied: attributes)
-            self.child = ctx.withChildContext { (mctx: consuming _MountContext) in
+            self.attributes = .inline(
+                node: domNode,
+                lastApplied: attributes
+            )
+            self.child = ctx.withChildContext {
+                (mctx: consuming _MountContext) in
                 let child = makeChild(viewContext, &mctx)
                 _ = mctx.mountInDOMNode(domNode, observers: [])
                 return child
@@ -40,28 +49,35 @@ public struct _ElementNode<Child: _Reconcilable & ~Copyable>: ~Copyable, _Reconc
         var childContext = copy viewContext
 
         if childContext.modifiers[_AttributeModifier.key] != nil {
-            // upstream modifier exists: chain through _AttributeModifier as before
-            let modifier = _AttributeModifier(value: attributes, upstream: childContext.modifiers)
+            let modifier = _AttributeModifier(
+                value: attributes,
+                upstream: childContext.modifiers
+            )
             self.attributes = .modifier(modifier)
             childContext.modifiers[_AttributeModifier.key] = modifier
         } else {
-            // no upstream: apply attributes directly, skip _AttributeModifier allocation
             ctx.dom.addHTMLAttributes(domNode, attributes)
-            self.attributes = .inline(node: domNode, lastApplied: attributes)
+            self.attributes = .inline(
+                node: domNode,
+                lastApplied: attributes
+            )
         }
 
         let modifiers = childContext.takeModifiers()
         let layoutObservers = childContext.takeLayoutObservers()
 
         self.mountedModifiers.reserveCapacity(modifiers.count)
-
         for modifier in modifiers.reversed() {
             self.mountedModifiers.append(modifier.mount(domNode, &ctx))
         }
 
-        self.child = ctx.withChildContext { (mctx: consuming _MountContext) in
+        self.child = ctx.withChildContext {
+            (mctx: consuming _MountContext) in
             let child = makeChild(childContext, &mctx)
-            _ = mctx.mountInDOMNode(domNode, observers: layoutObservers)  //NOTE: maybe hold on to the container?
+            _ = mctx.mountInDOMNode(
+                domNode,
+                observers: layoutObservers
+            )
             return child
         }
     }
@@ -76,8 +92,17 @@ public struct _ElementNode<Child: _Reconcilable & ~Copyable>: ~Copyable, _Reconc
             modifier.updateValue(attributes, &context)
         case .inline(let node, let lastApplied):
             if attributes != lastApplied {
-                context.scheduler.addCommitAction(.patchAttributes(node: node, from: lastApplied, to: attributes))
-                self.attributes = .inline(node: node, lastApplied: attributes)
+                context.scheduler.addCommitAction(
+                    .patchAttributes(
+                        node: node,
+                        from: lastApplied,
+                        to: attributes
+                    )
+                )
+                self.attributes = .inline(
+                    node: node,
+                    lastApplied: attributes
+                )
             }
         }
         block(&child, &context)

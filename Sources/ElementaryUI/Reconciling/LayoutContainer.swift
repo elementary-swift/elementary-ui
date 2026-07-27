@@ -4,14 +4,14 @@ import ContainersPreview
 final class LayoutContainer {
     let domNode: DOM.Node
     private let layoutNodes: RigidArray<LayoutNode>
-    private let layoutObservers: [any DOMLayoutObserver]
+    private let layoutObservers: [DOMLayoutObserver]
     private var isDirty: Bool = false
 
     init(
         domNode: DOM.Node,
         scheduler: Scheduler,
         layoutNodes: consuming RigidArray<LayoutNode>,
-        layoutObservers: [any DOMLayoutObserver]
+        layoutObservers: [DOMLayoutObserver]
     ) {
         self.domNode = domNode
         self.layoutNodes = consume layoutNodes
@@ -152,6 +152,7 @@ enum LayoutNode {
             false
         }
     }
+
 }
 
 struct LayoutPass: ~Copyable, ~Escapable {
@@ -215,4 +216,5 @@ extension RigidArray where Element == LayoutNode {
             nodes[unchecked: index].collect(into: &ops, context: &context, op: op)
         }
     }
+
 }

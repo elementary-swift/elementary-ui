@@ -26,15 +26,6 @@ public enum DOM {
         func setAttribute(_ node: Node, name: String, value: String?)
         func removeAttribute(_ node: Node, name: String)
 
-        func animateElement(_ element: Node, _ effect: Animation.KeyframeEffect, onFinish: @escaping () -> Void) -> Animation
-
-        // Measurement API for FLIP animations
-        func getBoundingClientRect(_ node: Node) -> Rect
-        func getOffsetParent(_ node: Node) -> Node?
-
-        // Scroll offset API for FLIP animations
-        func getScrollOffset() -> (x: Double, y: Double)
-
         // Low-level DOM-like event listener APIs
         func addEventListener(_ node: Node, event: String, sink: borrowing EventSink)
         func removeEventListener(_ node: Node, event: String, sink: borrowing EventSink)
@@ -49,10 +40,30 @@ public enum DOM {
         func querySelector(_ selector: String) -> Node?
 
         // TODO: these are more scheduling APIs, but they kind of fit here...
-        func requestAnimationFrame(_ callback: @escaping (Double) -> Void)
         func queueMicrotask(_ callback: @escaping () -> Void)
         func setTimeout(_ callback: @escaping () -> Void, _ timeout: Double)
         func getCurrentTime() -> Double
+    }
+
+    protocol AnimationInteractor: Interactor {
+        func animateElement(
+            _ element: Node,
+            _ effect: Animation.KeyframeEffect,
+            onFinish: @escaping () -> Void
+        ) -> Animation
+    }
+
+    protocol AnimationFrameInteractor: Interactor {
+        func requestAnimationFrame(_ callback: @escaping (Double) -> Void)
+    }
+
+    protocol LayoutAnimationInteractor:
+        AnimationInteractor,
+        AnimationFrameInteractor
+    {
+        func getBoundingClientRect(_ node: Node) -> Rect
+        func getOffsetParent(_ node: Node) -> Node?
+        func getScrollOffset() -> (x: Double, y: Double)
     }
 }
 
@@ -61,3 +72,34 @@ extension DOM.Interactor {
         setTimeout(callback, 0)
     }
 }
+
+// TODO: fix this with typealias refactoring
+#if os(WASI)
+extension DOM.Interactor {
+    var animationInteractor: BridgeJSDOMInteractor {
+        BridgeJSDOMInteractor.shared
+    }
+
+    var layoutAnimationInteractor: BridgeJSDOMInteractor {
+        BridgeJSDOMInteractor.shared
+    }
+
+    var animationFrameInteractor: BridgeJSDOMInteractor {
+        BridgeJSDOMInteractor.shared
+    }
+}
+#else
+extension DOM.Interactor {
+    var animationInteractor: any DOM.AnimationInteractor {
+        self as! any DOM.AnimationInteractor
+    }
+
+    var layoutAnimationInteractor: any DOM.LayoutAnimationInteractor {
+        self as! any DOM.LayoutAnimationInteractor
+    }
+
+    var animationFrameInteractor: any DOM.AnimationFrameInteractor {
+        self as! any DOM.AnimationFrameInteractor
+    }
+}
+#endif
