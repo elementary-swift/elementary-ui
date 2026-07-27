@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784295699178,
+  "lastUpdate": 1785187896367,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -2679,6 +2679,85 @@ window.BENCHMARK_DATA = {
           {
             "name": "25_run-clear-memory",
             "value": 1.35,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8232737f749a784cfa95abe289cb1f3733961105",
+          "message": "more strippable FLIP and transition handling (#114)\n\n* more strippable FLIP and transition handling\n\n* use typealias for DOM.Interactor\n\n* tiny tweak\n\n* formatting",
+          "timestamp": "2026-07-27T23:21:31+02:00",
+          "tree_id": "180ca0648f90c3d63c8b33e1aaf6d9321d448323",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/8232737f749a784cfa95abe289cb1f3733961105"
+        },
+        "date": 1785187895816,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 116.25,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 136.31,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 227.9,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 29.57,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 67.98,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 43.11,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 143.59,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 67.56,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.04,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.08,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.36,
             "unit": "MB"
           }
         ]
