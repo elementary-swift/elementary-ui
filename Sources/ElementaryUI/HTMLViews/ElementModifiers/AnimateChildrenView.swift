@@ -13,7 +13,7 @@ struct AnimateContainerLayoutView<Wrapped: View>: View {
 
         // TODO: make this nicer
         let flipScheduler = ctx.scheduler.getOrAddExtension(FLIPScheduler.self) {
-            FLIPScheduler(dom: ctx.dom.layoutAnimationInteractor)
+            FLIPScheduler(dom: ctx.dom)
         }
         let observer = FLIPLayoutObserver(
             animateContainerSize: view.animateContainerSize,

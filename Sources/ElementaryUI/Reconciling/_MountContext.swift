@@ -9,14 +9,14 @@ public struct _MountContext: ~Copyable, ~Escapable {
 
     // NOTE: we could use a fancy Inout<_CommitContext> here.. but maybe not worth it
     let scheduler: Scheduler
-    let dom: any DOM.Interactor
+    let dom: DOMInteractor
     let currentFrameTime: Double
     let transaction: Transaction
 
     @_lifetime(copy nodeStack)
     init(
         nodeStack: consuming ScratchStack<LayoutNode>,
-        dom: any DOM.Interactor,
+        dom: DOMInteractor,
         scheduler: Scheduler,
         currentFrameTime: Double,
         transaction: Transaction,

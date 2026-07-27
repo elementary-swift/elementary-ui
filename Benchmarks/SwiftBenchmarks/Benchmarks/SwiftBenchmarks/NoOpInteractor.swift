@@ -82,6 +82,11 @@ final class NoOpInteractor: DOM.Interactor {
         return .init(ref: RefBox())
     }
 
+    func createElementNS(namespaceURI: String, element: String) -> DOM.Node {
+        let _ = namespaceURI
+        return createElement(element)
+    }
+
     func setAttribute(_ node: DOM.Node, name: String, value: String?) {}
     func removeAttribute(_ node: DOM.Node, name: String) {}
 

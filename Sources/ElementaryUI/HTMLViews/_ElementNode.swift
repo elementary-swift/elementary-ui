@@ -32,7 +32,7 @@ public struct _ElementNode<Child: _Reconcilable & ~Copyable>:
         ctx.appendStaticElement(domNode)
 
         guard !viewContext.hasNoUpstreamModifiers else {
-            ctx.dom.addHTMLAttributes(domNode, attributes)
+            addHTMLAttributes(attributes, to: domNode, using: ctx.dom)
             self.attributes = .inline(
                 node: domNode,
                 lastApplied: attributes
@@ -56,7 +56,7 @@ public struct _ElementNode<Child: _Reconcilable & ~Copyable>:
             self.attributes = .modifier(modifier)
             childContext.modifiers[_AttributeModifier.key] = modifier
         } else {
-            ctx.dom.addHTMLAttributes(domNode, attributes)
+            addHTMLAttributes(attributes, to: domNode, using: ctx.dom)
             self.attributes = .inline(
                 node: domNode,
                 lastApplied: attributes

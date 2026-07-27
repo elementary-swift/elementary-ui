@@ -62,7 +62,7 @@ final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: Unmountabl
         animations.removeAll(keepingCapacity: true)
     }
 
-    private func startOrUpdateAnimations(dom: any DOM.Interactor, scheduler: Scheduler) {
+    private func startOrUpdateAnimations(dom: DOMInteractor, scheduler: Scheduler) {
         if animations.isEmpty {
             logTrace("starting animations")
             animations.reserveCapacity(values.count)
@@ -70,7 +70,7 @@ final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: Unmountabl
             for (index, value) in values.enumerated() {
                 let progressAnimation = value.progressAnimation(_:)
                 animations.append(
-                    dom.animationInteractor.animateElement(
+                    dom.animateElement(
                         node,
                         DOM.Animation.KeyframeEffect(value.value, isFirst: index == 0)
                     ) { [scheduler, progressAnimation] in

@@ -21,11 +21,7 @@ private extension DOM.Node {
     var value: TestDOM.NodeRef { ref as! TestDOM.NodeRef }
 }
 
-final class TestDOM:
-    DOM.Interactor,
-    DOM.AnimationInteractor,
-    DOM.LayoutAnimationInteractor
-{
+final class TestDOM: DOM.Interactor {
     enum Op: Equatable, CustomStringConvertible {
         case createElement(String)
         case createElementNS(namespaceURI: String, element: String)

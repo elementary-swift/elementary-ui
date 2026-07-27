@@ -94,12 +94,12 @@ extension Application {
     ///   element cannot be found.
     @discardableResult
     public consuming func mount(in element: DOMElementSelector) -> MountedApplication? {
-        guard let domNode = element.findDOMNode(dom: BridgeJSDOMInteractor.shared) else {
+        guard let domNode = element.findDOMNode(dom: defaultDOMInteractor) else {
             logError("Mounting application failed: no DOM node found for \(element)")
             return nil
         }
 
-        let runtime = ApplicationRuntime(dom: BridgeJSDOMInteractor.shared, domRoot: domNode, appView: contentView)
+        let runtime = ApplicationRuntime(dom: defaultDOMInteractor, domRoot: domNode, appView: contentView)
         return MountedApplication(unmount: runtime.unmount)
     }
 }

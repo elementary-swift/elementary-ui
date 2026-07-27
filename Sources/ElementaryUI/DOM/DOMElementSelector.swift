@@ -49,7 +49,7 @@ public struct DOMElementSelector: Sendable, ExpressibleByStringLiteral {
 }
 
 internal extension DOMElementSelector {
-    func findDOMNode(dom: any DOM.Interactor) -> DOM.Node? {
+    func findDOMNode(dom: DOMInteractor) -> DOM.Node? {
         switch value {
         case .body:
             // TODO: this isn't so great....

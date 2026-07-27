@@ -16,7 +16,7 @@ enum CommitAction {
         case let .patchText(node, text):
             context.dom.patchText(node, with: text)
         case let .patchAttributes(node, previousAttributes, newAttributes):
-            context.dom.applyHTMLAttributes(node, from: previousAttributes, to: newAttributes)
+            applyHTMLAttributes(from: previousAttributes, to: newAttributes, on: node, using: context.dom)
         case let .patchLayout(container):
             container.performLayout(&context)
         case let .closure(action):
@@ -26,6 +26,7 @@ enum CommitAction {
 }
 
 final class Scheduler {
+    // TODO: verify if this is really needed, clean it up
     class TransitionRemoval {
         class func begin(
             mounted: borrowing MountContainer.Slot.Mounted,
@@ -36,7 +37,7 @@ final class Scheduler {
         }
     }
 
-    private let dom: any DOM.Interactor
+    private let dom: DOMInteractor
 
     // Transition views install this metatype without allocating a runtime
     // object. Keeping the call indirect lets transition-free Wasm builds
@@ -87,7 +88,7 @@ final class Scheduler {
         !runningAnimations.isEmpty
     }
 
-    init(dom: any DOM.Interactor) {
+    init(dom: DOMInteractor) {
         self.dom = dom
     }
 
@@ -188,7 +189,7 @@ final class Scheduler {
         isUpdateCycleActive = true
 
         if afterPaint {
-            dom.runNext { [self] in runUpdateCycle() }
+            dom.setTimeout({ [self] in runUpdateCycle() }, 0)
         } else {
             dom.queueMicrotask { [self] in runUpdateCycle() }
         }
@@ -197,7 +198,7 @@ final class Scheduler {
     private func ensureAnimationFrameScheduled() {
         guard !isAnimationFramePending && needsAnimationFrame else { return }
         isAnimationFramePending = true
-        dom.animationFrameInteractor.requestAnimationFrame {
+        dom.requestAnimationFrame {
             [self] rafTime in runAnimationFrame(rafTime / 1000)
         }
     }

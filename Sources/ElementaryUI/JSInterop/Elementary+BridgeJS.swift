@@ -19,14 +19,9 @@ extension DOM.EventSink {
     }
 }
 
-// TODO: fix this with typealias refactoring
-#if os(WASI)
-private typealias BridgeDOMInteractorProtocol = DOM.Interactor
-#else
-private protocol BridgeDOMInteractorProtocol: DOM.LayoutAnimationInteractor {}
-#endif
-
-final class BridgeJSDOMInteractor: BridgeDOMInteractorProtocol {
+// Keep the concrete interop boundary out of line. Without this, optimized WASI
+// builds duplicate JavaScript bridging code into callers and grow every bundle.
+final class BridgeJSDOMInteractor {
     private let _document: JSDocument
     private let _window: JSWindow
     private let _performance: JSPerformance
@@ -37,6 +32,7 @@ final class BridgeJSDOMInteractor: BridgeDOMInteractorProtocol {
         _performance = try! BrowserInterop.performance
     }
 
+    @inline(never)
     func makeEventSink(_ handler: @escaping (String, DOM.Event) -> Void) -> DOM.EventSink {
         let closure = JSEventCallback { e in
             handler(try! e.type, DOM.Event(e.jsObject))
@@ -45,6 +41,7 @@ final class BridgeJSDOMInteractor: BridgeDOMInteractorProtocol {
         return .init(js: closure)
     }
 
+    @inline(never)
     func makePropertyAccessor(_ node: DOM.Node, name: String) -> DOM.PropertyAccessor {
         .init(
             get: { .init(node.jsElement.jsObject[name]) },
@@ -52,6 +49,7 @@ final class BridgeJSDOMInteractor: BridgeDOMInteractorProtocol {
         )
     }
 
+    @inline(never)
     func makeStyleAccessor(_ node: DOM.Node, cssName: String) -> DOM.StyleAccessor {
         .init(
             get: {
@@ -65,6 +63,7 @@ final class BridgeJSDOMInteractor: BridgeDOMInteractorProtocol {
         )
     }
 
+    @inline(never)
     func makeComputedStyleAccessor(_ node: DOM.Node) -> DOM.ComputedStyleAccessor {
         .init(
             get: { cssName in
@@ -75,6 +74,7 @@ final class BridgeJSDOMInteractor: BridgeDOMInteractorProtocol {
         )
     }
 
+    @inline(never)
     func makeFocusAccessor(_ node: DOM.Node, onEvent: @escaping (DOM.FocusEvent) -> Void) -> DOM.FocusAccessor {
         let focusSink = DOM.EventSink(
             js:
@@ -104,52 +104,63 @@ final class BridgeJSDOMInteractor: BridgeDOMInteractorProtocol {
         )
     }
 
+    @inline(never)
     func setStyleProperty(_ node: DOM.Node, name: String, value: String) {
         let element = node.jsElement
         _ = try? element.style.setProperty(name, value)
     }
 
+    @inline(never)
     func removeStyleProperty(_ node: DOM.Node, name: String) {
         let element = node.jsElement
         _ = try? element.style.removeProperty(name)
     }
 
+    @inline(never)
     func createText(_ text: String) -> DOM.Node {
         let node = try! _document.createTextNode(text)
         return .init(ref: node.jsObject)
     }
 
+    @inline(never)
     func createElement(_ element: String) -> DOM.Node {
         let node = try! _document.createElement(element)
         return .init(ref: node.jsObject)
     }
 
+    @inline(never)
     func createElementNS(namespaceURI: String, element: String) -> DOM.Node {
         let node = try! _document.createElementNS(namespaceURI, element)
         return .init(ref: node.jsObject)
     }
 
+    @inline(never)
     func setAttribute(_ node: DOM.Node, name: String, value: String?) {
         let element = node.jsElement
         _ = try? element.setAttribute(name, value ?? "")
     }
 
+    @inline(never)
     func removeAttribute(_ node: DOM.Node, name: String) {
         _ = try? node.jsElement.removeAttribute(name)
     }
 
+    @inline(never)
     func addEventListener(_ node: DOM.Node, event: String, sink: borrowing DOM.EventSink) {
         _ = try? node.jsElement.addEventListener(event, sink.jsClosure)
     }
 
+    @inline(never)
     func removeEventListener(_ node: DOM.Node, event: String, sink: borrowing DOM.EventSink) {
         _ = try? node.jsElement.removeEventListener(event, sink.jsClosure)
     }
 
+    @inline(never)
     func patchText(_ node: DOM.Node, with text: String) {
         _ = try? node.jsNode.setTextContent(text)
     }
 
+    @inline(never)
     func insertChild(_ child: DOM.Node, before sibling: DOM.Node?, in parent: DOM.Node) {
         if let sibling {
             _ = try? parent.jsElement.insertBefore(
@@ -161,30 +172,37 @@ final class BridgeJSDOMInteractor: BridgeDOMInteractorProtocol {
         }
     }
 
+    @inline(never)
     func appendChild(_ child: DOM.Node, to parent: DOM.Node) {
         _ = try? parent.jsElement.appendChild(child.jsNode)
     }
 
+    @inline(never)
     func removeChild(_ child: DOM.Node, from parent: DOM.Node) {
         _ = try? parent.jsElement.removeChild(child.jsNode)
     }
 
+    @inline(never)
     func clearChildren(in parent: DOM.Node) {
         _ = try? parent.jsElement.replaceChildren()
     }
 
+    @inline(never)
     func queueMicrotask(_ callback: @escaping () -> Void) {
         try! BrowserInterop.queueMicrotask(callback)
     }
 
+    @inline(never)
     func setTimeout(_ callback: @escaping () -> Void, _ timeout: Double) {
         try! BrowserInterop.setTimeout(callback, timeout)
     }
 
+    @inline(never)
     func getCurrentTime() -> Double {
         try! _performance.now() / 1000
     }
 
+    @inline(never)
     func querySelector(_ selector: String) -> DOM.Node? {
         guard let element = try? _document.querySelector(selector) else {
             return nil
@@ -197,10 +215,12 @@ final class BridgeJSDOMInteractor: BridgeDOMInteractorProtocol {
 }
 
 extension BridgeJSDOMInteractor {
+    @inline(never)
     func requestAnimationFrame(_ callback: @escaping (Double) -> Void) {
         _ = try! BrowserInterop.requestAnimationFrame(callback)
     }
 
+    @inline(never)
     func animateElement(
         _ element: DOM.Node,
         _ effect: DOM.Animation.KeyframeEffect,
@@ -234,6 +254,7 @@ extension BridgeJSDOMInteractor {
         )
     }
 
+    @inline(never)
     func getBoundingClientRect(_ node: DOM.Node) -> DOM.Rect {
         guard let rect = try? node.jsElement.getBoundingClientRect() else {
             return DOM.Rect(x: 0, y: 0, width: 0, height: 0)
@@ -246,6 +267,7 @@ extension BridgeJSDOMInteractor {
         )
     }
 
+    @inline(never)
     func getOffsetParent(_ node: DOM.Node) -> DOM.Node? {
         guard let parent = try? node.jsElement.offsetParent else {
             return nil
@@ -256,6 +278,7 @@ extension BridgeJSDOMInteractor {
         return DOM.Node(ref: parent.jsObject)
     }
 
+    @inline(never)
     func getScrollOffset() -> (x: Double, y: Double) {
         (
             x: (try? _window.scrollX) ?? 0,

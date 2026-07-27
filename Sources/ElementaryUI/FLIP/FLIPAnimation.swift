@@ -92,7 +92,7 @@ final class FLIPAnimation<Value: CSSAnimatable> {
                 if let domAnimation = domAnimation {
                     domAnimation.update(effect)
                 } else {
-                    domAnimation = context.dom.animationInteractor.animateElement(node, effect) { [scheduler = context.scheduler] in
+                    domAnimation = context.dom.animateElement(node, effect) { [scheduler = context.scheduler] in
                         scheduler.scheduleUpdate { context in
                             logTrace("CSS animation of \(Value.CSSValue.styleKey) completed, marking dirty")
                             self.animatedValue.progressToTime(context.currentFrameTime)

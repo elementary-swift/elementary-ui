@@ -50,7 +50,7 @@ extension _AttributeModifier {
             self.modifier = modifier
             self.modifier.tracker.addDependency(self)
             let initialValue = modifier.value
-            context.dom.addHTMLAttributes(node, initialValue)
+            addHTMLAttributes(initialValue, to: node, using: context.dom)
             previousAttributes = initialValue
         }
 
@@ -64,7 +64,7 @@ extension _AttributeModifier {
         func updateDOMNode(_ context: inout _CommitContext) {
             logTrace("updating attribute modifier")
             let newValue = modifier.value
-            context.dom.applyHTMLAttributes(node, from: previousAttributes, to: newValue)
+            applyHTMLAttributes(from: previousAttributes, to: newValue, on: node, using: context.dom)
             previousAttributes = newValue
             isDirty = false
         }
@@ -78,7 +78,9 @@ extension _AttributeModifier {
 
 // MARK: - Attribute patching
 
-extension DOM.Interactor {
+struct DOMAttributePatcher {
+    let dom: DOMInteractor
+
     private typealias StylePair = (key: Substring.UTF8View, value: Substring.UTF8View)
 
     func addHTMLAttributes(_ node: DOM.Node, _ attributes: _AttributeStorage) {
@@ -88,7 +90,7 @@ extension DOM.Interactor {
             if let newStyle = attribute._styleKeyValuePairs {
                 applyStyleChanges(node, from: nil, to: newStyle)
             } else {
-                setAttribute(node, name: attribute.name, value: attribute.value)
+                dom.setAttribute(node, name: attribute.name, value: attribute.value)
             }
         }
     }
@@ -131,7 +133,7 @@ extension DOM.Interactor {
                     applyStyleChanges(node, from: oldStyle, to: newStyle)
                 } else if !old.value.utf8Equals(new.value) {
                     logTrace("updating attribute \(new.name) from \(old.value ?? "") to \(new.value ?? "")")
-                    setAttribute(node, name: new.name, value: new.value)
+                    dom.setAttribute(node, name: new.name, value: new.value)
                 }
             case (.none, .none):
                 return
@@ -171,7 +173,7 @@ extension DOM.Interactor {
             if oldStyle != nil || newStyle != nil {
                 applyStyleChanges(node, from: oldStyle, to: newStyle)
             } else if old == nil || !old!.value.utf8Equals(new.value) {
-                setAttribute(node, name: new.name, value: new.value)
+                dom.setAttribute(node, name: new.name, value: new.value)
             }
         }
 
@@ -187,7 +189,7 @@ extension DOM.Interactor {
                 applyStyleChanges(node, from: oldStylePairs, to: nil)
             } else {
                 logTrace("removing attribute \(old.name)")
-                removeAttribute(node, name: old.name)
+                dom.removeAttribute(node, name: old.name)
             }
         }
     }
@@ -200,7 +202,7 @@ extension DOM.Interactor {
         guard let newStylePairs else {
             if let oldStylePairs {
                 for (oldKey, _) in oldStylePairs {
-                    removeStyleProperty(node, name: String(decoding: oldKey, as: UTF8.self))
+                    dom.removeStyleProperty(node, name: String(decoding: oldKey, as: UTF8.self))
                 }
             }
             return
@@ -208,7 +210,7 @@ extension DOM.Interactor {
 
         guard let oldStylePairs else {
             for (newKey, newValue) in newStylePairs {
-                setStyleProperty(
+                dom.setStyleProperty(
                     node,
                     name: String(Substring(newKey)),
                     value: String(Substring(newValue))
@@ -238,7 +240,7 @@ extension DOM.Interactor {
                 }
 
                 if !oldPair.value.utf8Equals(newPair.value) {
-                    setStyleProperty(
+                    dom.setStyleProperty(
                         node,
                         name: String(Substring(newPair.key)),
                         value: String(Substring(newPair.value))
@@ -277,7 +279,7 @@ extension DOM.Interactor {
         func apply(_ pair: StylePair) {
             let key = _StyleUTF8Key(pair.key)
             if let oldValue = oldByKey.removeValue(forKey: key), oldValue.utf8Equals(pair.value) { return }
-            setStyleProperty(node, name: key.stringValue, value: String(decoding: pair.value, as: UTF8.self))
+            dom.setStyleProperty(node, name: key.stringValue, value: String(decoding: pair.value, as: UTF8.self))
         }
 
         if let firstNew {
@@ -288,7 +290,7 @@ extension DOM.Interactor {
         }
 
         for remainingKey in oldByKey.keys {
-            removeStyleProperty(node, name: remainingKey.stringValue)
+            dom.removeStyleProperty(node, name: remainingKey.stringValue)
         }
     }
 }

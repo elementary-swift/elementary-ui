@@ -4,12 +4,7 @@ import _UTF8Internals
 // this should be split into two separate runs
 
 final class FLIPScheduler {
-    // TODO: fix this with typealias refactoring
-    #if os(WASI)
-    private var dom: BridgeJSDOMInteractor
-    #else
-    private var dom: any DOM.LayoutAnimationInteractor
-    #endif
+    private var dom: DOMInteractor
 
     // NOTE: extend this to support css properties as well - for now it is always the bounding rect stuff
     private var scheduledAnimations: [DOM.Node: ScheduledNode] = [:]
@@ -18,16 +13,9 @@ final class FLIPScheduler {
     private var firstWindowScrollOffset: (x: Double, y: Double)? = nil
     private var isLayoutEffectScheduled = false
 
-    // TODO: fix this with typealias refactoring
-    #if os(WASI)
-    init(dom: BridgeJSDOMInteractor) {
+    init(dom: DOMInteractor) {
         self.dom = dom
     }
-    #else
-    init(dom: any DOM.LayoutAnimationInteractor) {
-        self.dom = dom
-    }
-    #endif
 
     func scheduleLayoutEffect(on scheduler: Scheduler) {
         guard !isLayoutEffectScheduled else { return }

@@ -1,6 +1,6 @@
 import BasicContainers
 
-final class ApplicationRuntime<DOMInteractor: DOM.Interactor> {
+final class ApplicationRuntime {
     private var rootNode: _ConditionalNode?
     private var scheduler: Scheduler
 
