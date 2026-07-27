@@ -31,7 +31,6 @@ package func _withUTF8Buffer<R>(
     utf8.withContiguousStorageIfAvailable(body)!
 }
 
-@inline(__always)
 @inlinable
 package func _utf8BuffersEqual(
     _ lhs: UnsafeBufferPointer<UInt8>,
