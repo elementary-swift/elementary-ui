@@ -9,7 +9,8 @@ extension HTMLVoidElement: _Mountable, View {
         ctx: inout _MountContext
     ) -> _MountedNode {
         _TransitionableNode(context: context, ctx: &ctx) {
-            viewContext, ctx in
+            viewContext,
+            ctx in
             _ElementNode(
                 tag: self.Tag.name,
                 attributes: view._attributes,

@@ -9,7 +9,8 @@ extension HTMLElement: _Mountable, View where Content: _Mountable {
         ctx: inout _MountContext
     ) -> _MountedNode {
         _TransitionableNode(context: context, ctx: &ctx) {
-            viewContext, ctx in
+            viewContext,
+            ctx in
             _ElementNode(
                 tag: self.Tag.name,
                 attributes: view._attributes,
@@ -34,7 +35,8 @@ extension HTMLElement: _Mountable, View where Content: _Mountable {
 
         node.update(&tx) { element, tx in
             element.update(attributes: view._attributes, &tx) {
-                child, tx in
+                child,
+                tx in
                 Content._patchNode(
                     view.content,
                     node: &child,
