@@ -1,5 +1,8 @@
 import Reactivity
 
+// NOTE: the implementation is split up like this to improve code size
+// statically splitting out the animation machinery for non-animatable views helps with that
+
 // FIXME EMBEDDED: these typealiases work around the embedded compiler failing
 // to resolve Value.Body._MountedNode directly at some use sites.
 public typealias _FunctionNode<Value: __FunctionView> = __FunctionNode<
@@ -19,7 +22,7 @@ where ChildNode == Value.Body._MountedNode {
         _FunctionNodeCore<
             Value,
             ChildNode,
-            SchedulableFunction<Value, Value.Body, ChildNode>
+            SchedulableFunction<Value, ChildNode>
         >
 
     init(
@@ -51,7 +54,7 @@ where ChildNode == Value.Body._MountedNode {
         _FunctionNodeCore<
             Value,
             ChildNode,
-            AnimatableFunction<Value, Value.Body, ChildNode>
+            AnimatableFunction<Value, ChildNode>
         >
 
     init(
@@ -82,12 +85,10 @@ private struct _FunctionNodeCore<
 where
     ChildNode == Value.Body._MountedNode,
     Function.View == Value,
-    Function.Child == Value.Body,
     Function.ChildNode == ChildNode
 {
     let context: _ViewContext
-    let depthInTree: Int
-    var state: Value.__ViewState
+    let state: Value.__ViewState
     var lastValue: Value
     var storage: Storage
 
@@ -101,7 +102,7 @@ where
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) {
-        depthInTree = context.functionDepth
+        let depthInTree = context.functionDepth
         state = Value.__initializeState(from: value)
 
         var childContext = copy context
@@ -146,7 +147,11 @@ where
         Value.__applyContext(context, to: &newValue)
         Value.__restoreState(state, in: &newValue)
 
-        storage.patch(newValue, depthInTree: depthInTree, tx: &tx)
+        storage.patch(
+            newValue,
+            childFunctionDepth: context.functionDepth,
+            tx: &tx
+        )
 
         lastValue = consume newValue
     }
@@ -157,8 +162,6 @@ where
             __noOpModifyForStupidWarning(&child)
             child.unmount(&context)
         case .box(let function):
-            function.trackingSession.take()?.cancel()
-            function.cancelAnimation()
             function.unmountChild(&context)
         }
     }
@@ -186,7 +189,7 @@ private extension _FunctionNodeCore.Storage where ChildNode: ~Copyable {
 
     mutating func patch(
         _ value: borrowing Value,
-        depthInTree: Int,
+        childFunctionDepth: Int,
         tx: inout _TransactionContext
     ) {
         switch self {
@@ -202,7 +205,7 @@ private extension _FunctionNodeCore.Storage where ChildNode: ~Copyable {
                     Self.makeBox(
                         child: child,
                         value: value,
-                        depthInTree: depthInTree,
+                        depthInTree: childFunctionDepth - 1,
                         accessList: accessList,
                         scheduler: tx.scheduler
                     )
@@ -218,9 +221,9 @@ private extension _FunctionNodeCore.Storage where ChildNode: ~Copyable {
     }
 }
 
-private protocol _FunctionScheduler<View, Child, ChildNode>: AnyObject {
+private protocol _FunctionScheduler<View, ChildNode>: AnyObject
+where Self: _SchedulableNode {
     associatedtype View: __FunctionView
-    associatedtype Child: _Mountable
     associatedtype ChildNode: _Reconcilable & ~Copyable
 
     static var boxesWithoutTracking: Bool { get }
@@ -231,35 +234,25 @@ private protocol _FunctionScheduler<View, Child, ChildNode>: AnyObject {
         depthInTree: Int
     )
 
-    var trackingSession: TrackingSession? { get set }
-
-    func startTracking(
-        for accessList: ReactivePropertyAccessList,
-        scheduler: Scheduler
-    )
     func updateValue(
         _ value: borrowing View,
         tx: inout _TransactionContext
     )
-    func cancelAnimation()
     func unmountChild(_ context: inout _CommitContext)
 }
 
 class SchedulableFunction<
     Value: __FunctionView,
-    Body: _Mountable,
     MountedBody: _Reconcilable & ~Copyable
 >: _SchedulableNode, _FunctionScheduler
-where Body == Value.Body, MountedBody == Body._MountedNode {
+where MountedBody == Value.Body._MountedNode {
     typealias View = Value
-    typealias Child = Body
     typealias ChildNode = MountedBody
 
     class var boxesWithoutTracking: Bool { false }
 
     var child: MountedBody?
     var wiredValue: Value
-    let patchChild: (consuming Body, inout MountedBody, inout _TransactionContext) -> Void
 
     required init(
         child: consuming MountedBody,
@@ -268,7 +261,6 @@ where Body == Value.Body, MountedBody == Body._MountedNode {
     ) {
         self.child = .some(child)
         self.wiredValue = wiredValue
-        patchChild = Body._patchNode
         super.init(depthInTree: depthInTree)
     }
 
@@ -295,22 +287,23 @@ where Body == Value.Body, MountedBody == Body._MountedNode {
         if let accessList {
             startTracking(for: accessList, scheduler: tx.scheduler)
         }
-        patchChild(body, &child!, &tx)
+        Value.Body._patchNode(body, node: &child!, tx: &tx)
     }
 
     func cancelAnimation() {}
 
     final func unmountChild(_ context: inout _CommitContext) {
+        trackingSession.take()?.cancel()
+        cancelAnimation()
         child.take()?.unmount(&context)
     }
 }
 
 final class AnimatableFunction<
     Value: __FunctionView & Animatable,
-    Body: _Mountable,
     MountedBody: _Reconcilable & ~Copyable
->: SchedulableFunction<Value, Body, MountedBody>
-where Body == Value.Body, MountedBody == Body._MountedNode {
+>: SchedulableFunction<Value, MountedBody>
+where MountedBody == Value.Body._MountedNode {
     override class var boxesWithoutTracking: Bool { true }
 
     var animatedValue: AnimatedValue<Value.Value>
