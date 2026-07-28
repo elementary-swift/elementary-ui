@@ -114,6 +114,47 @@ struct BenchTextPatchView {
 }
 
 @View
+struct BenchOrderedAttributePatchView {
+    @Environment(ToggleBenchStore.self) var store: ToggleBenchStore
+
+    var body: some View {
+        p(
+            .id(store.flag ? "after" : "before"),
+            .class("stable"),
+            .hidden
+        ) {}
+    }
+}
+
+@View
+struct BenchReorderedAttributePatchView {
+    @Environment(ToggleBenchStore.self) var store: ToggleBenchStore
+
+    var body: some View {
+        p {}.attributes(
+            contentsOf: store.flag
+                ? [.id("after"), .class("stable"), .hidden]
+                : [.hidden, .id("before"), .class("stable")]
+        )
+    }
+}
+
+@View
+struct BenchReorderedStylePatchView {
+    @Environment(ToggleBenchStore.self) var store: ToggleBenchStore
+
+    var body: some View {
+        p(
+            .style(
+                store.flag
+                    ? ["b": "20", "d": "4", "a": "1"]
+                    : ["a": "1", "b": "2", "c": "3"]
+            )
+        ) {}
+    }
+}
+
+@View
 struct BenchStaticTextMountView {
     var body: some View {
         HTMLText("Hello")
@@ -237,6 +278,24 @@ private func withMountedTextPatch(
     store.setText(initial)
     let dom = NoOpInteractor()
     let mounted = Application(BenchTextPatchView().environment(store))._mount(dom: dom, root: dom.rootNode)
+    dom.drain()
+
+    body(store, dom)
+
+    mounted.unmount()
+    dom.drain()
+}
+
+@inline(never)
+private func withMountedToggleView<Content: View>(
+    initial: Bool,
+    _ makeView: () -> Content,
+    _ body: (ToggleBenchStore, NoOpInteractor) -> Void
+) {
+    let store = ToggleBenchStore()
+    store.flag = initial
+    let dom = NoOpInteractor()
+    let mounted = Application(makeView().environment(store))._mount(dom: dom, root: dom.rootNode)
     dom.drain()
 
     body(store, dom)
@@ -515,6 +574,39 @@ let benchmarks = {
             for _ in benchmark.scaledIterations {
                 benchmark.startMeasurement()
                 store.setText("A")
+                dom.drain()
+                benchmark.stopMeasurement()
+            }
+        }
+    }
+
+    Benchmark("Attributes.patch.ordered") { benchmark in
+        withMountedToggleView(initial: false, { BenchOrderedAttributePatchView() }) { store, dom in
+            for _ in benchmark.scaledIterations {
+                benchmark.startMeasurement()
+                store.toggle()
+                dom.drain()
+                benchmark.stopMeasurement()
+            }
+        }
+    }
+
+    Benchmark("Attributes.patch.reordered") { benchmark in
+        withMountedToggleView(initial: false, { BenchReorderedAttributePatchView() }) { store, dom in
+            for _ in benchmark.scaledIterations {
+                benchmark.startMeasurement()
+                store.toggle()
+                dom.drain()
+                benchmark.stopMeasurement()
+            }
+        }
+    }
+
+    Benchmark("Styles.patch.reordered") { benchmark in
+        withMountedToggleView(initial: false, { BenchReorderedStylePatchView() }) { store, dom in
+            for _ in benchmark.scaledIterations {
+                benchmark.startMeasurement()
+                store.toggle()
                 dom.drain()
                 benchmark.stopMeasurement()
             }

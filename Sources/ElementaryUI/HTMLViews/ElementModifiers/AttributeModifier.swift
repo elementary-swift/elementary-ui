@@ -157,40 +157,55 @@ struct DOMAttributePatcher {
         firstNew: _StoredAttribute?,
         newIterator: inout _MergedAttributes.Iterator
     ) {
-        var oldByKey: [UTF8Key: _StoredAttribute] = [:]
+        var oldAttributes: [_StoredAttribute] = []
+        oldAttributes.reserveCapacity(4)
         if let firstOld {
-            oldByKey[UTF8Key(firstOld.name)] = firstOld
+            oldAttributes.append(firstOld)
         }
         while let old = oldIterator.next() {
-            oldByKey[UTF8Key(old.name)] = old
-        }
-
-        func apply(_ new: _StoredAttribute) {
-            let key = UTF8Key(new.name)
-            let old = oldByKey.removeValue(forKey: key)
-            let oldStyle = old?._styleKeyValuePairs
-            let newStyle = new._styleKeyValuePairs
-            if oldStyle != nil || newStyle != nil {
-                applyStyleChanges(node, from: oldStyle, to: newStyle)
-            } else if old == nil || !old!.value.utf8Equals(new.value) {
-                dom.setAttribute(node, name: new.name, value: new.value)
-            }
+            oldAttributes.append(old)
         }
 
         if let firstNew {
-            apply(firstNew)
+            applyAttribute(firstNew, to: node, matching: &oldAttributes)
         }
         while let new = newIterator.next() {
-            apply(new)
+            applyAttribute(new, to: node, matching: &oldAttributes)
         }
 
-        for old in oldByKey.values {
+        var oldIndex = 0
+        while oldIndex < oldAttributes.count {
+            let old = oldAttributes[oldIndex]
             if let oldStylePairs = old._styleKeyValuePairs {
                 applyStyleChanges(node, from: oldStylePairs, to: nil)
             } else {
                 logTrace("removing attribute \(old.name)")
                 dom.removeAttribute(node, name: old.name)
             }
+            oldIndex += 1
+        }
+    }
+
+    private func applyAttribute(
+        _ new: _StoredAttribute,
+        to node: DOM.Node,
+        matching oldAttributes: inout [_StoredAttribute]
+    ) {
+        var old: _StoredAttribute?
+        var index = 0
+        while index < oldAttributes.count {
+            if oldAttributes[index].name.utf8Equals(new.name) {
+                old = oldAttributes.remove(at: index)
+                break
+            }
+            index += 1
+        }
+        let oldStyle = old?._styleKeyValuePairs
+        let newStyle = new._styleKeyValuePairs
+        if oldStyle != nil || newStyle != nil {
+            applyStyleChanges(node, from: oldStyle, to: newStyle)
+        } else if old == nil || !old!.value.utf8Equals(new.value) {
+            dom.setAttribute(node, name: new.name, value: new.value)
         }
     }
 
@@ -268,54 +283,61 @@ struct DOMAttributePatcher {
         firstNew: StylePair?,
         newIterator: inout _StoredAttribute._StyleKeyValuePairs.Iterator
     ) {
-        var oldByKey: [_StyleUTF8Key: Substring.UTF8View] = [:]
+        var oldStyles: [StylePair] = []
+        oldStyles.reserveCapacity(4)
         if let firstOld {
-            oldByKey[_StyleUTF8Key(firstOld.key)] = firstOld.value
+            oldStyles.append(firstOld)
         }
         while let pair = oldIterator.next() {
-            oldByKey[_StyleUTF8Key(pair.key)] = pair.value
-        }
-
-        func apply(_ pair: StylePair) {
-            let key = _StyleUTF8Key(pair.key)
-            if let oldValue = oldByKey.removeValue(forKey: key), oldValue.utf8Equals(pair.value) { return }
-            dom.setStyleProperty(node, name: key.stringValue, value: String(decoding: pair.value, as: UTF8.self))
+            oldStyles.append(pair)
         }
 
         if let firstNew {
-            apply(firstNew)
+            applyStyle(firstNew, to: node, matching: &oldStyles)
         }
         while let pair = newIterator.next() {
-            apply(pair)
+            applyStyle(pair, to: node, matching: &oldStyles)
         }
 
-        for remainingKey in oldByKey.keys {
-            dom.removeStyleProperty(node, name: remainingKey.stringValue)
+        while let remaining = oldStyles.popLast() {
+            removeStyles(named: remaining.key, from: &oldStyles)
+            dom.removeStyleProperty(node, name: String(decoding: remaining.key, as: UTF8.self))
         }
     }
-}
 
-// TODO: get rid of this Substring stuff, properly fix this in elementary
-private struct _StyleUTF8Key: Hashable {
-    let raw: Substring.UTF8View
-
-    @inline(__always)
-    init(_ raw: Substring.UTF8View) {
-        self.raw = raw
+    private func applyStyle(
+        _ new: StylePair,
+        to node: DOM.Node,
+        matching oldStyles: inout [StylePair]
+    ) {
+        if let oldValue = removeStyles(named: new.key, from: &oldStyles),
+            oldValue.utf8Equals(new.value)
+        {
+            return
+        }
+        dom.setStyleProperty(
+            node,
+            name: String(decoding: new.key, as: UTF8.self),
+            value: String(decoding: new.value, as: UTF8.self)
+        )
     }
 
-    @inline(__always)
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.raw.utf8Equals(rhs.raw)
-    }
+    @discardableResult
+    private func removeStyles(
+        named key: Substring.UTF8View,
+        from oldStyles: inout [StylePair]
+    ) -> Substring.UTF8View? {
+        var oldValue: Substring.UTF8View?
+        var index = oldStyles.count
+        while index > 0 {
+            index -= 1
+            guard oldStyles[index].key.utf8Equals(key) else { continue }
 
-    @inline(__always)
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(utf8Bytes: raw)
-    }
-
-    @inline(__always)
-    var stringValue: String {
-        String(decoding: raw, as: UTF8.self)
+            if oldValue == nil {
+                oldValue = oldStyles[index].value
+            }
+            oldStyles.remove(at: index)
+        }
+        return oldValue
     }
 }

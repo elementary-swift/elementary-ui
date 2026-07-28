@@ -35,6 +35,28 @@ struct DOMPatchingTests {
         )
     }
 
+    @Test
+    func patchesShuffledAttributes() {
+        let state = ToggleState()
+        let ops = patchOps {
+            p {}.attributes(
+                contentsOf: state.value
+                    ? [.id("after"), .class("stable"), .title("new")]
+                    : [.hidden, .id("before"), .class("stable")]
+            )
+        } toggle: {
+            state.toggle()
+        }
+
+        #expect(
+            ops == [
+                .setAttr(node: "<p>", name: "id", value: "after"),
+                .setAttr(node: "<p>", name: "title", value: "new"),
+                .removeAttr(node: "<p>", name: "hidden"),
+            ]
+        )
+    }
+
     @Test func patchesOptionals() async throws {
         let state = ToggleState()
         let ops = patchOps {
