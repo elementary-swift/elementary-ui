@@ -1,3 +1,5 @@
+import BasicContainers
+
 struct ReactivityTracker: Sendable {
     private struct Subscription: Sendable {
         private enum Kind {
@@ -35,19 +37,36 @@ struct ReactivityTracker: Sendable {
         }
     }
 
-    private struct State: Sendable {
-        private var id = 0
-        private var subscriptions = [Int: Subscription]()
+    private struct State: ~Copyable, Sendable {
+        private var usedSubscriptionIDs: UInt64 = 0
+        private var nextOverflowSubscriptionID = 64
+        private var subscriptions = UniqueArray<Subscription?>()
+        private var freeOverflowSubscriptionIDs = UniqueArray<Int>()
         private var trackedProperties = [PropertyID: Set<Int>]()
 
-        private mutating func nextId() -> Int {
-            defer { id &+= 1 }
-            return id
+        private mutating func generateSubscriptionID() -> Int {
+            let available = (~usedSubscriptionIDs).trailingZeroBitCount
+            if available < UInt64.bitWidth {
+                usedSubscriptionIDs |= 1 << available
+                return available
+            }
+
+            if let available = freeOverflowSubscriptionIDs.popLast() {
+                return available
+            }
+
+            defer { nextOverflowSubscriptionID &+= 1 }
+            return nextOverflowSubscriptionID
         }
 
         mutating func registerSubscription(_ subscription: Subscription) -> Int {
-            let id = nextId()
-            subscriptions[id] = subscription
+            let id = generateSubscriptionID()
+            if id < subscriptions.count {
+                subscriptions[id] = subscription
+            } else {
+                assert(id == subscriptions.count)
+                subscriptions.append(subscription)
+            }
             for property in subscription.properties {
                 trackedProperties[property, default: []].insert(id)
             }
@@ -79,20 +98,30 @@ struct ReactivityTracker: Sendable {
         }
 
         mutating func cancel(_ id: Int) {
-            if let observation = subscriptions.removeValue(forKey: id) {
-                for property in observation.properties {
-                    if let index = trackedProperties.index(forKey: property) {
-                        trackedProperties.values[index].remove(id)
-                        if trackedProperties.values[index].isEmpty {
-                            trackedProperties.remove(at: index)
-                        }
+            guard subscriptions.indices.contains(id),
+                let observation = subscriptions[id].take()
+            else { return }
+
+            if id < UInt64.bitWidth {
+                usedSubscriptionIDs &= ~(1 << id)
+            } else {
+                freeOverflowSubscriptionIDs.append(id)
+            }
+            for property in observation.properties {
+                if let index = trackedProperties.index(forKey: property) {
+                    trackedProperties.values[index].remove(id)
+                    if trackedProperties.values[index].isEmpty {
+                        trackedProperties.remove(at: index)
                     }
                 }
             }
         }
 
         mutating func cancelAll() {
+            usedSubscriptionIDs = 0
+            nextOverflowSubscriptionID = UInt64.bitWidth
             subscriptions.removeAll()
+            freeOverflowSubscriptionIDs.removeAll()
             trackedProperties.removeAll()
         }
     }

@@ -81,7 +81,11 @@ let package = Package(
         /// --- REACTIVITY ---
         .target(
             name: "Reactivity",
-            dependencies: ["ReactivityMacros", "_UTF8Internals"]
+            dependencies: [
+                .product(name: "BasicContainers", package: "swift-collections"),
+                "ReactivityMacros",
+                "_UTF8Internals",
+            ]
         ),
         .macro(
             name: "ReactivityMacros",

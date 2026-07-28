@@ -14,10 +14,10 @@ final class MutexBox<State: ~Copyable>: Sendable {
     var id: ObjectIdentifier { ObjectIdentifier(self) }
 }
 #else
-final class MutexBox<State>: @unchecked Sendable {
+final class MutexBox<State: ~Copyable>: @unchecked Sendable {
     private var state: State
 
-    init(_ state: sending State) {
+    init(_ state: consuming sending State) {
         self.state = state
     }
 

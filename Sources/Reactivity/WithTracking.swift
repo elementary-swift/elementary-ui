@@ -19,7 +19,7 @@ package struct ReactivePropertyAccessList: Sendable {
         entries[tracker.id, default: Entry(tracker)].properties.insert(property)
     }
 
-    mutating func add(contensOf other: ReactivePropertyAccessList) {
+    mutating func add(contentsOf other: consuming ReactivePropertyAccessList) {
         for (id, entry) in other.entries {
             entries[id, default: Entry(entry.tracker)].properties.formUnion(entry.properties)
         }
@@ -27,7 +27,7 @@ package struct ReactivePropertyAccessList: Sendable {
 }
 
 package struct ReactiveTrackingSession: Sendable {
-    private struct State {
+    private struct State: ~Copyable {
         var subscriptions: [ReactivityTracker.SubscriptionToken] = []
         var isCancelled = false
     }
@@ -63,11 +63,12 @@ package func withAccessTracking<T>(_ block: () -> T) -> (T, ReactivePropertyAcce
         _ThreadLocal.value = UnsafeMutableRawPointer(ptr)
         defer {
             if let scoped = ptr.pointee, let previous {
-                if var prevList = previous.assumingMemoryBound(to: ReactivePropertyAccessList?.self).pointee {
-                    prevList.add(contensOf: scoped)
-                    previous.assumingMemoryBound(to: ReactivePropertyAccessList?.self).pointee = prevList
+                let previousList = previous.assumingMemoryBound(to: ReactivePropertyAccessList?.self)
+                if var prevList = previousList.pointee.take() {
+                    prevList.add(contentsOf: scoped)
+                    previousList.pointee = prevList
                 } else {
-                    previous.assumingMemoryBound(to: ReactivePropertyAccessList?.self).pointee = scoped
+                    previousList.pointee = scoped
                 }
             }
             _ThreadLocal.value = previous
@@ -138,7 +139,7 @@ public func withReactiveTracking<T>(
     let (result, accessList) = withAccessTracking {
         apply()
     }
-    if let accessList = accessList {
+    if let accessList {
         let onChange = onChange()
         let session = ReactiveTrackingSession()
         session.trackWillSet(for: accessList) { _ in
@@ -170,7 +171,7 @@ package func withReactiveTrackingSession<T>(
     let (result, accessList) = withAccessTracking {
         apply()
     }
-    if let accessList = accessList {
+    if let accessList {
         let onWillSet = onWillSet()
         let session = ReactiveTrackingSession()
         session.trackWillSet(for: accessList) { [onWillSet] _ in

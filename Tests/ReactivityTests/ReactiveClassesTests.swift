@@ -46,6 +46,48 @@ struct ReactiveClassesTests {
         }
 
     }
+
+    @Test
+    func tracksMoreThanBitmapCapacityAndReusesIDs() {
+        let foo = Foo()
+        let changeCount = Atomic(0)
+
+        for batch in 1...20 {
+            for _ in 0..<80 {
+                withReactiveTracking {
+                    _ = foo.one
+                } onChange: {
+                    changeCount.wrappingAdd(1, ordering: .relaxed)
+                }
+            }
+
+            foo.one = "\(batch)"
+            #expect(changeCount.load(ordering: .relaxed) == batch * 80)
+        }
+    }
+
+    @Test
+    func nestedTrackingInstallsBothObservers() {
+        let foo = Foo()
+        let outerChanged = Atomic(false)
+        let innerChanged = Atomic(false)
+
+        withReactiveTracking {
+            withReactiveTracking {
+                _ = foo.one
+            } onChange: {
+                innerChanged.store(true, ordering: .relaxed)
+            }
+        } onChange: {
+            outerChanged.store(true, ordering: .relaxed)
+        }
+
+        foo.one = "changed"
+        let didChangeInner = innerChanged.load(ordering: .relaxed)
+        let didChangeOuter = outerChanged.load(ordering: .relaxed)
+        #expect(didChangeInner)
+        #expect(didChangeOuter)
+    }
 }
 
 final class ChangeTracker: Sendable {
