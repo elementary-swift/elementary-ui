@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785187855412,
+  "lastUpdate": 1785227484546,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -8212,6 +8212,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "HelloWorld",
             "value": 89,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 165.38,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "8232737f749a784cfa95abe289cb1f3733961105",
+          "message": "more strippable FLIP and transition handling (#114)\n\n* more strippable FLIP and transition handling\n\n* use typealias for DOM.Interactor\n\n* tiny tweak\n\n* formatting",
+          "timestamp": "2026-07-27T21:21:31Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/8232737f749a784cfa95abe289cb1f3733961105"
+        },
+        "date": 1785227483546,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 182.28,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 113.08,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 88.99,
             "unit": "kB"
           },
           {
