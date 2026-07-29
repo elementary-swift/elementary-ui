@@ -32,10 +32,18 @@ final class BridgeJSDOMInteractor {
         _performance = try! BrowserInterop.performance
     }
 
+    // This overload deliberately ignores the JavaScript event. Keeping an
+    // event-free callback path avoids DOM.Event construction in small Wasm apps.
     @inline(never)
-    func makeEventSink(_ handler: @escaping (String, DOM.Event) -> Void) -> DOM.EventSink {
+    func makeEventSink(_ handler: @escaping () -> Void) -> DOM.EventSink {
+        let closure = JSEventCallback { _ in handler() }
+        return .init(js: closure)
+    }
+
+    @inline(never)
+    func makeEventSink(_ handler: @escaping (DOM.Event) -> Void) -> DOM.EventSink {
         let closure = JSEventCallback { e in
-            handler(try! e.type, DOM.Event(e.jsObject))
+            handler(DOM.Event(e.jsObject))
         }
 
         return .init(js: closure)

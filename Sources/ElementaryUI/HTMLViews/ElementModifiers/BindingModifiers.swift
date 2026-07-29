@@ -57,7 +57,7 @@ final class BindingModifier<Configuration>: DOMElementModifier, Unmountable wher
         self.mountedNode = node
         self.accessor = context.dom.makePropertyAccessor(node, name: Configuration.propertyName)
 
-        let sink = context.dom.makeEventSink { [self] name, event in
+        let sink = context.dom.makeEventSink { [self] in
             guard let value = self.accessor?.get() else {
                 logWarning("Unexpected property value read from accessor")
                 return

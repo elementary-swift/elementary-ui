@@ -38,7 +38,12 @@ final class NoOpInteractor: DOM.Interactor {
         }
     }
 
-    func makeEventSink(_ handler: @escaping (String, DOM.Event) -> Void) -> DOM.EventSink {
+    func makeEventSink(_ handler: @escaping () -> Void) -> DOM.EventSink {
+        let _ = handler
+        return .init(ref: NoOpToken())
+    }
+
+    func makeEventSink(_ handler: @escaping (DOM.Event) -> Void) -> DOM.EventSink {
         let _ = handler
         return .init(ref: NoOpToken())
     }

@@ -128,8 +128,25 @@ final class TestDOM: DOM.Interactor {
     }
 
     final class EventSink {
-        let handler: (String, DOM.Event) -> Void
-        init(_ handler: @escaping (String, DOM.Event) -> Void) { self.handler = handler }
+        enum Kind: Equatable {
+            case action
+            case event
+        }
+
+        enum Handler {
+            case action(() -> Void)
+            case event((DOM.Event) -> Void)
+        }
+
+        let handler: Handler
+        init(_ handler: consuming Handler) { self.handler = handler }
+
+        var kind: Kind {
+            switch handler {
+            case .action: .action
+            case .event: .event
+            }
+        }
     }
 
     let root: DOM.Node
@@ -137,6 +154,7 @@ final class TestDOM: DOM.Interactor {
     private(set) var rafCallbacks: [(Double) -> Void] = []
     private(set) var timeoutCallbacks: [(() -> Void, Double)] = []
     private(set) var queueMicrotaskCallbacks: [() -> Void] = []
+    private(set) var eventSinkKinds: [EventSink.Kind] = []
     private(set) var startedAnimationCount = 0
     private(set) var canceledAnimationCount = 0
     private var animationFinishCallbacks: [() -> Void] = []
@@ -154,8 +172,16 @@ final class TestDOM: DOM.Interactor {
         fatalError("Not implemented")
     }
 
-    func makeEventSink(_ handler: @escaping (String, DOM.Event) -> Void) -> DOM.EventSink {
-        .init(EventSink(handler))
+    func makeEventSink(_ handler: @escaping () -> Void) -> DOM.EventSink {
+        let sink = EventSink(.action(handler))
+        eventSinkKinds.append(sink.kind)
+        return .init(sink)
+    }
+
+    func makeEventSink(_ handler: @escaping (DOM.Event) -> Void) -> DOM.EventSink {
+        let sink = EventSink(.event(handler))
+        eventSinkKinds.append(sink.kind)
+        return .init(sink)
     }
 
     func makePropertyAccessor(_ node: DOM.Node, name: String) -> DOM.PropertyAccessor {

@@ -4,7 +4,8 @@ typealias DOMInteractor = BridgeJSDOMInteractor
 extension DOM {
     @_spi(Benchmarking)
     public protocol Interactor: AnyObject {
-        func makeEventSink(_ handler: @escaping (String, Event) -> Void) -> EventSink
+        func makeEventSink(_ handler: @escaping () -> Void) -> EventSink
+        func makeEventSink(_ handler: @escaping (Event) -> Void) -> EventSink
 
         func makePropertyAccessor(_ node: Node, name: String) -> PropertyAccessor
         func makeStyleAccessor(_ node: Node, cssName: String) -> StyleAccessor

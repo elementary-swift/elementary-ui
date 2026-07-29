@@ -5,6 +5,14 @@ import Testing
 struct DOMMountingTests {
     let svgNamespaceURI = "http://www.w3.org/2000/svg"
 
+    private enum TestActionA: _DOMEventConfig {
+        static let name = "action-a"
+    }
+
+    private enum TestActionB: _DOMEventConfig {
+        static let name = "action-b"
+    }
+
     @Test
     func mountsAnElement() {
         let ops = mountOps { div { "Hello" } }
@@ -66,15 +74,55 @@ struct DOMMountingTests {
 
     @Test
     func setsEventListeners() {
-        let ops = mountOps { button {}.onClick { _ in } }
+        let dom = TestDOM()
+        dom.mount { button {}.onClick { _ in } }
+        dom.runNextFrame()
 
         #expect(
-            ops == [
+            dom.ops == [
                 .createElement("button"),
                 .addListener(node: "<button>", event: "click"),
                 .addChild(parent: "<>", child: "<button>"),
             ]
         )
+        #expect(dom.eventSinkKinds == [.event])
+    }
+
+    @Test
+    func setsNoArgumentEventListeners() {
+        let dom = TestDOM()
+        dom.mount { button {}.onClick {} }
+        dom.runNextFrame()
+
+        #expect(
+            dom.ops == [
+                .createElement("button"),
+                .addListener(node: "<button>", event: "click"),
+                .addChild(parent: "<>", child: "<button>"),
+            ]
+        )
+        #expect(dom.eventSinkKinds == [.action])
+    }
+
+    @Test
+    func keepsDifferentNoArgumentEventNamesSeparate() {
+        let dom = TestDOM()
+        dom.mount {
+            button {}
+                ._onEvent(TestActionA.self) {}
+                ._onEvent(TestActionB.self) {}
+        }
+        dom.runNextFrame()
+
+        #expect(
+            dom.ops == [
+                .createElement("button"),
+                .addListener(node: "<button>", event: "action-a"),
+                .addListener(node: "<button>", event: "action-b"),
+                .addChild(parent: "<>", child: "<button>"),
+            ]
+        )
+        #expect(dom.eventSinkKinds == [.action, .action])
     }
 
     @Test

@@ -4,7 +4,15 @@ public extension View {
         _ type: Config.Type,
         handler: @escaping (Config.Event) -> Void
     ) -> some View<Tag> {
-        DOMEffectView<EventModifier<Config>, Self>(value: handler, wrapped: self)
+        DOMEffectView<EventHandlerModifier<Config>, Self>(value: handler, wrapped: self)
+    }
+
+    // TODO: embedded - for whatever reason this must be public or the embedded compiler freaks out. investigate why, check if still an issue in 6.3
+    consuming func _onEvent<Config: _DOMEventConfig>(
+        _ type: Config.Type,
+        handler: @escaping () -> Void
+    ) -> some View<Tag> {
+        DOMEffectView<EventActionModifier<Config>, Self>(value: handler, wrapped: self)
     }
 
     /// Adds a handler for click events with event details.
@@ -51,7 +59,7 @@ public extension View {
     /// - Parameter handler: A closure to execute when clicked.
     /// - Returns: A view that responds to click events.
     consuming func onClick(_ handler: @escaping () -> Void) -> some View<Tag> {
-        onClick { _ in handler() }
+        _onEvent(DOMEventHandlers.Click.self, handler: handler)
     }
 
     /// Adds a handler for mouse down events.
