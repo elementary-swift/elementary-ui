@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785187896367,
+  "lastUpdate": 1785331511054,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -2758,6 +2758,85 @@ window.BENCHMARK_DATA = {
           {
             "name": "25_run-clear-memory",
             "value": 1.36,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "075ecbb206a413078b7be2a7cb11fb88022a592a",
+          "message": "various size and speed optimizations (#115)\n\n* statically split view animations in separate implementations\n\n* simplifications\n\n* tiny reactivity tweaks\n\n* shaving off codesize for attribute handling\n\n* strippable event types",
+          "timestamp": "2026-07-29T15:16:17+02:00",
+          "tree_id": "9864eb53a07f2763ca1ae11d6d4fde797c1ae8a3",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/075ecbb206a413078b7be2a7cb11fb88022a592a"
+        },
+        "date": 1785331510056,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 93.7,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 108.87,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 151.07,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 19.28,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 44.52,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 30.41,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 120.88,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 47.11,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.04,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.07,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.35,
             "unit": "MB"
           }
         ]
