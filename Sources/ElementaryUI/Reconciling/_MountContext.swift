@@ -5,7 +5,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
     private var nodeStack: ScratchStack<LayoutNode>
     private(set) var isStatic: Bool = true
 
-    private(set) var transitionRoot: _TransitionRoot?
+    private(set) var slotTransitions: _SlotTransitions?
 
     // NOTE: we could use a fancy Inout<_CommitContext> here.. but maybe not worth it
     let scheduler: Scheduler
@@ -20,14 +20,14 @@ public struct _MountContext: ~Copyable, ~Escapable {
         scheduler: Scheduler,
         currentFrameTime: Double,
         transaction: Transaction,
-        transitionRoot: consuming _TransitionRoot? = nil
+        slotTransitions: consuming _SlotTransitions? = nil
     ) {
         self.nodeStack = consume nodeStack
         self.dom = dom
         self.scheduler = scheduler
         self.currentFrameTime = currentFrameTime
         self.transaction = transaction
-        self.transitionRoot = consume transitionRoot
+        self.slotTransitions = consume slotTransitions
     }
 
     mutating func appendStaticElement(_ node: DOM.Node) {
@@ -46,26 +46,47 @@ public struct _MountContext: ~Copyable, ~Escapable {
         _ transitionedElement: _TransitionElement,
         initialPhase: TransitionPhase
     ) {
-        precondition(transitionRoot != nil)
-        transitionRoot!.register(
+        precondition(slotTransitions != nil)
+        slotTransitions!.register(
             transitionedElement,
             initialPhase: initialPhase
         )
     }
 
-    mutating func withMountedSlotContext<R: ~Copyable>(
-        _ body: (consuming _MountContext) -> R
-    ) -> R {
-        nodeStack.withNestedStack { childScratch in
-            let childContext = _MountContext(
-                nodeStack: consume childScratch,
+    /// Mounts one structural slot: runs `makeNode` in a nested layout-node
+    /// frame with a fresh transition registry, then packages the node, its
+    /// layout nodes, and its transitions into a slot.
+    // inline(never): keeps slot mounting out of every mount site (code size)
+    @inline(never)
+    mutating func mountSlot(
+        key: _ViewKey,
+        newKeyIndex: Int,
+        env: borrowing _ViewContext,
+        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
+    ) -> MountContainer.Slot {
+        nodeStack.withNestedStack { slotStack in
+            var slotCtx = _MountContext(
+                nodeStack: slotStack,
                 dom: dom,
                 scheduler: scheduler,
                 currentFrameTime: currentFrameTime,
                 transaction: transaction,
-                transitionRoot: _TransitionRoot()
+                slotTransitions: _SlotTransitions()
             )
-            return body(childContext)
+            let node = makeNode(newKeyIndex, env, &slotCtx)
+
+            let transitions = slotCtx.slotTransitions.take()!
+            transitions.scheduleEnterIdentityIfNeeded(
+                scheduler: scheduler,
+                transaction: transaction
+            )
+
+            return MountContainer.Slot(
+                key: key,
+                node: node,
+                layoutNodes: slotCtx.takeMaterializedLayoutNodes(),
+                transitions: transitions
+            )
         }
     }
 
@@ -78,7 +99,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
                     scheduler: scheduler,
                     currentFrameTime: currentFrameTime,
                     transaction: transaction,
-                    transitionRoot: nil
+                    slotTransitions: nil
                 )
             )
         }
@@ -91,27 +112,6 @@ public struct _MountContext: ~Copyable, ~Escapable {
             currentFrameTime: currentFrameTime
         )
         return body(&commitContext)
-    }
-
-    consuming func makeMountedSlot(
-        newKeyIndex: Int,
-        viewContext: borrowing _ViewContext,
-        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
-    ) -> MountContainer.Slot.Mounted {
-        let node = makeNode(newKeyIndex, viewContext, &self)
-        let transitionRoot = self.transitionRoot.take()!
-        transitionRoot.scheduleEnterIdentityIfNeeded(
-            scheduler: scheduler,
-            transaction: transaction
-        )
-
-        return MountContainer.Slot.Mounted(
-            node: node,
-            layoutNodes: takeMaterializedLayoutNodes(),
-            placement: .unchanged,
-            transitionRoot: consume transitionRoot,
-            deferredRemoval: nil
-        )
     }
 
     consuming func mountInDOMNode(_ domNode: DOM.Node, observers: [DOMLayoutObserver] = []) -> LayoutContainer? {

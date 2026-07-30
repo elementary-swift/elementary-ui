@@ -1,16 +1,31 @@
 import BasicContainers
 
+/// Owns the keyed child slots of one structural view (conditional content,
+/// keyed lists, ...).
+///
+/// A slot moves through three lanes:
+///
+/// ```
+/// active ──key dropped──▶ removed ──exit transition starts──▶ leaving
+///    ▲                      │  ▲                                 │
+///    │                      │  └─────transitions finished────────┤
+///    │                   collect                                 │
+///    │            (.removed ops, unmount)                        │
+///    └───────────────────key reappears (revive)──────────────────┘
+/// ```
+///
+/// - `activeSlots`: mounted and part of layout, ordered by the current keys.
+/// - `leavingSlots`: dropped from active while an exit transition runs; their
+///   DOM stays in place and they can be revived by key.
+/// - `removedSlots`: done; the next `collect` emits their `.removed` layout
+///   ops and unmounts them.
 final class MountContainer {
     private let viewContext: _ViewContext
     private var activeSlots: UniqueArray<Slot>
     private var leavingSlots: UniqueArray<Slot> = .init()
-    private var removedNodes: UniqueArray<RemovedNode> = .init()
+    private var removedSlots: UniqueArray<Slot> = .init()
 
     var containerHandle: LayoutContainer.Handle?
-
-    // TODO: get rid of these here...
-    private var removedMiddleSlots: UniqueArray<Slot> = .init()
-    private var leavingRemovalScratch: UniqueArray<Int> = .init()
 
     private init(context: borrowing _ViewContext, slots: consuming UniqueArray<Slot>) {
         self.viewContext = copy context
@@ -24,18 +39,10 @@ final class MountContainer {
         makeNode: (borrowing _ViewContext, inout _MountContext) -> Node
     ) {
         self.init(
+            mountedKeyStorage: CollectionOfOne(key).span,
             context: context,
-            slots: UniqueArray<Slot>(capacity: 1) { span in
-                let mounted = Self.makeMountedSlot(
-                    newKeyIndex: 0,
-                    viewContext: context,
-                    ctx: &ctx,
-                    makeNode: { _, viewContext, mountCtx in
-                        AnyReconcilable(makeNode(viewContext, &mountCtx))
-                    }
-                )
-                span.append(.mounted(key: key, mounted: mounted))
-            }
+            ctx: &ctx,
+            makeNode: { _, context, ctx in makeNode(context, &ctx) }
         )
     }
 
@@ -49,15 +56,16 @@ final class MountContainer {
             context: context,
             slots: UniqueArray<Slot>(capacity: keys.count) { span in
                 for index in keys.indices {
-                    let mounted = Self.makeMountedSlot(
-                        newKeyIndex: index,
-                        viewContext: context,
-                        ctx: &ctx,
-                        makeNode: { index, viewContext, mountCtx in
-                            AnyReconcilable(makeNode(index, viewContext, &mountCtx))
-                        }
+                    span.append(
+                        ctx.mountSlot(
+                            key: keys[unchecked: index],
+                            newKeyIndex: index,
+                            env: context,
+                            makeNode: { index, context, ctx in
+                                AnyReconcilable(makeNode(index, context, &ctx))
+                            }
+                        )
                     )
-                    span.append(.mounted(key: keys[unchecked: index], mounted: mounted))
                 }
             }
         )
@@ -68,7 +76,7 @@ final class MountContainer {
 
         promoteCompletedLeavingSlots()
 
-        while var removed = removedNodes.popLast() {
+        while let removed = removedSlots.popLast() {
             removed.collectRemoved(into: &ops, context: &context)
         }
 
@@ -88,13 +96,12 @@ final class MountContainer {
         for index in leavingSlots.indices {
             leavingSlots[index].unmount(&context)
         }
-        while var removed = removedNodes.popLast() {
+        while var removed = removedSlots.popLast() {
             removed.unmount(&context)
         }
 
         activeSlots.removeAll()
         leavingSlots.removeAll()
-        removedNodes.removeAll()
         containerHandle = nil
     }
 
@@ -103,75 +110,66 @@ final class MountContainer {
     }
 
     func patch(
-        keys newKeys: borrowing Span<_ViewKey>,
-        tx: inout _TransactionContext,
-        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
-        patchNode: (Int, inout AnyReconcilable, inout _TransactionContext) -> Void
-    ) {
-        patchPrepared(keys: newKeys, tx: &tx, makeNode: makeNode, patchNode: patchNode)
-    }
-
-    func patch(
         key newKey: _ViewKey,
         tx: inout _TransactionContext,
         makeNode: (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
         patchNode: (inout AnyReconcilable, inout _TransactionContext) -> Void
     ) {
-        patchPrepared(
+        patch(
             keys: CollectionOfOne(newKey).span,
             tx: &tx,
-            makeNode: { _, viewContext, mountCtx in makeNode(viewContext, &mountCtx) },
+            makeNode: { _, context, ctx in makeNode(context, &ctx) },
             patchNode: { _, node, tx in patchNode(&node, &tx) }
         )
     }
 
-    private func patchPrepared(
-        keys: borrowing Span<_ViewKey>,
+    func patch(
+        keys newKeys: borrowing Span<_ViewKey>,
         tx: inout _TransactionContext,
         makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
         patchNode: (Int, inout AnyReconcilable, inout _TransactionContext) -> Void
     ) {
-        prepareLaneCapacities(newCount: keys.count)
+        activeSlots.reserveCapacity(newKeys.count)
 
-        removedMiddleSlots.removeAll(keepingCapacity: true)
+        let firstDroppedIndex = removedSlots.count
 
         let didStructureChange = tx.scheduler.scratch.withDiffEngine { differ in
             differ.run(
                 activeSlots: &activeSlots,
                 leavingSlots: &leavingSlots,
-                removedSlots: &removedMiddleSlots,
-                keys: keys,
+                removedSlots: &removedSlots,
+                keys: newKeys,
                 makeNewSlot: { [viewContext] newKeyIndex, key in
-                    var mounted = tx.scheduler.withMountContext(tx: &tx) { (mountCtx: consuming _MountContext) in
-                        var mountCtx = mountCtx
-                        return Self.makeMountedSlot(
+                    var slot = tx.scheduler.withMountContext(tx: &tx) { (ctx: consuming _MountContext) in
+                        var ctx = ctx
+                        return ctx.mountSlot(
+                            key: key,
                             newKeyIndex: newKeyIndex,
-                            viewContext: viewContext,
-                            ctx: &mountCtx,
+                            env: viewContext,
                             makeNode: makeNode
                         )
                     }
-                    mounted.placement = .added
-                    return .mounted(key: key, mounted: mounted)
+                    slot.placement = .added
+                    return slot
                 }
             )
         }
 
-        // TODO: fix this to move-only
-        while var slot = removedMiddleSlots.popLast() {
-            switch slot.startRemoval(tx: &tx, handle: containerHandle) {
-            case .ready(let removedNode):
-                removedNodes.append(removedNode)
-            case .deferred(let leavingSlot):
-                leavingSlots.append(leavingSlot)
+        // The diff dropped slots straight into the removed lane. Those that
+        // start an exit transition move to the leaving lane instead.
+        var index = firstDroppedIndex
+        while index < removedSlots.count {
+            if removedSlots[index].deferRemovalIfNeeded(tx: &tx, handle: containerHandle) {
+                leavingSlots.append(removedSlots.remove(at: index))
+            } else {
+                index += 1
             }
         }
 
         for index in activeSlots.indices {
-            activeSlots[index].patchInActiveLane(
+            activeSlots[index].patch(
                 newKeyIndex: index,
                 tx: &tx,
-                containerHandle: containerHandle,
                 patchNode: patchNode
             )
         }
@@ -181,193 +179,112 @@ final class MountContainer {
         }
     }
 
-    private func prepareLaneCapacities(newCount: Int) {
-        let oldCount = activeSlots.count
-
-        activeSlots.reserveCapacity(newCount)
-
-        let removableUpperBound = oldCount
-        leavingSlots.reserveCapacity(leavingSlots.count + removableUpperBound)
-        removedNodes.reserveCapacity(removedNodes.count + removableUpperBound)
-        removedMiddleSlots.reserveCapacity(removableUpperBound)
-    }
-
+    /// Moves leaving slots whose exit transitions have finished into the
+    /// removed lane.
     private func promoteCompletedLeavingSlots() {
-        leavingRemovalScratch.removeAll(keepingCapacity: true)
-        leavingRemovalScratch.reserveCapacity(leavingSlots.count)
-
-        for index in leavingSlots.indices {
-            if let removed = leavingSlots[index].takeRemovedNodeIfRemovalComplete() {
-                removedNodes.append(removed)
-                leavingRemovalScratch.append(index)
+        var index = 0
+        while index < leavingSlots.count {
+            if leavingSlots[index].isRemovalComplete {
+                removedSlots.append(leavingSlots.remove(at: index))
+            } else {
+                index += 1
             }
-        }
-
-        while let index = leavingRemovalScratch.popLast() {
-            _ = leavingSlots.remove(at: index)
         }
     }
 }
 
 extension MountContainer {
-    func forEachMountedSlot(
-        _ body: (borrowing Slot.Mounted) -> Void
+    /// Visits every slot that is still mounted (active and leaving lanes).
+    func forEachLiveSlot(
+        _ body: (borrowing Slot) -> Void
     ) {
         for index in activeSlots.indices {
-            activeSlots[index].withMounted(body)
+            body(activeSlots[index])
         }
         for index in leavingSlots.indices {
-            leavingSlots[index].withMounted(body)
+            body(leavingSlots[index])
         }
     }
 }
 
 extension MountContainer {
-    private static func makeMountedSlot(
-        newKeyIndex: Int,
-        viewContext: borrowing _ViewContext,
-        ctx: inout _MountContext,
-        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
-    ) -> Slot.Mounted {
-        let mounted = ctx.withMountedSlotContext { slotCtx in
-            slotCtx.makeMountedSlot(
-                newKeyIndex: newKeyIndex,
-                viewContext: viewContext,
-                makeNode: makeNode
-            )
-        }
-        return mounted
-    }
-
+    /// One keyed child: its mounted node, the layout nodes it produced, and
+    /// the transition state that decides how it enters and leaves.
     struct Slot: ~Copyable {
-        struct Mounted: ~Copyable {
-            enum Placement {
-                case unchanged
-                case added
-                case moved
-            }
-
-            var node: AnyReconcilable
-            var layoutNodes: RigidArray<LayoutNode>
-            var placement: Placement
-            var transitionRoot: _TransitionRoot
-            var deferredRemoval: _DeferredRemoval?
-
-            deinit {
-                // NOTE: this is a load-bearing deinit
-            }
-        }
-
-        enum RemovalResult: ~Copyable {
-            case ready(MountContainer.RemovedNode)
-            case deferred(Slot)
-        }
-
-        private enum Storage: ~Copyable {
-            case mounted(Mounted)
-            case movedOut
+        enum Placement {
+            case unchanged
+            case added
+            case moved
         }
 
         let key: _ViewKey
-        private var storage: Storage
+        var node: AnyReconcilable
+        var layoutNodes: RigidArray<LayoutNode>
+        var placement: Placement
+        var transitions: _SlotTransitions
+        var pendingRemoval: _PendingRemoval?
 
-        static func mounted(
+        init(
             key: _ViewKey,
-            mounted: consuming Mounted
-        ) -> Self {
-            .init(key: key, storage: .mounted(mounted))
-        }
-
-        @inline(__always)
-        private mutating func takeMounted() -> Mounted {
-            var storage = Storage.movedOut
-            swap(&storage, &self.storage)
-
-            switch consume storage {
-            case .mounted(let mounted):
-                return mounted
-            case .movedOut:
-                preconditionFailure("slot mounted state was already moved out")
-            }
-        }
-
-        @inline(__always)
-        private mutating func putMounted(_ mounted: consuming Mounted) {
-            self.storage = .mounted(mounted)
-        }
-
-        mutating func withMounted(
-            _ body: (borrowing Mounted) -> Void
+            node: consuming AnyReconcilable,
+            layoutNodes: consuming RigidArray<LayoutNode>,
+            transitions: consuming _SlotTransitions
         ) {
-            let mounted = takeMounted()
-            body(mounted)
-            putMounted(consume mounted)
+            self.key = key
+            self.node = node
+            self.layoutNodes = layoutNodes
+            self.placement = .unchanged
+            self.transitions = transitions
+            self.pendingRemoval = nil
         }
 
-        @inline(__always)
-        mutating func patchInActiveLane(
+        var isRemovalComplete: Bool {
+            pendingRemoval?.isComplete == true
+        }
+
+        mutating func patch(
             newKeyIndex: Int,
             tx: inout _TransactionContext,
-            containerHandle: LayoutContainer.Handle?,
             patchNode: (Int, inout AnyReconcilable, inout _TransactionContext) -> Void
         ) {
-            var mounted = takeMounted()
-
-            if let removal = mounted.deferredRemoval {
+            if let removal = pendingRemoval {
+                // revived from the leaving lane: abort the exit transition
                 removal.cancel(tx: &tx)
-                mounted.deferredRemoval = nil
-                mounted.placement = .moved
+                pendingRemoval = nil
+                placement = .moved
             }
 
-            patchNode(newKeyIndex, &mounted.node, &tx)
-            putMounted(consume mounted)
+            patchNode(newKeyIndex, &node, &tx)
         }
 
-        mutating func markMovedInActiveLane() {
-            var mounted = takeMounted()
-
-            if mounted.placement == .unchanged {
-                mounted.placement = .moved
+        mutating func markMoved() {
+            if placement == .unchanged {
+                placement = .moved
             }
-            putMounted(consume mounted)
         }
 
-        mutating func startRemoval(
+        /// Starts exit transitions for a slot that just left the active lane.
+        /// Returns true if the removal is deferred: the slot must park in the
+        /// leaving lane until its transitions finish.
+        ///
+        /// Slots added and dropped within the same patch never entered layout,
+        /// so they skip transitions (and their `.added` placement makes
+        /// `collectRemoved` skip the layout ops too).
+        mutating func deferRemovalIfNeeded(
             tx: inout _TransactionContext,
             handle: LayoutContainer.Handle?
-        ) -> RemovalResult {
-            var mounted = takeMounted()
-
-            if mounted.placement == .added {
-                return .ready(
-                    .init(
-                        mounted: mounted,
-                        shouldCollectLayout: false
-                    )
+        ) -> Bool {
+            guard placement != .added,
+                let removal = _PendingRemoval.begin(
+                    for: self,
+                    handle: handle,
+                    tx: &tx
                 )
+            else {
+                return false
             }
-
-            if let removal = _DeferredRemoval.startIfNeeded(
-                for: mounted,
-                handle: handle,
-                tx: &tx
-            ) {
-                mounted.deferredRemoval = removal
-                return .deferred(.mounted(key: key, mounted: mounted))
-            }
-
-            return .ready(.init(mounted: mounted))
-        }
-
-        mutating func takeRemovedNodeIfRemovalComplete() -> MountContainer.RemovedNode? {
-            let mounted = takeMounted()
-
-            if mounted.deferredRemoval?.isReadyForRemoval == true {
-                return .init(mounted: mounted)
-            }
-
-            putMounted(consume mounted)
-            return nil
+            pendingRemoval = removal
+            return true
         }
 
         mutating func collectActive(
@@ -375,10 +292,8 @@ extension MountContainer {
             context: inout _CommitContext,
             parentOp: LayoutPass.Entry.LayoutOp
         ) {
-            var mounted = takeMounted()
-
             let childOp: LayoutPass.Entry.LayoutOp
-            switch mounted.placement {
+            switch placement {
             case .unchanged:
                 childOp = parentOp
             case .added:
@@ -386,34 +301,21 @@ extension MountContainer {
             case .moved:
                 childOp = .moved
             }
-            mounted.layoutNodes.collect(into: &ops, context: &context, op: childOp)
-            mounted.placement = .unchanged
-            putMounted(consume mounted)
+            layoutNodes.collect(into: &ops, context: &context, op: childOp)
+            placement = .unchanged
         }
 
-        mutating func unmount(_ context: inout _CommitContext) {
-            let mounted = takeMounted()
-            mounted.node.unmount(&context)
-        }
-    }
-
-    struct RemovedNode: ~Copyable {
-        var mounted: Slot.Mounted
-        var shouldCollectLayout: Bool = true
-
-        mutating func collectRemoved(into ops: inout LayoutPass, context: inout _CommitContext) {
-            if shouldCollectLayout {
-                mounted.layoutNodes.collect(into: &ops, context: &context, op: .removed)
+        /// Emits the `.removed` layout ops (unless the slot never entered
+        /// layout) and unmounts. Terminal: consumes the slot.
+        consuming func collectRemoved(into ops: inout LayoutPass, context: inout _CommitContext) {
+            if placement != .added {
+                layoutNodes.collect(into: &ops, context: &context, op: .removed)
             }
-            mounted.node.unmount(&context)
+            node.unmount(&context)
         }
 
         mutating func unmount(_ context: inout _CommitContext) {
-            mounted.node.unmount(&context)
-        }
-
-        deinit {
-            // NOTE: this is a load-bearing deinit
+            node.unmount(&context)
         }
     }
 }

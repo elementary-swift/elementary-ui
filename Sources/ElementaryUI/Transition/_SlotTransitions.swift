@@ -1,8 +1,8 @@
-/// The transition participants owned by one structural mount slot.
+/// The transition elements owned by one structural mount slot.
 ///
 /// Transition-free slots store only a nil reference. Storage is allocated
 /// lazily when a transition reaches an element in the slot.
-struct _TransitionRoot: ~Copyable {
+struct _SlotTransitions: ~Copyable {
     private final class Storage {
         var elements: [_TransitionElement] = []
         var pendingEnterIdentityPatches = 0

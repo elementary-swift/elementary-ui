@@ -30,7 +30,7 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
         nodeContext.transition = nil
 
         // Without a structural owner there is nothing that can defer removal.
-        guard ctx.transitionRoot != nil else {
+        guard ctx.slotTransitions != nil else {
             storage = .direct(makeNode(nodeContext, &ctx))
             return
         }

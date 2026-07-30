@@ -1,9 +1,9 @@
 import BasicContainers
 
 /// Keeps a removed structural slot alive until its transitions have finished.
-final class _TransitionRemoval: _DeferredRemoval {
+final class _TransitionRemoval: _PendingRemoval {
     private let transitionElements: [_TransitionElement]
-    private let nestedRemovals: [_DeferredRemoval]
+    private let nestedRemovals: [_PendingRemoval]
     private let leavingDOMNodes: [DOM.Node]
     private let handle: LayoutContainer.Handle?
 
@@ -12,7 +12,7 @@ final class _TransitionRemoval: _DeferredRemoval {
 
     private init(
         transitionElements: [_TransitionElement],
-        nestedRemovals: [_DeferredRemoval],
+        nestedRemovals: [_PendingRemoval],
         leavingDOMNodes: [DOM.Node],
         handle: LayoutContainer.Handle?
     ) {
@@ -22,27 +22,27 @@ final class _TransitionRemoval: _DeferredRemoval {
         self.handle = handle
     }
 
-    override class func startIfNeeded(
-        for mounted: borrowing MountContainer.Slot.Mounted,
+    override class func begin(
+        for slot: borrowing MountContainer.Slot,
         handle: LayoutContainer.Handle?,
         tx: inout _TransactionContext
-    ) -> _DeferredRemoval? {
+    ) -> _PendingRemoval? {
         var targets = _TransitionRemovalTargets()
-        targets.collect(mounted: mounted)
-        return startIfNeeded(
+        targets.collect(slot: slot)
+        return begin(
             for: targets,
             handle: handle,
             tx: &tx
         )
     }
 
-    private static func startIfNeeded(
+    private static func begin(
         for targets: _TransitionRemovalTargets,
         handle: LayoutContainer.Handle?,
         tx: inout _TransactionContext
     ) -> _TransitionRemoval? {
         let nestedRemovals = targets.nestedRemovals.filter {
-            !$0.isReadyForRemoval
+            !$0.isComplete
         }
         let hasAnimatedElement = targets.transitionElements.contains { element in
             transitionEffectiveAnimation(
@@ -65,15 +65,15 @@ final class _TransitionRemoval: _DeferredRemoval {
             handle: handle
         )
         removal.startExitTransitions(tx: &tx)
-        guard !removal.isReadyForRemoval else { return nil }
+        guard !removal.isComplete else { return nil }
         removal.reportLeavingDOMNodes(tx: &tx)
         return removal
     }
 
-    override var isReadyForRemoval: Bool {
+    override var isComplete: Bool {
         isCancelled
             || (pendingAnimationCompletions == 0
-                && nestedRemovals.allSatisfy(\.isReadyForRemoval))
+                && nestedRemovals.allSatisfy { $0.isComplete })
     }
 
     override func cancel(tx: inout _TransactionContext) {
@@ -148,16 +148,16 @@ final class _TransitionRemoval: _DeferredRemoval {
 
 private struct _TransitionRemovalTargets {
     var transitionElements: [_TransitionElement] = []
-    var nestedRemovals: [_DeferredRemoval] = []
+    var nestedRemovals: [_PendingRemoval] = []
     var leavingDOMNodes: [DOM.Node] = []
 
     mutating func collect(
-        mounted: borrowing MountContainer.Slot.Mounted
+        slot: borrowing MountContainer.Slot
     ) {
-        mounted.transitionRoot.collectLiveElements(
+        slot.transitions.collectLiveElements(
             into: &transitionElements
         )
-        mounted.layoutNodes.collectTransitionRemovalTargets(into: &self)
+        slot.layoutNodes.collectTransitionRemovalTargets(into: &self)
     }
 }
 
@@ -165,13 +165,13 @@ private extension MountContainer {
     func collectTransitionRemovalTargets(
         into targets: inout _TransitionRemovalTargets
     ) {
-        forEachMountedSlot { mounted in
-            if let removal = mounted.deferredRemoval {
+        forEachLiveSlot { slot in
+            if let removal = slot.pendingRemoval {
                 // A nested removal already owns its transition elements. The
                 // parent waits for it instead of starting them a second time.
                 targets.nestedRemovals.append(removal)
             } else {
-                targets.collect(mounted: mounted)
+                targets.collect(slot: slot)
             }
         }
     }

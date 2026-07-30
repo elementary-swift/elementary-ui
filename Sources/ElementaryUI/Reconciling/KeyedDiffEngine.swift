@@ -17,6 +17,8 @@ struct KeyedDiffEngine: ~Copyable {
 
     init() {}
 
+    // inline(never): keeps the diff out of every container patch site (code size)
+    @inline(never)
     mutating func run(
         activeSlots: inout UniqueArray<MountContainer.Slot>,
         leavingSlots: inout UniqueArray<MountContainer.Slot>,
@@ -42,8 +44,7 @@ struct KeyedDiffEngine: ~Copyable {
             oldLeavingCount: leavingSlots.count
         )
 
-        buildLeavingKeyMap(leavingSlots: leavingSlots.span)
-        materializeLeavingCells(leavingSlots: &leavingSlots)
+        consumeLeavingSlots(&leavingSlots)
 
         let newMiddleKeys = keys.extracting(prefixCount..<(prefixCount + newMiddleCount))
 
@@ -164,27 +165,22 @@ struct KeyedDiffEngine: ~Copyable {
         }
     }
 
-    private mutating func materializeLeavingCells(
-        leavingSlots: inout UniqueArray<MountContainer.Slot>
+    private mutating func consumeLeavingSlots(
+        _ leavingSlots: inout UniqueArray<MountContainer.Slot>
     ) {
         var i = leavingSlots.count
         while i > 0 {
             i -= 1
-            leavingCells[i] = leavingSlots.removeLast()
-        }
-    }
-
-    private mutating func buildLeavingKeyMap(
-        leavingSlots: borrowing Span<MountContainer.Slot>
-    ) {
-        for i in leavingSlots.indices {
-            leavingKeyMap[leavingSlots[unchecked: i].key] = i
+            let slot = leavingSlots.removeLast()
+            leavingKeyMap[slot.key] = i
+            leavingCells[i] = consume slot
         }
     }
 
     private mutating func collectRemovedSlots(
         into removedSlots: inout UniqueArray<MountContainer.Slot>
     ) {
+        removedSlots.reserveCapacity(removedSlots.count + oldKeyMap.count)
         for (_, removedOldIndex) in oldKeyMap {
             removedSlots.append(takeActiveCell(at: removedOldIndex))
         }
@@ -238,7 +234,7 @@ struct KeyedDiffEngine: ~Copyable {
             let source = sources[sourceIndex]
             if source >= 0 && !inLIS[sourceIndex] {
                 var slot = takeActiveCell(at: source)
-                slot.markMovedInActiveLane()
+                slot.markMoved()
                 activeCells[source] = .some(consume slot)
                 didMove = true
             }
@@ -305,11 +301,6 @@ private enum KeyedDiffSource {
     @inline(__always)
     static func encodeRevive(_ leavingIndex: Int) -> Int {
         reviveBase - leavingIndex
-    }
-
-    @inline(__always)
-    static func isRevive(_ source: Int) -> Bool {
-        source <= reviveBase
     }
 
     @inline(__always)
