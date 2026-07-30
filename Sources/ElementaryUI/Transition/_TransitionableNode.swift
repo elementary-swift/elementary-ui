@@ -24,9 +24,12 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
             return
         }
 
+        // An element consumes the transition modifier; it must never leak into
+        // structural content mounted below that element.
         var nodeContext = copy context
         nodeContext.transition = nil
 
+        // Without a structural owner there is nothing that can defer removal.
         guard ctx.transitionRoot != nil else {
             storage = .direct(makeNode(nodeContext, &ctx))
             return
@@ -91,6 +94,8 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
     }
 }
 
+/// Owns a mounted transition body and every placeholder where that body mounts
+/// its underlying element. Custom transition bodies may omit or duplicate it.
 final class _TransitionElement {
     private let transition: AnyTransition
     private var bodyNode: AnyReconcilable?

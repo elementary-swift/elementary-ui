@@ -15,9 +15,11 @@ public struct _TransitionNode<V: View>: ~Copyable, _Reconcilable {
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) {
-        // NOTE: this is for dead code stripping to keep size down if no transitions are used
-        _DeferredRemoval.install(type: _TransitionRemoval.self)
+        // The indirection keeps transition removal out of transition-free builds.
+        _DeferredRemoval.install(_TransitionRemoval.self)
 
+        // Descendants retain this reference. Replacing its value updates future
+        // elements without changing transition bodies that are already mounted.
         let transition = _TransitionState(view.transition)
         var context = copy context
         context.transition = transition

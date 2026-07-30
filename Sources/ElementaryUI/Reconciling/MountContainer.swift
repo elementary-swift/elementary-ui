@@ -66,7 +66,7 @@ final class MountContainer {
     func collect(into ops: inout LayoutPass, context: inout _CommitContext, op: LayoutPass.Entry.LayoutOp) {
         if containerHandle == nil { containerHandle = ops.containerHandle }
 
-        promoteReadyLeavingNodes()
+        promoteCompletedLeavingSlots()
 
         while var removed = removedNodes.popLast() {
             removed.collectRemoved(into: &ops, context: &context)
@@ -159,9 +159,11 @@ final class MountContainer {
 
         // TODO: fix this to move-only
         while var slot = removedMiddleSlots.popLast() {
-            switch slot.beginRemovalForDiff(tx: &tx, handle: containerHandle) {
-            case .removed(let removed): removedNodes.append(removed)
-            case .leaving(let leavingSlot): leavingSlots.append(leavingSlot)
+            switch slot.startRemoval(tx: &tx, handle: containerHandle) {
+            case .ready(let removedNode):
+                removedNodes.append(removedNode)
+            case .deferred(let leavingSlot):
+                leavingSlots.append(leavingSlot)
             }
         }
 
@@ -190,12 +192,12 @@ final class MountContainer {
         removedMiddleSlots.reserveCapacity(removableUpperBound)
     }
 
-    private func promoteReadyLeavingNodes() {
+    private func promoteCompletedLeavingSlots() {
         leavingRemovalScratch.removeAll(keepingCapacity: true)
         leavingRemovalScratch.reserveCapacity(leavingSlots.count)
 
         for index in leavingSlots.indices {
-            if let removed = leavingSlots[index].consumeRemovedIfReadyFromLeaving() {
+            if let removed = leavingSlots[index].takeRemovedNodeIfRemovalComplete() {
                 removedNodes.append(removed)
                 leavingRemovalScratch.append(index)
             }
@@ -256,9 +258,9 @@ extension MountContainer {
             }
         }
 
-        enum RemovalForDiff: ~Copyable {
-            case leaving(Slot)
-            case removed(MountContainer.RemovedNode)
+        enum RemovalResult: ~Copyable {
+            case ready(MountContainer.RemovedNode)
+            case deferred(Slot)
         }
 
         private enum Storage: ~Copyable {
@@ -330,32 +332,37 @@ extension MountContainer {
             putMounted(consume mounted)
         }
 
-        mutating func beginRemovalForDiff(
+        mutating func startRemoval(
             tx: inout _TransactionContext,
             handle: LayoutContainer.Handle?
-        ) -> RemovalForDiff {
+        ) -> RemovalResult {
             var mounted = takeMounted()
 
             if mounted.placement == .added {
-                return .removed(.init(mounted: mounted, shouldCollectLayout: false))
+                return .ready(
+                    .init(
+                        mounted: mounted,
+                        shouldCollectLayout: false
+                    )
+                )
             }
 
-            if let removal = _DeferredRemoval.begin(
-                mounted: mounted,
+            if let removal = _DeferredRemoval.startIfNeeded(
+                for: mounted,
                 handle: handle,
                 tx: &tx
             ) {
                 mounted.deferredRemoval = removal
-                return .leaving(.mounted(key: key, mounted: mounted))
+                return .deferred(.mounted(key: key, mounted: mounted))
             }
 
-            return .removed(.init(mounted: mounted))
+            return .ready(.init(mounted: mounted))
         }
 
-        mutating func consumeRemovedIfReadyFromLeaving() -> MountContainer.RemovedNode? {
+        mutating func takeRemovedNodeIfRemovalComplete() -> MountContainer.RemovedNode? {
             let mounted = takeMounted()
 
-            if mounted.deferredRemoval?.isReady == true {
+            if mounted.deferredRemoval?.isReadyForRemoval == true {
                 return .init(mounted: mounted)
             }
 

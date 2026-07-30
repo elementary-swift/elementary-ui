@@ -2,99 +2,104 @@ import BasicContainers
 
 /// Keeps a removed structural slot alive until its transitions have finished.
 final class _TransitionRemoval: _DeferredRemoval {
-    private let elements: [_TransitionElement]
-    private let dependencies: [_DeferredRemoval]
-    private let leavingElements: [DOM.Node]
+    private let transitionElements: [_TransitionElement]
+    private let nestedRemovals: [_DeferredRemoval]
+    private let leavingDOMNodes: [DOM.Node]
     private let handle: LayoutContainer.Handle?
 
-    private var pendingCompletions = 0
+    private var pendingAnimationCompletions = 0
     private var isCancelled = false
 
     private init(
-        elements: [_TransitionElement],
-        dependencies: [_DeferredRemoval],
-        leavingElements: [DOM.Node],
+        transitionElements: [_TransitionElement],
+        nestedRemovals: [_DeferredRemoval],
+        leavingDOMNodes: [DOM.Node],
         handle: LayoutContainer.Handle?
     ) {
-        self.elements = elements
-        self.dependencies = dependencies
-        self.leavingElements = leavingElements
+        self.transitionElements = transitionElements
+        self.nestedRemovals = nestedRemovals
+        self.leavingDOMNodes = leavingDOMNodes
         self.handle = handle
     }
 
-    override class func begin(
-        mounted: borrowing MountContainer.Slot.Mounted,
+    override class func startIfNeeded(
+        for mounted: borrowing MountContainer.Slot.Mounted,
         handle: LayoutContainer.Handle?,
         tx: inout _TransactionContext
     ) -> _DeferredRemoval? {
         var targets = _TransitionRemovalTargets()
         targets.collect(mounted: mounted)
-        return begin(targets: targets, handle: handle, tx: &tx)
+        return startIfNeeded(
+            for: targets,
+            handle: handle,
+            tx: &tx
+        )
     }
 
-    private static func begin(
-        targets: _TransitionRemovalTargets,
+    private static func startIfNeeded(
+        for targets: _TransitionRemovalTargets,
         handle: LayoutContainer.Handle?,
         tx: inout _TransactionContext
     ) -> _TransitionRemoval? {
-        let dependencies = targets.dependencies.filter { !$0.isReady }
-        let hasAnimatedElement = targets.elements.contains { element in
+        let nestedRemovals = targets.nestedRemovals.filter {
+            !$0.isReadyForRemoval
+        }
+        let hasAnimatedElement = targets.transitionElements.contains { element in
             transitionEffectiveAnimation(
                 defaultAnimation: element.defaultAnimation,
                 transaction: tx.transaction
             ) != nil
         }
 
-        guard hasAnimatedElement || !dependencies.isEmpty else {
-            for element in targets.elements {
+        guard hasAnimatedElement || !nestedRemovals.isEmpty else {
+            for element in targets.transitionElements {
                 element.patchPhase(.didDisappear, tx: &tx)
             }
             return nil
         }
 
         let removal = _TransitionRemoval(
-            elements: targets.elements,
-            dependencies: dependencies,
-            leavingElements: targets.leavingElements,
+            transitionElements: targets.transitionElements,
+            nestedRemovals: nestedRemovals,
+            leavingDOMNodes: targets.leavingDOMNodes,
             handle: handle
         )
-        removal.start(tx: &tx)
-        guard !removal.isReady else { return nil }
-        removal.reportLeavingElements(tx: &tx)
+        removal.startExitTransitions(tx: &tx)
+        guard !removal.isReadyForRemoval else { return nil }
+        removal.reportLeavingDOMNodes(tx: &tx)
         return removal
     }
 
-    override var isReady: Bool {
-        guard !isCancelled, pendingCompletions == 0 else {
-            return isCancelled
-        }
-        return dependencies.allSatisfy { $0.isReady }
+    override var isReadyForRemoval: Bool {
+        isCancelled
+            || (pendingAnimationCompletions == 0
+                && nestedRemovals.allSatisfy(\.isReadyForRemoval))
     }
 
     override func cancel(tx: inout _TransactionContext) {
         guard !isCancelled else { return }
         isCancelled = true
-        pendingCompletions = 0
+        pendingAnimationCompletions = 0
 
-        for dependency in dependencies {
-            dependency.cancel(tx: &tx)
+        for removal in nestedRemovals {
+            removal.cancel(tx: &tx)
         }
         patchTransitionElements(
-            elements,
+            transitionElements,
             to: .identity,
             tx: &tx,
             transaction: tx.transaction
         )
-        for node in leavingElements {
+        for node in leavingDOMNodes {
             handle?.reportReenteringElement(node, &tx)
         }
     }
 
-    private func start(tx: inout _TransactionContext) {
+    private func startExitTransitions(tx: inout _TransactionContext) {
         let transaction = tx.transaction
         let scheduler = tx.scheduler
 
-        for element in elements {
+        for element in transitionElements {
             guard
                 let animation = transitionEffectiveAnimation(
                     defaultAnimation: element.defaultAnimation,
@@ -105,13 +110,13 @@ final class _TransitionRemoval: _DeferredRemoval {
                 continue
             }
 
-            pendingCompletions += 1
+            pendingAnimationCompletions += 1
             tx.withModifiedTransaction {
                 $0.animation = animation
                 $0.disablesAnimation = false
                 $0.addAnimationCompletion(criteria: .removed) {
                     [self, scheduler] in
-                    animationCompleted(scheduler: scheduler)
+                    exitAnimationCompleted(scheduler: scheduler)
                 }
             } run: { tx in
                 element.patchPhase(.didDisappear, tx: &tx)
@@ -120,17 +125,21 @@ final class _TransitionRemoval: _DeferredRemoval {
         }
     }
 
-    private func reportLeavingElements(tx: inout _TransactionContext) {
-        for node in leavingElements {
+    private func reportLeavingDOMNodes(tx: inout _TransactionContext) {
+        for node in leavingDOMNodes {
             handle?.reportLeavingElement(node, &tx)
         }
     }
 
-    private func animationCompleted(scheduler: Scheduler) {
-        guard !isCancelled, pendingCompletions > 0 else { return }
-        pendingCompletions -= 1
-        guard pendingCompletions == 0 else { return }
+    private func exitAnimationCompleted(scheduler: Scheduler) {
+        guard !isCancelled, pendingAnimationCompletions > 0 else {
+            return
+        }
+        pendingAnimationCompletions -= 1
+        guard pendingAnimationCompletions == 0 else { return }
 
+        // Completion callbacks run outside reconciliation. Re-enter through the
+        // scheduler so the owning container can promote this leaving slot.
         scheduler.scheduleUpdate { [handle] tx in
             handle?.reportLayoutChange(&tx)
         }
@@ -138,14 +147,16 @@ final class _TransitionRemoval: _DeferredRemoval {
 }
 
 private struct _TransitionRemovalTargets {
-    var elements: [_TransitionElement] = []
-    var dependencies: [_DeferredRemoval] = []
-    var leavingElements: [DOM.Node] = []
+    var transitionElements: [_TransitionElement] = []
+    var nestedRemovals: [_DeferredRemoval] = []
+    var leavingDOMNodes: [DOM.Node] = []
 
     mutating func collect(
         mounted: borrowing MountContainer.Slot.Mounted
     ) {
-        mounted.transitionRoot.collectLiveElements(into: &elements)
+        mounted.transitionRoot.collectLiveElements(
+            into: &transitionElements
+        )
         mounted.layoutNodes.collectTransitionRemovalTargets(into: &self)
     }
 }
@@ -156,7 +167,9 @@ private extension MountContainer {
     ) {
         forEachMountedSlot { mounted in
             if let removal = mounted.deferredRemoval {
-                targets.dependencies.append(removal)
+                // A nested removal already owns its transition elements. The
+                // parent waits for it instead of starting them a second time.
+                targets.nestedRemovals.append(removal)
             } else {
                 targets.collect(mounted: mounted)
             }
@@ -170,7 +183,7 @@ private extension LayoutNode {
     ) {
         switch self {
         case .elementNode(let node):
-            targets.leavingElements.append(node)
+            targets.leavingDOMNodes.append(node)
         case .textNode:
             break
         case .container(let container):
