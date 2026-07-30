@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785331484976,
+  "lastUpdate": 1785399719232,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -8325,6 +8325,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/elementary-swift/elementary-ui/commit/075ecbb206a413078b7be2a7cb11fb88022a592a"
         },
         "date": 1785331484644,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 176.96,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 101.33,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 85.86,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 150.27,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "075ecbb206a413078b7be2a7cb11fb88022a592a",
+          "message": "various size and speed optimizations (#115)\n\n* statically split view animations in separate implementations\n\n* simplifications\n\n* tiny reactivity tweaks\n\n* shaving off codesize for attribute handling\n\n* strippable event types",
+          "timestamp": "2026-07-29T13:16:17Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/075ecbb206a413078b7be2a7cb11fb88022a592a"
+        },
+        "date": 1785399718919,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
