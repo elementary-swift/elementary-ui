@@ -35,24 +35,16 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
             return
         }
 
-        let initialPhase = transitionInitialPhase(
-            defaultAnimation: transition.value.animation,
-            transaction: ctx.transaction
+        storage = .transitioned(
+            mountTransitionElement(
+                transition,
+                context: nodeContext,
+                ctx: &ctx,
+                makeElement: { context, ctx in
+                    AnyReconcilable(makeNode(context, &ctx))
+                }
+            )
         )
-        let transitionedElement = _TransitionElement(
-            transition: transition.value,
-            initialPhase: initialPhase,
-            context: nodeContext,
-            ctx: &ctx,
-            makeElement: { context, ctx in
-                AnyReconcilable(makeNode(context, &ctx))
-            }
-        )
-        ctx.registerTransition(
-            transitionedElement,
-            initialPhase: initialPhase
-        )
-        storage = .transitioned(transitionedElement)
     }
 
     mutating func update(
@@ -92,6 +84,36 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
             )
         }
     }
+}
+
+/// Mounts a transition element and registers it with the owning slot.
+///
+/// inline(never): shared by every `_TransitionableNode` specialization so the
+/// transitioned mount path isn't duplicated per element type (code size).
+@inline(never)
+private func mountTransitionElement(
+    _ transition: _TransitionState,
+    context: borrowing _ViewContext,
+    ctx: inout _MountContext,
+    makeElement:
+        @escaping (
+            borrowing _ViewContext,
+            inout _MountContext
+        ) -> AnyReconcilable
+) -> _TransitionElement {
+    let initialPhase = transitionInitialPhase(
+        defaultAnimation: transition.value.animation,
+        transaction: ctx.transaction
+    )
+    let element = _TransitionElement(
+        transition: transition.value,
+        initialPhase: initialPhase,
+        context: context,
+        ctx: &ctx,
+        makeElement: makeElement
+    )
+    ctx.registerTransition(element, initialPhase: initialPhase)
+    return element
 }
 
 /// Owns a mounted transition body and every placeholder where that body mounts
