@@ -5,7 +5,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
     private var nodeStack: ScratchStack<LayoutNode>
     private(set) var isStatic: Bool = true
 
-    private(set) var mountRoot: _MountRoot?
+    private(set) var transitionRoot: _TransitionRoot?
 
     // NOTE: we could use a fancy Inout<_CommitContext> here.. but maybe not worth it
     let scheduler: Scheduler
@@ -20,14 +20,14 @@ public struct _MountContext: ~Copyable, ~Escapable {
         scheduler: Scheduler,
         currentFrameTime: Double,
         transaction: Transaction,
-        mountRoot: consuming _MountRoot? = nil
+        transitionRoot: consuming _TransitionRoot? = nil
     ) {
         self.nodeStack = consume nodeStack
         self.dom = dom
         self.scheduler = scheduler
         self.currentFrameTime = currentFrameTime
         self.transaction = transaction
-        self.mountRoot = consume mountRoot
+        self.transitionRoot = consume transitionRoot
     }
 
     mutating func appendStaticElement(_ node: DOM.Node) {
@@ -43,11 +43,11 @@ public struct _MountContext: ~Copyable, ~Escapable {
     }
 
     mutating func registerTransition(
-        _ transitionedElement: _TransitionedElement,
+        _ transitionedElement: _TransitionElement,
         initialPhase: TransitionPhase
     ) {
-        precondition(mountRoot != nil)
-        mountRoot!.register(
+        precondition(transitionRoot != nil)
+        transitionRoot!.register(
             transitionedElement,
             initialPhase: initialPhase
         )
@@ -63,7 +63,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
                 scheduler: scheduler,
                 currentFrameTime: currentFrameTime,
                 transaction: transaction,
-                mountRoot: _MountRoot()
+                transitionRoot: _TransitionRoot()
             )
             return body(childContext)
         }
@@ -78,7 +78,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
                     scheduler: scheduler,
                     currentFrameTime: currentFrameTime,
                     transaction: transaction,
-                    mountRoot: nil
+                    transitionRoot: nil
                 )
             )
         }
@@ -99,8 +99,8 @@ public struct _MountContext: ~Copyable, ~Escapable {
         makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
     ) -> MountContainer.Slot.Mounted {
         let node = makeNode(newKeyIndex, viewContext, &self)
-        var mountRoot = self.mountRoot.take()!
-        mountRoot.scheduleEnterIdentityIfNeeded(
+        let transitionRoot = self.transitionRoot.take()!
+        transitionRoot.scheduleEnterIdentityIfNeeded(
             scheduler: scheduler,
             transaction: transaction
         )
@@ -109,8 +109,8 @@ public struct _MountContext: ~Copyable, ~Escapable {
             node: node,
             layoutNodes: takeMaterializedLayoutNodes(),
             placement: .unchanged,
-            mountRoot: consume mountRoot,
-            transitionRemoval: nil
+            transitionRoot: consume transitionRoot,
+            deferredRemoval: nil
         )
     }
 

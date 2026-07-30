@@ -93,9 +93,10 @@ struct AppView {
                                 }
                             }
                         hr()
-                    }.transition(.fade)
-                }
-            }.animateContainerLayout()
+                    }
+                }.transition(.fade)
+            }
+            .animateContainerLayout()
         }
 
         div {

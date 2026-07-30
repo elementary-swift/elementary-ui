@@ -26,3 +26,10 @@ extension Transition where Self == FadeTransition {
     /// ```
     public static var fade: Self { FadeTransition() }
 }
+
+extension AnyTransition {
+    /// A transition that fades views in and out.
+    public static var fade: AnyTransition {
+        AnyTransition(FadeTransition())
+    }
+}

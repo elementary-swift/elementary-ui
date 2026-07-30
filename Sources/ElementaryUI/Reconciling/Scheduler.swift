@@ -26,23 +26,7 @@ enum CommitAction {
 }
 
 final class Scheduler {
-    // TODO: verify if this is really needed, clean it up
-    class TransitionRemoval {
-        class func begin(
-            mounted: borrowing MountContainer.Slot.Mounted,
-            handle: LayoutContainer.Handle?,
-            tx: inout _TransactionContext
-        ) -> _TransitionRemoval? {
-            nil
-        }
-    }
-
     private let dom: DOMInteractor
-
-    // Transition views install this metatype without allocating a runtime
-    // object. Keeping the call indirect lets transition-free Wasm builds
-    // strip the recursive removal and animation implementation.
-    var transitionRemoval: TransitionRemoval.Type?
 
     let scratch = ScratchStorage()
 

@@ -1,12 +1,10 @@
-// TODO-TRANSITION: simplify this, AI is too stupid
-
 public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
     ~Copyable,
     _Reconcilable
 {
     private enum Storage: ~Copyable {
         case direct(Node)
-        case transitioned(_TransitionedElement)
+        case transitioned(_TransitionElement)
         case _movedOut
     }
 
@@ -21,7 +19,7 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
                 inout _MountContext
             ) -> Node
     ) {
-        guard let transition = context.transition, ctx.mountRoot != nil else {
+        guard let transition = context.transition else {
             storage = .direct(makeNode(context, &ctx))
             return
         }
@@ -29,12 +27,17 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
         var nodeContext = copy context
         nodeContext.transition = nil
 
+        guard ctx.transitionRoot != nil else {
+            storage = .direct(makeNode(nodeContext, &ctx))
+            return
+        }
+
         let initialPhase = transitionInitialPhase(
-            defaultAnimation: transition.animation,
+            defaultAnimation: transition.value.animation,
             transaction: ctx.transaction
         )
-        let transitionedElement = _TransitionedElement(
-            transition: transition,
+        let transitionedElement = _TransitionElement(
+            transition: transition.value,
             initialPhase: initialPhase,
             context: nodeContext,
             ctx: &ctx,
@@ -53,19 +56,20 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
         _ tx: inout _TransactionContext,
         body: (inout Node, inout _TransactionContext) -> Void
     ) {
-        let storage = takeStorage()
+        var storage = Storage._movedOut
+        swap(&storage, &self.storage)
 
         switch consume storage {
         case .direct(var node):
             body(&node, &tx)
-            putStorage(.direct(node))
+            self.storage = .direct(node)
         case .transitioned(let transitionedElement):
             transitionedElement.forEachPlaceholder { placeholder in
                 placeholder.node.modify(as: Node.self) { node in
                     body(&node, &tx)
                 }
             }
-            putStorage(.transitioned(transitionedElement))
+            self.storage = .transitioned(transitionedElement)
         case ._movedOut:
             preconditionFailure(
                 "_TransitionableNode storage was already moved out"
@@ -85,22 +89,10 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
             )
         }
     }
-
-    @inline(__always)
-    private mutating func takeStorage() -> Storage {
-        var storage = Storage._movedOut
-        swap(&storage, &self.storage)
-        return storage
-    }
-
-    @inline(__always)
-    private mutating func putStorage(_ storage: consuming Storage) {
-        self.storage = storage
-    }
 }
 
-final class _TransitionedElement {
-    private let transition: _AnyTransition
+final class _TransitionElement {
+    private let transition: AnyTransition
     private var bodyNode: AnyReconcilable?
     private var placeholderNode: _PlaceholderNode?
     private var additionalPlaceholderNodes: [_PlaceholderNode] = []
@@ -113,7 +105,7 @@ final class _TransitionedElement {
         )?
 
     init(
-        transition: _AnyTransition,
+        transition: AnyTransition,
         initialPhase: TransitionPhase,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
@@ -146,8 +138,8 @@ final class _TransitionedElement {
         tx: inout _TransactionContext
     ) {
         guard bodyNode != nil else { return }
-        transition.patchPhase(
-            phase,
+        transition.patchNode(
+            to: phase,
             node: &bodyNode!,
             tx: &tx,
             makePlaceholderNode: self.makePlaceholderNode

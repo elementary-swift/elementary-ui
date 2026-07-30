@@ -6,6 +6,73 @@ import Testing
 @Suite(.serialized)
 struct TransitionMountRootTests {
     @Test
+    func anyTransitionCarriesItsDefaultAnimation() {
+        let state = VisibilityState()
+        let recorder = TransitionPhaseRecorder()
+        let transition = AnyTransition(
+            RecordingFadeTransition(recorder: recorder)
+        )
+        .animation(.linear(duration: 0.35))
+        let dom = TestDOM()
+
+        dom.mount {
+            Group {
+                if state.value {
+                    p {}.transition(transition)
+                }
+            }
+        }
+        dom.runNextFrame()
+
+        state.value = true
+        dom.runNextFrame()
+
+        #expect(recorder.phases.contains(.willAppear))
+        #expect(recorder.phases.contains(.identity))
+    }
+
+    @Test
+    func changingAnyTransitionTypeAffectsFutureElements() {
+        let isVisible = VisibilityState(true)
+        let usesEmptyTransition = VisibilityState()
+        let fadeRecorder = TransitionPhaseRecorder()
+        let emptyRecorder = TransitionPhaseRecorder()
+        let dom = TestDOM()
+
+        dom.mount {
+            Group {
+                if isVisible.value {
+                    p {}.transition(
+                        usesEmptyTransition.value
+                            ? AnyTransition(
+                                EmptyRecordingTransition(
+                                    recorder: emptyRecorder
+                                )
+                            )
+                            : AnyTransition(
+                                RecordingFadeTransition(
+                                    recorder: fadeRecorder
+                                )
+                            )
+                    )
+                }
+            }
+        }
+        dom.runNextFrame()
+
+        usesEmptyTransition.value = true
+        dom.runNextFrame()
+
+        isVisible.value = false
+        dom.runNextFrame()
+        #expect(fadeRecorder.phases.contains(.didDisappear))
+
+        isVisible.value = true
+        dom.runNextFrame()
+        #expect(emptyRecorder.phases.contains(.identity))
+    }
+
+    @Test
     func initialMountTransitionStartsAtIdentity() {
         let recorder = TransitionPhaseRecorder()
         let dom = TestDOM()
@@ -389,6 +456,33 @@ struct TransitionMountRootTests {
                     )
             }
         }
+        dom.runNextFrame()
+
+        #expect(recorder.phases.isEmpty)
+    }
+
+    @Test
+    func discardedTransitionDoesNotLeakThroughElement() {
+        let state = VisibilityState()
+        let recorder = TransitionPhaseRecorder()
+        let dom = TestDOM()
+
+        dom.mount {
+            div {
+                span {
+                    if state.value {
+                        p {}
+                    }
+                }
+                .transition(
+                    RecordingFadeTransition(recorder: recorder),
+                    animation: .linear(duration: 0.35)
+                )
+            }
+        }
+        dom.runNextFrame()
+
+        state.value = true
         dom.runNextFrame()
 
         #expect(recorder.phases.isEmpty)

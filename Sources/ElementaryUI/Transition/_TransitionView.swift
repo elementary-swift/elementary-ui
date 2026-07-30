@@ -1,18 +1,30 @@
-// TODO-TRANSITION: simplify this, AI is too stupid
-
 extension View {
-    public func transition<T: Transition>(_ transition: T, animation: Animation? = nil) -> _TransitionView<T, Self> {
-        _TransitionView(transition: transition, animation: animation, wrapped: self)
+    /// Applies a type-erased transition to this view.
+    public func transition(
+        _ transition: AnyTransition
+    ) -> _TransitionView<Self> {
+        _TransitionView(transition: transition, wrapped: self)
+    }
+
+    /// Applies a transition to this view.
+    ///
+    /// The optional animation becomes the transition's default animation.
+    public func transition<T: Transition>(
+        _ transition: T,
+        animation: Animation? = nil
+    ) -> _TransitionView<Self> {
+        self.transition(
+            AnyTransition(transition, animation: animation)
+        )
     }
 }
 
-public struct _TransitionView<T: Transition, V: View>: View {
+public struct _TransitionView<V: View>: View {
     public typealias Content = Never
-    var transition: T
-    var animation: Animation?
+    var transition: AnyTransition
     var wrapped: V
 
-    public typealias _MountedNode = _TransitionNode<T, V>
+    public typealias _MountedNode = _TransitionNode<V>
 
     public static func _makeNode(
         _ view: consuming Self,

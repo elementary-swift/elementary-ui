@@ -2,8 +2,8 @@ import BasicContainers
 
 final class MountContainer {
     private let viewContext: _ViewContext
-    var activeSlots: UniqueArray<Slot>
-    var leavingSlots: UniqueArray<Slot> = .init()
+    private var activeSlots: UniqueArray<Slot>
+    private var leavingSlots: UniqueArray<Slot> = .init()
     private var removedNodes: UniqueArray<RemovedNode> = .init()
 
     var containerHandle: LayoutContainer.Handle?
@@ -208,6 +208,19 @@ final class MountContainer {
 }
 
 extension MountContainer {
+    func forEachMountedSlot(
+        _ body: (borrowing Slot.Mounted) -> Void
+    ) {
+        for index in activeSlots.indices {
+            activeSlots[index].withMounted(body)
+        }
+        for index in leavingSlots.indices {
+            leavingSlots[index].withMounted(body)
+        }
+    }
+}
+
+extension MountContainer {
     private static func makeMountedSlot(
         newKeyIndex: Int,
         viewContext: borrowing _ViewContext,
@@ -235,8 +248,8 @@ extension MountContainer {
             var node: AnyReconcilable
             var layoutNodes: RigidArray<LayoutNode>
             var placement: Placement
-            var mountRoot: _MountRoot
-            var transitionRemoval: _TransitionRemoval?
+            var transitionRoot: _TransitionRoot
+            var deferredRemoval: _DeferredRemoval?
 
             deinit {
                 // NOTE: this is a load-bearing deinit
@@ -298,9 +311,9 @@ extension MountContainer {
         ) {
             var mounted = takeMounted()
 
-            if let removal = mounted.transitionRemoval {
+            if let removal = mounted.deferredRemoval {
                 removal.cancel(tx: &tx)
-                mounted.transitionRemoval = nil
+                mounted.deferredRemoval = nil
                 mounted.placement = .moved
             }
 
@@ -327,15 +340,13 @@ extension MountContainer {
                 return .removed(.init(mounted: mounted, shouldCollectLayout: false))
             }
 
-            if let transitionRemoval = tx.scheduler.transitionRemoval {
-                if let removal = transitionRemoval.begin(
-                    mounted: mounted,
-                    handle: handle,
-                    tx: &tx
-                ) {
-                    mounted.transitionRemoval = removal
-                    return .leaving(.mounted(key: key, mounted: mounted))
-                }
+            if let removal = _DeferredRemoval.begin(
+                mounted: mounted,
+                handle: handle,
+                tx: &tx
+            ) {
+                mounted.deferredRemoval = removal
+                return .leaving(.mounted(key: key, mounted: mounted))
             }
 
             return .removed(.init(mounted: mounted))
@@ -344,7 +355,7 @@ extension MountContainer {
         mutating func consumeRemovedIfReadyFromLeaving() -> MountContainer.RemovedNode? {
             let mounted = takeMounted()
 
-            if mounted.transitionRemoval?.isReady == true {
+            if mounted.deferredRemoval?.isReady == true {
                 return .init(mounted: mounted)
             }
 
