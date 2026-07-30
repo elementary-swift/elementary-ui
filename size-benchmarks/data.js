@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785399719232,
+  "lastUpdate": 1785414682676,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -8387,6 +8387,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 150.27,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c98bcdf90dbff5770440614a12ecc4bad84735ac",
+          "message": "leaner transition system (#116)\n\n* improving transition system\n\n* cleaner naming + comments\n\n* more simplification and cleanup",
+          "timestamp": "2026-07-30T14:22:35+02:00",
+          "tree_id": "c3cd1cfea0687dd5834e77550fa1f055f2e1371f",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/c98bcdf90dbff5770440614a12ecc4bad84735ac"
+        },
+        "date": 1785414681736,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 176.57,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 100.32,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 84.32,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 150.37,
             "unit": "kB"
           }
         ]
