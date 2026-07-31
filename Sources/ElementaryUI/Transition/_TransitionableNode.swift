@@ -37,7 +37,7 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
             return
         }
 
-        let element = _TransitionElement(
+        let element = _TransitionElement.make(
             transition: transition.value,
             context: nodeContext,
             ctx: &ctx,
@@ -88,9 +88,51 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
     }
 }
 
+/// The generic reconciler stores only this base class, keeping its transitioned
+/// branches short and preventing specialization of the concrete implementation.
+class _TransitionElement {
+    var defaultAnimation: Animation? { fatalError("abstract") }
+    var isMounted: Bool { fatalError("abstract") }
+
+    private static var type: _TransitionElement.Type? = nil
+
+    static func install(_ type: _TransitionElement.Type) {
+        self.type = type
+    }
+
+    class func make(
+        transition: AnyTransition,
+        context: borrowing _ViewContext,
+        ctx: inout _MountContext,
+        makeElement:
+            @escaping (
+                borrowing _ViewContext,
+                inout _MountContext
+            ) -> AnyReconcilable
+    ) -> _TransitionElement {
+        guard let type else { preconditionFailure("No transition element type installed") }
+        return type.make(transition: transition, context: context, ctx: &ctx, makeElement: makeElement)
+    }
+
+    func patchPhase(
+        _ phase: TransitionPhase,
+        tx: inout _TransactionContext
+    ) {
+        fatalError("abstract")
+    }
+
+    func forEachPlaceholder(_ body: (inout AnyReconcilable) -> Void) {
+        fatalError("abstract")
+    }
+
+    func unmount(_ context: inout _CommitContext) {
+        fatalError("abstract")
+    }
+}
+
 /// Owns a mounted transition body and every placeholder where that body mounts
 /// its underlying element. Custom transition bodies may omit or duplicate it.
-final class _TransitionElement {
+final class _MountedTransitionElement: _TransitionElement {
     private let transition: AnyTransition
     private var bodyNode: AnyReconcilable?
     private var placeholderNode: AnyReconcilable?
@@ -102,6 +144,19 @@ final class _TransitionElement {
                 inout _MountContext
             ) -> AnyReconcilable
         )?
+
+    override class func make(
+        transition: AnyTransition,
+        context: borrowing _ViewContext,
+        ctx: inout _MountContext,
+        makeElement:
+            @escaping (
+                borrowing _ViewContext,
+                inout _MountContext
+            ) -> AnyReconcilable
+    ) -> _TransitionElement {
+        _MountedTransitionElement(transition: transition, context: context, ctx: &ctx, makeElement: makeElement)
+    }
 
     @inline(never)
     init(
@@ -121,24 +176,28 @@ final class _TransitionElement {
             defaultAnimation: transition.animation,
             transaction: ctx.transaction
         )
+        super.init()
         self.bodyNode = transition.makeNode(
             phase: initialPhase,
             context: context,
             ctx: &ctx,
             makePlaceholderNode: self.makePlaceholderNode
         )
-        ctx.registerTransition(self, initialPhase: initialPhase)
+        ctx.registerTransition(
+            self,
+            initialPhase: initialPhase
+        )
     }
 
-    var defaultAnimation: Animation? {
+    override var defaultAnimation: Animation? {
         transition.animation
     }
 
-    var isMounted: Bool {
+    override var isMounted: Bool {
         bodyNode != nil
     }
 
-    func patchPhase(
+    override func patchPhase(
         _ phase: TransitionPhase,
         tx: inout _TransactionContext
     ) {
@@ -151,7 +210,9 @@ final class _TransitionElement {
         )
     }
 
-    func forEachPlaceholder(_ body: (inout AnyReconcilable) -> Void) {
+    override func forEachPlaceholder(
+        _ body: (inout AnyReconcilable) -> Void
+    ) {
         guard placeholderNode != nil else { return }
         body(&placeholderNode!)
 
@@ -160,7 +221,7 @@ final class _TransitionElement {
         }
     }
 
-    func unmount(_ context: inout _CommitContext) {
+    override func unmount(_ context: inout _CommitContext) {
         bodyNode?.unmount(&context)
         bodyNode = nil
         placeholderNode = nil

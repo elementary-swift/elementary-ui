@@ -17,6 +17,7 @@ public struct _TransitionNode<V: View>: ~Copyable, _Reconcilable {
     ) {
         // The indirection keeps transition removal out of transition-free builds.
         _PendingRemoval.install(_TransitionRemoval.self)
+        _TransitionElement.install(_MountedTransitionElement.self)
 
         // Descendants retain this reference. Replacing its value updates future
         // elements without changing transition bodies that are already mounted.
