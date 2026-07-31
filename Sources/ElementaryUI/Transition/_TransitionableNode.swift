@@ -1,3 +1,5 @@
+import BasicContainers
+
 public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
     ~Copyable,
     _Reconcilable
@@ -35,16 +37,16 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
             return
         }
 
-        storage = .transitioned(
-            mountTransitionElement(
-                transition,
-                context: nodeContext,
-                ctx: &ctx,
-                makeElement: { context, ctx in
-                    AnyReconcilable(makeNode(context, &ctx))
-                }
-            )
+        let element = _TransitionElement(
+            transition: transition.value,
+            context: nodeContext,
+            ctx: &ctx,
+            makeElement: { context, ctx in
+                AnyReconcilable(makeNode(context, &ctx))
+            }
         )
+
+        storage = .transitioned(element)
     }
 
     mutating func update(
@@ -60,7 +62,7 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
             self.storage = .direct(node)
         case .transitioned(let transitionedElement):
             transitionedElement.forEachPlaceholder { placeholder in
-                placeholder.node.modify(as: Node.self) { node in
+                placeholder.modify(as: Node.self) { node in
                     body(&node, &tx)
                 }
             }
@@ -86,43 +88,13 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
     }
 }
 
-/// Mounts a transition element and registers it with the owning slot.
-///
-/// inline(never): shared by every `_TransitionableNode` specialization so the
-/// transitioned mount path isn't duplicated per element type (code size).
-@inline(never)
-private func mountTransitionElement(
-    _ transition: _TransitionState,
-    context: borrowing _ViewContext,
-    ctx: inout _MountContext,
-    makeElement:
-        @escaping (
-            borrowing _ViewContext,
-            inout _MountContext
-        ) -> AnyReconcilable
-) -> _TransitionElement {
-    let initialPhase = transitionInitialPhase(
-        defaultAnimation: transition.value.animation,
-        transaction: ctx.transaction
-    )
-    let element = _TransitionElement(
-        transition: transition.value,
-        initialPhase: initialPhase,
-        context: context,
-        ctx: &ctx,
-        makeElement: makeElement
-    )
-    ctx.registerTransition(element, initialPhase: initialPhase)
-    return element
-}
-
 /// Owns a mounted transition body and every placeholder where that body mounts
 /// its underlying element. Custom transition bodies may omit or duplicate it.
 final class _TransitionElement {
     private let transition: AnyTransition
     private var bodyNode: AnyReconcilable?
-    private var placeholderNode: _PlaceholderNode?
-    private var additionalPlaceholderNodes: [_PlaceholderNode] = []
+    private var placeholderNode: AnyReconcilable?
+    private var additionalPlaceholderNodes: UniqueArray<AnyReconcilable> = .init()
     private var makeElement:
         (
             (
@@ -131,9 +103,9 @@ final class _TransitionElement {
             ) -> AnyReconcilable
         )?
 
+    @inline(never)
     init(
         transition: AnyTransition,
-        initialPhase: TransitionPhase,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
         makeElement:
@@ -144,12 +116,18 @@ final class _TransitionElement {
     ) {
         self.transition = transition
         self.makeElement = makeElement
+
+        let initialPhase = transitionInitialPhase(
+            defaultAnimation: transition.animation,
+            transaction: ctx.transaction
+        )
         self.bodyNode = transition.makeNode(
             phase: initialPhase,
             context: context,
             ctx: &ctx,
             makePlaceholderNode: self.makePlaceholderNode
         )
+        ctx.registerTransition(self, initialPhase: initialPhase)
     }
 
     var defaultAnimation: Animation? {
@@ -173,12 +151,12 @@ final class _TransitionElement {
         )
     }
 
-    func forEachPlaceholder(_ body: (_PlaceholderNode) -> Void) {
-        if let placeholderNode {
-            body(placeholderNode)
-        }
-        for placeholder in additionalPlaceholderNodes {
-            body(placeholder)
+    func forEachPlaceholder(_ body: (inout AnyReconcilable) -> Void) {
+        guard placeholderNode != nil else { return }
+        body(&placeholderNode!)
+
+        for index in additionalPlaceholderNodes.indices {
+            body(&additionalPlaceholderNodes[index])
         }
     }
 
@@ -193,17 +171,11 @@ final class _TransitionElement {
     private func makePlaceholderNode(
         context: borrowing _ViewContext,
         ctx: inout _MountContext
-    ) -> _PlaceholderNode {
-        var elementContext = copy context
-        elementContext.transition = nil
-        let node = _PlaceholderNode(
-            node: makeElement!(elementContext, &ctx)
-        )
+    ) {
         if placeholderNode == nil {
-            placeholderNode = node
+            placeholderNode = makeElement!(context, &ctx)
         } else {
-            additionalPlaceholderNodes.append(node)
+            additionalPlaceholderNodes.append(makeElement!(context, &ctx))
         }
-        return node
     }
 }

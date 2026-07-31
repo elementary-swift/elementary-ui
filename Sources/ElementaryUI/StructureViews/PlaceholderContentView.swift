@@ -14,15 +14,15 @@
 /// }
 /// ```
 public struct PlaceholderContentView<Value>: View {
-    private var makeNodeFn: (borrowing _ViewContext, inout _MountContext) -> _PlaceholderNode
+    private var makeNodeFn: (borrowing _ViewContext, inout _MountContext) -> Void
 
-    init(makeNodeFn: @escaping (borrowing _ViewContext, inout _MountContext) -> _PlaceholderNode) {
+    init(makeNodeFn: @escaping (borrowing _ViewContext, inout _MountContext) -> Void) {
         self.makeNodeFn = makeNodeFn
     }
 }
 
 extension PlaceholderContentView: _Mountable {
-    public typealias _MountedNode = _PlaceholderNode
+    public typealias _MountedNode = _EmptyNode
 
     public static func _makeNode(
         _ view: consuming Self,
@@ -30,6 +30,7 @@ extension PlaceholderContentView: _Mountable {
         ctx: inout _MountContext
     ) -> _MountedNode {
         view.makeNodeFn(context, &ctx)
+        return _EmptyNode()
     }
 
     public static func _patchNode(
@@ -37,17 +38,5 @@ extension PlaceholderContentView: _Mountable {
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-    }
-}
-
-public final class _PlaceholderNode: _Reconcilable {
-    var node: AnyReconcilable
-
-    init(node: consuming AnyReconcilable) {
-        self.node = node
-    }
-
-    public func unmount(_ context: inout _CommitContext) {
-        node.unmount(&context)
     }
 }

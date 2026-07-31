@@ -13,7 +13,7 @@ public struct AnyTransition {
         (
             borrowing _ViewContext,
             inout _MountContext
-        ) -> _PlaceholderNode
+        ) -> Void
 
     private class Box {
         let animation: Animation?

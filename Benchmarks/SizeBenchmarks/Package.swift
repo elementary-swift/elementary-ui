@@ -32,6 +32,13 @@ let package = Package(
                 .product(name: "ElementaryUI", package: "elementary-ui")
             ]
         ),
+        // Copy of the js-framework-benchmark app (Benchmarks/PerformanceBenchmarks)
+        .executableTarget(
+            name: "KeyedRows",
+            dependencies: [
+                .product(name: "ElementaryUI", package: "elementary-ui")
+            ]
+        ),
     ],
     swiftLanguageModes: [.v5]
 )
