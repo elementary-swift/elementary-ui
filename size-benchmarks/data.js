@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785487737548,
+  "lastUpdate": 1785502398150,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -8517,6 +8517,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 148.26,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4f42bc17f12a2feba7c16baef8d6ef2586123774",
+          "message": "fix size regression (#118)\n\n* fixed size regression and embedded crasher\n\n* strippable transition element",
+          "timestamp": "2026-07-31T14:43:16+02:00",
+          "tree_id": "aff522f4842deddc72b2c52a0309d1e3ea12d6a2",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/4f42bc17f12a2feba7c16baef8d6ef2586123774"
+        },
+        "date": 1785502397796,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 172.67,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 98.71,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 83.15,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 144.7,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 173.27,
             "unit": "kB"
           }
         ]
