@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787208224829,
+  "lastUpdate": 1787294429505,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -9491,6 +9491,53 @@ window.BENCHMARK_DATA = {
           {
             "name": "Counter",
             "value": 98.69,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 83.04,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 144.6,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 173.13,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "id": "56ee55546e43b938a382e06622b510471f83062b",
+          "message": "moved CI to 6.3.3",
+          "timestamp": "2026-07-31T14:28:59Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/56ee55546e43b938a382e06622b510471f83062b"
+        },
+        "date": 1787294428347,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 172.68,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 98.7,
             "unit": "kB"
           },
           {
