@@ -1,4 +1,3 @@
-import { runApplication } from "elementary-ui-browser-runtime";
-import appInit from "virtual:swift-wasm?init&product=$PRODUCT";
+import { init } from "virtual:swift-wasm?js&product=$PRODUCT";
 
-await runApplication(appInit);
+await init();

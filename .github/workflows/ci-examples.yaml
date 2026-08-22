@@ -40,7 +40,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'pnpm'
+          cache: "pnpm"
           cache-dependency-path: ${{ matrix.examples }}/pnpm-lock.yaml
 
       - name: Install Swift WASM SDK
@@ -48,7 +48,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ${{ matrix.examples }}
-        run: pnpm preinstall && pnpm install
+        run: pnpm install
 
       - name: Build
         working-directory: ${{ matrix.examples }}

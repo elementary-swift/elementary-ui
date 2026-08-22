@@ -15,9 +15,9 @@ function injectBenchProduct(): Plugin {
     name: "inject-bench-product",
     enforce: "pre",
     resolveId(id, importer, options) {
-      if (id === "virtual:swift-wasm?init&product=$PRODUCT") {
+      if (id === "virtual:swift-wasm?js&product=$PRODUCT") {
         return this.resolve(
-          `virtual:swift-wasm?init&product=${product}`,
+          `virtual:swift-wasm?js&product=${product}`,
           importer,
           { ...options, skipSelf: true },
         );

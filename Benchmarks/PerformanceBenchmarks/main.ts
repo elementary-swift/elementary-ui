@@ -1,8 +1,7 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./main.css";
-import { runApplication } from "elementary-ui-browser-runtime";
-import appInit from "virtual:swift-wasm?init&product=Benchmark";
+import { init } from "virtual:swift-wasm?js";
 
-await runApplication(appInit);
+await init();
 
 document.getElementById("app")?.setAttribute("data-ready", "true");

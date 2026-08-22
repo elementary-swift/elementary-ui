@@ -57,7 +57,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ${{ matrix.examples }}
-        run: pnpm preinstall && pnpm install
+        run: pnpm install
 
       - name: Build
         working-directory: ${{ matrix.examples }}
