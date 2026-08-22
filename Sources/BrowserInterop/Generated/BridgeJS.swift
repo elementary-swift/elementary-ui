@@ -37,8 +37,8 @@ private enum _BJS_Closure_14BrowserInterop7JSEventC_y {
         let callback = JSObject.bridgeJSLiftParameter(callbackId)
         return { [callback] param0 in
             #if arch(wasm32)
-            let callbackValue = callback.bridgeJSLowerParameter()
             let param0Value = param0.bridgeJSLowerParameter()
+            let callbackValue = callback.bridgeJSLowerParameter()
             invoke_js_callback_BrowserInterop_14BrowserInterop7JSEventC_y(callbackValue, param0Value)
             #else
             fatalError("Only available on WebAssembly")
@@ -98,8 +98,8 @@ private enum _BJS_Closure_14BrowserInteropSd_y {
         let callback = JSObject.bridgeJSLiftParameter(callbackId)
         return { [callback] param0 in
             #if arch(wasm32)
-            let callbackValue = callback.bridgeJSLowerParameter()
             let param0Value = param0.bridgeJSLowerParameter()
+            let callbackValue = callback.bridgeJSLowerParameter()
             invoke_js_callback_BrowserInterop_14BrowserInteropSd_y(callbackValue, param0Value)
             #else
             fatalError("Only available on WebAssembly")
@@ -292,6 +292,22 @@ fileprivate func _bjs_struct_lift_JSAnimationTiming_extern() -> Int32 {
     return _bjs_struct_lift_JSAnimationTiming_extern()
 }
 
+extension JSKeyframeEffectOptions: BridgedSwiftGenericBridgeable {
+    @_spi(BridgeJS) public static let bridgeJSTypeHandle = JSKeyframeEffectOptions.bridgeJSMakeTypeHandle()
+}
+
+extension JSAnimationTiming: BridgedSwiftGenericBridgeable {
+    @_spi(BridgeJS) public static let bridgeJSTypeHandle = JSAnimationTiming.bridgeJSMakeTypeHandle()
+}
+
+extension JSCompositeOperation: BridgedSwiftGenericBridgeable {
+    @_spi(BridgeJS) public static let bridgeJSTypeHandle = JSCompositeOperation.bridgeJSMakeTypeHandle()
+}
+
+extension JSFillMode: BridgedSwiftGenericBridgeable {
+    @_spi(BridgeJS) public static let bridgeJSTypeHandle = JSFillMode.bridgeJSMakeTypeHandle()
+}
+
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_body_get")
 fileprivate func bjs_JSDocument_body_get_extern(_ self: Int32) -> Int32
@@ -386,8 +402,8 @@ func _$JSDocument_body_get(_ self: JSObject) throws(JSException) -> JSElement {
 }
 
 func _$JSDocument_createElement(_ self: JSObject, _ tagName: String) throws(JSException) -> JSElement {
-    let selfValue = self.bridgeJSLowerParameter()
     let ret0 = tagName.bridgeJSWithLoweredParameter { (tagNameBytes, tagNameLength) in
+        let selfValue = self.bridgeJSLowerParameter()
         let ret = bjs_JSDocument_createElement(selfValue, tagNameBytes, tagNameLength)
         return ret
     }
@@ -399,9 +415,9 @@ func _$JSDocument_createElement(_ self: JSObject, _ tagName: String) throws(JSEx
 }
 
 func _$JSDocument_createElementNS(_ self: JSObject, _ namespaceURI: String, _ qualifiedName: String) throws(JSException) -> JSElement {
-    let selfValue = self.bridgeJSLowerParameter()
     let ret0 = namespaceURI.bridgeJSWithLoweredParameter { (namespaceURIBytes, namespaceURILength) in
         let ret1 = qualifiedName.bridgeJSWithLoweredParameter { (qualifiedNameBytes, qualifiedNameLength) in
+            let selfValue = self.bridgeJSLowerParameter()
             let ret = bjs_JSDocument_createElementNS(selfValue, namespaceURIBytes, namespaceURILength, qualifiedNameBytes, qualifiedNameLength)
             return ret
         }
@@ -415,8 +431,8 @@ func _$JSDocument_createElementNS(_ self: JSObject, _ namespaceURI: String, _ qu
 }
 
 func _$JSDocument_createTextNode(_ self: JSObject, _ text: String) throws(JSException) -> JSNode {
-    let selfValue = self.bridgeJSLowerParameter()
     let ret0 = text.bridgeJSWithLoweredParameter { (textBytes, textLength) in
+        let selfValue = self.bridgeJSLowerParameter()
         let ret = bjs_JSDocument_createTextNode(selfValue, textBytes, textLength)
         return ret
     }
@@ -428,8 +444,8 @@ func _$JSDocument_createTextNode(_ self: JSObject, _ text: String) throws(JSExce
 }
 
 func _$JSDocument_querySelector(_ self: JSObject, _ selector: String) throws(JSException) -> JSElement {
-    let selfValue = self.bridgeJSLowerParameter()
     let ret0 = selector.bridgeJSWithLoweredParameter { (selectorBytes, selectorLength) in
+        let selfValue = self.bridgeJSLowerParameter()
         let ret = bjs_JSDocument_querySelector(selfValue, selectorBytes, selectorLength)
         return ret
     }
@@ -441,9 +457,9 @@ func _$JSDocument_querySelector(_ self: JSObject, _ selector: String) throws(JSE
 }
 
 func _$JSDocument_addEventListener(_ self: JSObject, _ type: String, _ listener: JSTypedClosure<(JSEvent) -> Void>) throws(JSException) -> Void {
-    let selfValue = self.bridgeJSLowerParameter()
     type.bridgeJSWithLoweredParameter { (typeBytes, typeLength) in
         let listenerFuncRef = listener.bridgeJSLowerParameter()
+        let selfValue = self.bridgeJSLowerParameter()
         bjs_JSDocument_addEventListener(selfValue, typeBytes, typeLength, listenerFuncRef)
     }
     if let error = _swift_js_take_exception() {
@@ -452,9 +468,9 @@ func _$JSDocument_addEventListener(_ self: JSObject, _ type: String, _ listener:
 }
 
 func _$JSDocument_removeEventListener(_ self: JSObject, _ type: String, _ listener: JSTypedClosure<(JSEvent) -> Void>) throws(JSException) -> Void {
-    let selfValue = self.bridgeJSLowerParameter()
     type.bridgeJSWithLoweredParameter { (typeBytes, typeLength) in
         let listenerFuncRef = listener.bridgeJSLowerParameter()
+        let selfValue = self.bridgeJSLowerParameter()
         bjs_JSDocument_removeEventListener(selfValue, typeBytes, typeLength, listenerFuncRef)
     }
     if let error = _swift_js_take_exception() {
@@ -517,8 +533,8 @@ func _$JSWindow_scrollY_get(_ self: JSObject) throws(JSException) -> Double {
 }
 
 func _$JSWindow_getComputedStyle(_ self: JSObject, _ element: JSElement) throws(JSException) -> JSCSSStyleDeclaration {
-    let selfValue = self.bridgeJSLowerParameter()
     let elementValue = element.bridgeJSLowerParameter()
+    let selfValue = self.bridgeJSLowerParameter()
     let ret = bjs_JSWindow_getComputedStyle(selfValue, elementValue)
     if let error = _swift_js_take_exception() {
         throw error
@@ -560,8 +576,8 @@ fileprivate func bjs_JSNode_textContent_set_extern(_ self: Int32, _ newValueByte
 }
 
 func _$JSNode_textContent_set(_ self: JSObject, _ newValue: String) throws(JSException) -> Void {
-    let selfValue = self.bridgeJSLowerParameter()
     newValue.bridgeJSWithLoweredParameter { (newValueBytes, newValueLength) in
+        let selfValue = self.bridgeJSLowerParameter()
         bjs_JSNode_textContent_set(selfValue, newValueBytes, newValueLength)
     }
     if let error = _swift_js_take_exception() {
@@ -727,14 +743,14 @@ fileprivate func bjs_JSElement_blur_extern(_ self: Int32) -> Void {
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_animate")
-fileprivate func bjs_JSElement_animate_extern(_ self: Int32, _ keyframes: Int32, _ options: Int32) -> Int32
+fileprivate func bjs_JSElement_animate_extern(_ self: Int32, _ keyframes: Int32) -> Int32
 #else
-fileprivate func bjs_JSElement_animate_extern(_ self: Int32, _ keyframes: Int32, _ options: Int32) -> Int32 {
+fileprivate func bjs_JSElement_animate_extern(_ self: Int32, _ keyframes: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSElement_animate(_ self: Int32, _ keyframes: Int32, _ options: Int32) -> Int32 {
-    return bjs_JSElement_animate_extern(self, keyframes, options)
+@inline(never) fileprivate func bjs_JSElement_animate(_ self: Int32, _ keyframes: Int32) -> Int32 {
+    return bjs_JSElement_animate_extern(self, keyframes)
 }
 
 func _$JSElement_style_get(_ self: JSObject) throws(JSException) -> JSCSSStyleDeclaration {
@@ -756,9 +772,9 @@ func _$JSElement_offsetParent_get(_ self: JSObject) throws(JSException) -> JSEle
 }
 
 func _$JSElement_setAttribute(_ self: JSObject, _ name: String, _ value: String) throws(JSException) -> Void {
-    let selfValue = self.bridgeJSLowerParameter()
     name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
         value.bridgeJSWithLoweredParameter { (valueBytes, valueLength) in
+            let selfValue = self.bridgeJSLowerParameter()
             bjs_JSElement_setAttribute(selfValue, nameBytes, nameLength, valueBytes, valueLength)
         }
     }
@@ -768,8 +784,8 @@ func _$JSElement_setAttribute(_ self: JSObject, _ name: String, _ value: String)
 }
 
 func _$JSElement_removeAttribute(_ self: JSObject, _ name: String) throws(JSException) -> Void {
-    let selfValue = self.bridgeJSLowerParameter()
     name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
+        let selfValue = self.bridgeJSLowerParameter()
         bjs_JSElement_removeAttribute(selfValue, nameBytes, nameLength)
     }
     if let error = _swift_js_take_exception() {
@@ -778,8 +794,8 @@ func _$JSElement_removeAttribute(_ self: JSObject, _ name: String) throws(JSExce
 }
 
 func _$JSElement_appendChild(_ self: JSObject, _ child: JSNode) throws(JSException) -> Void {
-    let selfValue = self.bridgeJSLowerParameter()
     let childValue = child.bridgeJSLowerParameter()
+    let selfValue = self.bridgeJSLowerParameter()
     bjs_JSElement_appendChild(selfValue, childValue)
     if let error = _swift_js_take_exception() {
         throw error
@@ -787,8 +803,8 @@ func _$JSElement_appendChild(_ self: JSObject, _ child: JSNode) throws(JSExcepti
 }
 
 func _$JSElement_removeChild(_ self: JSObject, _ child: JSNode) throws(JSException) -> Void {
-    let selfValue = self.bridgeJSLowerParameter()
     let childValue = child.bridgeJSLowerParameter()
+    let selfValue = self.bridgeJSLowerParameter()
     bjs_JSElement_removeChild(selfValue, childValue)
     if let error = _swift_js_take_exception() {
         throw error
@@ -796,9 +812,9 @@ func _$JSElement_removeChild(_ self: JSObject, _ child: JSNode) throws(JSExcepti
 }
 
 func _$JSElement_insertBefore(_ self: JSObject, _ newChild: JSNode, _ refChild: JSNode) throws(JSException) -> Void {
-    let selfValue = self.bridgeJSLowerParameter()
-    let newChildValue = newChild.bridgeJSLowerParameter()
     let refChildValue = refChild.bridgeJSLowerParameter()
+    let newChildValue = newChild.bridgeJSLowerParameter()
+    let selfValue = self.bridgeJSLowerParameter()
     bjs_JSElement_insertBefore(selfValue, newChildValue, refChildValue)
     if let error = _swift_js_take_exception() {
         throw error
@@ -823,9 +839,9 @@ func _$JSElement_getBoundingClientRect(_ self: JSObject) throws(JSException) -> 
 }
 
 func _$JSElement_addEventListener(_ self: JSObject, _ type: String, _ listener: JSTypedClosure<(JSEvent) -> Void>) throws(JSException) -> Void {
-    let selfValue = self.bridgeJSLowerParameter()
     type.bridgeJSWithLoweredParameter { (typeBytes, typeLength) in
         let listenerFuncRef = listener.bridgeJSLowerParameter()
+        let selfValue = self.bridgeJSLowerParameter()
         bjs_JSElement_addEventListener(selfValue, typeBytes, typeLength, listenerFuncRef)
     }
     if let error = _swift_js_take_exception() {
@@ -834,9 +850,9 @@ func _$JSElement_addEventListener(_ self: JSObject, _ type: String, _ listener: 
 }
 
 func _$JSElement_removeEventListener(_ self: JSObject, _ type: String, _ listener: JSTypedClosure<(JSEvent) -> Void>) throws(JSException) -> Void {
-    let selfValue = self.bridgeJSLowerParameter()
     type.bridgeJSWithLoweredParameter { (typeBytes, typeLength) in
         let listenerFuncRef = listener.bridgeJSLowerParameter()
+        let selfValue = self.bridgeJSLowerParameter()
         bjs_JSElement_removeEventListener(selfValue, typeBytes, typeLength, listenerFuncRef)
     }
     if let error = _swift_js_take_exception() {
@@ -861,10 +877,10 @@ func _$JSElement_blur(_ self: JSObject) throws(JSException) -> Void {
 }
 
 func _$JSElement_animate(_ self: JSObject, _ keyframes: JSObject, _ options: JSKeyframeEffectOptions) throws(JSException) -> JSAnimation {
-    let selfValue = self.bridgeJSLowerParameter()
+    let _ = options.bridgeJSLowerParameter()
     let keyframesValue = keyframes.bridgeJSLowerParameter()
-    let optionsObjectId = options.bridgeJSLowerParameter()
-    let ret = bjs_JSElement_animate(selfValue, keyframesValue, optionsObjectId)
+    let selfValue = self.bridgeJSLowerParameter()
+    let ret = bjs_JSElement_animate(selfValue, keyframesValue)
     if let error = _swift_js_take_exception() {
         throw error
     }
@@ -908,8 +924,8 @@ fileprivate func bjs_JSCSSStyleDeclaration_removeProperty_extern(_ self: Int32, 
 }
 
 func _$JSCSSStyleDeclaration_getPropertyValue(_ self: JSObject, _ name: String) throws(JSException) -> String {
-    let selfValue = self.bridgeJSLowerParameter()
     let ret0 = name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
+        let selfValue = self.bridgeJSLowerParameter()
         let ret = bjs_JSCSSStyleDeclaration_getPropertyValue(selfValue, nameBytes, nameLength)
         return ret
     }
@@ -921,9 +937,9 @@ func _$JSCSSStyleDeclaration_getPropertyValue(_ self: JSObject, _ name: String) 
 }
 
 func _$JSCSSStyleDeclaration_setProperty(_ self: JSObject, _ name: String, _ value: String) throws(JSException) -> Void {
-    let selfValue = self.bridgeJSLowerParameter()
     name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
         value.bridgeJSWithLoweredParameter { (valueBytes, valueLength) in
+            let selfValue = self.bridgeJSLowerParameter()
             bjs_JSCSSStyleDeclaration_setProperty(selfValue, nameBytes, nameLength, valueBytes, valueLength)
         }
     }
@@ -933,8 +949,8 @@ func _$JSCSSStyleDeclaration_setProperty(_ self: JSObject, _ name: String, _ val
 }
 
 func _$JSCSSStyleDeclaration_removeProperty(_ self: JSObject, _ name: String) throws(JSException) -> Void {
-    let selfValue = self.bridgeJSLowerParameter()
     name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
+        let selfValue = self.bridgeJSLowerParameter()
         bjs_JSCSSStyleDeclaration_removeProperty(selfValue, nameBytes, nameLength)
     }
     if let error = _swift_js_take_exception() {
@@ -1120,8 +1136,8 @@ func _$JSAnimation_effect_get(_ self: JSObject) throws(JSException) -> JSAnimati
 }
 
 func _$JSAnimation_currentTime_set(_ self: JSObject, _ newValue: Double) throws(JSException) -> Void {
-    let selfValue = self.bridgeJSLowerParameter()
     let newValueValue = newValue.bridgeJSLowerParameter()
+    let selfValue = self.bridgeJSLowerParameter()
     bjs_JSAnimation_currentTime_set(selfValue, newValueValue)
     if let error = _swift_js_take_exception() {
         throw error
@@ -1129,9 +1145,9 @@ func _$JSAnimation_currentTime_set(_ self: JSObject, _ newValue: Double) throws(
 }
 
 func _$JSAnimation_onfinish_set(_ self: JSObject, _ newValue: @escaping () -> Void) throws(JSException) -> Void {
-    let selfValue = self.bridgeJSLowerParameter()
     let newValue = JSTypedClosure<() -> Void>(newValue)
     let newValueFuncRef = newValue.bridgeJSLowerParameter()
+    let selfValue = self.bridgeJSLowerParameter()
     withExtendedLifetime((newValue)) {
         bjs_JSAnimation_onfinish_set(selfValue, newValueFuncRef)
     }
@@ -1186,19 +1202,19 @@ fileprivate func bjs_JSAnimationEffect_setKeyframes_extern(_ self: Int32, _ keyf
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSAnimationEffect_updateTiming")
-fileprivate func bjs_JSAnimationEffect_updateTiming_extern(_ self: Int32, _ timing: Int32) -> Void
+fileprivate func bjs_JSAnimationEffect_updateTiming_extern(_ self: Int32) -> Void
 #else
-fileprivate func bjs_JSAnimationEffect_updateTiming_extern(_ self: Int32, _ timing: Int32) -> Void {
+fileprivate func bjs_JSAnimationEffect_updateTiming_extern(_ self: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSAnimationEffect_updateTiming(_ self: Int32, _ timing: Int32) -> Void {
-    return bjs_JSAnimationEffect_updateTiming_extern(self, timing)
+@inline(never) fileprivate func bjs_JSAnimationEffect_updateTiming(_ self: Int32) -> Void {
+    return bjs_JSAnimationEffect_updateTiming_extern(self)
 }
 
 func _$JSAnimationEffect_setKeyframes(_ self: JSObject, _ keyframes: JSObject) throws(JSException) -> Void {
-    let selfValue = self.bridgeJSLowerParameter()
     let keyframesValue = keyframes.bridgeJSLowerParameter()
+    let selfValue = self.bridgeJSLowerParameter()
     bjs_JSAnimationEffect_setKeyframes(selfValue, keyframesValue)
     if let error = _swift_js_take_exception() {
         throw error
@@ -1206,9 +1222,9 @@ func _$JSAnimationEffect_setKeyframes(_ self: JSObject, _ keyframes: JSObject) t
 }
 
 func _$JSAnimationEffect_updateTiming(_ self: JSObject, _ timing: JSAnimationTiming) throws(JSException) -> Void {
+    let _ = timing.bridgeJSLowerParameter()
     let selfValue = self.bridgeJSLowerParameter()
-    let timingObjectId = timing.bridgeJSLowerParameter()
-    bjs_JSAnimationEffect_updateTiming(selfValue, timingObjectId)
+    bjs_JSAnimationEffect_updateTiming(selfValue)
     if let error = _swift_js_take_exception() {
         throw error
     }
@@ -1796,8 +1812,8 @@ fileprivate func bjs_setTimeout_extern(_ callback: Int32, _ timeout: Float64) ->
 
 func _$setTimeout(_ callback: @escaping () -> Void, _ timeout: Double) throws(JSException) -> Void {
     let callback = JSTypedClosure<() -> Void>(callback)
-    let callbackFuncRef = callback.bridgeJSLowerParameter()
     let timeoutValue = timeout.bridgeJSLowerParameter()
+    let callbackFuncRef = callback.bridgeJSLowerParameter()
     withExtendedLifetime((callback)) {
         bjs_setTimeout(callbackFuncRef, timeoutValue)
     }
@@ -1885,8 +1901,8 @@ func _$JSMath_sin(_ value: Double) throws(JSException) -> Double {
 }
 
 func _$JSMath_pow(_ base: Double, _ exponent: Double) throws(JSException) -> Double {
-    let baseValue = base.bridgeJSLowerParameter()
     let exponentValue = exponent.bridgeJSLowerParameter()
+    let baseValue = base.bridgeJSLowerParameter()
     let ret = bjs_JSMath_pow_static(baseValue, exponentValue)
     if let error = _swift_js_take_exception() {
         throw error
@@ -1911,3 +1927,21 @@ func _$JSMath_log(_ value: Double) throws(JSException) -> Double {
     }
     return Double.bridgeJSLiftReturn(ret)
 }
+
+#if arch(wasm32)
+@_extern(wasm, module: "bjs", name: "bjs_BrowserInterop_register_type_handles")
+fileprivate func _bjs_BrowserInterop_register_type_handles_extern(_ base: UnsafePointer<Int32>?, _ count: Int32)
+
+@_expose(wasm, "bjs_BrowserInterop_register_type_handles")
+public func _bjs_BrowserInterop_register_type_handles() {
+    let typeIds: [Int32] = [
+        JSKeyframeEffectOptions.bridgeJSTypeID,
+        JSAnimationTiming.bridgeJSTypeID,
+        JSCompositeOperation.bridgeJSTypeID,
+        JSFillMode.bridgeJSTypeID,
+    ]
+    typeIds.withUnsafeBufferPointer { buffer in
+        _bjs_BrowserInterop_register_type_handles_extern(buffer.baseAddress, Int32(buffer.count))
+    }
+}
+#endif

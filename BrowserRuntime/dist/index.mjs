@@ -806,7 +806,7 @@ async function createInstantiator(options, swift) {
 		swiftClosureRegistry.register(real, state, state);
 		return swift.memory.retain(real);
 	};
-	const __bjs_createJSKeyframeEffectOptionsHelpers = () => ({
+	const __bjs_createStructHelpers_M14BrowserInteropT23JSKeyframeEffectOptions = () => ({
 		lower: (value) => {
 			i32Stack.push(value.duration | 0);
 			const bytes = textEncoder.encode(value.fill);
@@ -828,7 +828,7 @@ async function createInstantiator(options, swift) {
 			};
 		}
 	});
-	const __bjs_createJSAnimationTimingHelpers = () => ({
+	const __bjs_createStructHelpers_M14BrowserInteropT17JSAnimationTiming = () => ({
 		lower: (value) => {
 			i32Stack.push(value.duration | 0);
 		},
@@ -915,19 +915,21 @@ async function createInstantiator(options, swift) {
 				taStack.push(Array.from(new Ctor(copy)));
 			};
 			bjs["swift_js_struct_lower_JSKeyframeEffectOptions"] = function(objectId) {
-				structHelpers.JSKeyframeEffectOptions.lower(swift.memory.getObject(objectId));
+				structHelpers.M14BrowserInteropT23JSKeyframeEffectOptions.lower(swift.memory.getObject(objectId));
 			};
 			bjs["swift_js_struct_lift_JSKeyframeEffectOptions"] = function() {
-				const value = structHelpers.JSKeyframeEffectOptions.lift();
+				const value = structHelpers.M14BrowserInteropT23JSKeyframeEffectOptions.lift();
 				return swift.memory.retain(value);
 			};
 			bjs["swift_js_struct_lower_JSAnimationTiming"] = function(objectId) {
-				structHelpers.JSAnimationTiming.lower(swift.memory.getObject(objectId));
+				structHelpers.M14BrowserInteropT17JSAnimationTiming.lower(swift.memory.getObject(objectId));
 			};
 			bjs["swift_js_struct_lift_JSAnimationTiming"] = function() {
-				const value = structHelpers.JSAnimationTiming.lift();
+				const value = structHelpers.M14BrowserInteropT17JSAnimationTiming.lift();
 				return swift.memory.retain(value);
 			};
+			bjs["bjs_core_register_type_handles"] = function() {};
+			bjs["bjs_BrowserInterop_register_type_handles"] = function() {};
 			const __bjs_promiseSettlers = Symbol("JavaScriptKit.promiseSettlers");
 			bjs["swift_js_make_promise"] = function() {
 				let resolve, reject;
@@ -1278,11 +1280,10 @@ async function createInstantiator(options, swift) {
 					setException(error);
 				}
 			};
-			BrowserInterop["bjs_JSElement_animate"] = function bjs_JSElement_animate(self, keyframes, options) {
+			BrowserInterop["bjs_JSElement_animate"] = function bjs_JSElement_animate(self, keyframes) {
 				try {
-					const value = swift.memory.getObject(options);
-					swift.memory.release(options);
-					let ret = swift.memory.getObject(self).animate(swift.memory.getObject(keyframes), value);
+					const structValue = structHelpers.M14BrowserInteropT23JSKeyframeEffectOptions.lift();
+					let ret = swift.memory.getObject(self).animate(swift.memory.getObject(keyframes), structValue);
 					return swift.memory.retain(ret);
 				} catch (error) {
 					setException(error);
@@ -1406,11 +1407,10 @@ async function createInstantiator(options, swift) {
 					setException(error);
 				}
 			};
-			BrowserInterop["bjs_JSAnimationEffect_updateTiming"] = function bjs_JSAnimationEffect_updateTiming(self, timing) {
+			BrowserInterop["bjs_JSAnimationEffect_updateTiming"] = function bjs_JSAnimationEffect_updateTiming(self) {
 				try {
-					const value = swift.memory.getObject(timing);
-					swift.memory.release(timing);
-					swift.memory.getObject(self).updateTiming(value);
+					const structValue = structHelpers.M14BrowserInteropT17JSAnimationTiming.lift();
+					swift.memory.getObject(self).updateTiming(structValue);
 				} catch (error) {
 					setException(error);
 				}
@@ -1697,8 +1697,8 @@ async function createInstantiator(options, swift) {
 		},
 		createExports: (instance) => {
 			swift.memory.heap;
-			structHelpers.JSKeyframeEffectOptions = __bjs_createJSKeyframeEffectOptionsHelpers();
-			structHelpers.JSAnimationTiming = __bjs_createJSAnimationTimingHelpers();
+			structHelpers.M14BrowserInteropT23JSKeyframeEffectOptions = __bjs_createStructHelpers_M14BrowserInteropT23JSKeyframeEffectOptions();
+			structHelpers.M14BrowserInteropT17JSAnimationTiming = __bjs_createStructHelpers_M14BrowserInteropT17JSAnimationTiming();
 			return {
 				JSCompositeOperation: JSCompositeOperationValues,
 				JSFillMode: JSFillModeValues
