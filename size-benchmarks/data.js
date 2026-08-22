@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787403459200,
+  "lastUpdate": 1787425751155,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -9649,6 +9649,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 173.34,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "04fdc29437b99e26da8c6b8b1a12e9d2b0b37045",
+          "message": "upgrade to JavaScritKit 0.58 (#122)",
+          "timestamp": "2026-08-22T20:59:35+02:00",
+          "tree_id": "c5bdc1aea404ae439783d83eff6796d90d18c2dc",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/04fdc29437b99e26da8c6b8b1a12e9d2b0b37045"
+        },
+        "date": 1787425750122,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 172.99,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 99.06,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 83.5,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 143.87,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 173.71,
             "unit": "kB"
           }
         ]
