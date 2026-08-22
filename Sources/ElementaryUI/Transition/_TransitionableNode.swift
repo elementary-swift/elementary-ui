@@ -4,13 +4,10 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
     ~Copyable,
     _Reconcilable
 {
-    private enum Storage: ~Copyable {
-        case direct(Node)
-        case transitioned(_TransitionElement)
-        case _movedOut
-    }
-
-    private var storage: Storage
+    // FIXME: this should be an enum, but 6.3 has serious embedded miscompiles with enums and ownership
+    // revisit in 6.4
+    private var node: Node?
+    private var transitionedElement: _TransitionElement?
 
     init(
         context: borrowing _ViewContext,
@@ -21,8 +18,13 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
                 inout _MountContext
             ) -> Node
     ) {
+        defer {
+            precondition(node != nil || transitionedElement != nil)
+            precondition(node == nil || transitionedElement == nil)
+        }
+
         guard let transition = context.transition else {
-            storage = .direct(makeNode(context, &ctx))
+            self.node = makeNode(context, &ctx)
             return
         }
 
@@ -33,11 +35,11 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
 
         // Without a structural owner there is nothing that can defer removal.
         guard ctx.slotTransitions != nil else {
-            storage = .direct(makeNode(nodeContext, &ctx))
+            self.node = makeNode(nodeContext, &ctx)
             return
         }
 
-        let element = _TransitionElement.make(
+        self.transitionedElement = _TransitionElement.make(
             transition: transition.value,
             context: nodeContext,
             ctx: &ctx,
@@ -45,46 +47,25 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
                 AnyReconcilable(makeNode(context, &ctx))
             }
         )
-
-        storage = .transitioned(element)
     }
 
     mutating func update(
         _ tx: inout _TransactionContext,
         body: (inout Node, inout _TransactionContext) -> Void
     ) {
-        var storage = Storage._movedOut
-        swap(&storage, &self.storage)
-
-        switch consume storage {
-        case .direct(var node):
-            body(&node, &tx)
-            self.storage = .direct(node)
-        case .transitioned(let transitionedElement):
-            transitionedElement.forEachPlaceholder { placeholder in
+        if node != nil { body(&node!, &tx) }
+        if transitionedElement != nil {
+            transitionedElement!.forEachPlaceholder { placeholder in
                 placeholder.modify(as: Node.self) { node in
                     body(&node, &tx)
                 }
             }
-            self.storage = .transitioned(transitionedElement)
-        case ._movedOut:
-            preconditionFailure(
-                "_TransitionableNode storage was already moved out"
-            )
         }
     }
 
     public consuming func unmount(_ context: inout _CommitContext) {
-        switch consume storage {
-        case .direct(let node):
-            node.unmount(&context)
-        case .transitioned(let transitionedElement):
-            transitionedElement.unmount(&context)
-        case ._movedOut:
-            preconditionFailure(
-                "_TransitionableNode storage was already moved out"
-            )
-        }
+        node.take()?.unmount(&context)
+        transitionedElement.take()?.unmount(&context)
     }
 }
 

@@ -1,8 +1,3 @@
-enum _ElementAttributes {
-    case inline(node: DOM.Node, lastApplied: _AttributeStorage)
-    case modifier(_AttributeModifier)
-}
-
 public struct _ElementNode<Child: _Reconcilable & ~Copyable>:
     ~Copyable,
     _Reconcilable
@@ -32,10 +27,10 @@ public struct _ElementNode<Child: _Reconcilable & ~Copyable>:
         ctx.appendStaticElement(domNode)
 
         guard !viewContext.hasNoUpstreamModifiers else {
-            addHTMLAttributes(attributes, to: domNode, using: ctx.dom)
-            self.attributes = .inline(
-                node: domNode,
-                lastApplied: attributes
+            self.attributes = .mountInline(
+                attributes,
+                on: domNode,
+                using: ctx.dom
             )
             self.child = ctx.withChildContext {
                 (mctx: consuming _MountContext) in
@@ -47,19 +42,18 @@ public struct _ElementNode<Child: _Reconcilable & ~Copyable>:
         }
 
         var childContext = copy viewContext
-
         if childContext.modifiers[_AttributeModifier.key] != nil {
             let modifier = _AttributeModifier(
                 value: attributes,
                 upstream: childContext.modifiers
             )
-            self.attributes = .modifier(modifier)
+            self.attributes = .mountModifier(modifier)
             childContext.modifiers[_AttributeModifier.key] = modifier
         } else {
-            addHTMLAttributes(attributes, to: domNode, using: ctx.dom)
-            self.attributes = .inline(
-                node: domNode,
-                lastApplied: attributes
+            self.attributes = .mountInline(
+                attributes,
+                on: domNode,
+                using: ctx.dom
             )
         }
 
@@ -87,24 +81,7 @@ public struct _ElementNode<Child: _Reconcilable & ~Copyable>:
         _ context: inout _TransactionContext,
         block: (inout Child, inout _TransactionContext) -> Void
     ) {
-        switch self.attributes {
-        case .modifier(let modifier):
-            modifier.updateValue(attributes, &context)
-        case .inline(let node, let lastApplied):
-            if attributes != lastApplied {
-                context.scheduler.addCommitAction(
-                    .patchAttributes(
-                        node: node,
-                        from: lastApplied,
-                        to: attributes
-                    )
-                )
-                self.attributes = .inline(
-                    node: node,
-                    lastApplied: attributes
-                )
-            }
-        }
+        self.attributes.patch(attributes, context: &context)
         block(&child, &context)
     }
 
@@ -121,5 +98,59 @@ public struct _ElementNode<Child: _Reconcilable & ~Copyable>:
 private extension _ViewContext {
     var hasNoUpstreamModifiers: Bool {
         modifiers.isEmpty && layoutObservers.isEmpty
+    }
+}
+
+struct _ElementAttributes {
+    private enum Storage {
+        case inline(node: DOM.Node, lastApplied: _AttributeStorage)
+        case modifier(_AttributeModifier)
+    }
+
+    private var storage: Storage
+
+    private init(storage: consuming Storage) {
+        self.storage = storage
+    }
+
+    static func mountInline(
+        _ attributes: _AttributeStorage,
+        on node: DOM.Node,
+        using dom: DOMInteractor
+    ) -> Self {
+        addHTMLAttributes(attributes, to: node, using: dom)
+        return Self(
+            storage: .inline(node: node, lastApplied: attributes)
+        )
+    }
+
+    static func mountModifier(
+        _ modifier: consuming _AttributeModifier
+    ) -> Self {
+        Self(storage: .modifier(modifier))
+    }
+
+    @inline(never)
+    mutating func patch(
+        _ attributes: _AttributeStorage,
+        context: inout _TransactionContext
+    ) {
+        switch storage {
+        case .modifier(let modifier):
+            modifier.updateValue(attributes, &context)
+        case .inline(let node, let lastApplied):
+            guard attributes != lastApplied else { return }
+            context.scheduler.addCommitAction(
+                .patchAttributes(
+                    node: node,
+                    from: lastApplied,
+                    to: attributes
+                )
+            )
+            storage = .inline(
+                node: node,
+                lastApplied: attributes
+            )
+        }
     }
 }
