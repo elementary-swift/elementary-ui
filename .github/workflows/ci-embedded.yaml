@@ -57,7 +57,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ${{ matrix.examples }}
-        run: pnpm install
+        run: swift package resolve && pnpm install
 
       - name: Build
         working-directory: ${{ matrix.examples }}
