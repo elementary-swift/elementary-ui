@@ -6,7 +6,8 @@ let package = Package(
     platforms: [.macOS(.v15)],
     dependencies: [
         .package(name: "elementary-ui", path: "../../"),
-        .package(url: "https://github.com/elementary-swift/elementary-flow", from: "0.1.0-alpha"),
+        .package(url: "https://github.com/elementary-swift/elementary-flow", from: "0.1.0"),
+        .package(url: "https://github.com/swiftwasm/JavaScriptKit", from: "0.58.0"),
     ],
     targets: [
         .executableTarget(

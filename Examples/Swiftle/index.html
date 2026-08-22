@@ -1,12 +1,17 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Swiftle</title>
-    <link rel="stylesheet" href="index.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-  </head>
 
-  <body>
-    <script type="module" src="index.ts"></script>
-  </body>
+<head>
+  <title>Swiftle</title>
+  <link rel="stylesheet" href="index.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+  <script type="module">
+    import { init } from "virtual:swift-wasm?js";
+    init()
+  </script>
+</body>
+
 </html>

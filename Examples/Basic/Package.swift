@@ -7,7 +7,8 @@ let package = Package(
     name: "BasicExample",
     platforms: [.macOS(.v15)],
     dependencies: [
-        .package(name: "elementary-ui", path: "../../", traits: traceLogs ? ["TraceLogs"] : [])
+        .package(name: "elementary-ui", path: "../../", traits: traceLogs ? ["TraceLogs"] : []),
+        .package(url: "https://github.com/swiftwasm/JavaScriptKit", from: "0.58.0"),
     ],
     targets: [
         .executableTarget(

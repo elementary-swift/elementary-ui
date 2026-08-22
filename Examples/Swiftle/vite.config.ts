@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 export default defineConfig({
   resolve: {
     alias: {
-      "ElementaryFlow": resolve(__dirname, ".build/checkouts/elementary-flow/css/elementary-flow.css"),
+      "ElementaryFlow": resolve(import.meta.dirname, ".build/checkouts/elementary-flow/css/elementary-flow.css"),
     },
   },
   plugins: [
