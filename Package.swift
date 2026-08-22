@@ -2,6 +2,12 @@
 import CompilerPluginSupport
 import PackageDescription
 
+#if compiler(>=6.4)
+let enableSuppressedAssociatedTypes: SwiftSetting = .enableExperimentalFeature("SuppressedAssociatedTypesWithDefaults")
+#else
+let enableSuppressedAssociatedTypes: SwiftSetting = .enableExperimentalFeature("SuppressedAssociatedTypes")
+#endif
+
 let package = Package(
     name: "elementary-ui",
     platforms: [.macOS(.v15)],
@@ -38,7 +44,7 @@ let package = Package(
                 .enableUpcomingFeature("ConciseMagicFile"),
                 .enableUpcomingFeature("ImplicitOpenExistentials"),
                 .enableExperimentalFeature("Lifetimes"),
-                .enableExperimentalFeature("SuppressedAssociatedTypes"),
+                enableSuppressedAssociatedTypes,
             ]
         ),
         .target(
