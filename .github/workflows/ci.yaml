@@ -25,7 +25,7 @@ jobs:
       image: ${{ matrix.image }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Build
         run: swift build --build-tests
@@ -38,7 +38,7 @@ jobs:
     timeout-minutes: 5
     container: "swift:6.3.3"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: swift format lint -rps .
 
   build-embedded:
@@ -51,7 +51,7 @@ jobs:
       SDK-CHECKSUM: cabfa08b73bb8ac783927ecd15fa386e99d0c139c5f232445067bcf58379cae7
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Swift WASM SDK
         run: swift sdk install ${{ env.SDK_URL }} --checksum ${{ env.SDK-CHECKSUM }}
@@ -64,10 +64,10 @@ jobs:
     container: "swift:6.3.3"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "20"
 
