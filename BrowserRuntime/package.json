@@ -1,6 +1,7 @@
 {
   "name": "elementary-ui-browser-runtime",
-  "description": "Bundled browser runtime for ElementaryUI",
+  "description": "[Deprecated] Bundled browser runtime for ElementaryUI",
+  "deprecated": "Use the vite-plugin-swift-wasm 0.2 ?js mode instead: https://github.com/elementary-swift/vite-plugin-swift-wasm/releases/tag/v0.2.0",
   "type": "module",
   "exports": {
     ".": {
