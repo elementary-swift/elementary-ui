@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788257550986,
+  "lastUpdate": 1788262682075,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -3533,6 +3533,85 @@ window.BENCHMARK_DATA = {
           {
             "name": "09_clear1k_x8",
             "value": 74.46,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.08,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.11,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.39,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a4a03833f557a4113350a6a297d0c423b0c236ce",
+          "message": "cut back on AI slop a bit (#127)\n\n* comments\n\n* cut back on AI slop test surface",
+          "timestamp": "2026-09-01T13:31:44+02:00",
+          "tree_id": "89b5213b8527d8ff685e63669363476c64d74c45",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/a4a03833f557a4113350a6a297d0c423b0c236ce"
+        },
+        "date": 1788262680600,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 129.08,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 151.71,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 267.33,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 35.38,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 96.71,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 62.94,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 148.97,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 75.51,
             "unit": "ms"
           },
           {
