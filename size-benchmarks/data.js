@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788260479121,
+  "lastUpdate": 1788262614539,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -10364,6 +10364,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 176,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a4a03833f557a4113350a6a297d0c423b0c236ce",
+          "message": "cut back on AI slop a bit (#127)\n\n* comments\n\n* cut back on AI slop test surface",
+          "timestamp": "2026-09-01T13:31:44+02:00",
+          "tree_id": "89b5213b8527d8ff685e63669363476c64d74c45",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/a4a03833f557a4113350a6a297d0c423b0c236ce"
+        },
+        "date": 1788262613477,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 175.32,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 100.35,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 84.46,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 145.8,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 176.02,
             "unit": "kB"
           }
         ]
