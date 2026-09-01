@@ -1,11 +1,8 @@
-// Mirrored per namespace like key(_:) in KeyedView.swift. One extension on
-// MarkupContent & _Mountable would serve both, but only by making the wrapper and
-// its modifier protocol public.
-//
-// onInput is deliberately absent - input events do not fire on SVG elements.
+// NOTE: SVGView defines its own extensions to avoid complicated return types with conditional conformances.
+// This way, both documentation and function signatures are much simpler with the minor maintenance cost of duplicating the modifiers.
 
 public extension SVGView {
-    // TODO: embedded - must be public, see the matching note on View.
+    // FIXME EMBEDDED: must be public in 6.3 (crashes compiler) - recheck in 6.4
     consuming func _onEvent<Config: _DOMEventHandlerConfig>(
         _ type: Config.Type,
         handler: @escaping (Config.Event) -> Void
@@ -13,6 +10,7 @@ public extension SVGView {
         DOMEffectView<EventHandlerModifier<Config>, Self>(value: handler, wrapped: self)
     }
 
+    // FIXME EMBEDDED: must be public in 6.3 (crashes compiler) - recheck in 6.4
     consuming func _onEvent<Config: _DOMEventConfig>(
         _ type: Config.Type,
         handler: @escaping () -> Void

@@ -1,4 +1,5 @@
-// See SVGView+DOMEvents.swift for why each namespace declares its own.
+// NOTE: SVGView defines its own extensions to avoid complicated return types with conditional conformances.
+// This way, both documentation and function signatures are much simpler with the minor maintenance cost of duplicating the modifiers.
 
 extension SVGView {
     /// Sets the opacity of the content.
