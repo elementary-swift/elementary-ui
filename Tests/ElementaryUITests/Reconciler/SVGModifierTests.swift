@@ -50,6 +50,27 @@ struct SVGModifierTests {
 
         #expect(ops == [.setStyle(node: "<rect>", name: "opacity", value: "1.0")])
     }
+
+    @Test
+    func setsFillBoxTransformOriginForRotationAndScaling() {
+        let dom = TestDOM()
+        dom.mount {
+            SVG.svg {
+                SVG.rect().rotationEffect(.degrees(45))
+                SVG.ellipse().scaleEffect(2)
+                SVG.polygon().scaleEffect(x: 2, y: 1)
+                SVG.path().rotationEffect(.degrees(45)).scaleEffect(2)
+                SVG.circle().offset(x: 1, y: 2)
+            }
+        }
+        dom.runNextFrame()
+
+        for node in ["<rect>", "<ellipse>", "<polygon>", "<path>"] {
+            #expect(dom.ops.filter { $0 == .setStyle(node: node, name: "transform-box", value: "fill-box") }.count == 1)
+            #expect(dom.ops.filter { $0 == .setStyle(node: node, name: "transform-origin", value: "50% 50%") }.count == 1)
+        }
+        #expect(!dom.ops.contains { if case .setStyle(node: "<circle>", name: "transform-box", _) = $0 { true } else { false } })
+    }
 }
 
 @Reactive
