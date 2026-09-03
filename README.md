@@ -9,6 +9,8 @@
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Felementary-swift%2Felementary-ui%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/elementary-swift/elementary-ui)
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Felementary-swift%2Felementary-ui%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/elementary-swift/elementary-ui)
 
+ElementaryUI brings the declarative approach of [Elementary](https://github.com/elementary-swift/elementary), the server-side HTML rendering library, to reactive Swift applications running directly in the browser.
+
 ## Features
 
 - 🌐 **Swift in the Browser** - Run declarative Swift applications natively in the browser with WebAssembly
