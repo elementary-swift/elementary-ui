@@ -1,0 +1,381 @@
+{
+  "exported" : {
+    "aliases" : [
+
+    ],
+    "classes" : [
+      {
+        "isFinal" : true,
+        "methods" : [
+          {
+            "abiName" : "bjs_CustomElementImplementation_construct",
+            "effects" : {
+              "isAsync" : false,
+              "isStatic" : false,
+              "isThrows" : true
+            },
+            "name" : "construct",
+            "parameters" : [
+              {
+                "label" : "element",
+                "name" : "element",
+                "type" : {
+                  "jsObject" : {
+                    "_0" : "JSHTMLElement"
+                  }
+                }
+              }
+            ],
+            "returnType" : {
+              "void" : {
+
+              }
+            }
+          },
+          {
+            "abiName" : "bjs_CustomElementImplementation_connect",
+            "effects" : {
+              "isAsync" : false,
+              "isStatic" : false,
+              "isThrows" : true
+            },
+            "name" : "connect",
+            "parameters" : [
+              {
+                "label" : "element",
+                "name" : "element",
+                "type" : {
+                  "jsObject" : {
+                    "_0" : "JSHTMLElement"
+                  }
+                }
+              }
+            ],
+            "returnType" : {
+              "void" : {
+
+              }
+            }
+          },
+          {
+            "abiName" : "bjs_CustomElementImplementation_destruct",
+            "effects" : {
+              "isAsync" : false,
+              "isStatic" : false,
+              "isThrows" : false
+            },
+            "name" : "destruct",
+            "parameters" : [
+              {
+                "label" : "element",
+                "name" : "element",
+                "type" : {
+                  "jsObject" : {
+                    "_0" : "JSHTMLElement"
+                  }
+                }
+              }
+            ],
+            "returnType" : {
+              "void" : {
+
+              }
+            }
+          },
+          {
+            "abiName" : "bjs_CustomElementImplementation_setAttribute",
+            "effects" : {
+              "isAsync" : false,
+              "isStatic" : false,
+              "isThrows" : false
+            },
+            "name" : "setAttribute",
+            "parameters" : [
+              {
+                "label" : "element",
+                "name" : "element",
+                "type" : {
+                  "jsObject" : {
+                    "_0" : "JSHTMLElement"
+                  }
+                }
+              },
+              {
+                "label" : "name",
+                "name" : "name",
+                "type" : {
+                  "string" : {
+
+                  }
+                }
+              },
+              {
+                "label" : "value",
+                "name" : "value",
+                "type" : {
+                  "nullable" : {
+                    "_0" : {
+                      "string" : {
+
+                      }
+                    },
+                    "_1" : "null"
+                  }
+                }
+              }
+            ],
+            "returnType" : {
+              "void" : {
+
+              }
+            }
+          }
+        ],
+        "name" : "CustomElementImplementation",
+        "properties" : [
+
+        ],
+        "swiftCallName" : "CustomElementImplementation"
+      }
+    ],
+    "enums" : [
+
+    ],
+    "exposeToGlobal" : false,
+    "functions" : [
+
+    ],
+    "protocols" : [
+
+    ],
+    "structs" : [
+      {
+        "methods" : [
+
+        ],
+        "name" : "JSShadowRootInit",
+        "properties" : [
+          {
+            "isReadonly" : true,
+            "isStatic" : false,
+            "name" : "mode",
+            "type" : {
+              "string" : {
+
+              }
+            }
+          }
+        ],
+        "swiftCallName" : "JSShadowRootInit"
+      }
+    ]
+  },
+  "imported" : {
+    "children" : [
+      {
+        "functions" : [
+          {
+            "accessLevel" : "internal",
+            "effects" : {
+              "isAsync" : false,
+              "isStatic" : false,
+              "isThrows" : true
+            },
+            "from" : {
+              "kind" : "snippet",
+              "path" : "\/JavaScript\/custom-elements.js"
+            },
+            "name" : "defineCustomElement",
+            "parameters" : [
+              {
+                "name" : "name",
+                "type" : {
+                  "string" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "shadowDOM",
+                "type" : {
+                  "string" : {
+
+                  }
+                }
+              },
+              {
+                "name" : "observedAttributes",
+                "type" : {
+                  "array" : {
+                    "_0" : {
+                      "string" : {
+
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "name" : "implementation",
+                "type" : {
+                  "swiftHeapObject" : {
+                    "_0" : "CustomElementImplementation"
+                  }
+                }
+              }
+            ],
+            "returnType" : {
+              "void" : {
+
+              }
+            }
+          }
+        ],
+        "types" : [
+
+        ]
+      },
+      {
+        "functions" : [
+
+        ],
+        "types" : [
+          {
+            "accessLevel" : "internal",
+            "getters" : [
+              {
+                "accessLevel" : "internal",
+                "name" : "shadowRoot",
+                "type" : {
+                  "nullable" : {
+                    "_0" : {
+                      "jsObject" : {
+                        "_0" : "JSShadowRoot"
+                      }
+                    },
+                    "_1" : "null"
+                  }
+                }
+              }
+            ],
+            "jsName" : "HTMLElement",
+            "methods" : [
+              {
+                "accessLevel" : "internal",
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
+                "name" : "attachShadow",
+                "parameters" : [
+                  {
+                    "name" : "options",
+                    "type" : {
+                      "swiftStruct" : {
+                        "_0" : "JSShadowRootInit"
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "jsObject" : {
+                    "_0" : "JSShadowRoot"
+                  }
+                }
+              }
+            ],
+            "name" : "JSHTMLElement",
+            "setters" : [
+
+            ],
+            "staticMethods" : [
+
+            ]
+          },
+          {
+            "accessLevel" : "internal",
+            "getters" : [
+
+            ],
+            "jsName" : "ShadowRoot",
+            "methods" : [
+
+            ],
+            "name" : "JSShadowRoot",
+            "setters" : [
+              {
+                "accessLevel" : "internal",
+                "functionName" : "adoptedStyleSheets_set",
+                "name" : "adoptedStyleSheets",
+                "type" : {
+                  "array" : {
+                    "_0" : {
+                      "jsObject" : {
+                        "_0" : "JSCSSStyleSheet"
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "staticMethods" : [
+
+            ]
+          },
+          {
+            "accessLevel" : "internal",
+            "constructor" : {
+              "accessLevel" : "internal",
+              "parameters" : [
+
+              ]
+            },
+            "from" : "global",
+            "getters" : [
+
+            ],
+            "jsName" : "CSSStyleSheet",
+            "methods" : [
+              {
+                "accessLevel" : "internal",
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
+                "name" : "replaceSync",
+                "parameters" : [
+                  {
+                    "name" : "css",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "void" : {
+
+                  }
+                }
+              }
+            ],
+            "name" : "JSCSSStyleSheet",
+            "setters" : [
+
+            ],
+            "staticMethods" : [
+
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "moduleName" : "ElementaryWebComponents",
+  "usedExternalModules" : [
+
+  ]
+}

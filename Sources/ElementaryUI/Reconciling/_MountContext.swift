@@ -114,7 +114,11 @@ public struct _MountContext: ~Copyable, ~Escapable {
         return body(&commitContext)
     }
 
-    consuming func mountInDOMNode(_ domNode: DOM.Node, observers: [DOMLayoutObserver] = []) -> LayoutContainer? {
+    consuming func mountInDOMNode(
+        _ domNode: DOM.Node,
+        observers: [DOMLayoutObserver] = [],
+        ownsAllChildren: Bool = true
+    ) -> LayoutContainer? {
         if isStatic {
             let dom = dom
             nodeStack.consume { span in
@@ -132,7 +136,8 @@ public struct _MountContext: ~Copyable, ~Escapable {
             domNode: domNode,
             scheduler: scheduler,
             layoutNodes: takeMaterializedLayoutNodes(),
-            layoutObservers: observers
+            layoutObservers: observers,
+            ownsAllChildren: ownsAllChildren
         )
 
         var commit = _CommitContext(

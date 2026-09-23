@@ -29,7 +29,7 @@ final class ApplicationRuntime {
                         }
                     )
 
-                    _ = mountCtx.mountInDOMNode(domRoot)
+                    _ = mountCtx.mountInDOMNode(domRoot, ownsAllChildren: false)
                     return node
                 }
             }
@@ -37,9 +37,10 @@ final class ApplicationRuntime {
     }
 
     func unmount() {
-        guard var rootNode = self.rootNode.take() else { return }
+        guard rootNode != nil else { return }
 
-        scheduler.scheduleUpdate { tx in
+        scheduler.scheduleUpdate { [self] tx in
+            guard var rootNode = rootNode.take() else { return }
             tx.withModifiedTransaction {
                 $0.disablesAnimation = true
             } run: { tx in
@@ -49,5 +50,6 @@ final class ApplicationRuntime {
                 tx.scheduler.addCommitAction { ctx in rootNode.container.unmount(&ctx) }
             }
         }
+        scheduler.forceRunUpdateCycleSynchronously()
     }
 }

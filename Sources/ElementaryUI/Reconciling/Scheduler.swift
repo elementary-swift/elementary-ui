@@ -46,6 +46,7 @@ final class Scheduler {
     // True while an update cycle is either scheduled or currently running.
     // If this is true, callers can just enqueue work; the active cycle will pick it up.
     private var isUpdateCycleActive = false
+    private var isRunningUpdateCycle = false
     private var isAnimationFramePending = false
     private var currentTransaction: Transaction?
 
@@ -97,6 +98,13 @@ final class Scheduler {
     func scheduleUpdate(_ callback: @escaping (inout _TransactionContext) -> Void) {
         ensureUpdateCycleScheduled()
         pendingUpdates.append(callback)
+    }
+
+    /// Immediately drains pending work instead of waiting for the scheduled microtask.
+    /// This deliberately breaks normal scheduler timing and is reserved for teardown.
+    func forceRunUpdateCycleSynchronously() {
+        guard isUpdateCycleActive && !isRunningUpdateCycle else { return }
+        runUpdateCycle()
     }
 
     func addCommitAction(_ action: CommitAction) {
@@ -190,6 +198,10 @@ final class Scheduler {
     // MARK: - Update Cycle
 
     private func runUpdateCycle() {
+        guard !isRunningUpdateCycle else { return }
+        isRunningUpdateCycle = true
+        defer { isRunningUpdateCycle = false }
+
         let startTime = dom.getCurrentTime()
         drainAllWork(frameTime: startTime)
 

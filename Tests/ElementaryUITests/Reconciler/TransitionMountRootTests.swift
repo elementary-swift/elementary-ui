@@ -548,7 +548,10 @@ struct TransitionMountRootTests {
         dom.finishAnimations()
         dom.flushMicrotasks()
 
-        #expect(dom.ops.contains(.setChildren(parent: "<>", children: [])))
+        let removedCount = dom.ops.filter {
+            $0 == .removeChild(parent: "<>", child: "<p>")
+        }.count
+        #expect(removedCount == 2)
     }
 
     @Test

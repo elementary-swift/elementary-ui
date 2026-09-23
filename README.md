@@ -19,6 +19,7 @@ ElementaryUI brings the declarative approach of [Elementary](https://github.com/
 - 📦 **Tiny Binaries** - Full Embedded Swift support means kB-sized wasm bundles instead of MB
 - ✨ **Magical Animations** - Powerful CSS-based animation system including automatic FLIP transitions
 - 🚀 **Vite-Powered Development** - Fast dev server with hot reload for rapid iteration
+- 🧩 **Web Components** - Publish ElementaryUI views as typed custom elements with the optional `ElementaryWebComponents` library
 
 <br>
 
