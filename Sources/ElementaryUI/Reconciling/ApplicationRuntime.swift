@@ -37,8 +37,6 @@ final class ApplicationRuntime {
     }
 
     func unmount() {
-        guard rootNode != nil else { return }
-
         scheduler.scheduleUpdate { [self] tx in
             guard var rootNode = rootNode.take() else { return }
             tx.withModifiedTransaction {

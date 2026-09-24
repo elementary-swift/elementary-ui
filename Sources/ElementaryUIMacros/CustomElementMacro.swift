@@ -47,16 +47,9 @@ extension CustomElementMacro: MemberMacro {
         )
         let access = declaration.customElementAccessModifier
         let names = attributes.map { "\"\($0.attributeName)\"" }.joined(separator: ", ")
-        let cases = attributes.map { attribute in
-            """
-                case "\(attribute.attributeName)":
-                    guard let value else {
-                        self._\(attribute.identifier).wrappedValue = \(attribute.defaultValue)
-                        return true
-                    }
-                    return self._\(attribute.identifier)._setAttributeValue(value)
-            """
-        }.joined(separator: "\n")
+        let slots = attributes.map { attribute in
+            "view._\(attribute.identifier).slot(named: \"\(attribute.attributeName)\", declarationDefault: \(attribute.defaultValue))"
+        }.joined(separator: ",\n")
 
         return [
             DeclSyntax(
@@ -68,11 +61,10 @@ extension CustomElementMacro: MemberMacro {
             ),
             DeclSyntax(
                 """
-                \(access)func setAttribute(name: String, value: String?) -> Bool {
-                    switch name {
-                \(raw: cases)
-                    default: return false
-                    }
+                \(access)static func __attributes(from view: borrowing Self) -> ElementaryWebComponents._CustomElementAttributeStorage {
+                    ElementaryWebComponents._CustomElementAttributeStorage([
+                        \(raw: slots)
+                    ])
                 }
                 """
             ),

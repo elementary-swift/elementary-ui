@@ -26,15 +26,12 @@ struct StepperElement {
     }
 }
 
-try CustomElements.define("example-stepper") {
-    StepperElement()
-}
+try CustomElements.define("example-stepper", StepperElement.self)
 ```
 
 The element name is selected at registration time, so the same Swift type can be registered
-under more than one name. The factory creates independent view and attribute storage for every
-host element. Outside registration, `StepperElement()` remains an ordinary view that can be
-rendered inline.
+under more than one name. Each host element is a fresh `StepperElement()`. Outside registration,
+that value remains an ordinary view that can be rendered inline.
 
 ## Typed attributes
 
@@ -42,7 +39,7 @@ Attribute names are derived by converting Swift names to lowercase kebab case. F
 `stepSize` becomes `step-size` and `URLValue` becomes `url-value`. Pass a string to
 `@Attribute` to override the name.
 
-Present values are decoded as strings, textual booleans (`true` or `false`), integers, or
+Present values are decoded as strings, case-sensitive textual booleans (`true` or `false`), integers, or
 floating-point values. String-backed `RawRepresentable` types can adopt
 ``CustomElementAttributeValue`` without implementing additional decoding code:
 
@@ -63,10 +60,10 @@ the view reactively but does not reflect the new value back to HTML.
 
 ## Shadow DOM and slots
 
-Registration creates an open shadow root by default:
+Pass `shadow: .open` to mount into an open shadow root:
 
 ```swift
-try CustomElements.define("shadow-card") { Card() }
+try CustomElements.define("shadow-card", Card.self, shadow: .open)
 ```
 
 Render a native `slot` in the Swift body to project light-DOM children. Shadow styles can use
@@ -83,10 +80,9 @@ let cardStyles = try CustomElementStyleSheet("""
 
 try CustomElements.define(
     "shadow-card",
-    shadowDOM: .open(styleSheets: [cardStyles])
-) {
-    Card()
-}
+    Card.self,
+    shadow: .open(styleSheets: [cardStyles])
+)
 ```
 
 The stylesheet is created once with `CSSStyleSheet.replaceSync` and the same browser object is
@@ -107,10 +103,10 @@ slot(.name("actions"))
 </example-stepper>
 ```
 
-To render without a shadow root, pass `.none`:
+Omitting `shadow` mounts directly into the host:
 
 ```swift
-try CustomElements.define("light-card", shadowDOM: .none) { Card() }
+try CustomElements.define("light-card", Card.self)
 ```
 
 Light-DOM mounting follows ElementaryUI's normal container behavior: existing authored children

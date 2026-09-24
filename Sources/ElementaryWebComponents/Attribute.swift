@@ -1,4 +1,5 @@
 import Reactivity
+import _UTF8Internals
 
 /// A type that can be decoded from the textual value of an HTML attribute.
 public protocol CustomElementAttributeValue {
@@ -14,11 +15,9 @@ extension String: CustomElementAttributeValue {
 
 extension Bool: CustomElementAttributeValue {
     public static func decodeAttribute(_ value: String) -> Bool? {
-        switch value.lowercased() {
-        case "true": true
-        case "false": false
-        default: nil
-        }
+        if value.utf8Equals("true") { return true }
+        if value.utf8Equals("false") { return false }
+        return nil
     }
 }
 
@@ -83,72 +82,123 @@ public extension CustomElementAttributeValue where Self: RawRepresentable, RawVa
     }
 }
 
-private final class AttributeStorage<Value> {
-    private let propertyID = PropertyID(0)
-    private let registrar = ReactivityRegistrar()
+/// One `@Attribute` value. The property wrapper creates it; attribute storage only indexes it.
+public class AttributeSlot {
+    var name: String = ""
+    fileprivate var registrar: ReactivityRegistrar?
+    fileprivate var propertyID = PropertyID(0)
 
-    private var value: Value
+    fileprivate init() {}
 
-    init(_ value: Value) {
-        self.value = value
+    func apply(_ value: String?) -> Bool { false }
+
+    fileprivate func attach(_ registrar: ReactivityRegistrar, id: PropertyID) {
+        self.registrar = registrar
+        self.propertyID = id
+    }
+}
+
+private final class StoredAttribute<Value: CustomElementAttributeValue>: AttributeSlot {
+    private var stored: Value
+    var declarationDefault: Value
+
+    init(_ initialValue: Value) {
+        stored = initialValue
+        declarationDefault = initialValue
+        super.init()
     }
 
-    var currentValue: Value {
+    var value: Value {
         get {
-            registrar.access(propertyID)
-            return value
+            registrar?.access(propertyID)
+            return stored
         }
         set {
-            registrar.willSet(propertyID)
-            value = newValue
-            registrar.didSet(propertyID)
+            registrar?.willSet(propertyID)
+            stored = newValue
+            registrar?.didSet(propertyID)
         }
         _modify {
-            registrar.access(propertyID)
-            registrar.willSet(propertyID)
-            defer { registrar.didSet(propertyID) }
-            yield &value
+            registrar?.access(propertyID)
+            registrar?.willSet(propertyID)
+            yield &stored
+            registrar?.didSet(propertyID)
         }
+    }
+
+    override func apply(_ text: String?) -> Bool {
+        let next: Value
+        if let text {
+            guard let decoded = Value.decodeAttribute(text) else { return false }
+            next = decoded
+        } else {
+            next = declarationDefault
+        }
+        value = next
+        return true
+    }
+}
+
+/// Indexed, reactive storage for a custom element's `@Attribute` properties.
+///
+/// The mounted element owns this storage. Each slot already exists on the view; this type
+/// only decodes later host updates into those slots.
+public final class _CustomElementAttributeStorage {
+    private let slots: [AttributeSlot]
+    private let registrar = ReactivityRegistrar()
+
+    public init(_ slots: [AttributeSlot]) {
+        self.slots = slots
+        for index in slots.indices {
+            slots[index].attach(registrar, id: PropertyID(index))
+        }
+    }
+
+    /// Decodes `value` into the named slot, or restores the declaration default when `value` is `nil`.
+    ///
+    /// - Returns: `false` when `name` is unknown or `value` is present but cannot be decoded.
+    ///   The slot is unchanged.
+    public func apply(name: String, value: String?) -> Bool {
+        guard let slot = slots.first(where: { $0.name.utf8Equals(name) }) else { return false }
+        return slot.apply(value)
     }
 }
 
 /// A reactive, typed input supplied by an HTML attribute on a custom-element host.
 ///
-/// Swift mutations update the ElementaryUI view but intentionally do not reflect back to
-/// the host element's HTML attribute.
+/// The wrapper creates one slot. Reads and writes always go through that slot. Swift mutations
+/// update the ElementaryUI view but intentionally do not reflect back to the host element's
+/// HTML attribute.
 @propertyWrapper
 public struct Attribute<Value: CustomElementAttributeValue> {
-    private let storage: AttributeStorage<Value>
+    private let stored: StoredAttribute<Value>
 
     public var wrappedValue: Value {
-        get { storage.currentValue }
-        nonmutating set { storage.currentValue = newValue }
-        nonmutating _modify { yield &storage.currentValue }
+        get { stored.value }
+        nonmutating set { stored.value = newValue }
+        nonmutating _modify { yield &stored.value }
     }
 
     public init(wrappedValue: Value) {
-        storage = AttributeStorage(wrappedValue)
+        stored = StoredAttribute(wrappedValue)
     }
 
     public init(wrappedValue: Value, _: String) {
-        storage = AttributeStorage(wrappedValue)
+        stored = StoredAttribute(wrappedValue)
     }
 
     public init() where Value: ExpressibleByNilLiteral {
-        storage = AttributeStorage(Value(nilLiteral: ()))
+        stored = StoredAttribute(Value(nilLiteral: ()))
     }
 
     public init(_: String) where Value: ExpressibleByNilLiteral {
-        storage = AttributeStorage(Value(nilLiteral: ()))
+        stored = StoredAttribute(Value(nilLiteral: ()))
     }
 
-    /// Applies an attribute value to this property wrapper.
-    ///
-    /// This is public so code generated in clients by ``CustomElement()`` can call it.
-    /// Application code should normally mutate ``wrappedValue`` instead.
-    public func _setAttributeValue(_ value: String) -> Bool {
-        guard let decoded = Value.decodeAttribute(value) else { return false }
-        storage.currentValue = decoded
-        return true
+    /// Labels the slot this wrapper already created. Public so code generated by ``CustomElement()`` can call it.
+    public func slot(named name: String, declarationDefault: Value) -> AttributeSlot {
+        stored.name = name
+        stored.declarationDefault = declarationDefault
+        return stored
     }
 }

@@ -41,53 +41,43 @@ let hotReloadStyleSheet = try! CustomElementStyleSheet(
 
 try! CustomElements.define(
     "test-counter",
-    shadowDOM: .open(styleSheets: [sharedStyleSheet])
-) {
-    BrowserCounter()
-}
+    BrowserCounter.self,
+    shadow: .open(styleSheets: [sharedStyleSheet])
+)
 
 var duplicateRegistrationFailed = false
 do {
     try CustomElements.define(
         "test-counter",
-        shadowDOM: .open(styleSheets: [sharedStyleSheet, hotReloadStyleSheet])
-    ) {
-        BrowserCounter()
-    }
+        BrowserCounter.self,
+        shadow: .open(styleSheets: [sharedStyleSheet, hotReloadStyleSheet])
+    )
 } catch {
     duplicateRegistrationFailed = true
 }
 
 var invalidRegistrationFailed = false
 do {
-    try CustomElements.define("invalid") {
-        BrowserCounter()
-    }
+    try CustomElements.define("invalid", BrowserCounter.self)
 } catch {
     invalidRegistrationFailed = true
 }
 
-try! CustomElements.define("test-light-counter", shadowDOM: .none) {
-    BrowserCounter()
-}
+try! CustomElements.define("test-light-counter", BrowserCounter.self)
 
 try! CustomElements.define(
     "test-styled-counter",
-    shadowDOM: .open(styleSheets: [sharedStyleSheet, orderedStyleSheet])
-) {
-    BrowserCounter()
-}
+    BrowserCounter.self,
+    shadow: .open(styleSheets: [sharedStyleSheet, orderedStyleSheet])
+)
 
 try! CustomElements.define(
     "test-shared-counter",
-    shadowDOM: .open(styleSheets: [sharedStyleSheet])
-) {
-    BrowserCounter()
-}
+    BrowserCounter.self,
+    shadow: .open(styleSheets: [sharedStyleSheet])
+)
 
-try! CustomElements.define("test-unstyled-counter") {
-    BrowserCounter()
-}
+try! CustomElements.define("test-unstyled-counter", BrowserCounter.self, shadow: .open)
 
 JSObject.global["__elementaryDuplicateRegistrationFailed"] = .boolean(duplicateRegistrationFailed)
 JSObject.global["__elementaryInvalidRegistrationFailed"] = .boolean(invalidRegistrationFailed)

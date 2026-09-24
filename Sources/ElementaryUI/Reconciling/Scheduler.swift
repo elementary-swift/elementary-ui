@@ -96,14 +96,20 @@ final class Scheduler {
     }
 
     func scheduleUpdate(_ callback: @escaping (inout _TransactionContext) -> Void) {
-        ensureUpdateCycleScheduled()
+        // Enqueue before scheduling. A JS call can drain microtasks before it
+        // returns, and the callback has to be visible to that cycle.
         pendingUpdates.append(callback)
+        ensureUpdateCycleScheduled()
     }
 
     /// Immediately drains pending work instead of waiting for the scheduled microtask.
     /// This deliberately breaks normal scheduler timing and is reserved for teardown.
     func forceRunUpdateCycleSynchronously() {
-        guard isUpdateCycleActive && !isRunningUpdateCycle else { return }
+        guard !isRunningUpdateCycle else { return }
+        guard isUpdateCycleActive || hasReconcileWork || hasCommitWork else { return }
+        if !isUpdateCycleActive {
+            isUpdateCycleActive = true
+        }
         runUpdateCycle()
     }
 

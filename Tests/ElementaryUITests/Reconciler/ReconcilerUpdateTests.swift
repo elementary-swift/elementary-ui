@@ -78,6 +78,7 @@ struct ReconcilerUpdateTests {
     func unmountsBeforeInitialUpdate() {
         let dom = TestDOM()
         let app = dom.mount { p {} }
+        dom.runNextFrame()
 
         app.unmount()
 

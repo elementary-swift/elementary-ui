@@ -2,23 +2,26 @@ import ElementaryUI
 
 /// A view that can be registered as an autonomous browser custom element.
 public protocol CustomElement: View {
+    /// Creates the view mounted for one host element.
+    init()
+
     /// Attribute names observed by the browser custom-element implementation.
+    ///
+    /// This is a static list so registration does not need to build a view.
     static var observedAttributes: [String] { get }
 
-    /// Updates an observed attribute by its HTML name.
-    ///
-    /// - Returns: `false` when `name` is unknown or `value` cannot be decoded.
-    func setAttribute(name: String, value: String?) -> Bool
+    /// Collects the `@Attribute` slots this value already holds.
+    static func __attributes(from view: borrowing Self) -> _CustomElementAttributeStorage
 }
 
 /// Marks a struct as both an ElementaryUI view and a browser custom-element definition.
 ///
 /// The element's tag name and Shadow DOM policy are intentionally selected when the type is
-/// registered with ``CustomElements/define(_:shadowDOM:factory:)``.
+/// registered with ``CustomElements/define(_:_:shadow:)``.
 @attached(
     member,
     names: named(observedAttributes),
-    named(setAttribute)
+    named(__attributes)
 )
 @attached(
     extension,

@@ -27,17 +27,10 @@ final class CustomElementMacroTests: XCTestCase {
                         ["title"]
                     }
 
-                    func setAttribute(name: String, value: String?) -> Bool {
-                        switch name {
-                        case "title":
-                            guard let value else {
-                                self._title.wrappedValue = "Hello"
-                                return true
-                            }
-                            return self._title._setAttributeValue(value)
-                        default:
-                            return false
-                        }
+                    static func __attributes(from view: borrowing Self) -> ElementaryWebComponents._CustomElementAttributeStorage {
+                        ElementaryWebComponents._CustomElementAttributeStorage([
+                            view._title.slot(named: "title", declarationDefault: "Hello")
+                        ])
                     }
                 }
 

@@ -54,30 +54,6 @@ fileprivate func _bjs_struct_lift_JSShadowRootInit_extern() -> Int32 {
     return _bjs_struct_lift_JSShadowRootInit_extern()
 }
 
-@_expose(wasm, "bjs_CustomElementImplementation_construct")
-@_cdecl("bjs_CustomElementImplementation_construct")
-public func _bjs_CustomElementImplementation_construct(_ _self: UnsafeMutableRawPointer, _ element: Int32) -> Void {
-    #if arch(wasm32)
-    do {
-        try CustomElementImplementation.bridgeJSLiftParameter(_self).construct(element: JSHTMLElement.bridgeJSLiftParameter(element))
-    } catch let error {
-        if let error = error.thrownValue.object {
-            withExtendedLifetime(error) {
-                _swift_js_throw(Int32(bitPattern: $0.id))
-            }
-        } else {
-            let jsError = JSError(message: error.description)
-            withExtendedLifetime(jsError.jsObject) {
-                _swift_js_throw(Int32(bitPattern: $0.id))
-            }
-        }
-        return
-    }
-    #else
-    fatalError("Only available on WebAssembly")
-    #endif
-}
-
 @_expose(wasm, "bjs_CustomElementImplementation_connect")
 @_cdecl("bjs_CustomElementImplementation_connect")
 public func _bjs_CustomElementImplementation_connect(_ _self: UnsafeMutableRawPointer, _ element: Int32) -> Void {
@@ -199,6 +175,18 @@ fileprivate func bjs_JSHTMLElement_shadowRoot_get_extern(_ self: Int32) -> Void 
 }
 
 #if arch(wasm32)
+@_extern(wasm, module: "ElementaryWebComponents", name: "bjs_JSHTMLElement_getAttribute")
+fileprivate func bjs_JSHTMLElement_getAttribute_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void
+#else
+fileprivate func bjs_JSHTMLElement_getAttribute_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void {
+    fatalError("Only available on WebAssembly")
+}
+#endif
+@inline(never) fileprivate func bjs_JSHTMLElement_getAttribute(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void {
+    return bjs_JSHTMLElement_getAttribute_extern(self, nameBytes, nameLength)
+}
+
+#if arch(wasm32)
 @_extern(wasm, module: "ElementaryWebComponents", name: "bjs_JSHTMLElement_attachShadow")
 fileprivate func bjs_JSHTMLElement_attachShadow_extern(_ self: Int32) -> Int32
 #else
@@ -217,6 +205,17 @@ func _$JSHTMLElement_shadowRoot_get(_ self: JSObject) throws(JSException) -> Opt
         throw error
     }
     return Optional<JSShadowRoot>.bridgeJSLiftReturn()
+}
+
+func _$JSHTMLElement_getAttribute(_ self: JSObject, _ name: String) throws(JSException) -> Optional<String> {
+    name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
+        let selfValue = self.bridgeJSLowerParameter()
+        bjs_JSHTMLElement_getAttribute(selfValue, nameBytes, nameLength)
+    }
+    if let error = _swift_js_take_exception() {
+        throw error
+    }
+    return Optional<String>.bridgeJSLiftReturnFromSideChannel()
 }
 
 func _$JSHTMLElement_attachShadow(_ self: JSObject, _ options: JSShadowRootInit) throws(JSException) -> JSShadowRoot {

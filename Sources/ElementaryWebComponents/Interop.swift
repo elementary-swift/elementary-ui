@@ -3,6 +3,7 @@ import JavaScriptKit
 @JSClass(jsName: "HTMLElement")
 struct JSHTMLElement: Hashable {
     @JSGetter var shadowRoot: JSShadowRoot?
+    @JSFunction func getAttribute(_ name: String) throws(JSException) -> String?
     @JSFunction func attachShadow(_ options: JSShadowRootInit) throws(JSException) -> JSShadowRoot
 
     static func == (lhs: Self, rhs: Self) -> Bool {

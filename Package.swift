@@ -62,6 +62,7 @@ let package = Package(
         .target(
             name: "ElementaryWebComponents",
             dependencies: [
+                .target(name: "_UTF8Internals"),
                 .target(name: "ElementaryUI"),
                 .target(name: "ElementaryUIMacros"),
                 .target(name: "Reactivity"),

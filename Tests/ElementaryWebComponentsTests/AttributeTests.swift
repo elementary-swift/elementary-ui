@@ -19,19 +19,20 @@ struct AttributeTests {
     @Test
     func attributesDecodeAndRestoreDefaults() {
         let fixture = AttributeFixture(count: 7)
+        let storage = mount(fixture)
 
-        #expect(fixture.setAttribute(name: "count", value: "42"))
-        #expect(fixture.setAttribute(name: "step-size", value: "3"))
-        #expect(fixture.setAttribute(name: "label", value: "Hello"))
-        #expect(fixture.setAttribute(name: "theme", value: "dark"))
+        #expect(storage.apply(name: "count", value: "42"))
+        #expect(storage.apply(name: "step-size", value: "3"))
+        #expect(storage.apply(name: "label", value: "Hello"))
+        #expect(storage.apply(name: "theme", value: "dark"))
         #expect(fixture.count == 42)
         #expect(fixture.stepSize == 3)
         #expect(fixture.label == "Hello")
         #expect(fixture.theme == .dark)
 
-        #expect(fixture.setAttribute(name: "count", value: nil))
-        #expect(fixture.setAttribute(name: "label", value: nil))
-        #expect(fixture.setAttribute(name: "theme", value: nil))
+        #expect(storage.apply(name: "count", value: nil))
+        #expect(storage.apply(name: "label", value: nil))
+        #expect(storage.apply(name: "theme", value: nil))
         #expect(fixture.count == 1)
         #expect(fixture.label == nil)
         #expect(fixture.theme == .system)
@@ -40,21 +41,46 @@ struct AttributeTests {
     @Test
     func invalidValuesPreserveCurrentValue() {
         let fixture = AttributeFixture()
-        #expect(fixture.setAttribute(name: "count", value: "9"))
-        #expect(!fixture.setAttribute(name: "count", value: "nine"))
-        #expect(!fixture.setAttribute(name: "missing", value: "1"))
+        let storage = mount(fixture)
+        #expect(storage.apply(name: "count", value: "9"))
+        #expect(!storage.apply(name: "count", value: "nine"))
+        #expect(!storage.apply(name: "missing", value: "1"))
         #expect(fixture.count == 9)
     }
 
     @Test
-    func textualBooleanIsCaseInsensitiveAndNotPresenceBased() {
+    func textualBooleanRequiresExactLowercaseValues() {
         let attribute = Attribute(wrappedValue: false)
-        #expect(attribute._setAttributeValue("TRUE"))
+        let storage = _CustomElementAttributeStorage([
+            attribute.slot(named: "flag", declarationDefault: false)
+        ])
+        #expect(storage.apply(name: "flag", value: "true"))
         #expect(attribute.wrappedValue)
-        #expect(attribute._setAttributeValue("false"))
+        #expect(storage.apply(name: "flag", value: "false"))
         #expect(!attribute.wrappedValue)
-        #expect(!attribute._setAttributeValue(""))
-        #expect(!attribute.wrappedValue)
+        for invalid in ["", "TRUE", "True", "FALSE", "False", " true", "false ", "1", "0", "trué"] {
+            #expect(!storage.apply(name: "flag", value: invalid))
+            #expect(!attribute.wrappedValue)
+        }
+    }
+
+    @Test
+    func attributeNamesUseExactUTF8Bytes() {
+        let count = Attribute(wrappedValue: 0)
+        let countStorage = _CustomElementAttributeStorage([
+            count.slot(named: "count", declarationDefault: 0)
+        ])
+        #expect(countStorage.apply(name: "count", value: "3"))
+        #expect(!countStorage.apply(name: "COUNT", value: "4"))
+        #expect(!countStorage.apply(name: "", value: "1"))
+        #expect(!countStorage.apply(name: "count\0", value: "1"))
+        #expect(count.wrappedValue == 3)
+
+        let fixture = UTF8AttributeFixture()
+        let storage = UTF8AttributeFixture.__attributes(from: fixture)
+        #expect(storage.apply(name: "café", value: "7"))
+        #expect(!storage.apply(name: "cafe\u{301}", value: "8"))
+        #expect(fixture.value == 7)
     }
 
     @Test
@@ -78,6 +104,9 @@ struct AttributeTests {
     @Test
     func attributeChangesParticipateInReactivity() {
         let attribute = Attribute(wrappedValue: 1)
+        let storage = _CustomElementAttributeStorage([
+            attribute.slot(named: "count", declarationDefault: 1)
+        ])
         nonisolated(unsafe) var changed = false
 
         withReactiveTracking {
@@ -86,7 +115,7 @@ struct AttributeTests {
             changed = true
         }
 
-        #expect(attribute._setAttributeValue("2"))
+        #expect(storage.apply(name: "count", value: "2"))
         #expect(changed)
         #expect(attribute.wrappedValue == 2)
     }
@@ -122,48 +151,20 @@ private struct AttributeFixture {
         ["count", "step-size", "label", "user-id", "url-value", "theme"]
     }
 
-    func setAttribute(name: String, value: String?) -> Bool {
-        switch name {
-        case "count":
-            guard let value else {
-                self._count.wrappedValue = 1
-                return true
-            }
-            return self._count._setAttributeValue(value)
-        case "step-size":
-            guard let value else {
-                self._stepSize.wrappedValue = 2
-                return true
-            }
-            return self._stepSize._setAttributeValue(value)
-        case "label":
-            guard let value else {
-                self._label.wrappedValue = nil
-                return true
-            }
-            return self._label._setAttributeValue(value)
-        case "user-id":
-            guard let value else {
-                self._userID.wrappedValue = "user"
-                return true
-            }
-            return self._userID._setAttributeValue(value)
-        case "url-value":
-            guard let value else {
-                self._URLValue.wrappedValue = "url"
-                return true
-            }
-            return self._URLValue._setAttributeValue(value)
-        case "theme":
-            guard let value else {
-                self._theme.wrappedValue = .system
-                return true
-            }
-            return self._theme._setAttributeValue(value)
-        default:
-            return false
-        }
+    static func __attributes(from view: borrowing Self) -> _CustomElementAttributeStorage {
+        _CustomElementAttributeStorage([
+            view._count.slot(named: "count", declarationDefault: 1),
+            view._stepSize.slot(named: "step-size", declarationDefault: 2),
+            view._label.slot(named: "label", declarationDefault: nil),
+            view._userID.slot(named: "user-id", declarationDefault: "user"),
+            view._URLValue.slot(named: "url-value", declarationDefault: "url"),
+            view._theme.slot(named: "theme", declarationDefault: .system),
+        ])
     }
+}
+
+private func mount(_ fixture: AttributeFixture) -> _CustomElementAttributeStorage {
+    AttributeFixture.__attributes(from: fixture)
 }
 
 extension AttributeFixture: __FunctionView, View {
@@ -186,4 +187,11 @@ extension AttributeFixture: __ViewEquatable {
 }
 
 extension AttributeFixture: CustomElement {
+}
+
+@CustomElement
+private struct UTF8AttributeFixture {
+    @Attribute("café") var value = 0
+
+    var body: some View { "\(value)" }
 }

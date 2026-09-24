@@ -8,31 +8,6 @@
         "isFinal" : true,
         "methods" : [
           {
-            "abiName" : "bjs_CustomElementImplementation_construct",
-            "effects" : {
-              "isAsync" : false,
-              "isStatic" : false,
-              "isThrows" : true
-            },
-            "name" : "construct",
-            "parameters" : [
-              {
-                "label" : "element",
-                "name" : "element",
-                "type" : {
-                  "jsObject" : {
-                    "_0" : "JSHTMLElement"
-                  }
-                }
-              }
-            ],
-            "returnType" : {
-              "void" : {
-
-              }
-            }
-          },
-          {
             "abiName" : "bjs_CustomElementImplementation_connect",
             "effects" : {
               "isAsync" : false,
@@ -260,6 +235,35 @@
             ],
             "jsName" : "HTMLElement",
             "methods" : [
+              {
+                "accessLevel" : "internal",
+                "effects" : {
+                  "isAsync" : false,
+                  "isStatic" : false,
+                  "isThrows" : true
+                },
+                "name" : "getAttribute",
+                "parameters" : [
+                  {
+                    "name" : "name",
+                    "type" : {
+                      "string" : {
+
+                      }
+                    }
+                  }
+                ],
+                "returnType" : {
+                  "nullable" : {
+                    "_0" : {
+                      "string" : {
+
+                      }
+                    },
+                    "_1" : "null"
+                  }
+                }
+              },
               {
                 "accessLevel" : "internal",
                 "effects" : {

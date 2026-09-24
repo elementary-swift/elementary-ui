@@ -1,12 +1,3 @@
-function construct(element, implementation) {
-  implementation.construct(element);
-  for (const name of element.constructor.observedAttributes) {
-    if (element.hasAttribute(name)) {
-      implementation.setAttribute(element, name, element.getAttribute(name));
-    }
-  }
-}
-
 function makeCustomElement(shadowDOM, observedAttributes, implementation) {
   return class ElementaryCustomElement extends HTMLElement {
     static __elementaryImplementation = implementation;
@@ -18,13 +9,10 @@ function makeCustomElement(shadowDOM, observedAttributes, implementation) {
 
     constructor() {
       super();
-      implementation.construct(this);
     }
 
     connectedCallback() {
-      const implementation = this.constructor.__elementaryImplementation;
-      construct(this, implementation);
-      implementation.connect(this);
+      this.constructor.__elementaryImplementation.connect(this);
     }
 
     disconnectedCallback() {
@@ -54,7 +42,6 @@ function replaceImplementation(name, elementClass, implementation) {
   elementClass.__elementaryImplementation = implementation;
 
   for (const element of instances) {
-    construct(element, implementation);
     implementation.connect(element);
   }
 }

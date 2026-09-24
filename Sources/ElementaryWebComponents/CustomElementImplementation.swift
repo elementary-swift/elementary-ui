@@ -1,19 +1,72 @@
 import ElementaryUI
 import JavaScriptKit
 
-private final class MountedCustomElement<Element: CustomElement> {
-    var view: Element
-    private let mountTarget: MountTarget
+/// One host element. Attribute values live in ``attributes``; the mount closure captures the
+/// view, which already shares those slots.
+private final class MountedCustomElement {
+    private let mountTarget: JSObject
     private var application: MountedApplication?
+    private let attributes: _CustomElementAttributeStorage
+    private let mountView: () -> MountedApplication
 
     init(
-        view: Element,
-        host: JSHTMLElement,
-        shadowDOM: CustomElementShadowDOM
-    ) throws(JSException) {
-        self.view = view
+        mountTarget: JSObject,
+        attributes: _CustomElementAttributeStorage,
+        mountView: @escaping () -> MountedApplication
+    ) {
+        self.mountTarget = mountTarget
+        self.attributes = attributes
+        self.mountView = mountView
+    }
 
-        switch shadowDOM.mode {
+    // Generic initializers must be convenience on final classes for embedded Swift.
+    convenience init<Element: CustomElement>(
+        name: String,
+        host: JSHTMLElement,
+        shadow: CustomElements.ShadowRootOptions?,
+        factory: () -> Element
+    ) throws(JSException) {
+        let mountTarget = try Self.resolveMountTarget(host: host, shadow: shadow)
+        let view = factory()
+        let attributes = Element.__attributes(from: view)
+        for attributeName in Element.observedAttributes {
+            guard let value = try host.getAttribute(attributeName) else { continue }
+            guard attributes.apply(name: attributeName, value: value) else {
+                print(
+                    "ELEMENTARY WARNING: invalid value for attribute '\(attributeName)' on <\(name)>"
+                )
+                continue
+            }
+        }
+        self.init(
+            mountTarget: mountTarget,
+            attributes: attributes,
+            mountView: {
+                Application(view)._mount(in: mountTarget)
+            }
+        )
+    }
+
+    func mount() {
+        guard application == nil else { return }
+        application = mountView()
+    }
+
+    func unmount() {
+        guard let application = application.take() else { return }
+        application.unmount()
+    }
+
+    func setAttribute(name: String, value: String?) -> Bool {
+        attributes.apply(name: name, value: value)
+    }
+
+    private static func resolveMountTarget(
+        host: JSHTMLElement,
+        shadow: CustomElements.ShadowRootOptions?
+    ) throws(JSException) -> JSObject {
+        guard let shadow else { return host.jsObject }
+        switch shadow.mode {
         case .open:
             let shadowRoot: JSShadowRoot
             if let existingShadowRoot = try host.shadowRoot {
@@ -22,143 +75,63 @@ private final class MountedCustomElement<Element: CustomElement> {
                 shadowRoot = try host.attachShadow(JSShadowRootInit(mode: "open"))
             }
             try shadowRoot.setAdoptedStyleSheets(
-                shadowDOM.styleSheets.map { $0.jsStyleSheet }
+                shadow.styleSheets.map { $0.jsStyleSheet }
             )
-            mountTarget = .shadowRoot(shadowRoot)
-        case .none:
-            mountTarget = .host(host)
+            return shadowRoot.jsObject
         }
-    }
-
-    func mount() {
-        guard application == nil else { return }
-        application = Application(view)._mount(in: mountTarget.jsObject)
-    }
-
-    func unmount() {
-        guard let application = application.take() else { return }
-        application.unmount()
-    }
-
-    private enum MountTarget {
-        case host(JSHTMLElement)
-        case shadowRoot(JSShadowRoot)
-
-        var jsObject: JSObject {
-            switch self {
-            case .host(let host): host.jsObject
-            case .shadowRoot(let shadowRoot): shadowRoot.jsObject
-            }
-        }
-    }
-}
-
-private final class CustomElementManager<Element: CustomElement> {
-    private let name: String
-    private let shadowDOM: CustomElementShadowDOM
-    private let factory: () -> Element
-    private var elements: [JSHTMLElement: MountedCustomElement<Element>] = [:]
-
-    init(
-        name: String,
-        shadowDOM: CustomElementShadowDOM,
-        factory: @escaping () -> Element
-    ) {
-        self.name = name
-        self.shadowDOM = shadowDOM
-        self.factory = factory
-    }
-
-    func construct(_ element: JSHTMLElement) throws(JSException) {
-        guard elements[element] == nil else { return }
-        elements[element] = try MountedCustomElement(
-            view: factory(),
-            host: element,
-            shadowDOM: shadowDOM
-        )
-    }
-
-    func connect(_ element: JSHTMLElement) throws(JSException) {
-        try construct(element)
-        mountedElement(for: element).mount()
-    }
-
-    func destruct(_ element: JSHTMLElement) {
-        guard let mounted = elements.removeValue(forKey: element) else { return }
-        mounted.unmount()
-    }
-
-    func setAttribute(_ element: JSHTMLElement, name attributeName: String, value: String?) {
-        guard let mounted = elements[element] else { return }
-        guard mounted.view.setAttribute(name: attributeName, value: value) else {
-            print("ELEMENTARY WARNING: invalid value for attribute '\(attributeName)' on <\(name)>")
-            return
-        }
-    }
-
-    private func mountedElement(for element: JSHTMLElement) -> MountedCustomElement<Element> {
-        guard let mounted = elements[element] else {
-            fatalError("Custom element <\(name)> has not been constructed")
-        }
-        return mounted
     }
 }
 
 @JS
 final class CustomElementImplementation {
-    private let _construct: (JSHTMLElement) throws(JSException) -> Void
-    private let _connect: (JSHTMLElement) throws(JSException) -> Void
-    private let _destruct: (JSHTMLElement) -> Void
-    private let _setAttribute: (JSHTMLElement, String, String?) -> Void
+    private let name: String
+    private let factory: (JSHTMLElement) throws(JSException) -> MountedCustomElement
+    private var elements: [JSHTMLElement: MountedCustomElement] = [:]
 
     private init(
-        construct: @escaping (JSHTMLElement) throws(JSException) -> Void,
-        connect: @escaping (JSHTMLElement) throws(JSException) -> Void,
-        destruct: @escaping (JSHTMLElement) -> Void,
-        setAttribute: @escaping (JSHTMLElement, String, String?) -> Void
+        name: String,
+        factory: @escaping (JSHTMLElement) throws(JSException) -> MountedCustomElement
     ) {
-        _construct = construct
-        _connect = connect
-        _destruct = destruct
-        _setAttribute = setAttribute
+        self.name = name
+        self.factory = factory
     }
 
     convenience init<Element: CustomElement>(
         name: String,
-        shadowDOM: CustomElementShadowDOM,
+        shadow: CustomElements.ShadowRootOptions?,
         factory: @escaping () -> Element
     ) {
-        let manager = CustomElementManager(
-            name: name,
-            shadowDOM: shadowDOM,
-            factory: factory
-        )
-        self.init(
-            construct: manager.construct,
-            connect: manager.connect,
-            destruct: manager.destruct,
-            setAttribute: manager.setAttribute
-        )
-    }
-
-    @JS
-    func construct(element: JSHTMLElement) throws(JSException) {
-        try _construct(element)
+        self.init(name: name) { (host: JSHTMLElement) throws(JSException) -> MountedCustomElement in
+            try MountedCustomElement(
+                name: name,
+                host: host,
+                shadow: shadow,
+                factory: factory
+            )
+        }
     }
 
     @JS
     func connect(element: JSHTMLElement) throws(JSException) {
-        try _connect(element)
+        if elements[element] == nil {
+            elements[element] = try factory(element)
+        }
+        elements[element]!.mount()
     }
 
     @JS
     func destruct(element: JSHTMLElement) {
-        _destruct(element)
+        guard let mounted = elements.removeValue(forKey: element) else { return }
+        mounted.unmount()
     }
 
     @JS
     func setAttribute(element: JSHTMLElement, name: String, value: String?) {
-        _setAttribute(element, name, value)
+        guard let mounted = elements[element] else { return }
+        guard mounted.setAttribute(name: name, value: value) else {
+            print("ELEMENTARY WARNING: invalid value for attribute '\(name)' on <\(self.name)>")
+            return
+        }
     }
 }
 

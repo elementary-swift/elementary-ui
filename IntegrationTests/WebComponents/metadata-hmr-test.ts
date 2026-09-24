@@ -1,10 +1,9 @@
 import { defineCustomElement } from "../../Sources/ElementaryWebComponents/JavaScript/custom-elements.js";
 
 const implementation = {
-  construct: () => 1,
   connect: () => {},
   setAttribute: () => {},
-  destroy: () => {},
+  destruct: () => {},
 };
 
 (globalThis as any).__triggerElementaryMetadataMismatch = () => {
