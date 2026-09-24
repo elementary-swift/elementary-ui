@@ -15,6 +15,7 @@ struct BrowserCounter {
             """
         }
         slot()
+        slot(.name("note"))
         output(.id("value")) {
             "\(count):\(localCount):\(label ?? "nil")"
         }
@@ -45,16 +46,19 @@ try! CustomElements.define(
     shadow: .open(styleSheets: [sharedStyleSheet])
 )
 
-var duplicateRegistrationFailed = false
-do {
-    try CustomElements.define(
-        "test-counter",
-        BrowserCounter.self,
-        shadow: .open(styleSheets: [sharedStyleSheet, hotReloadStyleSheet])
-    )
-} catch {
-    duplicateRegistrationFailed = true
+let replaceCounter = JSClosure { _ in
+    do {
+        try CustomElements.define(
+            "test-counter",
+            BrowserCounter.self,
+            shadow: .open(styleSheets: [sharedStyleSheet, hotReloadStyleSheet])
+        )
+        return .boolean(true)
+    } catch {
+        return .boolean(false)
+    }
 }
+JSObject.global["__elementaryReplaceCounter"] = .object(replaceCounter)
 
 var invalidRegistrationFailed = false
 do {
@@ -79,5 +83,4 @@ try! CustomElements.define(
 
 try! CustomElements.define("test-unstyled-counter", BrowserCounter.self, shadow: .open)
 
-JSObject.global["__elementaryDuplicateRegistrationFailed"] = .boolean(duplicateRegistrationFailed)
 JSObject.global["__elementaryInvalidRegistrationFailed"] = .boolean(invalidRegistrationFailed)
