@@ -23,33 +23,25 @@ public enum CustomElements {
         public static func open(styleSheets: [CustomElementStyleSheet]) -> Self {
             Self(mode: .open, styleSheets: styleSheets)
         }
-
-        fileprivate var bridgeValue: String { mode.rawValue }
     }
 
-    /// Defines an autonomous custom element backed by a fresh `Element()` per host.
+    /// Registers a custom HTML element implemented by `Element`.
     ///
-    /// Pass `shadow` to mount into a shadow root. The default mounts into the host, after any
-    /// existing light-DOM children.
+    /// A new `Element` is created for each host. When `shadow` is `nil`, the view is appended to the host's light DOM, after any existing children. Otherwise the view is mounted in the shadow root described by `shadow`.
     ///
-    /// The browser requires custom-element names to contain a hyphen. Invalid names and
-    /// duplicate definitions throw ``CustomElementRegistrationError``.
+    /// Custom element names must contain a hyphen. An invalid name or a duplicate registration throws ``JSException``.
     public static func define<Element: CustomElement>(
         _ name: String,
         _: Element.Type,
         shadow: ShadowRootOptions? = nil
     ) throws(JSException) {
-        let implementation = CustomElementClass(
-            name: name,
-            shadow: shadow,
-            factory: { Element() }
-        )
-
         try defineCustomElement(
             name,
-            shadow?.bridgeValue ?? "none",
-            Element.observedAttributes,
-            implementation
+            CustomElementBridge(
+                name: name,
+                shadow: shadow,
+                factory: Element.init
+            )
         )
     }
 }

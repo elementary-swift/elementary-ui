@@ -5,13 +5,13 @@ import Testing
 @testable import ElementaryWebComponents
 
 @Suite
-struct AttributeTests {
+struct CustomElementAttributeTests {
     @Test
     func macroMakesViewAndCollectsAttributeNames() {
         let view: any View = AttributeFixture()
         #expect(view is AttributeFixture)
         #expect(
-            AttributeFixture.observedAttributes == [
+            AttributeFixture.__observedAttributes == [
                 "count", "step-size", "label", "user-id", "url-value", "theme",
             ]
         )
@@ -84,20 +84,20 @@ struct AttributeTests {
 
     @Test
     func builtInNumericTypesDecodeAttributeText() {
-        #expect(Int.decodeAttribute("-1") == -1)
-        #expect(Int8.decodeAttribute("-8") == -8)
-        #expect(Int16.decodeAttribute("-16") == -16)
-        #expect(Int32.decodeAttribute("-32") == -32)
-        #expect(Int64.decodeAttribute("-64") == -64)
-        #expect(UInt.decodeAttribute("1") == 1)
-        #expect(UInt8.decodeAttribute("8") == 8)
-        #expect(UInt16.decodeAttribute("16") == 16)
-        #expect(UInt32.decodeAttribute("32") == 32)
-        #expect(UInt64.decodeAttribute("64") == 64)
-        #expect(Float.decodeAttribute("1.25") == 1.25)
-        #expect(Double.decodeAttribute("2.5") == 2.5)
-        #expect(UInt8.decodeAttribute("-1") == nil)
-        #expect(Int8.decodeAttribute("128") == nil)
+        #expect(Int(attributeValue: "-1") == -1)
+        #expect(Int8(attributeValue: "-8") == -8)
+        #expect(Int16(attributeValue: "-16") == -16)
+        #expect(Int32(attributeValue: "-32") == -32)
+        #expect(Int64(attributeValue: "-64") == -64)
+        #expect(UInt(attributeValue: "1") == 1)
+        #expect(UInt8(attributeValue: "8") == 8)
+        #expect(UInt16(attributeValue: "16") == 16)
+        #expect(UInt32(attributeValue: "32") == 32)
+        #expect(UInt64(attributeValue: "64") == 64)
+        #expect(Float(attributeValue: "1.25") == 1.25)
+        #expect(Double(attributeValue: "2.5") == 2.5)
+        #expect(UInt8(attributeValue: "-1") == nil)
+        #expect(Int8(attributeValue: "128") == nil)
     }
 
     @Test
@@ -137,7 +137,7 @@ private final class Host {
         element.__applyCustomElementContext(&context)
     }
 
-    func link(_ name: String, _ attribute: Attribute<some CustomElementAttributeValue>) {
+    func link(_ name: String, _ attribute: Attribute<some ExpressibleByAttributeValue>) {
         context.linkAttribute(name, attribute)
     }
 
@@ -146,7 +146,7 @@ private final class Host {
     }
 }
 
-private enum Theme: String, CustomElementAttributeValue {
+private enum Theme: String, ExpressibleByAttributeValue {
     case system
     case dark
 }

@@ -50,7 +50,7 @@ extension CustomElementMacro: MemberMacro {
         return [
             DeclSyntax(
                 """
-                \(access)static var observedAttributes: [String] {
+                \(access)static var __observedAttributes: [String] {
                     [\(raw: names)]
                 }
                 """

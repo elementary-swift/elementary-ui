@@ -41,10 +41,10 @@ Attribute names are derived by converting Swift names to lowercase kebab case. F
 
 Present values are decoded as strings, case-sensitive textual booleans (`true` or `false`), integers, or
 floating-point values. String-backed `RawRepresentable` types can adopt
-``CustomElementAttributeValue`` without implementing additional decoding code:
+``ExpressibleByAttributeValue`` without implementing additional decoding code:
 
 ```swift
-enum Theme: String, CustomElementAttributeValue {
+enum Theme: String, ExpressibleByAttributeValue {
     case system
     case light
     case dark
@@ -120,10 +120,9 @@ Moving a host with `Element.moveBefore()` retains ElementaryUI state through the
 `connectedMoveCallback()` lifecycle. Other removal and insertion APIs create a fresh view and
 state tree.
 
-During Vite HMR, registrations with unchanged attribute names and Shadow DOM mode replace their
-implementation and reconstruct live instances. Stylesheet changes are applied during
-reconstruction without a reload. Changing the attribute names or Shadow DOM mode forces a full
-reload. HMR reconstruction resets view state.
+During Vite HMR, an existing registration replaces its implementation and reconstructs live
+instances, including when attribute names or Shadow DOM mode change. Stylesheet changes are
+applied during that reconstruction. HMR reconstruction resets view state.
 
 The initial release intentionally leaves closed shadow roots, custom-event helpers, form
 association, focus delegation, manual slot assignment, scoped registries, JavaScript property

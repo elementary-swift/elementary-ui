@@ -5,11 +5,7 @@ public protocol CustomElement: View {
     /// Creates the view mounted for one host element.
     init()
 
-    /// Attribute names observed by the browser custom-element implementation.
-    ///
-    /// This is a static list so registration does not need to build a view.
-    static var observedAttributes: [String] { get }
-
+    static var __observedAttributes: [String] { get }
     func __applyCustomElementContext(_ hostContext: inout _CustomElementHostContext)
 }
 
@@ -19,7 +15,7 @@ public protocol CustomElement: View {
 /// registered with ``CustomElements/define(_:_:shadow:)``.
 @attached(
     member,
-    names: named(observedAttributes)
+    names: named(__observedAttributes)
 )
 @attached(
     extension,

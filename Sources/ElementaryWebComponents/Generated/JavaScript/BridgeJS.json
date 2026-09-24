@@ -8,7 +8,7 @@
         "isFinal" : true,
         "methods" : [
           {
-            "abiName" : "bjs_CustomElementClass_connect",
+            "abiName" : "bjs_CustomElementBridge_connect",
             "effects" : {
               "isAsync" : false,
               "isStatic" : false,
@@ -33,13 +33,13 @@
             }
           },
           {
-            "abiName" : "bjs_CustomElementClass_destruct",
+            "abiName" : "bjs_CustomElementBridge_disconnect",
             "effects" : {
               "isAsync" : false,
               "isStatic" : false,
               "isThrows" : false
             },
-            "name" : "destruct",
+            "name" : "disconnect",
             "parameters" : [
               {
                 "label" : "element",
@@ -58,7 +58,7 @@
             }
           },
           {
-            "abiName" : "bjs_CustomElementClass_setAttribute",
+            "abiName" : "bjs_CustomElementBridge_setAttribute",
             "effects" : {
               "isAsync" : false,
               "isStatic" : false,
@@ -106,11 +106,24 @@
             }
           }
         ],
-        "name" : "CustomElementClass",
+        "name" : "CustomElementBridge",
         "properties" : [
+          {
+            "isReadonly" : false,
+            "isStatic" : false,
+            "name" : "observedAttributes",
+            "type" : {
+              "array" : {
+                "_0" : {
+                  "string" : {
 
+                  }
+                }
+              }
+            }
+          }
         ],
-        "swiftCallName" : "CustomElementClass"
+        "swiftCallName" : "CustomElementBridge"
       }
     ],
     "enums" : [
@@ -171,30 +184,10 @@
                 }
               },
               {
-                "name" : "shadowDOM",
-                "type" : {
-                  "string" : {
-
-                  }
-                }
-              },
-              {
-                "name" : "observedAttributes",
-                "type" : {
-                  "array" : {
-                    "_0" : {
-                      "string" : {
-
-                      }
-                    }
-                  }
-                }
-              },
-              {
                 "name" : "implementation",
                 "type" : {
                   "swiftHeapObject" : {
-                    "_0" : "CustomElementClass"
+                    "_0" : "CustomElementBridge"
                   }
                 }
               }
@@ -205,14 +198,6 @@
               }
             }
           }
-        ],
-        "types" : [
-
-        ]
-      },
-      {
-        "functions" : [
-
         ],
         "types" : [
           {

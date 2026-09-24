@@ -20,7 +20,7 @@ let package = Package(
             .upToNextMinor(from: "1.6.0"),
             traits: ["UnstableContainersPreview", "UnstableHashedContainers"]
         ),
-        .package(url: "https://github.com/swiftlang/swift-syntax", "600.0.0"..<"604.0.0"),
+        .package(url: "https://github.com/swiftlang/swift-syntax", "600.0.0"..<"605.0.0"),
     ],
     targets: [
         .target(name: "_UTF8Internals"),
@@ -52,7 +52,8 @@ let package = Package(
                 .product(name: "JavaScriptKit", package: "JavaScriptKit")
             ],
             exclude: [
-                "Generated/JavaScript/BridgeJS.json"
+                "bridge-js.config.json",
+                "Generated/JavaScript/BridgeJS.json",
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v5),
@@ -72,6 +73,7 @@ let package = Package(
                 .product(name: "JavaScriptKit", package: "JavaScriptKit"),
             ],
             exclude: [
+                "bridge-js.config.json",
                 "Generated/JavaScript/BridgeJS.json",
                 "JavaScript",
             ],

@@ -23,7 +23,7 @@ final class CustomElementMacroTests: XCTestCase {
                     @ContentBuilder
                     var body: some View { title }
 
-                    static var observedAttributes: [String] {
+                    static var __observedAttributes: [String] {
                         ["title"]
                     }
                 }

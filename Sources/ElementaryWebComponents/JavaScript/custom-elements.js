@@ -1,10 +1,35 @@
-function makeCustomElement(shadowDOM, observedAttributes, implementation) {
+export function defineCustomElement(name, implementation) {
+  if (import.meta.hot) {
+    const existing = customElements.get(name);
+    if (existing) {
+      const instances = document.querySelectorAll(name);
+      for (const element of instances) {
+        existing.__elementaryImplementation.disconnect(element);
+      }
+
+      existing.setImplementation(implementation);
+
+      for (const element of instances) {
+        implementation.connect(element);
+      }
+      return;
+    }
+  }
+
+  const elementClass = makeCustomElement();
+  elementClass.setImplementation(implementation);
+  customElements.define(name, elementClass);
+}
+
+function makeCustomElement() {
   return class ElementaryCustomElement extends HTMLElement {
-    static __elementaryImplementation = implementation;
-    static __elementaryShadowDOM = shadowDOM;
+    static setImplementation(implementation) {
+      this.__elementaryImplementation = implementation;
+      this.__observedAttributes = implementation.observedAttributes;
+    }
 
     static get observedAttributes() {
-      return observedAttributes;
+      return this.__observedAttributes;
     }
 
     constructor() {
@@ -16,7 +41,7 @@ function makeCustomElement(shadowDOM, observedAttributes, implementation) {
     }
 
     disconnectedCallback() {
-      this.constructor.__elementaryImplementation.destruct(this);
+      this.constructor.__elementaryImplementation.disconnect(this);
     }
 
     connectedMoveCallback() {}
@@ -26,51 +51,9 @@ function makeCustomElement(shadowDOM, observedAttributes, implementation) {
         this.constructor.__elementaryImplementation.setAttribute(
           this,
           name,
-          newValue
+          newValue,
         );
       }
     }
   };
-}
-
-function replaceImplementation(name, elementClass, implementation) {
-  const instances = document.querySelectorAll(name);
-  for (const element of instances) {
-    elementClass.__elementaryImplementation.destruct(element);
-  }
-
-  elementClass.__elementaryImplementation = implementation;
-
-  for (const element of instances) {
-    implementation.connect(element);
-  }
-}
-
-export function defineCustomElement(
-  name,
-  shadowDOM,
-  observedAttributes,
-  implementation
-) {
-  const existing = customElements.get(name);
-  if (existing && import.meta.hot) {
-    if (
-      existing.__elementaryShadowDOM !== shadowDOM ||
-      existing.observedAttributes.join("\0") !== observedAttributes.join("\0")
-    ) {
-      const message =
-        `Elementary custom element metadata changed for <${name}>; full reload required`;
-      console.info(message);
-      import.meta.hot.invalidate(message);
-      return;
-    }
-
-    replaceImplementation(name, existing, implementation);
-    return;
-  }
-
-  customElements.define(
-    name,
-    makeCustomElement(shadowDOM, observedAttributes, implementation)
-  );
 }

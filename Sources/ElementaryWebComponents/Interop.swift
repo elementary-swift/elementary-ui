@@ -1,4 +1,45 @@
+import BasicContainers
 import JavaScriptKit
+
+@JSFunction(from: .snippet("/JavaScript/custom-elements.js"))
+func defineCustomElement(
+    _ name: String,
+    _ implementation: CustomElementBridge
+) throws(JSException)
+
+@JS
+final class CustomElementBridge {
+    let factory: (JSHTMLElement) throws(JSException) -> MountedCustomElement
+    var elements = UniqueDictionary<JSHTMLElement, MountedCustomElement>()
+
+    init(
+        observedAttributes: [String],
+        factory: @escaping (JSHTMLElement) throws(JSException) -> MountedCustomElement
+    ) {
+        self.observedAttributes = observedAttributes
+        self.factory = factory
+    }
+
+    @JS
+    var observedAttributes: [String]
+
+    @JS
+    func connect(element: JSHTMLElement) throws(JSException) {
+        let existing = elements.insertValue(try factory(element), forKey: element)
+        existing?.unmount()
+    }
+
+    @JS
+    func disconnect(element: JSHTMLElement) {
+        guard let mounted = elements.removeValue(forKey: element) else { return }
+        mounted.unmount()
+    }
+
+    @JS
+    func setAttribute(element: JSHTMLElement, name: String, value: String?) {
+        elements.withValue(forKey: element) { $0.setAttribute(name: name, value: value) }
+    }
+}
 
 @JSClass(jsName: "HTMLElement")
 struct JSHTMLElement: Hashable {

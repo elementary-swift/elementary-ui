@@ -165,18 +165,5 @@ test("replaces live instances during Vite HMR-compatible registration", async ({
       count: element.shadowRoot!.adoptedStyleSheets.length,
       color: getComputedStyle(element).color,
     }))
-  ).toEqual({ count: 2, color: "rgb(70, 80, 90)" });
-});
-
-test("requests a full reload when browser metadata changes", async ({ page }) => {
-  await load(page, 4173);
-
-  const invalidationMessage = page.waitForEvent(
-    "console",
-    (message) =>
-      message.text() ===
-      "Elementary custom element metadata changed for <test-metadata-counter>; full reload required"
-  );
-  await page.evaluate(() => (globalThis as any).__triggerElementaryMetadataMismatch());
-  await invalidationMessage;
+  )    .toEqual({ count: 2, color: "rgb(70, 80, 90)" });
 });
