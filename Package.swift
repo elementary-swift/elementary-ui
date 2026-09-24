@@ -15,7 +15,11 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/swiftwasm/JavaScriptKit", .upToNextMinor(from: "0.58.0")),
         .package(url: "https://github.com/elementary-swift/elementary", from: "0.8.2"),
-        .package(url: "https://github.com/apple/swift-collections", .upToNextMinor(from: "1.6.0"), traits: ["UnstableContainersPreview"]),
+        .package(
+            url: "https://github.com/apple/swift-collections",
+            .upToNextMinor(from: "1.6.0"),
+            traits: ["UnstableContainersPreview", "UnstableHashedContainers"]
+        ),
         .package(url: "https://github.com/swiftlang/swift-syntax", "600.0.0"..<"604.0.0"),
     ],
     targets: [
@@ -48,8 +52,7 @@ let package = Package(
                 .product(name: "JavaScriptKit", package: "JavaScriptKit")
             ],
             exclude: [
-                "bridge-js.config.json",
-                "Generated/JavaScript/BridgeJS.json",
+                "Generated/JavaScript/BridgeJS.json"
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v5),
@@ -62,14 +65,13 @@ let package = Package(
         .target(
             name: "ElementaryWebComponents",
             dependencies: [
-                .target(name: "_UTF8Internals"),
                 .target(name: "ElementaryUI"),
                 .target(name: "ElementaryUIMacros"),
                 .target(name: "Reactivity"),
+                .product(name: "BasicContainers", package: "swift-collections"),
                 .product(name: "JavaScriptKit", package: "JavaScriptKit"),
             ],
             exclude: [
-                "bridge-js.config.json",
                 "Generated/JavaScript/BridgeJS.json",
                 "JavaScript",
             ],

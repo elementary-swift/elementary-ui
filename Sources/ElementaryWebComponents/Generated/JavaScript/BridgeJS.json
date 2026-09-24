@@ -8,7 +8,7 @@
         "isFinal" : true,
         "methods" : [
           {
-            "abiName" : "bjs_CustomElementImplementation_connect",
+            "abiName" : "bjs_CustomElementClass_connect",
             "effects" : {
               "isAsync" : false,
               "isStatic" : false,
@@ -33,7 +33,7 @@
             }
           },
           {
-            "abiName" : "bjs_CustomElementImplementation_destruct",
+            "abiName" : "bjs_CustomElementClass_destruct",
             "effects" : {
               "isAsync" : false,
               "isStatic" : false,
@@ -58,7 +58,7 @@
             }
           },
           {
-            "abiName" : "bjs_CustomElementImplementation_setAttribute",
+            "abiName" : "bjs_CustomElementClass_setAttribute",
             "effects" : {
               "isAsync" : false,
               "isStatic" : false,
@@ -106,11 +106,11 @@
             }
           }
         ],
-        "name" : "CustomElementImplementation",
+        "name" : "CustomElementClass",
         "properties" : [
 
         ],
-        "swiftCallName" : "CustomElementImplementation"
+        "swiftCallName" : "CustomElementClass"
       }
     ],
     "enums" : [
@@ -194,7 +194,7 @@
                 "name" : "implementation",
                 "type" : {
                   "swiftHeapObject" : {
-                    "_0" : "CustomElementImplementation"
+                    "_0" : "CustomElementClass"
                   }
                 }
               }

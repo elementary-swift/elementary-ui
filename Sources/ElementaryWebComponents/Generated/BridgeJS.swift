@@ -54,12 +54,12 @@ fileprivate func _bjs_struct_lift_JSShadowRootInit_extern() -> Int32 {
     return _bjs_struct_lift_JSShadowRootInit_extern()
 }
 
-@_expose(wasm, "bjs_CustomElementImplementation_connect")
-@_cdecl("bjs_CustomElementImplementation_connect")
-public func _bjs_CustomElementImplementation_connect(_ _self: UnsafeMutableRawPointer, _ element: Int32) -> Void {
+@_expose(wasm, "bjs_CustomElementClass_connect")
+@_cdecl("bjs_CustomElementClass_connect")
+public func _bjs_CustomElementClass_connect(_ _self: UnsafeMutableRawPointer, _ element: Int32) -> Void {
     #if arch(wasm32)
     do {
-        try CustomElementImplementation.bridgeJSLiftParameter(_self).connect(element: JSHTMLElement.bridgeJSLiftParameter(element))
+        try CustomElementClass.bridgeJSLiftParameter(_self).connect(element: JSHTMLElement.bridgeJSLiftParameter(element))
     } catch let error {
         if let error = error.thrownValue.object {
             withExtendedLifetime(error) {
@@ -78,63 +78,63 @@ public func _bjs_CustomElementImplementation_connect(_ _self: UnsafeMutableRawPo
     #endif
 }
 
-@_expose(wasm, "bjs_CustomElementImplementation_destruct")
-@_cdecl("bjs_CustomElementImplementation_destruct")
-public func _bjs_CustomElementImplementation_destruct(_ _self: UnsafeMutableRawPointer, _ element: Int32) -> Void {
+@_expose(wasm, "bjs_CustomElementClass_destruct")
+@_cdecl("bjs_CustomElementClass_destruct")
+public func _bjs_CustomElementClass_destruct(_ _self: UnsafeMutableRawPointer, _ element: Int32) -> Void {
     #if arch(wasm32)
-    CustomElementImplementation.bridgeJSLiftParameter(_self).destruct(element: JSHTMLElement.bridgeJSLiftParameter(element))
+    CustomElementClass.bridgeJSLiftParameter(_self).destruct(element: JSHTMLElement.bridgeJSLiftParameter(element))
     #else
     fatalError("Only available on WebAssembly")
     #endif
 }
 
-@_expose(wasm, "bjs_CustomElementImplementation_setAttribute")
-@_cdecl("bjs_CustomElementImplementation_setAttribute")
-public func _bjs_CustomElementImplementation_setAttribute(_ _self: UnsafeMutableRawPointer, _ element: Int32, _ nameBytes: Int32, _ nameLength: Int32, _ valueIsSome: Int32, _ valueBytes: Int32, _ valueLength: Int32) -> Void {
+@_expose(wasm, "bjs_CustomElementClass_setAttribute")
+@_cdecl("bjs_CustomElementClass_setAttribute")
+public func _bjs_CustomElementClass_setAttribute(_ _self: UnsafeMutableRawPointer, _ element: Int32, _ nameBytes: Int32, _ nameLength: Int32, _ valueIsSome: Int32, _ valueBytes: Int32, _ valueLength: Int32) -> Void {
     #if arch(wasm32)
-    CustomElementImplementation.bridgeJSLiftParameter(_self).setAttribute(element: JSHTMLElement.bridgeJSLiftParameter(element), name: String.bridgeJSLiftParameter(nameBytes, nameLength), value: Optional<String>.bridgeJSLiftParameter(valueIsSome, valueBytes, valueLength))
+    CustomElementClass.bridgeJSLiftParameter(_self).setAttribute(element: JSHTMLElement.bridgeJSLiftParameter(element), name: String.bridgeJSLiftParameter(nameBytes, nameLength), value: Optional<String>.bridgeJSLiftParameter(valueIsSome, valueBytes, valueLength))
     #else
     fatalError("Only available on WebAssembly")
     #endif
 }
 
-@_expose(wasm, "bjs_CustomElementImplementation_deinit")
-@_cdecl("bjs_CustomElementImplementation_deinit")
-public func _bjs_CustomElementImplementation_deinit(_ pointer: UnsafeMutableRawPointer) -> Void {
+@_expose(wasm, "bjs_CustomElementClass_deinit")
+@_cdecl("bjs_CustomElementClass_deinit")
+public func _bjs_CustomElementClass_deinit(_ pointer: UnsafeMutableRawPointer) -> Void {
     #if arch(wasm32)
-    Unmanaged<CustomElementImplementation>.fromOpaque(pointer).release()
+    Unmanaged<CustomElementClass>.fromOpaque(pointer).release()
     #else
     fatalError("Only available on WebAssembly")
     #endif
 }
 
-extension CustomElementImplementation: ConvertibleToJSValue, _BridgedSwiftHeapObject, _BridgedSwiftProtocolExportable {
+extension CustomElementClass: ConvertibleToJSValue, _BridgedSwiftHeapObject, _BridgedSwiftProtocolExportable {
     var jsValue: JSValue {
-        return .object(JSObject(id: UInt32(bitPattern: _bjs_CustomElementImplementation_wrap(Unmanaged.passRetained(self).toOpaque()))))
+        return .object(JSObject(id: UInt32(bitPattern: _bjs_CustomElementClass_wrap(Unmanaged.passRetained(self).toOpaque()))))
     }
     consuming func bridgeJSLowerAsProtocolReturn() -> Int32 {
-        _bjs_CustomElementImplementation_wrap(Unmanaged.passRetained(self).toOpaque())
+        _bjs_CustomElementClass_wrap(Unmanaged.passRetained(self).toOpaque())
     }
 }
 
 #if arch(wasm32)
-@_extern(wasm, module: "ElementaryWebComponents", name: "bjs_CustomElementImplementation_wrap")
-fileprivate func _bjs_CustomElementImplementation_wrap_extern(_ pointer: UnsafeMutableRawPointer) -> Int32
+@_extern(wasm, module: "ElementaryWebComponents", name: "bjs_CustomElementClass_wrap")
+fileprivate func _bjs_CustomElementClass_wrap_extern(_ pointer: UnsafeMutableRawPointer) -> Int32
 #else
-fileprivate func _bjs_CustomElementImplementation_wrap_extern(_ pointer: UnsafeMutableRawPointer) -> Int32 {
+fileprivate func _bjs_CustomElementClass_wrap_extern(_ pointer: UnsafeMutableRawPointer) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func _bjs_CustomElementImplementation_wrap(_ pointer: UnsafeMutableRawPointer) -> Int32 {
-    return _bjs_CustomElementImplementation_wrap_extern(pointer)
+@inline(never) fileprivate func _bjs_CustomElementClass_wrap(_ pointer: UnsafeMutableRawPointer) -> Int32 {
+    return _bjs_CustomElementClass_wrap_extern(pointer)
 }
 
 extension JSShadowRootInit: BridgedSwiftGenericBridgeable {
     @_spi(BridgeJS) public static let bridgeJSTypeHandle = JSShadowRootInit.bridgeJSMakeTypeHandle()
 }
 
-extension CustomElementImplementation: BridgedSwiftGenericBridgeable {
-    @_spi(BridgeJS) public static let bridgeJSTypeHandle = CustomElementImplementation.bridgeJSMakeTypeHandle()
+extension CustomElementClass: BridgedSwiftGenericBridgeable {
+    @_spi(BridgeJS) public static let bridgeJSTypeHandle = CustomElementClass.bridgeJSMakeTypeHandle()
 }
 
 #if arch(wasm32)
@@ -149,7 +149,7 @@ fileprivate func bjs_defineCustomElement_extern(_ nameBytes: Int32, _ nameLength
     return bjs_defineCustomElement_extern(nameBytes, nameLength, shadowDOMBytes, shadowDOMLength, implementation)
 }
 
-func _$defineCustomElement(_ name: String, _ shadowDOM: String, _ observedAttributes: [String], _ implementation: CustomElementImplementation) throws(JSException) -> Void {
+func _$defineCustomElement(_ name: String, _ shadowDOM: String, _ observedAttributes: [String], _ implementation: CustomElementClass) throws(JSException) -> Void {
     name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
         shadowDOM.bridgeJSWithLoweredParameter { (shadowDOMBytes, shadowDOMLength) in
             let implementationPointer = implementation.bridgeJSLowerParameter()
@@ -299,7 +299,7 @@ fileprivate func _bjs_ElementaryWebComponents_register_type_handles_extern(_ bas
 public func _bjs_ElementaryWebComponents_register_type_handles() {
     let typeIds: [Int32] = [
         JSShadowRootInit.bridgeJSTypeID,
-        CustomElementImplementation.bridgeJSTypeID,
+        CustomElementClass.bridgeJSTypeID,
     ]
     typeIds.withUnsafeBufferPointer { buffer in
         _bjs_ElementaryWebComponents_register_type_handles_extern(buffer.baseAddress, Int32(buffer.count))

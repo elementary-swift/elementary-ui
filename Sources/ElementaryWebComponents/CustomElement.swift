@@ -10,8 +10,7 @@ public protocol CustomElement: View {
     /// This is a static list so registration does not need to build a view.
     static var observedAttributes: [String] { get }
 
-    /// Collects the `@Attribute` slots this value already holds.
-    static func __attributes(from view: borrowing Self) -> _CustomElementAttributeStorage
+    func __applyCustomElementContext(_ hostContext: inout _CustomElementHostContext)
 }
 
 /// Marks a struct as both an ElementaryUI view and a browser custom-element definition.
@@ -20,8 +19,7 @@ public protocol CustomElement: View {
 /// registered with ``CustomElements/define(_:_:shadow:)``.
 @attached(
     member,
-    names: named(observedAttributes),
-    named(__attributes)
+    names: named(observedAttributes)
 )
 @attached(
     extension,
@@ -29,7 +27,8 @@ public protocol CustomElement: View {
     View,
     __ViewEquatable,
     CustomElement,
-    names: named(__initializeState),
+    names: named(__applyCustomElementContext),
+    named(__initializeState),
     named(__restoreState),
     named(__applyContext),
     named(__ViewState),

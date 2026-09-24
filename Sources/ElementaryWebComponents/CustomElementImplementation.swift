@@ -1,64 +1,71 @@
+import BasicContainers
 import ElementaryUI
 import JavaScriptKit
+import Reactivity
+
+public struct _CustomElementHostContext: ~Copyable {
+    private var attributes: [PropertyID: any AnyAttributeBox] = [:]
+    private let registrar = ReactivityRegistrar()
+
+    public mutating func linkAttribute(_ name: String, _ attribute: Attribute<some CustomElementAttributeValue>) {
+        let id = PropertyID(name)
+        assert(attributes[id] == nil, "Attribute already added")
+
+        attribute.box.attachReactivity(registrar, id: id)
+        attributes[id] = attribute.box
+    }
+
+    func trySetAttribute(_ name: String, value: String?) -> Bool {
+        let id = PropertyID(name)
+        guard let box = attributes[id] else { return false }
+        return box.trySetValue(value)
+    }
+}
+
+extension _CustomElementHostContext {
+    func setAttribute(_ name: String, value: String?, onElement elementName: String) {
+        guard self.trySetAttribute(name, value: value) else {
+            print("ELEMENTARY WARNING: invalid value for attribute '\(name)' on <\(elementName)>")
+            return
+        }
+    }
+}
 
 /// One host element. Attribute values live in ``attributes``; the mount closure captures the
 /// view, which already shares those slots.
-private final class MountedCustomElement {
-    private let mountTarget: JSObject
-    private var application: MountedApplication?
-    private let attributes: _CustomElementAttributeStorage
-    private let mountView: () -> MountedApplication
-
-    init(
-        mountTarget: JSObject,
-        attributes: _CustomElementAttributeStorage,
-        mountView: @escaping () -> MountedApplication
-    ) {
-        self.mountTarget = mountTarget
-        self.attributes = attributes
-        self.mountView = mountView
-    }
+private struct MountedCustomElement: ~Copyable {
+    private let elementName: String
+    private var application: MountedApplication
+    private var context: _CustomElementHostContext
 
     // Generic initializers must be convenience on final classes for embedded Swift.
-    convenience init<Element: CustomElement>(
-        name: String,
+    init<Element: CustomElement>(
+        elementName: String,
         host: JSHTMLElement,
         shadow: CustomElements.ShadowRootOptions?,
         factory: () -> Element
     ) throws(JSException) {
+        self.elementName = elementName
         let mountTarget = try Self.resolveMountTarget(host: host, shadow: shadow)
+        self.context = _CustomElementHostContext()
+
         let view = factory()
-        let attributes = Element.__attributes(from: view)
+        view.__applyCustomElementContext(&self.context)
+
         for attributeName in Element.observedAttributes {
-            guard let value = try host.getAttribute(attributeName) else { continue }
-            guard attributes.apply(name: attributeName, value: value) else {
-                print(
-                    "ELEMENTARY WARNING: invalid value for attribute '\(attributeName)' on <\(name)>"
-                )
-                continue
-            }
+            guard let value = try? host.getAttribute(attributeName) else { continue }
+            self.context.setAttribute(attributeName, value: value, onElement: self.elementName)
         }
-        self.init(
-            mountTarget: mountTarget,
-            attributes: attributes,
-            mountView: {
-                Application(view)._mount(in: mountTarget)
-            }
-        )
+
+        self.application = Application(view)._mount(in: mountTarget)
     }
 
-    func mount() {
-        guard application == nil else { return }
-        application = mountView()
-    }
-
-    func unmount() {
-        guard let application = application.take() else { return }
+    consuming func unmount() {
         application.unmount()
     }
 
-    func setAttribute(name: String, value: String?) -> Bool {
-        attributes.apply(name: name, value: value)
+    func setAttribute(name: String, value: String?) {
+        context.setAttribute(name, value: value, onElement: self.elementName)
     }
 
     private static func resolveMountTarget(
@@ -83,16 +90,13 @@ private final class MountedCustomElement {
 }
 
 @JS
-final class CustomElementImplementation {
-    private let name: String
+final class CustomElementClass {
     private let factory: (JSHTMLElement) throws(JSException) -> MountedCustomElement
-    private var elements: [JSHTMLElement: MountedCustomElement] = [:]
+    private var elements = UniqueDictionary<JSHTMLElement, MountedCustomElement>()
 
     private init(
-        name: String,
         factory: @escaping (JSHTMLElement) throws(JSException) -> MountedCustomElement
     ) {
-        self.name = name
         self.factory = factory
     }
 
@@ -101,9 +105,9 @@ final class CustomElementImplementation {
         shadow: CustomElements.ShadowRootOptions?,
         factory: @escaping () -> Element
     ) {
-        self.init(name: name) { (host: JSHTMLElement) throws(JSException) -> MountedCustomElement in
+        self.init { (host: JSHTMLElement) throws(JSException) -> MountedCustomElement in
             try MountedCustomElement(
-                name: name,
+                elementName: name,
                 host: host,
                 shadow: shadow,
                 factory: factory
@@ -113,10 +117,8 @@ final class CustomElementImplementation {
 
     @JS
     func connect(element: JSHTMLElement) throws(JSException) {
-        if elements[element] == nil {
-            elements[element] = try factory(element)
-        }
-        elements[element]!.mount()
+        let existing = elements.insertValue(try factory(element), forKey: element)
+        existing?.unmount()
     }
 
     @JS
@@ -127,11 +129,7 @@ final class CustomElementImplementation {
 
     @JS
     func setAttribute(element: JSHTMLElement, name: String, value: String?) {
-        guard let mounted = elements[element] else { return }
-        guard mounted.setAttribute(name: name, value: value) else {
-            print("ELEMENTARY WARNING: invalid value for attribute '\(name)' on <\(self.name)>")
-            return
-        }
+        elements.withValue(forKey: element) { $0.setAttribute(name: name, value: value) }
     }
 }
 
@@ -140,5 +138,5 @@ func defineCustomElement(
     _ name: String,
     _ shadowDOM: String,
     _ observedAttributes: [String],
-    _ implementation: CustomElementImplementation
+    _ implementation: CustomElementClass
 ) throws(JSException)

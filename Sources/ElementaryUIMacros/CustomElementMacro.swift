@@ -31,7 +31,6 @@ private func customElementDiagnostic(
 private struct CustomElementAttributeDeclaration {
     let identifier: String
     let attributeName: String
-    let defaultValue: String
 }
 
 extension CustomElementMacro: MemberMacro {
@@ -47,9 +46,6 @@ extension CustomElementMacro: MemberMacro {
         )
         let access = declaration.customElementAccessModifier
         let names = attributes.map { "\"\($0.attributeName)\"" }.joined(separator: ", ")
-        let slots = attributes.map { attribute in
-            "view._\(attribute.identifier).slot(named: \"\(attribute.attributeName)\", declarationDefault: \(attribute.defaultValue))"
-        }.joined(separator: ",\n")
 
         return [
             DeclSyntax(
@@ -58,16 +54,7 @@ extension CustomElementMacro: MemberMacro {
                     [\(raw: names)]
                 }
                 """
-            ),
-            DeclSyntax(
-                """
-                \(access)static func __attributes(from view: borrowing Self) -> ElementaryWebComponents._CustomElementAttributeStorage {
-                    ElementaryWebComponents._CustomElementAttributeStorage([
-                        \(raw: slots)
-                    ])
-                }
-                """
-            ),
+            )
         ]
     }
 }
@@ -97,7 +84,10 @@ extension CustomElementMacro: ExtensionMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [ExtensionDeclSyntax] {
-        guard (try? validateAndCollectAttributes(macroNode: node, declaration: declaration)) != nil else {
+        let attributes: [CustomElementAttributeDeclaration]
+        do {
+            attributes = try validateAndCollectAttributes(macroNode: node, declaration: declaration)
+        } catch {
             return []
         }
         var extensions = try ViewMacro.expansion(
@@ -108,10 +98,19 @@ extension CustomElementMacro: ExtensionMacro {
             in: context
         )
 
+        let access = declaration.customElementAccessModifier
+        let links = attributes.map { attribute in
+            "hostContext.linkAttribute(\"\(attribute.attributeName)\", _\(attribute.identifier))"
+        }.joined(separator: "\n")
+
         extensions.append(
             try ExtensionDeclSyntax(
                 """
-                extension \(type): CustomElement {}
+                extension \(type): CustomElement {
+                    \(access)func __applyCustomElementContext(_ hostContext: inout ElementaryWebComponents._CustomElementHostContext) {
+                        \(raw: links)
+                    }
+                }
                 """
             )
         )
@@ -226,8 +225,7 @@ private func validateAndCollectAttributes(
         result.append(
             .init(
                 identifier: identifier,
-                attributeName: attributeName,
-                defaultValue: binding.initializer?.value.trimmedDescription ?? "nil"
+                attributeName: attributeName
             )
         )
     }

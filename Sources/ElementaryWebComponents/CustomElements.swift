@@ -1,20 +1,5 @@
 import JavaScriptKit
 
-/// An error raised while registering a custom element with the browser.
-public struct CustomElementRegistrationError: Error, Sendable, CustomStringConvertible {
-    public let elementName: String
-    public let message: String
-
-    public var description: String {
-        "Could not define custom element <\(elementName)>: \(message)"
-    }
-
-    init(elementName: String, message: String) {
-        self.elementName = elementName
-        self.message = message
-    }
-}
-
 /// Browser custom-element registration APIs.
 public enum CustomElements {
     /// Where a custom element's view is mounted, and which constructable stylesheets its shadow root adopts.
@@ -53,22 +38,18 @@ public enum CustomElements {
         _ name: String,
         _: Element.Type,
         shadow: ShadowRootOptions? = nil
-    ) throws(CustomElementRegistrationError) {
-        let implementation = CustomElementImplementation(
+    ) throws(JSException) {
+        let implementation = CustomElementClass(
             name: name,
             shadow: shadow,
             factory: { Element() }
         )
 
-        do {
-            try defineCustomElement(
-                name,
-                shadow?.bridgeValue ?? "none",
-                Element.observedAttributes,
-                implementation
-            )
-        } catch let error {
-            throw CustomElementRegistrationError(elementName: name, message: error.description)
-        }
+        try defineCustomElement(
+            name,
+            shadow?.bridgeValue ?? "none",
+            Element.observedAttributes,
+            implementation
+        )
     }
 }

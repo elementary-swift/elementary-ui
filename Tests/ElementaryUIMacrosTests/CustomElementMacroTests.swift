@@ -26,15 +26,12 @@ final class CustomElementMacroTests: XCTestCase {
                     static var observedAttributes: [String] {
                         ["title"]
                     }
-
-                    static func __attributes(from view: borrowing Self) -> ElementaryWebComponents._CustomElementAttributeStorage {
-                        ElementaryWebComponents._CustomElementAttributeStorage([
-                            view._title.slot(named: "title", declarationDefault: "Hello")
-                        ])
-                    }
                 }
 
                 extension Greeting: CustomElement {
+                    func __applyCustomElementContext(_ hostContext: inout ElementaryWebComponents._CustomElementHostContext) {
+                        hostContext.linkAttribute("title", _title)
+                    }
                 }
                 """,
             macros: macros

@@ -1,7 +1,8 @@
 import ElementaryUI
-import ElementaryWebComponents
 import Reactivity
 import Testing
+
+@testable import ElementaryWebComponents
 
 @Suite
 struct AttributeTests {
@@ -19,21 +20,21 @@ struct AttributeTests {
     @Test
     func attributesDecodeAndRestoreDefaults() {
         let fixture = AttributeFixture(count: 7)
-        let storage = mount(fixture)
+        let host = Host(fixture)
 
-        #expect(storage.apply(name: "count", value: "42"))
-        #expect(storage.apply(name: "step-size", value: "3"))
-        #expect(storage.apply(name: "label", value: "Hello"))
-        #expect(storage.apply(name: "theme", value: "dark"))
+        #expect(host.apply("count", "42"))
+        #expect(host.apply("step-size", "3"))
+        #expect(host.apply("label", "Hello"))
+        #expect(host.apply("theme", "dark"))
         #expect(fixture.count == 42)
         #expect(fixture.stepSize == 3)
         #expect(fixture.label == "Hello")
         #expect(fixture.theme == .dark)
 
-        #expect(storage.apply(name: "count", value: nil))
-        #expect(storage.apply(name: "label", value: nil))
-        #expect(storage.apply(name: "theme", value: nil))
-        #expect(fixture.count == 1)
+        #expect(host.apply("count", nil))
+        #expect(host.apply("label", nil))
+        #expect(host.apply("theme", nil))
+        #expect(fixture.count == 7)
         #expect(fixture.label == nil)
         #expect(fixture.theme == .system)
     }
@@ -41,25 +42,24 @@ struct AttributeTests {
     @Test
     func invalidValuesPreserveCurrentValue() {
         let fixture = AttributeFixture()
-        let storage = mount(fixture)
-        #expect(storage.apply(name: "count", value: "9"))
-        #expect(!storage.apply(name: "count", value: "nine"))
-        #expect(!storage.apply(name: "missing", value: "1"))
+        let host = Host(fixture)
+        #expect(host.apply("count", "9"))
+        #expect(!host.apply("count", "nine"))
+        #expect(!host.apply("missing", "1"))
         #expect(fixture.count == 9)
     }
 
     @Test
     func textualBooleanRequiresExactLowercaseValues() {
         let attribute = Attribute(wrappedValue: false)
-        let storage = _CustomElementAttributeStorage([
-            attribute.slot(named: "flag", declarationDefault: false)
-        ])
-        #expect(storage.apply(name: "flag", value: "true"))
+        let host = Host()
+        host.link("flag", attribute)
+        #expect(host.apply("flag", "true"))
         #expect(attribute.wrappedValue)
-        #expect(storage.apply(name: "flag", value: "false"))
+        #expect(host.apply("flag", "false"))
         #expect(!attribute.wrappedValue)
         for invalid in ["", "TRUE", "True", "FALSE", "False", " true", "false ", "1", "0", "trué"] {
-            #expect(!storage.apply(name: "flag", value: invalid))
+            #expect(!host.apply("flag", invalid))
             #expect(!attribute.wrappedValue)
         }
     }
@@ -67,19 +67,18 @@ struct AttributeTests {
     @Test
     func attributeNamesUseExactUTF8Bytes() {
         let count = Attribute(wrappedValue: 0)
-        let countStorage = _CustomElementAttributeStorage([
-            count.slot(named: "count", declarationDefault: 0)
-        ])
-        #expect(countStorage.apply(name: "count", value: "3"))
-        #expect(!countStorage.apply(name: "COUNT", value: "4"))
-        #expect(!countStorage.apply(name: "", value: "1"))
-        #expect(!countStorage.apply(name: "count\0", value: "1"))
+        let countHost = Host()
+        countHost.link("count", count)
+        #expect(countHost.apply("count", "3"))
+        #expect(!countHost.apply("COUNT", "4"))
+        #expect(!countHost.apply("", "1"))
+        #expect(!countHost.apply("count\0", "1"))
         #expect(count.wrappedValue == 3)
 
         let fixture = UTF8AttributeFixture()
-        let storage = UTF8AttributeFixture.__attributes(from: fixture)
-        #expect(storage.apply(name: "café", value: "7"))
-        #expect(!storage.apply(name: "cafe\u{301}", value: "8"))
+        let host = Host(fixture)
+        #expect(host.apply("café", "7"))
+        #expect(!host.apply("cafe\u{301}", "8"))
         #expect(fixture.value == 7)
     }
 
@@ -104,9 +103,8 @@ struct AttributeTests {
     @Test
     func attributeChangesParticipateInReactivity() {
         let attribute = Attribute(wrappedValue: 1)
-        let storage = _CustomElementAttributeStorage([
-            attribute.slot(named: "count", declarationDefault: 1)
-        ])
+        let host = Host()
+        host.link("count", attribute)
         nonisolated(unsafe) var changed = false
 
         withReactiveTracking {
@@ -115,7 +113,7 @@ struct AttributeTests {
             changed = true
         }
 
-        #expect(storage.apply(name: "count", value: "2"))
+        #expect(host.apply("count", "2"))
         #expect(changed)
         #expect(attribute.wrappedValue == 2)
     }
@@ -130,11 +128,30 @@ struct AttributeTests {
     }
 }
 
+private final class Host {
+    private var context = _CustomElementHostContext()
+
+    init() {}
+
+    init(_ element: some CustomElement) {
+        element.__applyCustomElementContext(&context)
+    }
+
+    func link(_ name: String, _ attribute: Attribute<some CustomElementAttributeValue>) {
+        context.linkAttribute(name, attribute)
+    }
+
+    func apply(_ name: String, _ value: String?) -> Bool {
+        context.trySetAttribute(name, value: value)
+    }
+}
+
 private enum Theme: String, CustomElementAttributeValue {
     case system
     case dark
 }
 
+@CustomElement
 private struct AttributeFixture {
     @Attribute var count = 1
     @Attribute("step-size") var stepSize = 2
@@ -143,50 +160,9 @@ private struct AttributeFixture {
     @Attribute var URLValue = "url"
     @Attribute var theme: Theme? = .system
 
-    @ContentBuilder var body: some View {
+    var body: some View {
         "\(count):\(stepSize)"
     }
-
-    static var observedAttributes: [String] {
-        ["count", "step-size", "label", "user-id", "url-value", "theme"]
-    }
-
-    static func __attributes(from view: borrowing Self) -> _CustomElementAttributeStorage {
-        _CustomElementAttributeStorage([
-            view._count.slot(named: "count", declarationDefault: 1),
-            view._stepSize.slot(named: "step-size", declarationDefault: 2),
-            view._label.slot(named: "label", declarationDefault: nil),
-            view._userID.slot(named: "user-id", declarationDefault: "user"),
-            view._URLValue.slot(named: "url-value", declarationDefault: "url"),
-            view._theme.slot(named: "theme", declarationDefault: .system),
-        ])
-    }
-}
-
-private func mount(_ fixture: AttributeFixture) -> _CustomElementAttributeStorage {
-    AttributeFixture.__attributes(from: fixture)
-}
-
-extension AttributeFixture: __FunctionView, View {
-    static func __applyContext(_ context: borrowing _ViewContext, to view: inout Self) {
-
-    }
-    typealias __ViewState = Void
-}
-
-extension AttributeFixture: __ViewEquatable {
-    static func __arePropertiesEqual(a: Self, b: Self) -> Bool {
-        true
-            && __ViewProperty.areKnownEqual(a.count, b.count)
-            && __ViewProperty.areKnownEqual(a.stepSize, b.stepSize)
-            && __ViewProperty.areKnownEqual(a.label, b.label)
-            && __ViewProperty.areKnownEqual(a.userID, b.userID)
-            && __ViewProperty.areKnownEqual(a.URLValue, b.URLValue)
-            && __ViewProperty.areKnownEqual(a.theme, b.theme)
-    }
-}
-
-extension AttributeFixture: CustomElement {
 }
 
 @CustomElement
