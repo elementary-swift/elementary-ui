@@ -224,6 +224,41 @@ struct DOMPatchingTests {
         )
     }
 
+    @Test(arguments: [0, 1, 3])
+    func insertsKeyedRangeWithoutMovingExistingRows(at index: Int) {
+        let original = ["A", "B", "C"]
+        let state = StringListState(original)
+        let ops = patchOps {
+            ForEach(state.items, key: \.self) { $0 }
+        } toggle: {
+            state.items.insert(contentsOf: ["X", "Y"], at: index)
+        }
+
+        #expect(
+            ops == [
+                .createText("X"),
+                .createText("Y"),
+                .addChild(parent: "<>", child: "Y", before: index < original.count ? original[index] : nil),
+                .addChild(parent: "<>", child: "X", before: "Y"),
+            ]
+        )
+    }
+
+    @Test(arguments: [0, 1, 3])
+    func deletesKeyedRangeWithoutMovingRemainingRows(at index: Int) {
+        let state = StringListState(["A", "B", "C"])
+        state.items.insert(contentsOf: ["X", "Y"], at: index)
+        let ops = patchOps {
+            ForEach(state.items, key: \.self) { $0 }
+        } toggle: {
+            state.items.removeSubrange(index..<(index + 2))
+        }
+
+        #expect(ops.count == 2)
+        #expect(ops.contains(.removeChild(parent: "<>", child: "X")))
+        #expect(ops.contains(.removeChild(parent: "<>", child: "Y")))
+    }
+
     @Test
     func patchesKeyedMoves() {
         let state = StringListState(["A", "B", "C"])

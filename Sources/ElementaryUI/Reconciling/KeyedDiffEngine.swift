@@ -50,6 +50,39 @@ struct KeyedDiffEngine: ~Copyable {
             return false
         }
 
+        // Pure deletions cannot revive or reorder a slot. Move the removed
+        // range directly into the removal lane, preserving transition handling.
+        if newMiddleCount == 0 {
+            removedSlots.reserveCapacity(removedSlots.count + oldMiddleCount)
+            activeSlots.replace(
+                removing: prefixCount..<(prefixCount + oldMiddleCount),
+                consumingWith: { input in
+                    while !input.isEmpty {
+                        removedSlots.append(input.removeFirst())
+                    }
+                },
+                addingCount: 0,
+                initializingWith: { _ in }
+            )
+            return true
+        }
+
+        // With no old middle or leaving slots, every inserted key is new.
+        // Keep the general path when a key could revive an exit transition.
+        if oldMiddleCount == 0 && leavingSlots.isEmpty {
+            activeSlots.replace(
+                removing: prefixCount..<prefixCount,
+                consumingWith: { _ in },
+                addingCount: newMiddleCount,
+                initializingWith: { output in
+                    for index in prefixCount..<(prefixCount + newMiddleCount) {
+                        output.append(makeNewSlot(index, keys[index]))
+                    }
+                }
+            )
+            return true
+        }
+
         prepareScratch(
             oldMiddleCount: oldMiddleCount,
             newMiddleCount: newMiddleCount,
