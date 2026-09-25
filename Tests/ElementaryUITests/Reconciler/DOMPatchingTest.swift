@@ -328,18 +328,16 @@ struct DOMPatchingTests {
     func patchesKeyedEmptyList() {
         let state = StringListState(["A", "B", "C"])
         let ops = patchOps {
-            ForEach(state.items, key: \.self) { item in
-                item
+            div {
+                ForEach(state.items, key: \.self) { item in
+                    item
+                }
             }
         } toggle: {
             state.items.removeAll()
         }
 
-        #expect(
-            ops == [
-                .setChildren(parent: "<>", children: [])
-            ]
-        )
+        #expect(ops == [.setChildren(parent: "<div>", children: [])])
     }
 
     @Test

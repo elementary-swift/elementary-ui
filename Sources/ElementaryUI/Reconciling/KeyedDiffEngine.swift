@@ -30,6 +30,18 @@ struct KeyedDiffEngine: ~Copyable {
         let newCount = keys.count
         if oldCount == 0 && newCount == 0 { return false }
 
+        // A single key replacement never needs the hash table. Hashing a
+        // stored view key traps on the embedded Wasm target.
+        if oldCount == 1 && newCount == 1 && leavingSlots.isEmpty {
+            let oldKey = activeSlots.span[unchecked: 0].key
+            let newKey = keys[unchecked: 0]
+            if oldKey != newKey {
+                removedSlots.append(activeSlots.removeLast())
+                activeSlots.append(makeNewSlot(0, newKey))
+                return true
+            }
+        }
+
         let (prefixCount, suffixCount) = scanUnchangedEdges(activeSlots: activeSlots.span, keys: keys)
         let oldMiddleCount = oldCount - prefixCount - suffixCount
         let newMiddleCount = newCount - prefixCount - suffixCount

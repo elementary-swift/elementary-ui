@@ -11,3 +11,7 @@ Package.resolved
 .devcontainer
 .swift-version
 .cursor
+/IntegrationTests/WebComponents/node_modules
+/IntegrationTests/WebComponents/dist
+/IntegrationTests/WebComponents/test-results
+/IntegrationTests/WebComponents/playwright-report

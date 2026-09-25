@@ -5,17 +5,20 @@ final class LayoutContainer {
     let domNode: DOM.Node
     private let layoutNodes: RigidArray<LayoutNode>
     private let layoutObservers: [DOMLayoutObserver]
+    private let ownsAllChildren: Bool
     private var isDirty: Bool = false
 
     init(
         domNode: DOM.Node,
         scheduler: Scheduler,
         layoutNodes: consuming RigidArray<LayoutNode>,
-        layoutObservers: [DOMLayoutObserver]
+        layoutObservers: [DOMLayoutObserver],
+        ownsAllChildren: Bool
     ) {
         self.domNode = domNode
         self.layoutNodes = consume layoutNodes
         self.layoutObservers = layoutObservers
+        self.ownsAllChildren = ownsAllChildren
     }
 
     func commitInitialLayout(_ context: inout _CommitContext) {
@@ -68,15 +71,11 @@ final class LayoutContainer {
             let isAllAdditions = ops.isAllAdditions
 
             ops.consume { entries in
-                if canBatchReplace {
-                    if isAllRemovals {
-                        context.dom.clearChildren(in: domNode)
-                    } else if isAllAdditions {
-                        for index in entries.indices {
-                            context.dom.appendChild(entries[unchecked: index].reference, to: domNode)
-                        }
-                    } else {
-                        fatalError("invalid batch replace pass in layout container")
+                if canBatchReplace && isAllRemovals && ownsAllChildren {
+                    context.dom.clearChildren(in: domNode)
+                } else if canBatchReplace && isAllAdditions {
+                    for index in entries.indices {
+                        context.dom.appendChild(entries[unchecked: index].reference, to: domNode)
                     }
                 } else {
                     var sibling: DOM.Node?

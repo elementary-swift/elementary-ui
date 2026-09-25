@@ -66,11 +66,59 @@ struct ReconcilerUpdateTests {
         dom.runNextFrame()
         dom.clearOps()
         app.unmount()
-        dom.runNextFrame()
 
         #expect(deinitCount == 1)
-        #expect(!dom.hasWorkScheduled)
         #expect(dom.ops == [.removeChild(parent: "<>", child: "<p>")])
+
+        dom.runNextFrame()
+        #expect(!dom.hasWorkScheduled)
+    }
+
+    @Test
+    func unmountsBeforeInitialUpdate() {
+        let dom = TestDOM()
+        let app = dom.mount { p {} }
+        dom.runNextFrame()
+
+        app.unmount()
+
+        #expect(
+            dom.ops == [
+                .createElement("p"),
+                .addChild(parent: "<>", child: "<p>"),
+                .removeChild(parent: "<>", child: "<p>"),
+            ]
+        )
+
+        dom.runNextFrame()
+        #expect(!dom.hasWorkScheduled)
+    }
+
+    @Test
+    func unmountPreservesExistingRootChildren() {
+        let dom = TestDOM()
+        let authored = dom.createElement("authored")
+        dom.appendChild(authored, to: dom.root)
+        let app = dom.mount {
+            Group {
+                p { "First" }
+                p { "Second" }
+            }
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        app.unmount()
+
+        #expect(
+            dom.ops == [
+                .removeChild(parent: "<>", child: "<p>"),
+                .removeChild(parent: "<>", child: "<p>"),
+            ]
+        )
+
+        dom.runNextFrame()
+        #expect(!dom.hasWorkScheduled)
     }
 
     @Test

@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>ElementaryWebComponents integration tests</title>
+  </head>
+  <body>
+    <test-counter id="pre-upgrade" count="5" label="ready">
+      <span id="projected">Projected child</span>
+      <span id="note" slot="note">Named note</span>
+    </test-counter>
+    <test-light-counter id="light" count="2">
+      <span id="authored-light-child">Authored child</span>
+    </test-light-counter>
+    <test-styled-counter id="styled"></test-styled-counter>
+    <test-shared-counter id="shared"></test-shared-counter>
+    <test-unstyled-counter id="unstyled"></test-unstyled-counter>
+    <div id="move-target"></div>
+
+    <script type="module">
+      import { init } from "virtual:swift-wasm?js";
+
+      await init();
+      await Promise.all([
+        customElements.whenDefined("test-counter"),
+        customElements.whenDefined("test-light-counter"),
+        customElements.whenDefined("test-styled-counter"),
+        customElements.whenDefined("test-shared-counter"),
+        customElements.whenDefined("test-unstyled-counter"),
+      ]);
+      globalThis.__elementaryWebComponentsReady = true;
+    </script>
+  </body>
+</html>
