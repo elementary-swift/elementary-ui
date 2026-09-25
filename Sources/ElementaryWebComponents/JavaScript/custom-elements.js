@@ -2,16 +2,7 @@ export function defineCustomElement(name, implementation) {
   if (import.meta.hot) {
     const existing = customElements.get(name);
     if (existing) {
-      const instances = document.querySelectorAll(name);
-      for (const element of instances) {
-        existing.__elementaryImplementation.disconnect(element);
-      }
-
-      existing.setImplementation(implementation);
-
-      for (const element of instances) {
-        implementation.connect(element);
-      }
+      existing.swapImplementation(implementation);
       return;
     }
   }
@@ -23,6 +14,33 @@ export function defineCustomElement(name, implementation) {
 
 function makeCustomElement() {
   return class ElementaryCustomElement extends HTMLElement {
+    static {
+      if (import.meta.hot) {
+        this.__instances = new Set();
+        this.swapImplementation = function (implementation) {
+          const attributes = implementation.observedAttributes;
+          if (
+            this.observedAttributes.length !== attributes.length ||
+            this.observedAttributes.some((name) => !attributes.includes(name))
+          ) {
+            location.reload();
+            return;
+          }
+
+          const instances = [...this.__instances];
+          for (const element of instances) {
+            this.__elementaryImplementation.disconnect(element);
+          }
+
+          this.setImplementation(implementation);
+
+          for (const element of instances) {
+            if (element.isConnected) implementation.connect(element);
+          }
+        };
+      }
+    }
+
     static setImplementation(implementation) {
       this.__elementaryImplementation = implementation;
       this.__observedAttributes = implementation.observedAttributes;
@@ -37,10 +55,12 @@ function makeCustomElement() {
     }
 
     connectedCallback() {
+      if (import.meta.hot) this.constructor.__instances.add(this);
       this.constructor.__elementaryImplementation.connect(this);
     }
 
     disconnectedCallback() {
+      if (import.meta.hot) this.constructor.__instances.delete(this);
       this.constructor.__elementaryImplementation.disconnect(this);
     }
 

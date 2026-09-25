@@ -120,9 +120,10 @@ Moving a host with `Element.moveBefore()` retains ElementaryUI state through the
 `connectedMoveCallback()` lifecycle. Other removal and insertion APIs create a fresh view and
 state tree.
 
-During Vite HMR, an existing registration replaces its implementation and reconstructs live
-instances, including when attribute names or Shadow DOM mode change. Stylesheet changes are
-applied during that reconstruction. HMR reconstruction resets view state.
+During Vite HMR, an existing registration replaces its implementation and reconstructs connected
+instances, including those inside shadow roots. Stylesheet changes are applied during that
+reconstruction. Changing the observed attribute names reloads the page. HMR reconstruction resets
+view state; changes to Shadow DOM mode require a page reload.
 
 The initial release intentionally leaves closed shadow roots, custom-event helpers, form
 association, focus delegation, manual slot assignment, scoped registries, JavaScript property

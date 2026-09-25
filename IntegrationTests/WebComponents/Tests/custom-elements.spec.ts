@@ -130,6 +130,9 @@ test("maps native registration failures to the Swift error", async ({ page }) =>
 });
 
 test("replaces live instances during hot reload", async ({ page }) => {
+  await page.addInitScript(() => {
+    (globalThis as any).__elementaryHotReload = true;
+  });
   await load(page);
   const host = page.locator("#pre-upgrade");
   await host.locator("#increment").click();
