@@ -1,6 +1,6 @@
 version: 1
 builder:
   configs:
-    - documentation_targets: [ElementaryUI, Reactivity]
+    - documentation_targets: [ElementaryUI, Reactivity, ElementaryWebComponents]
       custom_documentation_parameters:
         [--enable-experimental-overloaded-symbol-presentation]
