@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790341822172,
+  "lastUpdate": 1790344046176,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -11493,6 +11493,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 158.11,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 207.55,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3d11549fe425224f12b473402f3024e0736a93f1",
+          "message": "add runtime deprecation warning in bundled runtime (#130)",
+          "timestamp": "2026-09-25T15:36:42+02:00",
+          "tree_id": "d762d41139748edf3349706d9579c2423df47a39",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/3d11549fe425224f12b473402f3024e0736a93f1"
+        },
+        "date": 1790344044105,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 180.93,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 102.42,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 87.34,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 158.12,
             "unit": "kB"
           },
           {
