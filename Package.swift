@@ -1,12 +1,6 @@
-// swift-tools-version: 6.3
+// swift-tools-version: 6.4
 import CompilerPluginSupport
 import PackageDescription
-
-#if compiler(>=6.4)
-let enableSuppressedAssociatedTypes: SwiftSetting = .enableExperimentalFeature("SuppressedAssociatedTypesWithDefaults")
-#else
-let enableSuppressedAssociatedTypes: SwiftSetting = .enableExperimentalFeature("SuppressedAssociatedTypes")
-#endif
 
 let package = Package(
     name: "elementary-ui",
@@ -20,7 +14,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/swiftwasm/JavaScriptKit", .upToNextMinor(from: "0.58.0")),
         .package(url: "https://github.com/elementary-swift/elementary", from: "0.8.0"),
-        .package(url: "https://github.com/apple/swift-collections", from: "1.6.0", traits: ["UnstableContainersPreview"]),
+        .package(url: "https://github.com/apple/swift-collections", .upToNextMinor(from: "1.6.0"), traits: ["UnstableContainersPreview"]),
         .package(url: "https://github.com/swiftlang/swift-syntax", "600.0.0"..<"604.0.0"),
     ],
     targets: [
@@ -44,7 +38,7 @@ let package = Package(
                 .enableUpcomingFeature("ConciseMagicFile"),
                 .enableUpcomingFeature("ImplicitOpenExistentials"),
                 .enableExperimentalFeature("Lifetimes"),
-                enableSuppressedAssociatedTypes,
+                .enableExperimentalFeature("SuppressedAssociatedTypesWithDefaults"),
             ]
         ),
         .target(
