@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790344046176,
+  "lastUpdate": 1790353340248,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -11547,6 +11547,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 207.55,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "975af30edbf25997c003804aad4be6874b38b20b",
+          "message": "minor performance improvements (#131)\n\n* bundled runtime warning shot\n\n* various small performance tweaks",
+          "timestamp": "2026-09-25T18:13:32+02:00",
+          "tree_id": "e7333e3fecbcd9a321bb94063389323ea14dcea5",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/975af30edbf25997c003804aad4be6874b38b20b"
+        },
+        "date": 1790353339588,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 182.23,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 103.83,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 89.16,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 160.03,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 208.66,
             "unit": "kB"
           }
         ]
