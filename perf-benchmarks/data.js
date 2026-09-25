@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790320644447,
+  "lastUpdate": 1790342089450,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -3691,6 +3691,85 @@ window.BENCHMARK_DATA = {
           {
             "name": "09_clear1k_x8",
             "value": 78.3,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.09,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.13,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.41,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d2deb45071731eae00f716ab5ba12b0b2de5d74b",
+          "message": "add ElementaryWebComponents for custom element support (#128)\n\n* basic implementation of web components\n\n* clean up\n\n* even more cleanup\n\n* moving around some code\n\n* tests cleanup\n\n* tighter HMR\n\n* better docs\n\n* fix rebase glitch\n\n* fix CI version\n\n* add to SPI docs",
+          "timestamp": "2026-09-25T15:03:43+02:00",
+          "tree_id": "0b808d82ffbf7afacf80641e32fb5108b94b7855",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/d2deb45071731eae00f716ab5ba12b0b2de5d74b"
+        },
+        "date": 1790342088838,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 127.08,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 147.95,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 236.94,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 17.14,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 64.68,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 49.13,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 143.84,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 66.81,
             "unit": "ms"
           },
           {
