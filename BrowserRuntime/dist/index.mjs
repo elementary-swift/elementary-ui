@@ -1709,7 +1709,7 @@ async function createInstantiator(options, swift) {
 //#endregion
 //#region src/index.ts
 /**
-* Runs an ElementaryUI application.
+* [DEPRECATED] Runs an ElementaryUI application.
 *
 * This function bootstraps a JavaScriptKit SwiftRuntime and WASI shim,
 * then runs the application by calling Swift's main entry point.
@@ -1721,6 +1721,7 @@ async function createInstantiator(options, swift) {
 * @returns A promise that resolves when initialization is complete and the Swift application has started.
 */
 async function runApplication(initializer) {
+	console.warn("[elementary-ui-browser-runtime] This bundled runtime is deprecated and will be removed in a future release. Use the vite-plugin-swift-wasm 0.2 ?js mode instead: https://github.com/elementary-swift/vite-plugin-swift-wasm/releases/tag/v0.2.0");
 	const wasi = createDefaultWASI();
 	const swiftRuntime = new SwiftRuntime();
 	let instance = null;

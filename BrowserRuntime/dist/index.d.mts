@@ -1,7 +1,7 @@
 //#region src/index.d.ts
 type WasmInstanceInitializer = (importsObject?: WebAssembly.Imports) => Promise<WebAssembly.Instance>;
 /**
- * Runs an ElementaryUI application.
+ * [DEPRECATED] Runs an ElementaryUI application.
  *
  * This function bootstraps a JavaScriptKit SwiftRuntime and WASI shim,
  * then runs the application by calling Swift's main entry point.

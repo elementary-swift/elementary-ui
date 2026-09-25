@@ -7,7 +7,7 @@ type WasmInstanceInitializer = (
 ) => Promise<WebAssembly.Instance>;
 
 /**
- * Runs an ElementaryUI application.
+ * [DEPRECATED] Runs an ElementaryUI application.
  *
  * This function bootstraps a JavaScriptKit SwiftRuntime and WASI shim,
  * then runs the application by calling Swift's main entry point.
@@ -19,6 +19,12 @@ type WasmInstanceInitializer = (
  * @returns A promise that resolves when initialization is complete and the Swift application has started.
  */
 export async function runApplication(initializer: WasmInstanceInitializer) {
+  console.warn(
+    "[elementary-ui-browser-runtime] This bundled runtime is deprecated and will be removed in a future release. " +
+    "Use the vite-plugin-swift-wasm 0.2 ?js mode instead: " +
+    "https://github.com/elementary-swift/vite-plugin-swift-wasm/releases/tag/v0.2.0"
+  );
+
   const wasi = createDefaultWASI();
   const swiftRuntime = new SwiftRuntime();
   let instance: WebAssembly.Instance | null = null;
