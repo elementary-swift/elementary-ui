@@ -1,3 +1,4 @@
+import BasicContainers
 import _UTF8Internals
 
 public final class _AttributeModifier: DOMElementModifier, Invalidateable {
@@ -157,7 +158,7 @@ struct DOMAttributePatcher {
         firstNew: _StoredAttribute?,
         newIterator: inout _MergedAttributes.Iterator
     ) {
-        var oldAttributes: [_StoredAttribute] = []
+        var oldAttributes = UniqueArray<_StoredAttribute>()
         oldAttributes.reserveCapacity(4)
         if let firstOld {
             oldAttributes.append(firstOld)
@@ -189,7 +190,7 @@ struct DOMAttributePatcher {
     private func applyAttribute(
         _ new: _StoredAttribute,
         to node: DOM.Node,
-        matching oldAttributes: inout [_StoredAttribute]
+        matching oldAttributes: inout UniqueArray<_StoredAttribute>
     ) {
         var old: _StoredAttribute?
         var index = 0
@@ -283,7 +284,7 @@ struct DOMAttributePatcher {
         firstNew: StylePair?,
         newIterator: inout _StoredAttribute._StyleKeyValuePairs.Iterator
     ) {
-        var oldStyles: [StylePair] = []
+        var oldStyles = UniqueArray<StylePair>()
         oldStyles.reserveCapacity(4)
         if let firstOld {
             oldStyles.append(firstOld)
@@ -308,7 +309,7 @@ struct DOMAttributePatcher {
     private func applyStyle(
         _ new: StylePair,
         to node: DOM.Node,
-        matching oldStyles: inout [StylePair]
+        matching oldStyles: inout UniqueArray<StylePair>
     ) {
         if let oldValue = removeStyles(named: new.key, from: &oldStyles),
             oldValue.utf8Equals(new.value)
@@ -325,7 +326,7 @@ struct DOMAttributePatcher {
     @discardableResult
     private func removeStyles(
         named key: Substring.UTF8View,
-        from oldStyles: inout [StylePair]
+        from oldStyles: inout UniqueArray<StylePair>
     ) -> Substring.UTF8View? {
         var oldValue: Substring.UTF8View?
         var index = oldStyles.count
