@@ -1,8 +1,13 @@
-/// A reactive, typed input supplied by an HTML attribute on a custom-element host.
+/// A property that updates the view when its host's HTML attribute changes.
 ///
-/// The wrapper creates one slot. Reads and writes always go through that slot. Swift mutations
-/// update the ElementaryUI view but intentionally do not reflect back to the host element's
-/// HTML attribute.
+/// `@CustomElement` derives the HTML attribute name by converting the Swift property name
+/// to lowercase kebab case: `stepSize` becomes `step-size`, `URLValue` becomes `url-value`,
+/// and `user_id` becomes `user-id`. Pass an explicit name, such as
+/// `@Attribute("custom-name")`, to override this conversion.
+///
+/// Values are decoded using ``ExpressibleByAttributeValue``. Removing the attribute restores
+/// the initial value; invalid values leave the current value unchanged and log a warning.
+/// Assigning to this property updates the view without changing the host's HTML attribute.
 @propertyWrapper
 public struct Attribute<Value: ExpressibleByAttributeValue> {
     internal let box: AttributeValueBox<Value>
@@ -17,7 +22,8 @@ public struct Attribute<Value: ExpressibleByAttributeValue> {
         box = AttributeValueBox(wrappedValue)
     }
 
-    /// `name` is read by `@CustomElement` from the declaration. The runtime ignores it.
+    /// Uses the specified HTML attribute name.
+    /// `@CustomElement` requires a string literal containing a valid lowercase HTML attribute name.
     public init(wrappedValue: Value, _ name: String) {
         _ = name
         box = AttributeValueBox(wrappedValue)
@@ -27,7 +33,8 @@ public struct Attribute<Value: ExpressibleByAttributeValue> {
         box = AttributeValueBox(Value(nilLiteral: ()))
     }
 
-    /// `name` is read by `@CustomElement` from the declaration. The runtime ignores it.
+    /// Uses the specified HTML attribute name.
+    /// `@CustomElement` requires a string literal containing a valid lowercase HTML attribute name.
     public init(_ name: String) where Value: ExpressibleByNilLiteral {
         _ = name
         box = AttributeValueBox(Value(nilLiteral: ()))

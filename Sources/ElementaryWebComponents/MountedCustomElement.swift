@@ -1,8 +1,7 @@
 import ElementaryUI
 import JavaScriptKit
 
-/// One host element. Attribute values live in ``attributes``; the mount closure captures the
-/// view, which already shares those slots.
+/// The mounted view and attribute context for a host element.
 struct MountedCustomElement: ~Copyable {
     private let elementName: String
     private var application: MountedApplication

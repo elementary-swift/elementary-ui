@@ -4,8 +4,9 @@ Register ElementaryUI views as autonomous browser custom elements.
 
 ## Defining an element
 
-`@CustomElement` includes the behavior of ElementaryUI's `@View` macro and generates the
-runtime attribute table used by the browser:
+Use `@CustomElement` to define a custom element and `CustomElements.define` to register its
+HTML tag name. The macro includes the behavior of `@View` and observes properties marked with
+`@Attribute`:
 
 ```swift
 import ElementaryUI
@@ -20,27 +21,29 @@ struct StepperElement {
     var body: some View {
         div {
             slot()
+            output { "\(value)" }
             button { label ?? "Increment" }
                 .onClick { value += step }
         }
     }
 }
 
-try CustomElements.define("example-stepper", StepperElement.self)
+try CustomElements.define("example-stepper", StepperElement.self, shadow: .open)
 ```
 
-The element name is selected at registration time, so the same Swift type can be registered
-under more than one name. Each host element is a fresh `StepperElement()`. Outside registration,
-that value remains an ordinary view that can be rendered inline.
+The same Swift type can be registered under multiple tag names. Each host element gets its own
+`StepperElement` instance.
 
 ## Typed attributes
 
 Attribute names are derived by converting Swift names to lowercase kebab case. For example,
 `stepSize` becomes `step-size` and `URLValue` becomes `url-value`. Pass a string to
-`@Attribute` to override the name.
+`@Attribute` to override the name. The macro requires explicit names to be lowercase string
+literals, matching the attribute names observed by the browser. Explicit names are used as
+written, without conversion to kebab case.
 
-Present values are decoded as strings, case-sensitive textual booleans (`true` or `false`), integers, or
-floating-point values. String-backed `RawRepresentable` types can adopt
+Built-in attribute types include strings, booleans, integers, and floating-point numbers.
+Boolean values must be exactly `true` or `false`. String-backed `RawRepresentable` types can adopt
 ``ExpressibleByAttributeValue`` without implementing additional decoding code:
 
 ```swift
@@ -51,12 +54,12 @@ enum Theme: String, ExpressibleByAttributeValue {
 }
 ```
 
-Non-optional attributes require a declaration-time default. An optional attribute may omit its
-initializer and defaults to `nil`. Removing an attribute restores its declaration-time default;
-invalid text preserves the current value and emits an Elementary warning.
+Non-optional attributes require a default value. Optional attributes default to `nil` if no
+initializer is provided. Removing an HTML attribute restores the default value. Invalid values
+leave the current value unchanged and log a warning.
 
-Attribute updates flow from the host into Swift. Assigning to an `@Attribute` property updates
-the view reactively but does not reflect the new value back to HTML.
+Changes to the host's HTML attributes update the view. Assigning to an `@Attribute` property
+also updates the view, but does not change the HTML attribute.
 
 ## Shadow DOM and slots
 
@@ -66,10 +69,10 @@ Pass `shadow: .open` to mount into an open shadow root:
 try CustomElements.define("shadow-card", Card.self, shadow: .open)
 ```
 
-Render a native `slot` in the Swift body to project light-DOM children. Shadow styles can use
+Use `slot` in the view body to display the host's light-DOM children inside the shadow root. Shadow styles can use
 standard selectors such as `:host` and `::slotted(...)`.
 
-Use constructable stylesheets for styles shared by multiple element registrations:
+Use `CustomElementStyleSheet` to share styles across shadow roots:
 
 ```swift
 let cardStyles = try CustomElementStyleSheet("""
@@ -85,13 +88,12 @@ try CustomElements.define(
 )
 ```
 
-The stylesheet is created once with `CSSStyleSheet.replaceSync` and the same browser object is
-adopted by every shadow root. The array order is preserved, and each component owns the complete
-`adoptedStyleSheets` list for its root. Passing `.open` adopts an empty list. Browsers must support
-constructable stylesheets and `adoptedStyleSheets`; stylesheet construction surfaces native
-`JSException` errors.
+Each `CustomElementStyleSheet` creates a browser stylesheet that is shared by the shadow roots
+using it. The supplied array replaces the root's `adoptedStyleSheets` in the specified order;
+`.open` uses an empty array. This requires browser support for constructable stylesheets and
+`adoptedStyleSheets`. Creating a stylesheet can throw a `JSException`.
 
-Named slots use the native HTML names on both sides:
+For a named slot, match the slot's name to the child element's `slot` attribute:
 
 ```swift
 slot(.name("actions"))
@@ -109,22 +111,16 @@ Omitting `shadow` mounts directly into the host:
 try CustomElements.define("light-card", Card.self)
 ```
 
-Light-DOM mounting follows ElementaryUI's normal container behavior: existing authored children
-are preserved and ElementaryUI-owned nodes are appended after them. Unmounting removes only the
-ElementaryUI-owned nodes.
+Existing children are preserved, and the view's nodes are appended after them. Unmounting removes
+only the nodes created by ElementaryUI.
 
 ## Lifecycle and development
 
-The view mounts when its host connects and is destroyed immediately when the host disconnects.
-Moving a host with `Element.moveBefore()` retains ElementaryUI state through the browser's
-`connectedMoveCallback()` lifecycle. Other removal and insertion APIs create a fresh view and
-state tree.
+The view mounts when its host connects to the document and unmounts immediately when the host
+disconnects. State-preserving moves with `Element.moveBefore()` retain the view and its state.
+Removing and reinserting the host with other APIs recreates the view and resets its state.
 
-During Vite HMR, an existing registration replaces its implementation and reconstructs connected
-instances, including those inside shadow roots. Stylesheet changes are applied during that
-reconstruction. Changing the observed attribute names reloads the page. HMR reconstruction resets
-view state; changes to Shadow DOM mode require a page reload.
-
-The initial release intentionally leaves closed shadow roots, custom-event helpers, form
-association, focus delegation, manual slot assignment, scoped registries, JavaScript property
-inputs, declarative-shadow hydration, and attribute reflection for future APIs.
+Vite hot module replacement (HMR) remounts connected instances, including those inside shadow
+roots, with the updated implementation and stylesheets. This resets view state. Changing the
+observed attribute names reloads the page automatically. Changes to Shadow DOM mode require a
+manual page reload.

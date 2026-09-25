@@ -1,6 +1,6 @@
-/// A type that can be created from the textual value of an HTML attribute.
+/// A type that can be decoded from an HTML attribute value.
 public protocol ExpressibleByAttributeValue {
-    /// Creates a value from a present HTML attribute.
+    /// Decodes an HTML attribute value.
     ///
     /// Returns `nil` when `attributeValue` is not a valid representation of `Self`.
     init?(attributeValue: String)

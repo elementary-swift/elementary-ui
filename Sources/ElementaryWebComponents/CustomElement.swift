@@ -2,17 +2,16 @@ import ElementaryUI
 
 /// A view that can be registered as an autonomous browser custom element.
 public protocol CustomElement: View {
-    /// Creates the view mounted for one host element.
+    /// Creates the view for a host element.
     init()
 
     static var __observedAttributes: [String] { get }
     func __applyCustomElementContext(_ hostContext: inout _CustomElementHostContext)
 }
 
-/// Marks a struct as both an ElementaryUI view and a browser custom-element definition.
+/// Defines a browser custom element using an ElementaryUI view.
 ///
-/// The element's tag name and Shadow DOM policy are intentionally selected when the type is
-/// registered with ``CustomElements/define(_:_:shadow:)``.
+/// Choose the HTML tag name and Shadow DOM options when registering the type with ``CustomElements/define(_:_:shadow:)``.
 @attached(
     member,
     names: named(__observedAttributes)

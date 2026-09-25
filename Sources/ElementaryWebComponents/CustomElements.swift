@@ -1,16 +1,16 @@
 import JavaScriptKit
 
-/// Browser custom-element registration APIs.
+/// Registers ElementaryUI views as browser custom elements.
 public enum CustomElements {
-    /// Where a custom element's view is mounted, and which constructable stylesheets its shadow root adopts.
+    /// Options for a custom element's shadow root and stylesheets.
     public struct ShadowRootOptions {
-        /// Shadow root mode passed to `attachShadow`.
+        /// The shadow root's access mode.
         public enum Mode: String {
-            /// The page can reach the root through `element.shadowRoot`.
+            /// Makes the root accessible through `element.shadowRoot`.
             case open
         }
 
-        /// How the shadow root is attached.
+        /// The shadow root's access mode.
         public let mode: Mode
 
         /// Constructable stylesheets adopted by the shadow root, in order.
@@ -27,9 +27,12 @@ public enum CustomElements {
 
     /// Registers a custom HTML element implemented by `Element`.
     ///
-    /// A new `Element` is created for each host. When `shadow` is `nil`, the view is appended to the host's light DOM, after any existing children. Otherwise the view is mounted in the shadow root described by `shadow`.
+    /// Each host gets its own `Element` instance. When `shadow` is `nil`, the view is appended
+    /// after the host's existing children. Otherwise, it mounts in the specified shadow root.
     ///
-    /// Custom element names must contain a hyphen. An invalid name or a duplicate registration throws ``JSException``.
+    /// The name must be a valid custom element name, including a hyphen. Invalid names and
+    /// duplicate registrations throw `JSException`. During Vite HMR, duplicate registrations
+    /// update the existing element definition instead.
     public static func define<Element: CustomElement>(
         _ name: String,
         _: Element.Type,
