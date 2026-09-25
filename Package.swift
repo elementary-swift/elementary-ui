@@ -84,7 +84,7 @@ let package = Package(
                 .enableUpcomingFeature("ConciseMagicFile"),
                 .enableUpcomingFeature("ImplicitOpenExistentials"),
                 .enableExperimentalFeature("Lifetimes"),
-                enableSuppressedAssociatedTypes,
+                .enableExperimentalFeature("SuppressedAssociatedTypesWithDefaults"),
             ]
         ),
         .target(
