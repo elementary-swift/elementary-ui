@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790334392580,
+  "lastUpdate": 1790341822172,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -11449,6 +11449,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 205.66,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d2deb45071731eae00f716ab5ba12b0b2de5d74b",
+          "message": "add ElementaryWebComponents for custom element support (#128)\n\n* basic implementation of web components\n\n* clean up\n\n* even more cleanup\n\n* moving around some code\n\n* tests cleanup\n\n* tighter HMR\n\n* better docs\n\n* fix rebase glitch\n\n* fix CI version\n\n* add to SPI docs",
+          "timestamp": "2026-09-25T15:03:43+02:00",
+          "tree_id": "0b808d82ffbf7afacf80641e32fb5108b94b7855",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/d2deb45071731eae00f716ab5ba12b0b2de5d74b"
+        },
+        "date": 1790341821256,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 180.93,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 102.41,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 87.35,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 158.11,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 207.55,
             "unit": "kB"
           }
         ]
