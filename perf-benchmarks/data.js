@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790410139278,
+  "lastUpdate": 1790537256477,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -4017,6 +4017,85 @@ window.BENCHMARK_DATA = {
           {
             "name": "22_run-memory",
             "value": 2.13,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.41,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9ab2fa84be977d1680947a3dab4d0407186a1b12",
+          "message": "add PhaseAnimator (#133)\n\n* basic phase animator implementation\n\n* PlaceholderContent rename\n\n* AnyEquatable for embedded\n\n* deslopify a bit\n\n* code size fixes",
+          "timestamp": "2026-09-27T21:20:13+02:00",
+          "tree_id": "49fe45eac5d2db1c65e67097114fdba90f2f6aa0",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/9ab2fa84be977d1680947a3dab4d0407186a1b12"
+        },
+        "date": 1790537255548,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 67.18,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 79.3,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 118.29,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 8.74,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 32.48,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 22.01,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 83.16,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 36.32,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.09,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.12,
             "unit": "MB"
           },
           {
