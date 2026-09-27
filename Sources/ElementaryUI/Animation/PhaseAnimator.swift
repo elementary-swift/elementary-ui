@@ -149,13 +149,14 @@ struct AnyEquatable: Equatable {
 }
 
 // Evaluate user content inside a function view so reactive reads remain tracked.
+// TODO: generalize this and move it to ForEach as well maybe?
 @View
 private struct _PhaseContent<Phase, Content: View> {
-    var phase: Phase?
+    var phase: Phase
     var content: (Phase) -> Content
 
-    var body: Content? {
-        phase.map(content)
+    var body: Content {
+        content(phase)
     }
 }
 
@@ -168,7 +169,7 @@ public struct _PhaseAnimatorNode<Phase: Equatable, Content: View>: ~Copyable, _R
 }
 
 private final class PhaseController<Phase: Equatable, Content: View> {
-    private typealias Rendered = _PhaseContent<Phase, Content>
+    private typealias Rendered = _PhaseContent<Phase, Content>?
     private var view: PhaseAnimator<Phase, Content>
     private let scheduler: Scheduler
     private var child: Rendered._MountedNode?
@@ -178,47 +179,44 @@ private final class PhaseController<Phase: Equatable, Content: View> {
     init(view: PhaseAnimator<Phase, Content>, context: borrowing _ViewContext, ctx: inout _MountContext) {
         self.view = view
         self.scheduler = ctx.scheduler
-        self.child = Rendered._makeNode(
-            Rendered(phase: view.phases.first, content: view.content),
-            context: context,
-            ctx: &ctx
-        )
-        if view.trigger == nil { enqueueTransition(to: 1) }
+        self.child = Rendered._makeNode(rendered, context: context, ctx: &ctx)
+        if view.trigger == nil { transition(to: 1) }
     }
 
     func patch(_ newView: PhaseAnimator<Phase, Content>, tx: inout _TransactionContext) {
-        let reset = view.phases != newView.phases || (view.trigger == nil) != (newView.trigger == nil)
-        let triggered = view.trigger != nil && newView.trigger != nil && view.trigger != newView.trigger
+        let oldView = view
         view = newView
-        if reset {
+
+        let isContinuous = newView.trigger == nil
+        let restarts = oldView.phases != newView.phases || (oldView.trigger == nil) != isContinuous
+        let triggered = oldView.trigger.map { $0 != newView.trigger } ?? false
+
+        if restarts {
             generation &+= 1
             index = 0
             tx.withModifiedTransaction({ $0 = Transaction() }, run: render(tx:))
         } else {
             render(tx: &tx)
         }
-        if triggered && view.phases.count > 1 {
-            enqueueTransition(to: index == 1 ? 2 % view.phases.count : 1)
-        } else if reset && view.trigger == nil {
-            enqueueTransition(to: 1)
+
+        if triggered || (restarts && isContinuous) {
+            transition(to: index == 1 ? 2 % view.phases.count : 1)
         }
+    }
+
+    private var rendered: Rendered {
+        view.phases.isEmpty ? nil : _PhaseContent(phase: view.phases[index], content: view.content)
     }
 
     private func render(tx: inout _TransactionContext) {
-        Rendered._patchNode(
-            Rendered(phase: view.phases.isEmpty ? nil : view.phases[index], content: view.content),
-            node: &child!,
-            tx: &tx
-        )
+        Rendered._patchNode(rendered, node: &child!, tx: &tx)
     }
 
-    private func enqueueTransition(to target: Int) {
+    private func transition(to target: Int) {
         guard view.phases.count > 1 else { return }
         generation &+= 1
         let token = generation
-        scheduler.addEffect { [self] in
-            self.scheduler.scheduleUpdate { [self] tx in self.apply(target, token: token, tx: &tx) }
-        }
+        scheduler.scheduleUpdate { [self] tx in apply(target, token: token, tx: &tx) }
     }
 
     private func apply(_ target: Int, token: UInt64, tx: inout _TransactionContext) {
@@ -227,8 +225,8 @@ private final class PhaseController<Phase: Equatable, Content: View> {
         let startTime = tx.currentFrameTime
         let transaction = Transaction(animation: view.animation(view.phases[target]))
         transaction.addAnimationCompletion { [self] in
-            guard self.generation == token, self.view.trigger == nil || target != 0 else { return }
-            self.advance(after: target, token: token, startTime: startTime)
+            guard generation == token, view.trigger == nil || target != 0 else { return }
+            advance(after: target, token: token, startTime: startTime)
         }
         tx.withModifiedTransaction({ $0 = transaction }, run: render(tx:))
     }
@@ -238,11 +236,12 @@ private final class PhaseController<Phase: Equatable, Content: View> {
     private func advance(after target: Int, token: UInt64, startTime: Double) {
         let next = (target + 1) % view.phases.count
         scheduler.scheduleUpdate { [self] tx in
-            guard self.generation == token else { return }
             if tx.currentFrameTime == startTime {
-                self.enqueueTransition(to: next)
+                scheduler.addEffect { [self] in
+                    scheduler.scheduleUpdate { [self] tx in apply(next, token: token, tx: &tx) }
+                }
             } else {
-                self.apply(next, token: token, tx: &tx)
+                apply(next, token: token, tx: &tx)
             }
         }
     }
