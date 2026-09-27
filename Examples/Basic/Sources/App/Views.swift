@@ -104,6 +104,8 @@ struct AppView {
             hr()
             AnimationsView()
             hr()
+            PhaseAnimationsView()
+            hr()
             TextField(value: #Binding(data.name))
 
             div {
