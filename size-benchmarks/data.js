@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790508151063,
+  "lastUpdate": 1790537448670,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -11739,6 +11739,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 208.66,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9ab2fa84be977d1680947a3dab4d0407186a1b12",
+          "message": "add PhaseAnimator (#133)\n\n* basic phase animator implementation\n\n* PlaceholderContent rename\n\n* AnyEquatable for embedded\n\n* deslopify a bit\n\n* code size fixes",
+          "timestamp": "2026-09-27T21:20:13+02:00",
+          "tree_id": "49fe45eac5d2db1c65e67097114fdba90f2f6aa0",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/9ab2fa84be977d1680947a3dab4d0407186a1b12"
+        },
+        "date": 1790537448070,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 180.15,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 104.51,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 90.23,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 159.44,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 205.95,
             "unit": "kB"
           }
         ]
