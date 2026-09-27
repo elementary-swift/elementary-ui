@@ -26,7 +26,7 @@ public struct PhaseAnimator<Phase: Equatable, Content: View>: View {
     public typealias _MountedNode = _PhaseAnimatorNode<Phase, Content>
 
     var phases: [Phase]
-    var trigger: _PhaseTrigger?
+    var trigger: AnyEquatable?
     var content: (Phase) -> Content
     var animation: (Phase) -> Animation?
 
@@ -36,9 +36,7 @@ public struct PhaseAnimator<Phase: Equatable, Content: View>: View {
         @ContentBuilder content: @escaping (Phase) -> Content,
         animation: @escaping (Phase) -> Animation? = { _ in .default }
     ) {
-        self.phases = Array(phases)
-        self.content = content
-        self.animation = animation
+        self.init(phases: Array(phases), trigger: nil, content: content, animation: animation)
     }
 
     /// Creates an animator that runs a cycle when the trigger changes.
@@ -52,8 +50,19 @@ public struct PhaseAnimator<Phase: Equatable, Content: View>: View {
         @ContentBuilder content: @escaping (Phase) -> Content,
         animation: @escaping (Phase) -> Animation? = { _ in .default }
     ) {
-        self.init(phases, content: content, animation: animation)
-        self.trigger = _PhaseTriggerValue(trigger)
+        self.init(phases: Array(phases), trigger: AnyEquatable(trigger), content: content, animation: animation)
+    }
+
+    init(
+        phases: [Phase],
+        trigger: AnyEquatable?,
+        content: @escaping (Phase) -> Content,
+        animation: @escaping (Phase) -> Animation?
+    ) {
+        self.phases = phases
+        self.trigger = trigger
+        self.content = content
+        self.animation = animation
     }
 
     public static func _makeNode(
@@ -61,7 +70,7 @@ public struct PhaseAnimator<Phase: Equatable, Content: View>: View {
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) -> _MountedNode {
-        .init(controller: _PhaseController(view: view, context: context, ctx: &ctx))
+        .init(controller: PhaseController(view: view, context: context, ctx: &ctx))
     }
 
     public static func _patchNode(
@@ -81,9 +90,7 @@ public extension View {
         @ContentBuilder content: @escaping (PlaceholderContentView<Self>, Phase) -> Content,
         animation: @escaping (Phase) -> Animation? = { _ in .default }
     ) -> some View<Content.Tag> {
-        _PhaseModifierView(wrapped: self) { placeholderContent in
-            PhaseAnimator(phases, content: { content(PlaceholderContentView(content: placeholderContent), $0) }, animation: animation)
-        }
+        _PhaseModifierView(wrapped: self, phases: Array(phases), trigger: nil, content: content, animation: animation)
     }
 
     /// Animates one cycle when the trigger changes, ending at the first phase.
@@ -102,23 +109,42 @@ public extension View {
         @ContentBuilder content: @escaping (PlaceholderContentView<Self>, Phase) -> Content,
         animation: @escaping (Phase) -> Animation? = { _ in .default }
     ) -> some View<Content.Tag> {
-        _PhaseModifierView(wrapped: self) { placeholderContent in
-            PhaseAnimator(phases, trigger: trigger, content: { content(PlaceholderContentView(content: placeholderContent), $0) }, animation: animation)
-        }
+        _PhaseModifierView(
+            wrapped: self,
+            phases: Array(phases),
+            trigger: AnyEquatable(trigger),
+            content: content,
+            animation: animation
+        )
     }
 }
 
-// Keep trigger erasure private to the implementation rather than adding a
-// trigger generic parameter to the public container type.
-class _PhaseTrigger {
-    func equals(_ other: _PhaseTrigger) -> Bool { fatalError("abstract") }
-}
+// Type-erased equatable value, embedded compatible.
+// The equator must be an instance rather than a metatype: Embedded does not
+// specialize witness tables stored in existential metatypes, so static
+// requirements dispatch to a deleted-method stub.
+struct AnyEquatable: Equatable {
+    private protocol Equating {
+        func isEqual(_ lhs: any Equatable, _ rhs: any Equatable) -> Bool
+    }
 
-private final class _PhaseTriggerValue<Value: Equatable>: _PhaseTrigger {
-    let value: Value
-    init(_ value: Value) { self.value = value }
-    override func equals(_ other: _PhaseTrigger) -> Bool {
-        (other as? _PhaseTriggerValue<Value>)?.value == value
+    private struct Equator<Value: Equatable>: Equating {
+        func isEqual(_ lhs: any Equatable, _ rhs: any Equatable) -> Bool {
+            guard let lhs = lhs as? Value, let rhs = rhs as? Value else { return false }
+            return lhs == rhs
+        }
+    }
+
+    private let value: any Equatable
+    private let equator: any Equating
+
+    init<Value: Equatable>(_ value: Value) {
+        self.value = value
+        self.equator = Equator<Value>()
+    }
+
+    static func == (lhs: AnyEquatable, rhs: AnyEquatable) -> Bool {
+        lhs.equator.isEqual(lhs.value, rhs.value)
     }
 }
 
@@ -134,21 +160,20 @@ private struct _PhaseContent<Phase, Content: View> {
 }
 
 public struct _PhaseAnimatorNode<Phase: Equatable, Content: View>: ~Copyable, _Reconcilable {
-    fileprivate let controller: _PhaseController<Phase, Content>
+    fileprivate let controller: PhaseController<Phase, Content>
 
     public consuming func unmount(_ context: inout _CommitContext) {
         controller.unmount(&context)
     }
 }
 
-private final class _PhaseController<Phase: Equatable, Content: View> {
-    typealias Rendered = _PhaseContent<Phase, Content>
-    var view: PhaseAnimator<Phase, Content>
-    let scheduler: Scheduler
-    var child: Rendered._MountedNode?
-    var index = 0
-    var generation: UInt64 = 0
-    var mounted = true
+private final class PhaseController<Phase: Equatable, Content: View> {
+    private typealias Rendered = _PhaseContent<Phase, Content>
+    private var view: PhaseAnimator<Phase, Content>
+    private let scheduler: Scheduler
+    private var child: Rendered._MountedNode?
+    private var index = 0
+    private var generation: UInt64 = 0
 
     init(view: PhaseAnimator<Phase, Content>, context: borrowing _ViewContext, ctx: inout _MountContext) {
         self.view = view
@@ -163,7 +188,7 @@ private final class _PhaseController<Phase: Equatable, Content: View> {
 
     func patch(_ newView: PhaseAnimator<Phase, Content>, tx: inout _TransactionContext) {
         let reset = view.phases != newView.phases || (view.trigger == nil) != (newView.trigger == nil)
-        let triggered = newView.trigger.map { new in view.trigger.map { !new.equals($0) } ?? false } ?? false
+        let triggered = view.trigger != nil && newView.trigger != nil && view.trigger != newView.trigger
         view = newView
         if reset {
             generation &+= 1
@@ -179,7 +204,7 @@ private final class _PhaseController<Phase: Equatable, Content: View> {
         }
     }
 
-    func render(tx: inout _TransactionContext) {
+    private func render(tx: inout _TransactionContext) {
         Rendered._patchNode(
             Rendered(phase: view.phases.isEmpty ? nil : view.phases[index], content: view.content),
             node: &child!,
@@ -187,29 +212,42 @@ private final class _PhaseController<Phase: Equatable, Content: View> {
         )
     }
 
-    func enqueueTransition(to target: Int) {
-        guard mounted, view.phases.count > 1 else { return }
+    private func enqueueTransition(to target: Int) {
+        guard view.phases.count > 1 else { return }
         generation &+= 1
         let token = generation
         scheduler.addEffect { [self] in
-            guard self.mounted, self.generation == token else { return }
-            self.scheduler.scheduleUpdate { [self] tx in
-                guard self.mounted, self.generation == token else { return }
-                self.index = target
-                let transaction = Transaction(animation: self.view.animation(self.view.phases[target]))
-                transaction.addAnimationCompletion { [self] in
-                    guard self.mounted, self.generation == token else { return }
-                    if self.view.trigger == nil || target != 0 {
-                        self.enqueueTransition(to: (target + 1) % self.view.phases.count)
-                    }
-                }
-                tx.withModifiedTransaction({ $0 = transaction }, run: self.render(tx:))
+            self.scheduler.scheduleUpdate { [self] tx in self.apply(target, token: token, tx: &tx) }
+        }
+    }
+
+    private func apply(_ target: Int, token: UInt64, tx: inout _TransactionContext) {
+        guard generation == token else { return }
+        index = target
+        let startTime = tx.currentFrameTime
+        let transaction = Transaction(animation: view.animation(view.phases[target]))
+        transaction.addAnimationCompletion { [self] in
+            guard self.generation == token, self.view.trigger == nil || target != 0 else { return }
+            self.advance(after: target, token: token, startTime: startTime)
+        }
+        tx.withModifiedTransaction({ $0 = transaction }, run: render(tx:))
+    }
+
+    // Completions within the starting frame did not animate; route them through
+    // effects so their per-cycle budget bounds chains of instant phases.
+    private func advance(after target: Int, token: UInt64, startTime: Double) {
+        let next = (target + 1) % view.phases.count
+        scheduler.scheduleUpdate { [self] tx in
+            guard self.generation == token else { return }
+            if tx.currentFrameTime == startTime {
+                self.enqueueTransition(to: next)
+            } else {
+                self.apply(next, token: token, tx: &tx)
             }
         }
     }
 
     func unmount(_ context: inout _CommitContext) {
-        mounted = false
         generation &+= 1
         child.take()?.unmount(&context)
     }
@@ -222,22 +260,35 @@ private struct _PhaseModifierView<Wrapped: View, Phase: Equatable, Content: View
     typealias _MountedNode = _StatefulNode<PlaceholderContent, PhaseAnimator<Phase, Content>._MountedNode>
 
     var wrapped: Wrapped
-    var makeAnimator: (PlaceholderContent) -> PhaseAnimator<Phase, Content>
+    var phases: [Phase]
+    var trigger: AnyEquatable?
+    var content: (PlaceholderContentView<Wrapped>, Phase) -> Content
+    var animation: (Phase) -> Animation?
+
+    func animator(_ placeholder: PlaceholderContent) -> PhaseAnimator<Phase, Content> {
+        PhaseAnimator(
+            phases: phases,
+            trigger: trigger,
+            content: { [content] in content(PlaceholderContentView(content: placeholder), $0) },
+            animation: animation
+        )
+    }
 
     static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) -> _MountedNode {
-        let content = PlaceholderContent.make(view.wrapped)
-        let child = PhaseAnimator._makeNode(view.makeAnimator(content), context: context, ctx: &ctx)
-        return .init(state: content, child: child)
+        let placeholder = PlaceholderContent.make(view.wrapped)
+        let child = PhaseAnimator._makeNode(view.animator(placeholder), context: context, ctx: &ctx)
+        return .init(state: placeholder, child: child)
     }
 
     static func _patchNode(_ view: consuming Self, node: inout _MountedNode, tx: inout _TransactionContext) {
         node.state.update(view.wrapped, tx: &tx) { child, tx in
             Wrapped._patchNode(view.wrapped, node: &child, tx: &tx)
         }
-        PhaseAnimator._patchNode(view.makeAnimator(node.state), node: &node.child, tx: &tx)
+
+        PhaseAnimator._patchNode(view.animator(node.state), node: &node.child, tx: &tx)
     }
 }

@@ -366,6 +366,26 @@ struct PhaseAnimatorTests {
     }
 
     @Test
+    func completedAnimationStartsNextPhaseInSameFrame() {
+        let dom = TestDOM()
+        var targets: [Int] = []
+        let app = dom.mount {
+            PhaseAnimator([0, 1]) { phase in
+                PhaseNumber(value: Double(phase))
+            } animation: {
+                targets.append($0)
+                return .linear(duration: 1)
+            }
+        }
+        dom.flushMicrotasks()
+        #expect(targets == [1])
+        dom.rafCallbacks.first!(1100)
+        #expect(targets == [1, 0])
+        #expect(dom.timeoutCallbacks.isEmpty)
+        app.unmount()
+    }
+
+    @Test
     func unmountInvalidatesQueuedAndRunningWork() {
         let dom = TestDOM()
         var targets: [Int] = []
