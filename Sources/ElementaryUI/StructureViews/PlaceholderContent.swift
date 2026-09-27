@@ -7,14 +7,14 @@ import BasicContainers
 class PlaceholderContent: Unmountable {
     typealias InstanceID = Int
 
-    private static let inlineID: InstanceID = 0
+    private static let inlineID: InstanceID = -1
 
     private var inlineInstance: AnyReconcilable?
-    private var additionalInstances = UniqueDictionary<InstanceID, AnyReconcilable>()
-    private var nextAdditionalID: InstanceID = 1
+    // Slot indices are the instance IDs; unmounted slots are reused.
+    private var additionalInstances = UniqueArray<AnyReconcilable?>()
 
     static func make<Value: _Mountable>(
-        _ value: Value
+        _ value: consuming Value
     ) -> PlaceholderContent {
         TypedPlaceholderContent(value)
     }
@@ -30,22 +30,25 @@ class PlaceholderContent: Unmountable {
             return Self.inlineID
         }
 
-        let id = nextAdditionalID
-        nextAdditionalID += 1
-        additionalInstances.insertValue(instance, forKey: id)
-        return id
+        for id in additionalInstances.indices where additionalInstances[id] == nil {
+            additionalInstances[id] = .some(instance)
+            return id
+        }
+
+        additionalInstances.append(.some(instance))
+        return additionalInstances.count - 1
     }
 
     func unmountInstance(_ id: InstanceID, _ context: inout _CommitContext) {
         if id == Self.inlineID {
             inlineInstance.take()?.unmount(&context)
         } else {
-            additionalInstances.removeValue(forKey: id)?.unmount(&context)
+            additionalInstances[id].take()?.unmount(&context)
         }
     }
 
     final func update<Value: _Mountable>(
-        _ value: Value,
+        _ value: consuming Value,
         tx: inout _TransactionContext,
         patch: (inout Value._MountedNode, inout _TransactionContext) -> Void
     ) {
@@ -59,20 +62,14 @@ class PlaceholderContent: Unmountable {
     @inline(never)
     private func forEachInstance(_ body: (borrowing AnyReconcilable) -> Void) {
         if inlineInstance != nil { body(inlineInstance!) }
-        guard !additionalInstances.isEmpty else { return }
-        // Borrowing dictionary elements by index miscompiles in embedded 6.4.
-        additionalInstances.withKeys { ids in
-            var index = ids.startIndex
-            while index != ids.endIndex {
-                _ = additionalInstances.withValue(forKey: ids[index]) { body($0) }
-                index = ids.index(after: index)
-            }
+        for id in additionalInstances.indices where additionalInstances[id] != nil {
+            body(additionalInstances[id]!)
         }
     }
 
     func unmount(_ context: inout _CommitContext) {
         assert(
-            inlineInstance == nil && additionalInstances.isEmpty,
+            inlineInstance == nil && additionalInstances.indices.allSatisfy { additionalInstances[$0] == nil },
             "Placeholder instances must be unmounted by their placeholder nodes"
         )
     }
@@ -80,19 +77,13 @@ class PlaceholderContent: Unmountable {
 
 /// The factory is installed once. Later mounts read the latest content value.
 private final class TypedPlaceholderContent<Value: _Mountable>: PlaceholderContent {
-    var value: Value?
+    var value: Value
 
-    init(_ value: Value) {
+    init(_ value: consuming Value) {
         self.value = value
     }
 
     override func makeInstance(context: borrowing _ViewContext, ctx: inout _MountContext) -> AnyReconcilable {
-        precondition(value != nil)
-        return AnyReconcilable(Value._makeNode(value!, context: context, ctx: &ctx))
-    }
-
-    override func unmount(_ context: inout _CommitContext) {
-        super.unmount(&context)
-        value = nil
+        AnyReconcilable(Value._makeNode(value, context: context, ctx: &ctx))
     }
 }

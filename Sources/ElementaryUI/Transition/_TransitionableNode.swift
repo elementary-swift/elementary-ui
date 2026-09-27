@@ -2,11 +2,11 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
     ~Copyable,
     _Reconcilable
 {
-    // FIXME: this should be an enum, but 6.3 has serious embedded miscompiles with enums and ownership
-    // revisit in 6.4
+    // NOTE: this looks like it should be an enum, but that causes code size bloat
     private var node: Node?
     private var transitionedElement: _TransitionElement?
 
+    @inline(never)
     init<Content: _Mountable>(
         _ value: consuming Content,
         context: borrowing _ViewContext,
@@ -41,18 +41,21 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
         )
     }
 
+    @inline(never)
     mutating func update<Content: _Mountable>(
-        _ value: Content,
+        _ value: consuming Content,
         _ tx: inout _TransactionContext
     ) where Content._MountedNode == Node {
-        if node != nil { Content._patchNode(value, node: &node!, tx: &tx) }
-        if let transitionedElement {
-            transitionedElement.content.update(value, tx: &tx) { node, tx in
-                Content._patchNode(value, node: &node, tx: &tx)
+        if node != nil {
+            Content._patchNode(value, node: &node!, tx: &tx)
+        } else if let transitionedElement {
+            transitionedElement.content.update(copy value, tx: &tx) { node, tx in
+                Content._patchNode(copy value, node: &node, tx: &tx)
             }
         }
     }
 
+    @inline(never)
     public consuming func unmount(_ context: inout _CommitContext) {
         node.take()?.unmount(&context)
         transitionedElement.take()?.unmount(&context)

@@ -1,5 +1,5 @@
 extension SVGElement: SVGView, _Mountable, _DOMElementMounting where Content: _Mountable {
-    var element: _AnyDOMElement<Content> {
+    consuming func element() -> _AnyDOMElement<Content> {
         _AnyDOMElement(
             namespaceURI: SVGAttributeValue.xmlNamespace,
             tag: Tag.name,

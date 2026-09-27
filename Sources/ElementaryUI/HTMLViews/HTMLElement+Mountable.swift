@@ -1,5 +1,5 @@
 extension HTMLElement: View, _Mountable, _DOMElementMounting where Content: _Mountable {
-    var element: _AnyDOMElement<Content> {
+    consuming func element() -> _AnyDOMElement<Content> {
         _AnyDOMElement(
             tag: Tag.name,
             attributes: _attributes,
@@ -11,7 +11,7 @@ extension HTMLElement: View, _Mountable, _DOMElementMounting where Content: _Mou
 protocol _DOMElementMounting {
     associatedtype Content: _Mountable
 
-    var element: _AnyDOMElement<Content> { get }
+    consuming func element() -> _AnyDOMElement<Content>
 }
 
 extension _DOMElementMounting {
@@ -22,7 +22,7 @@ extension _DOMElementMounting {
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) -> _MountedNode {
-        _TransitionableNode(view.element, context: context, ctx: &ctx)
+        _TransitionableNode(view.element(), context: context, ctx: &ctx)
     }
 
     public static func _patchNode(
@@ -30,7 +30,7 @@ extension _DOMElementMounting {
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        node.update(view.element, &tx)
+        node.update(view.element(), &tx)
     }
 }
 
