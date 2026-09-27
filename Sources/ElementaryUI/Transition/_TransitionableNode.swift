@@ -1,30 +1,24 @@
-import BasicContainers
-
 public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
     ~Copyable,
     _Reconcilable
 {
-    // FIXME: this should be an enum, but 6.3 has serious embedded miscompiles with enums and ownership
-    // revisit in 6.4
+    // NOTE: this looks like it should be an enum, but that causes code size bloat
     private var node: Node?
     private var transitionedElement: _TransitionElement?
 
-    init(
+    @inline(never)
+    init<Content: _Mountable>(
+        _ value: consuming Content,
         context: borrowing _ViewContext,
-        ctx: inout _MountContext,
-        makeNode:
-            @escaping (
-                borrowing _ViewContext,
-                inout _MountContext
-            ) -> Node
-    ) {
+        ctx: inout _MountContext
+    ) where Content._MountedNode == Node {
         defer {
             precondition(node != nil || transitionedElement != nil)
             precondition(node == nil || transitionedElement == nil)
         }
 
         guard let transition = context.transition else {
-            self.node = makeNode(context, &ctx)
+            self.node = Content._makeNode(value, context: context, ctx: &ctx)
             return
         }
 
@@ -35,7 +29,7 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
 
         // Without a structural owner there is nothing that can defer removal.
         guard ctx.slotTransitions != nil else {
-            self.node = makeNode(nodeContext, &ctx)
+            self.node = Content._makeNode(value, context: nodeContext, ctx: &ctx)
             return
         }
 
@@ -43,26 +37,25 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
             transition: transition.value,
             context: nodeContext,
             ctx: &ctx,
-            makeElement: { context, ctx in
-                AnyReconcilable(makeNode(context, &ctx))
-            }
+            content: PlaceholderContent.make(value)
         )
     }
 
-    mutating func update(
-        _ tx: inout _TransactionContext,
-        body: (inout Node, inout _TransactionContext) -> Void
-    ) {
-        if node != nil { body(&node!, &tx) }
-        if transitionedElement != nil {
-            transitionedElement!.forEachPlaceholder { placeholder in
-                placeholder.modify(as: Node.self) { node in
-                    body(&node, &tx)
-                }
+    @inline(never)
+    mutating func update<Content: _Mountable>(
+        _ value: consuming Content,
+        _ tx: inout _TransactionContext
+    ) where Content._MountedNode == Node {
+        if node != nil {
+            Content._patchNode(value, node: &node!, tx: &tx)
+        } else if let transitionedElement {
+            transitionedElement.content.update(copy value, tx: &tx) { node, tx in
+                Content._patchNode(copy value, node: &node, tx: &tx)
             }
         }
     }
 
+    @inline(never)
     public consuming func unmount(_ context: inout _CommitContext) {
         node.take()?.unmount(&context)
         transitionedElement.take()?.unmount(&context)
@@ -72,6 +65,10 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
 /// The generic reconciler stores only this base class, keeping its transitioned
 /// branches short and preventing specialization of the concrete implementation.
 class _TransitionElement {
+    let content: PlaceholderContent
+
+    init(content: PlaceholderContent) { self.content = content }
+
     var defaultAnimation: Animation? { fatalError("abstract") }
     var isMounted: Bool { fatalError("abstract") }
 
@@ -85,24 +82,16 @@ class _TransitionElement {
         transition: AnyTransition,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
-        makeElement:
-            @escaping (
-                borrowing _ViewContext,
-                inout _MountContext
-            ) -> AnyReconcilable
+        content: PlaceholderContent
     ) -> _TransitionElement {
         guard let type else { preconditionFailure("No transition element type installed") }
-        return type.make(transition: transition, context: context, ctx: &ctx, makeElement: makeElement)
+        return type.make(transition: transition, context: context, ctx: &ctx, content: content)
     }
 
     func patchPhase(
         _ phase: TransitionPhase,
         tx: inout _TransactionContext
     ) {
-        fatalError("abstract")
-    }
-
-    func forEachPlaceholder(_ body: (inout AnyReconcilable) -> Void) {
         fatalError("abstract")
     }
 
@@ -116,27 +105,14 @@ class _TransitionElement {
 final class _MountedTransitionElement: _TransitionElement {
     private let transition: AnyTransition
     private var bodyNode: AnyReconcilable?
-    private var placeholderNode: AnyReconcilable?
-    private var additionalPlaceholderNodes: UniqueArray<AnyReconcilable> = .init()
-    private var makeElement:
-        (
-            (
-                borrowing _ViewContext,
-                inout _MountContext
-            ) -> AnyReconcilable
-        )?
 
     override class func make(
         transition: AnyTransition,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
-        makeElement:
-            @escaping (
-                borrowing _ViewContext,
-                inout _MountContext
-            ) -> AnyReconcilable
+        content: PlaceholderContent
     ) -> _TransitionElement {
-        _MountedTransitionElement(transition: transition, context: context, ctx: &ctx, makeElement: makeElement)
+        _MountedTransitionElement(transition: transition, context: context, ctx: &ctx, content: content)
     }
 
     @inline(never)
@@ -144,25 +120,20 @@ final class _MountedTransitionElement: _TransitionElement {
         transition: AnyTransition,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
-        makeElement:
-            @escaping (
-                borrowing _ViewContext,
-                inout _MountContext
-            ) -> AnyReconcilable
+        content: PlaceholderContent
     ) {
         self.transition = transition
-        self.makeElement = makeElement
 
         let initialPhase = transitionInitialPhase(
             defaultAnimation: transition.animation,
             transaction: ctx.transaction
         )
-        super.init()
+        super.init(content: content)
         self.bodyNode = transition.makeNode(
             phase: initialPhase,
             context: context,
             ctx: &ctx,
-            makePlaceholderNode: self.makePlaceholderNode
+            content: content
         )
         ctx.registerTransition(
             self,
@@ -187,37 +158,12 @@ final class _MountedTransitionElement: _TransitionElement {
             to: phase,
             node: &bodyNode!,
             tx: &tx,
-            makePlaceholderNode: self.makePlaceholderNode
+            content: content
         )
     }
 
-    override func forEachPlaceholder(
-        _ body: (inout AnyReconcilable) -> Void
-    ) {
-        guard placeholderNode != nil else { return }
-        body(&placeholderNode!)
-
-        for index in additionalPlaceholderNodes.indices {
-            body(&additionalPlaceholderNodes[index])
-        }
-    }
-
     override func unmount(_ context: inout _CommitContext) {
-        bodyNode?.unmount(&context)
-        bodyNode = nil
-        placeholderNode = nil
-        additionalPlaceholderNodes.removeAll()
-        makeElement = nil
-    }
-
-    private func makePlaceholderNode(
-        context: borrowing _ViewContext,
-        ctx: inout _MountContext
-    ) {
-        if placeholderNode == nil {
-            placeholderNode = makeElement!(context, &ctx)
-        } else {
-            additionalPlaceholderNodes.append(makeElement!(context, &ctx))
-        }
+        bodyNode.take()?.unmount(&context)
+        content.unmount(&context)
     }
 }

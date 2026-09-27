@@ -374,6 +374,12 @@ final class TestDOM: DOM.Interactor {
         }
     }
 
+    /// Advances the simulated clock and processes one animation frame.
+    func advanceTime(by seconds: Double) {
+        currentTime += seconds
+        runNextFrame()
+    }
+
     func runNextFrame() {
         runAllScheduledWork()
         guard let callback = rafCallbacks.first else { return }

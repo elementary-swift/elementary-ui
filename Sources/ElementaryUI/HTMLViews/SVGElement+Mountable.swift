@@ -1,51 +1,12 @@
-extension SVGElement: _Mountable, SVGView where Content: _Mountable {
-    public typealias _MountedNode = _TransitionableNode<
-        _ElementNode<Content._MountedNode>
-    >
-
-    public static func _makeNode(
-        _ view: consuming Self,
-        context: borrowing _ViewContext,
-        ctx: inout _MountContext
-    ) -> _MountedNode {
-        _TransitionableNode(context: context, ctx: &ctx) {
-            viewContext,
-            ctx in
-            _ElementNode(
-                tag: self.Tag.name,
-                namespaceURI: SVGAttributeValue.xmlNamespace,
-                attributes: view._attributes,
-                viewContext: viewContext,
-                ctx: &ctx,
-                makeChild: { viewContext, ctx in
-                    Content._makeNode(
-                        view.content,
-                        context: viewContext,
-                        ctx: &ctx
-                    )
-                }
-            )
-        }
+extension SVGElement: SVGView, _Mountable, _DOMElementMounting where Content: _Mountable {
+    consuming func element() -> _AnyDOMElement<Content> {
+        _AnyDOMElement(
+            namespaceURI: SVGAttributeValue.xmlNamespace,
+            tag: Tag.name,
+            attributes: _attributes,
+            content: content
+        )
     }
-
-    public static func _patchNode(
-        _ view: consuming Self,
-        node: inout _MountedNode,
-        tx: inout _TransactionContext
-    ) {
-        node.update(&tx) { element, tx in
-            element.update(attributes: view._attributes, &tx) {
-                child,
-                tx in
-                Content._patchNode(
-                    view.content,
-                    node: &child,
-                    tx: &tx
-                )
-            }
-        }
-    }
-
 }
 
 extension SVGElement: View where Tag == SVGTag.svg, Content: _Mountable {}

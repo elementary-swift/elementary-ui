@@ -10,7 +10,7 @@ public struct _ElementNode<Child: _Reconcilable & ~Copyable>:
         tag: String,
         namespaceURI: String? = nil,
         attributes: _AttributeStorage,
-        viewContext: borrowing _ViewContext,
+        context: borrowing _ViewContext,
         ctx: inout _MountContext,
         makeChild: (borrowing _ViewContext, inout _MountContext) -> Child
     ) {
@@ -26,7 +26,7 @@ public struct _ElementNode<Child: _Reconcilable & ~Copyable>:
 
         ctx.appendStaticElement(domNode)
 
-        guard !viewContext.hasNoUpstreamModifiers else {
+        guard !context.hasNoUpstreamModifiers else {
             self.attributes = .mountInline(
                 attributes,
                 on: domNode,
@@ -34,14 +34,14 @@ public struct _ElementNode<Child: _Reconcilable & ~Copyable>:
             )
             self.child = ctx.withChildContext {
                 (mctx: consuming _MountContext) in
-                let child = makeChild(viewContext, &mctx)
+                let child = makeChild(context, &mctx)
                 _ = mctx.mountInDOMNode(domNode, observers: [])
                 return child
             }
             return
         }
 
-        var childContext = copy viewContext
+        var childContext = copy context
         if childContext.modifiers[_AttributeModifier.key] != nil {
             let modifier = _AttributeModifier(
                 value: attributes,

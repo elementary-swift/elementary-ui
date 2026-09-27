@@ -41,3 +41,6 @@ Visit the guide at [**elementary.codes**](https://elementary.codes).
 - ``withAnimation(_:_:)``
 - ``View/animation(_:value:)``
 - ``Animatable``
+- ``PhaseAnimator``
+- ``View/phaseAnimator(_:content:animation:)``
+- ``View/phaseAnimator(_:trigger:content:animation:)``

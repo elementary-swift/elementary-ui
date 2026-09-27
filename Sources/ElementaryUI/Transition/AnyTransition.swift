@@ -9,12 +9,6 @@
 ///     .animation(.easeInOut)
 /// ```
 public struct AnyTransition {
-    typealias MakePlaceholderNode =
-        (
-            borrowing _ViewContext,
-            inout _MountContext
-        ) -> Void
-
     private class Box {
         let animation: Animation?
 
@@ -26,7 +20,7 @@ public struct AnyTransition {
             phase: TransitionPhase,
             context: borrowing _ViewContext,
             ctx: inout _MountContext,
-            makePlaceholderNode: @escaping MakePlaceholderNode
+            content: PlaceholderContent
         ) -> AnyReconcilable {
             fatalError("abstract")
         }
@@ -35,7 +29,7 @@ public struct AnyTransition {
             to phase: TransitionPhase,
             node: inout AnyReconcilable,
             tx: inout _TransactionContext,
-            makePlaceholderNode: @escaping MakePlaceholderNode
+            content: PlaceholderContent
         ) {
             fatalError("abstract")
         }
@@ -57,14 +51,12 @@ public struct AnyTransition {
             phase: TransitionPhase,
             context: borrowing _ViewContext,
             ctx: inout _MountContext,
-            makePlaceholderNode: @escaping MakePlaceholderNode
+            content: PlaceholderContent
         ) -> AnyReconcilable {
-            let content = PlaceholderContentView<T>(
-                makeNodeFn: makePlaceholderNode
-            )
+            let placeholder = PlaceholderContentView<T>(content: content)
             return AnyReconcilable(
                 T.Body._makeNode(
-                    transition.body(content: content, phase: phase),
+                    transition.body(content: placeholder, phase: phase),
                     context: context,
                     ctx: &ctx
                 )
@@ -75,14 +67,12 @@ public struct AnyTransition {
             to phase: TransitionPhase,
             node: inout AnyReconcilable,
             tx: inout _TransactionContext,
-            makePlaceholderNode: @escaping MakePlaceholderNode
+            content: PlaceholderContent
         ) {
-            let content = PlaceholderContentView<T>(
-                makeNodeFn: makePlaceholderNode
-            )
+            let placeholder = PlaceholderContentView<T>(content: content)
             node.modify(as: T.Body._MountedNode.self) { node in
                 T.Body._patchNode(
-                    transition.body(content: content, phase: phase),
+                    transition.body(content: placeholder, phase: phase),
                     node: &node,
                     tx: &tx
                 )
@@ -124,13 +114,13 @@ public struct AnyTransition {
         phase: TransitionPhase,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
-        makePlaceholderNode: @escaping MakePlaceholderNode
+        content: PlaceholderContent
     ) -> AnyReconcilable {
         box.makeNode(
             phase: phase,
             context: context,
             ctx: &ctx,
-            makePlaceholderNode: makePlaceholderNode
+            content: content
         )
     }
 
@@ -138,13 +128,13 @@ public struct AnyTransition {
         to phase: TransitionPhase,
         node: inout AnyReconcilable,
         tx: inout _TransactionContext,
-        makePlaceholderNode: @escaping MakePlaceholderNode
+        content: PlaceholderContent
     ) {
         box.patchNode(
             to: phase,
             node: &node,
             tx: &tx,
-            makePlaceholderNode: makePlaceholderNode
+            content: content
         )
     }
 }

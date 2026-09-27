@@ -2,35 +2,21 @@
 ///
 /// `PlaceholderContentView` is used internally by the framework when implementing
 /// transitions and view modifiers.
-///
-/// ## Usage in Transitions
-///
-/// ```swift
-/// struct MyTransition: Transition {
-///     func body(content: Content, phase: TransitionPhase) -> some View {
-///         content  // Content is a PlaceholderContentView<MyTransition>
-///             .opacity(phase.isIdentity ? 1 : 0)
-///     }
-/// }
-/// ```
 public struct PlaceholderContentView<Value>: View {
-    private var makeNodeFn: (borrowing _ViewContext, inout _MountContext) -> Void
+    let content: PlaceholderContent
 
-    init(makeNodeFn: @escaping (borrowing _ViewContext, inout _MountContext) -> Void) {
-        self.makeNodeFn = makeNodeFn
-    }
+    init(content: PlaceholderContent) { self.content = content }
 }
 
 extension PlaceholderContentView: _Mountable {
-    public typealias _MountedNode = _EmptyNode
+    public typealias _MountedNode = _PlaceholderNode
 
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) -> _MountedNode {
-        view.makeNodeFn(context, &ctx)
-        return _EmptyNode()
+        _PlaceholderNode(host: view.content, context: context, ctx: &ctx)
     }
 
     public static func _patchNode(
@@ -38,5 +24,19 @@ extension PlaceholderContentView: _Mountable {
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
+    }
+}
+
+public struct _PlaceholderNode: ~Copyable, _Reconcilable {
+    private let host: PlaceholderContent
+    private let id: PlaceholderContent.InstanceID
+
+    init(host: PlaceholderContent, context: borrowing _ViewContext, ctx: inout _MountContext) {
+        self.host = host
+        self.id = host.mountInstance(context: context, ctx: &ctx)
+    }
+
+    public consuming func unmount(_ context: inout _CommitContext) {
+        host.unmountInstance(id, &context)
     }
 }

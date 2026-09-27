@@ -15,6 +15,12 @@ let package = Package(
             name: "App",
             dependencies: [
                 .product(name: "ElementaryUI", package: "elementary-ui")
+            ],
+            linkerSettings: [
+                .unsafeFlags(
+                    ["-Xlinker", "-z", "-Xlinker", "stack-size=8388608"],
+                    .when(configuration: .debug)
+                )
             ]
         )
     ],

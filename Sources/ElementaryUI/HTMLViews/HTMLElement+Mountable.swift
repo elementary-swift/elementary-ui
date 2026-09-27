@@ -1,30 +1,28 @@
-extension HTMLElement: _Mountable, View where Content: _Mountable {
-    public typealias _MountedNode = _TransitionableNode<
-        _ElementNode<Content._MountedNode>
-    >
+extension HTMLElement: View, _Mountable, _DOMElementMounting where Content: _Mountable {
+    consuming func element() -> _AnyDOMElement<Content> {
+        _AnyDOMElement(
+            tag: Tag.name,
+            attributes: _attributes,
+            content: content
+        )
+    }
+}
+
+protocol _DOMElementMounting {
+    associatedtype Content: _Mountable
+
+    consuming func element() -> _AnyDOMElement<Content>
+}
+
+extension _DOMElementMounting {
+    public typealias _MountedNode = _TransitionableNode<_ElementNode<Content._MountedNode>>
 
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) -> _MountedNode {
-        _TransitionableNode(context: context, ctx: &ctx) {
-            viewContext,
-            ctx in
-            _ElementNode(
-                tag: self.Tag.name,
-                attributes: view._attributes,
-                viewContext: viewContext,
-                ctx: &ctx,
-                makeChild: { viewContext, ctx in
-                    Content._makeNode(
-                        view.content,
-                        context: viewContext,
-                        ctx: &ctx
-                    )
-                }
-            )
-        }
+        _TransitionableNode(view.element(), context: context, ctx: &ctx)
     }
 
     public static func _patchNode(
@@ -32,18 +30,42 @@ extension HTMLElement: _Mountable, View where Content: _Mountable {
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
+        node.update(view.element(), &tx)
+    }
+}
 
-        node.update(&tx) { element, tx in
-            element.update(attributes: view._attributes, &tx) {
-                child,
-                tx in
-                Content._patchNode(
-                    view.content,
-                    node: &child,
-                    tx: &tx
-                )
+struct _AnyDOMElement<Content: _Mountable>: _Mountable {
+    typealias _MountedNode = _ElementNode<Content._MountedNode>
+
+    var namespaceURI: String?
+    var tag: String
+    var attributes: _AttributeStorage
+    var content: Content
+
+    static func _makeNode(
+        _ view: consuming Self,
+        context: borrowing _ViewContext,
+        ctx: inout _MountContext
+    ) -> _MountedNode {
+        _ElementNode(
+            tag: view.tag,
+            namespaceURI: view.namespaceURI,
+            attributes: view.attributes,
+            context: context,
+            ctx: &ctx,
+            makeChild: { viewContext, ctx in
+                Content._makeNode(view.content, context: viewContext, ctx: &ctx)
             }
-        }
+        )
     }
 
+    static func _patchNode(
+        _ view: consuming Self,
+        node: inout _MountedNode,
+        tx: inout _TransactionContext
+    ) {
+        node.update(attributes: view.attributes, &tx) { element, tx in
+            Content._patchNode(view.content, node: &element, tx: &tx)
+        }
+    }
 }
