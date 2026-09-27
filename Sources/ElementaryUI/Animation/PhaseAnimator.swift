@@ -81,8 +81,8 @@ public extension View {
         @ContentBuilder content: @escaping (PlaceholderContentView<Self>, Phase) -> Content,
         animation: @escaping (Phase) -> Animation? = { _ in .default }
     ) -> some View<Content.Tag> {
-        _PhaseModifierView(wrapped: self) { host in
-            PhaseAnimator(phases, content: { content(PlaceholderContentView(host: host), $0) }, animation: animation)
+        _PhaseModifierView(wrapped: self) { placeholderContent in
+            PhaseAnimator(phases, content: { content(PlaceholderContentView(content: placeholderContent), $0) }, animation: animation)
         }
     }
 
@@ -102,8 +102,8 @@ public extension View {
         @ContentBuilder content: @escaping (PlaceholderContentView<Self>, Phase) -> Content,
         animation: @escaping (Phase) -> Animation? = { _ in .default }
     ) -> some View<Content.Tag> {
-        _PhaseModifierView(wrapped: self) { host in
-            PhaseAnimator(phases, trigger: trigger, content: { content(PlaceholderContentView(host: host), $0) }, animation: animation)
+        _PhaseModifierView(wrapped: self) { placeholderContent in
+            PhaseAnimator(phases, trigger: trigger, content: { content(PlaceholderContentView(content: placeholderContent), $0) }, animation: animation)
         }
     }
 }
@@ -219,19 +219,19 @@ private final class _PhaseController<Phase: Equatable, Content: View> {
 private struct _PhaseModifierView<Wrapped: View, Phase: Equatable, Content: View>: View {
     typealias Body = Never
     typealias Tag = Content.Tag
-    typealias _MountedNode = _StatefulNode<_PlaceholderHost, PhaseAnimator<Phase, Content>._MountedNode>
+    typealias _MountedNode = _StatefulNode<PlaceholderContent, PhaseAnimator<Phase, Content>._MountedNode>
 
     var wrapped: Wrapped
-    var makeAnimator: (_PlaceholderHost) -> PhaseAnimator<Phase, Content>
+    var makeAnimator: (PlaceholderContent) -> PhaseAnimator<Phase, Content>
 
     static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) -> _MountedNode {
-        let host = _PlaceholderHost.make(view.wrapped)
-        let child = PhaseAnimator._makeNode(view.makeAnimator(host), context: context, ctx: &ctx)
-        return .init(state: host, child: child)
+        let content = PlaceholderContent.make(view.wrapped)
+        let child = PhaseAnimator._makeNode(view.makeAnimator(content), context: context, ctx: &ctx)
+        return .init(state: content, child: child)
     }
 
     static func _patchNode(_ view: consuming Self, node: inout _MountedNode, tx: inout _TransactionContext) {

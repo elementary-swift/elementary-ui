@@ -5,9 +5,9 @@ import Testing
 
 @MainActor
 @Suite
-struct PlaceholderHostTests {
+struct PlaceholderContentTests {
     @Test(arguments: [false, true])
-    func liveOccurrencesReceiveUpdatesAndUnmountExactlyOnce(transition: Bool) {
+    func liveInstancesReceiveUpdatesAndUnmountExactlyOnce(transition: Bool) {
         let inputs = PlaceholderInputs()
         let probe = PlaceholderProbe()
         let dom = TestDOM()
@@ -155,7 +155,7 @@ struct PlaceholderHostTests {
     }
 
     @Test
-    func nestedHostsDoNotUpdateEachOthersOccurrences() {
+    func nestedContentsDoNotUpdateEachOthersInstances() {
         let inputs = PlaceholderInputs()
         let probe = PlaceholderProbe()
         let dom = TestDOM()

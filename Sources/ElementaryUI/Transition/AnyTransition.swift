@@ -20,7 +20,7 @@ public struct AnyTransition {
             phase: TransitionPhase,
             context: borrowing _ViewContext,
             ctx: inout _MountContext,
-            host: _PlaceholderHost
+            content: PlaceholderContent
         ) -> AnyReconcilable {
             fatalError("abstract")
         }
@@ -29,7 +29,7 @@ public struct AnyTransition {
             to phase: TransitionPhase,
             node: inout AnyReconcilable,
             tx: inout _TransactionContext,
-            host: _PlaceholderHost
+            content: PlaceholderContent
         ) {
             fatalError("abstract")
         }
@@ -51,14 +51,12 @@ public struct AnyTransition {
             phase: TransitionPhase,
             context: borrowing _ViewContext,
             ctx: inout _MountContext,
-            host: _PlaceholderHost
+            content: PlaceholderContent
         ) -> AnyReconcilable {
-            let content = PlaceholderContentView<T>(
-                host: host
-            )
+            let placeholder = PlaceholderContentView<T>(content: content)
             return AnyReconcilable(
                 T.Body._makeNode(
-                    transition.body(content: content, phase: phase),
+                    transition.body(content: placeholder, phase: phase),
                     context: context,
                     ctx: &ctx
                 )
@@ -69,14 +67,12 @@ public struct AnyTransition {
             to phase: TransitionPhase,
             node: inout AnyReconcilable,
             tx: inout _TransactionContext,
-            host: _PlaceholderHost
+            content: PlaceholderContent
         ) {
-            let content = PlaceholderContentView<T>(
-                host: host
-            )
+            let placeholder = PlaceholderContentView<T>(content: content)
             node.modify(as: T.Body._MountedNode.self) { node in
                 T.Body._patchNode(
-                    transition.body(content: content, phase: phase),
+                    transition.body(content: placeholder, phase: phase),
                     node: &node,
                     tx: &tx
                 )
@@ -118,13 +114,13 @@ public struct AnyTransition {
         phase: TransitionPhase,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
-        host: _PlaceholderHost
+        content: PlaceholderContent
     ) -> AnyReconcilable {
         box.makeNode(
             phase: phase,
             context: context,
             ctx: &ctx,
-            host: host
+            content: content
         )
     }
 
@@ -132,13 +128,13 @@ public struct AnyTransition {
         to phase: TransitionPhase,
         node: inout AnyReconcilable,
         tx: inout _TransactionContext,
-        host: _PlaceholderHost
+        content: PlaceholderContent
     ) {
         box.patchNode(
             to: phase,
             node: &node,
             tx: &tx,
-            host: host
+            content: content
         )
     }
 }

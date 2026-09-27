@@ -2,11 +2,10 @@
 ///
 /// `PlaceholderContentView` is used internally by the framework when implementing
 /// transitions and view modifiers.
-/// ```
 public struct PlaceholderContentView<Value>: View {
-    let host: _PlaceholderHost
+    let content: PlaceholderContent
 
-    init(host: _PlaceholderHost) { self.host = host }
+    init(content: PlaceholderContent) { self.content = content }
 }
 
 extension PlaceholderContentView: _Mountable {
@@ -17,7 +16,7 @@ extension PlaceholderContentView: _Mountable {
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) -> _MountedNode {
-        _PlaceholderNode(host: view.host, context: context, ctx: &ctx)
+        _PlaceholderNode(host: view.content, context: context, ctx: &ctx)
     }
 
     public static func _patchNode(
@@ -29,15 +28,15 @@ extension PlaceholderContentView: _Mountable {
 }
 
 public struct _PlaceholderNode: ~Copyable, _Reconcilable {
-    private let host: _PlaceholderHost
-    private let id: _PlaceholderHost.OccurrenceID
+    private let host: PlaceholderContent
+    private let id: PlaceholderContent.InstanceID
 
-    init(host: _PlaceholderHost, context: borrowing _ViewContext, ctx: inout _MountContext) {
+    init(host: PlaceholderContent, context: borrowing _ViewContext, ctx: inout _MountContext) {
         self.host = host
-        self.id = host.mount(context: context, ctx: &ctx)
+        self.id = host.mountInstance(context: context, ctx: &ctx)
     }
 
     public consuming func unmount(_ context: inout _CommitContext) {
-        host.unmountOccurrence(id, &context)
+        host.unmountInstance(id, &context)
     }
 }

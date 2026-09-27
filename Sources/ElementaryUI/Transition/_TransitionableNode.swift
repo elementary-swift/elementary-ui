@@ -37,7 +37,7 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
             transition: transition.value,
             context: nodeContext,
             ctx: &ctx,
-            host: _PlaceholderHost.make(value)
+            content: PlaceholderContent.make(value)
         )
     }
 
@@ -47,7 +47,7 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
     ) where Content._MountedNode == Node {
         if node != nil { Content._patchNode(value, node: &node!, tx: &tx) }
         if let transitionedElement {
-            transitionedElement.host.update(value, tx: &tx) { node, tx in
+            transitionedElement.content.update(value, tx: &tx) { node, tx in
                 Content._patchNode(value, node: &node, tx: &tx)
             }
         }
@@ -62,9 +62,9 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
 /// The generic reconciler stores only this base class, keeping its transitioned
 /// branches short and preventing specialization of the concrete implementation.
 class _TransitionElement {
-    let host: _PlaceholderHost
+    let content: PlaceholderContent
 
-    init(host: _PlaceholderHost) { self.host = host }
+    init(content: PlaceholderContent) { self.content = content }
 
     var defaultAnimation: Animation? { fatalError("abstract") }
     var isMounted: Bool { fatalError("abstract") }
@@ -79,10 +79,10 @@ class _TransitionElement {
         transition: AnyTransition,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
-        host: _PlaceholderHost
+        content: PlaceholderContent
     ) -> _TransitionElement {
         guard let type else { preconditionFailure("No transition element type installed") }
-        return type.make(transition: transition, context: context, ctx: &ctx, host: host)
+        return type.make(transition: transition, context: context, ctx: &ctx, content: content)
     }
 
     func patchPhase(
@@ -107,9 +107,9 @@ final class _MountedTransitionElement: _TransitionElement {
         transition: AnyTransition,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
-        host: _PlaceholderHost
+        content: PlaceholderContent
     ) -> _TransitionElement {
-        _MountedTransitionElement(transition: transition, context: context, ctx: &ctx, host: host)
+        _MountedTransitionElement(transition: transition, context: context, ctx: &ctx, content: content)
     }
 
     @inline(never)
@@ -117,7 +117,7 @@ final class _MountedTransitionElement: _TransitionElement {
         transition: AnyTransition,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
-        host: _PlaceholderHost
+        content: PlaceholderContent
     ) {
         self.transition = transition
 
@@ -125,12 +125,12 @@ final class _MountedTransitionElement: _TransitionElement {
             defaultAnimation: transition.animation,
             transaction: ctx.transaction
         )
-        super.init(host: host)
+        super.init(content: content)
         self.bodyNode = transition.makeNode(
             phase: initialPhase,
             context: context,
             ctx: &ctx,
-            host: host
+            content: content
         )
         ctx.registerTransition(
             self,
@@ -155,12 +155,12 @@ final class _MountedTransitionElement: _TransitionElement {
             to: phase,
             node: &bodyNode!,
             tx: &tx,
-            host: host
+            content: content
         )
     }
 
     override func unmount(_ context: inout _CommitContext) {
         bodyNode.take()?.unmount(&context)
-        host.unmount(&context)
+        content.unmount(&context)
     }
 }
