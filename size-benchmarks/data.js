@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790672621407,
+  "lastUpdate": 1790683685643,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -11884,6 +11884,53 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 205.94,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "f4f4d96cda9b76017baa457f77d07d52f9cf628d",
+          "message": "added phaseAnimator API docs (#134)",
+          "timestamp": "2026-09-29T08:50:04Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/f4f4d96cda9b76017baa457f77d07d52f9cf628d"
+        },
+        "date": 1790683684600,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 180.15,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 104.51,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 90.22,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 159.44,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 205.95,
             "unit": "kB"
           }
         ]
