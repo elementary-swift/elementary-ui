@@ -87,21 +87,21 @@ Swift 6.4 or later with matching *Swift SDKs for WebAssembly* from [swift.org](h
 - ~~somehow migrate over to "var body" instead of "var content" (what was I thinking....)~~
 - ~~automatic FLIP animations for certain layout changes (child-layout after changes, maybe size of containers)~~
 - ~~fix those Foundation imports, review thread-local + mutex usage~~
-- more built-in animatable CSS modifiers (colors, borders, blur)
-- basic phaseAnimator implementations
+- ~~basic phaseAnimator implementations~~
 - implement auto-flip animation for custom CSS values (on value triggers)
 - maybe add "animateContainerLayout" modifier with value trigger (eg: to animate changes without child-changes)
-- support for combined and reversible transitions
 - multi-select bindings (options, radio-buttons, tagged check boxes, ...)
+- support for combined and reversible transitions
 - more unit testing (FLIP handling, animations, reactivity, ...)
+- more built-in animatable CSS modifiers (colors, borders) (maybe in extra module with more SwiftUI shims?)
 - implement @ViewEquatableIgnored
-- split out JavaScriptKit stuff in separate module to contain spread, maybe one day we can switch to faster interop somehow
+- ~~split out JavaScriptKit stuff in separate module to contain spread, maybe one day we can switch to faster interop somehow~~
 - ~~add basic docs, a good intro readme, and push a 0.1 out the door! (probably best to wait for Swift 6.2 to drop)~~
 - a router implementation (probably in extra module?)
 - maybe conditionally support @Observable for non-embedded builds?
 - ~~figure out why `@Environment` with optional `ReactiveObject` does not build in embedded~~
 - preference system (i.e., bubbling up values)
-- embedded-friendly Browser APIs (Storage, History, maybe in swiftwasm package with new JavaScriptKit macros)
+- ~~embedded-friendly Browser APIs (Storage, History, maybe in swiftwasm package with new JavaScriptKit macros)~~
 - ~~think about how to deal with the lack of `Codable` in embedded (wait for new serialization macros)~~
 - ~~make printing work without WASI (maybe pipe putchar through to JavaScript?)~~
 - isolation and @MainActor stuff for reusable types (server-side rendering and client apps - probably never quite possible to have same types render "multi-threaded" server side and stay single-threaded client side....)
