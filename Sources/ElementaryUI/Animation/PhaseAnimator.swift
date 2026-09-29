@@ -31,6 +31,13 @@ public struct PhaseAnimator<Phase: Equatable, Content: View>: View {
     var animation: (Phase) -> Animation?
 
     /// Creates an animator that continuously cycles through a finite sequence.
+    ///
+    /// - Parameters:
+    ///   - phases: The ordered sequence of phases to cycle through.
+    ///   - content: Builds content for the supplied phase.
+    ///   - animation: Receives the destination phase and returns the animation
+    ///     used to transition into it. Return `nil` to transition without animation.
+    ///     Defaults to `.default`.
     public init(
         _ phases: some Sequence<Phase>,
         @ContentBuilder content: @escaping (Phase) -> Content,
@@ -44,6 +51,14 @@ public struct PhaseAnimator<Phase: Equatable, Content: View>: View {
     /// Retriggering while targeting the second phase advances to the next phase;
     /// from any other target it redirects to the second phase. Existing motion
     /// is interrupted using the destination animation, without resetting visually.
+    ///
+    /// - Parameters:
+    ///   - phases: The ordered sequence of phases to cycle through.
+    ///   - trigger: A value whose changes start or redirect a cycle.
+    ///   - content: Builds content for the supplied phase.
+    ///   - animation: Receives the destination phase and returns the animation
+    ///     used to transition into it. Return `nil` to transition without animation.
+    ///     Defaults to `.default`.
     public init(
         _ phases: some Sequence<Phase>,
         trigger: some Equatable,
@@ -85,6 +100,13 @@ public struct PhaseAnimator<Phase: Equatable, Content: View>: View {
 public extension View {
     /// Continuously animates effects through a finite sequence of phases.
     /// The animation closure selects the animation for the destination phase.
+    ///
+    /// - Parameters:
+    ///   - phases: The ordered sequence of phases to cycle through.
+    ///   - content: Receives a proxy for the modified view and the phase to render.
+    ///   - animation: Receives the destination phase and returns the animation
+    ///     used to transition into it. Return `nil` to transition without animation.
+    ///     Defaults to `.default`.
     func phaseAnimator<Phase: Equatable, Content: View>(
         _ phases: some Sequence<Phase>,
         @ContentBuilder content: @escaping (PlaceholderContentView<Self>, Phase) -> Content,
@@ -103,6 +125,14 @@ public extension View {
     /// ```
     ///
     /// See ``PhaseAnimator`` for retriggering and phase-list replacement behavior.
+    ///
+    /// - Parameters:
+    ///   - phases: The ordered sequence of phases to cycle through.
+    ///   - trigger: A value whose changes start or redirect a cycle.
+    ///   - content: Receives a proxy for the modified view and the phase to render.
+    ///   - animation: Receives the destination phase and returns the animation
+    ///     used to transition into it. Return `nil` to transition without animation.
+    ///     Defaults to `.default`.
     func phaseAnimator<Phase: Equatable, Content: View>(
         _ phases: some Sequence<Phase>,
         trigger: some Equatable,
