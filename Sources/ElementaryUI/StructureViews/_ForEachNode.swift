@@ -94,7 +94,7 @@ where Data: Collection, Content: _KeyReadableContent {
         keysScratch.reserveCapacity(data.underestimatedCount)
 
         viewsScratch.removeAll(keepingCapacity: true)
-        keysScratch.removeAll(keepingCapacity: true)
+        keysScratch.removeAll()
 
         let (_, session) = withReactiveTrackingSession {
             for value in data {

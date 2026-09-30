@@ -17,7 +17,7 @@ let package = Package(
         .package(url: "https://github.com/elementary-swift/elementary", from: "0.8.2"),
         .package(
             url: "https://github.com/apple/swift-collections",
-            .upToNextMinor(from: "1.6.0"),
+            from: "1.7.1",
             traits: ["UnstableContainersPreview", "UnstableHashedContainers"]
         ),
         .package(url: "https://github.com/swiftlang/swift-syntax", "600.0.0"..<"605.0.0"),
@@ -36,6 +36,7 @@ let package = Package(
                 .product(name: "JavaScriptKit", package: "JavaScriptKit"),
                 .product(name: "BasicContainers", package: "swift-collections"),
                 .product(name: "ContainersPreview", package: "swift-collections"),
+                .product(name: "SpanPreview", package: "swift-collections"),
                 .target(name: "BrowserInterop"),
                 .target(name: "ElementaryUIMacros"),
                 .target(name: "_UTF8Internals"),
@@ -49,6 +50,7 @@ let package = Package(
                 .enableUpcomingFeature("ImplicitOpenExistentials"),
                 .enableExperimentalFeature("Lifetimes"),
                 .enableExperimentalFeature("SuppressedAssociatedTypesWithDefaults"),
+                .enableExperimentalFeature("BuiltinModule"),  // remove when MutableRef is fair game
                 .treatWarning("EmbeddedRestrictions", as: .warning),
             ]
         ),

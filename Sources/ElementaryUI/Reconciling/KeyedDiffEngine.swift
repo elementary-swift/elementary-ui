@@ -54,13 +54,10 @@ struct KeyedDiffEngine: ~Copyable {
         // range directly into the removal lane, preserving transition handling.
         if newMiddleCount == 0 {
             removedSlots.reserveCapacity(removedSlots.count + oldMiddleCount)
-            activeSlots.replace(
-                removing: prefixCount..<(prefixCount + oldMiddleCount),
-                consumingWith: { input in
-                    while !input.isEmpty {
-                        removedSlots.append(input.removeFirst())
-                    }
-                },
+
+            activeSlots.replaceSubrange(
+                prefixCount..<(prefixCount + oldMiddleCount),
+                consumingWith: { removedSlots.append(moving: &$0) },
                 addingCount: 0,
                 initializingWith: { _ in }
             )
@@ -70,8 +67,8 @@ struct KeyedDiffEngine: ~Copyable {
         // With no old middle or leaving slots, every inserted key is new.
         // Keep the general path when a key could revive an exit transition.
         if oldMiddleCount == 0 && leavingSlots.isEmpty {
-            activeSlots.replace(
-                removing: prefixCount..<prefixCount,
+            activeSlots.replaceSubrange(
+                prefixCount..<prefixCount,
                 consumingWith: { _ in },
                 addingCount: newMiddleCount,
                 initializingWith: { output in
@@ -100,8 +97,8 @@ struct KeyedDiffEngine: ~Copyable {
             didStructureChange: &didStructureChange
         )
 
-        activeSlots.replace(
-            removing: prefixCount..<(prefixCount + oldMiddleCount),
+        activeSlots.replaceSubrange(
+            prefixCount..<(prefixCount + oldMiddleCount),
             consumingWith: { inputSpan in
                 let count = inputSpan.count
                 for i in 0..<count {
@@ -159,28 +156,28 @@ struct KeyedDiffEngine: ~Copyable {
         leavingKeyMap.removeAll(keepingCapacity: true)
         leavingKeyMap.reserveCapacity(oldLeavingCount)
 
-        sources.removeAll(keepingCapacity: true)
+        sources.removeAll()
         sources.reserveCapacity(newMiddleCount)
 
-        tails.removeAll(keepingCapacity: true)
+        tails.removeAll()
         tails.reserveCapacity(newMiddleCount)
 
-        tailIndices.removeAll(keepingCapacity: true)
+        tailIndices.removeAll()
         tailIndices.reserveCapacity(newMiddleCount)
 
-        predecessors.removeAll(keepingCapacity: true)
+        predecessors.removeAll()
         predecessors.reserveCapacity(newMiddleCount)
 
-        inLIS.removeAll(keepingCapacity: true)
+        inLIS.removeAll()
         inLIS.reserveCapacity(newMiddleCount)
 
-        activeCells.removeAll(keepingCapacity: true)
+        activeCells.removeAll()
         activeCells.reserveCapacity(oldMiddleCount)
         for _ in 0..<oldMiddleCount {
             activeCells.append(nil)
         }
 
-        leavingCells.removeAll(keepingCapacity: true)
+        leavingCells.removeAll()
         leavingCells.reserveCapacity(oldLeavingCount)
         for _ in 0..<oldLeavingCount {
             leavingCells.append(nil)
