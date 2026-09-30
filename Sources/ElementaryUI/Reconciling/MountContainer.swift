@@ -90,18 +90,23 @@ final class MountContainer {
     }
 
     func unmount(_ context: inout _CommitContext) {
-        for index in activeSlots.indices {
-            activeSlots[index].unmount(&context)
+        activeSlots.consumeAll { span in
+            while let slot = span.popFirst() {
+                slot.unmount(&context)
+            }
         }
-        for index in leavingSlots.indices {
-            leavingSlots[index].unmount(&context)
-        }
-        while var removed = removedSlots.popLast() {
-            removed.unmount(&context)
+        leavingSlots.consumeAll { span in
+            while let slot = span.popFirst() {
+                slot.unmount(&context)
+            }
         }
 
-        activeSlots.removeAll()
-        leavingSlots.removeAll()
+        removedSlots.consumeAll { span in
+            while let slot = span.popFirst() {
+                slot.unmount(&context)
+            }
+        }
+
         containerHandle = nil
     }
 
@@ -314,7 +319,7 @@ extension MountContainer {
             node.unmount(&context)
         }
 
-        mutating func unmount(_ context: inout _CommitContext) {
+        consuming func unmount(_ context: inout _CommitContext) {
             node.unmount(&context)
         }
     }

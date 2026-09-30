@@ -9,9 +9,9 @@ class PlaceholderContent: Unmountable {
 
     private static let inlineID: InstanceID = -1
 
-    private var inlineInstance: AnyReconcilable?
+    final private var inlineInstance: AnyReconcilable?
     // Slot indices are the instance IDs; unmounted slots are reused.
-    private var additionalInstances = UniqueArray<AnyReconcilable?>()
+    final private var additionalInstances = UniqueArray<AnyReconcilable?>()
 
     static func make<Value: _Mountable>(
         _ value: consuming Value
@@ -23,7 +23,7 @@ class PlaceholderContent: Unmountable {
         fatalError("abstract")
     }
 
-    func mountInstance(context: borrowing _ViewContext, ctx: inout _MountContext) -> InstanceID {
+    final func mountInstance(context: borrowing _ViewContext, ctx: inout _MountContext) -> InstanceID {
         let instance = makeInstance(context: context, ctx: &ctx)
         if inlineInstance == nil {
             inlineInstance = .some(instance)
@@ -39,7 +39,7 @@ class PlaceholderContent: Unmountable {
         return additionalInstances.count - 1
     }
 
-    func unmountInstance(_ id: InstanceID, _ context: inout _CommitContext) {
+    final func unmountInstance(_ id: InstanceID, _ context: inout _CommitContext) {
         if id == Self.inlineID {
             inlineInstance.take()?.unmount(&context)
         } else {
@@ -60,14 +60,14 @@ class PlaceholderContent: Unmountable {
 
     // Keep registry traversal out of each concrete content specialization.
     @inline(never)
-    private func forEachInstance(_ body: (borrowing AnyReconcilable) -> Void) {
-        if inlineInstance != nil { body(inlineInstance!) }
+    private final func forEachInstance(_ body: (inout AnyReconcilable) -> Void) {
+        if inlineInstance != nil { body(&inlineInstance!) }
         for id in additionalInstances.indices where additionalInstances[id] != nil {
-            body(additionalInstances[id]!)
+            body(&additionalInstances[id]!)
         }
     }
 
-    func unmount(_ context: inout _CommitContext) {
+    final func unmount(_ context: inout _CommitContext) {
         assert(
             inlineInstance == nil && additionalInstances.indices.allSatisfy { additionalInstances[$0] == nil },
             "Placeholder instances must be unmounted by their placeholder nodes"

@@ -25,12 +25,12 @@ struct AnyReconcilable: ~Copyable {
         self.box = _TypedBox(node)
 
     }
-    func unmount(_ context: inout _CommitContext) {
+    consuming func unmount(_ context: inout _CommitContext) {
         box.unmount(&context)
     }
 
     // TODO: make this mutating to prepare for ~Copyable all the way
-    func modify<R: _Reconcilable & ~Copyable>(as type: R.Type = R.self, _ body: (inout R) -> Void) {
+    mutating func modify<R: _Reconcilable & ~Copyable>(as type: R.Type = R.self, _ body: (inout R) -> Void) {
         let box = unsafeDowncast(self.box, to: _TypedBox<R>.self)
         body(&box.node!)
     }
