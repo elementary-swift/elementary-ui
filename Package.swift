@@ -23,7 +23,12 @@ let package = Package(
         .package(url: "https://github.com/swiftlang/swift-syntax", "600.0.0"..<"605.0.0"),
     ],
     targets: [
-        .target(name: "_UTF8Internals"),
+        .target(
+            name: "_UTF8Internals",
+            swiftSettings: [
+                .treatWarning("EmbeddedRestrictions", as: .warning)
+            ]
+        ),
         .target(
             name: "ElementaryUI",
             dependencies: [
@@ -44,6 +49,7 @@ let package = Package(
                 .enableUpcomingFeature("ImplicitOpenExistentials"),
                 .enableExperimentalFeature("Lifetimes"),
                 .enableExperimentalFeature("SuppressedAssociatedTypesWithDefaults"),
+                .treatWarning("EmbeddedRestrictions", as: .warning),
             ]
         ),
         .target(
@@ -61,6 +67,7 @@ let package = Package(
                 .enableUpcomingFeature("ExistentialAny"),
                 .enableUpcomingFeature("ConciseMagicFile"),
                 .enableUpcomingFeature("ImplicitOpenExistentials"),
+                .treatWarning("EmbeddedRestrictions", as: .warning),
             ]
         ),
         .target(
@@ -85,13 +92,15 @@ let package = Package(
                 .enableUpcomingFeature("ImplicitOpenExistentials"),
                 .enableExperimentalFeature("Lifetimes"),
                 .enableExperimentalFeature("SuppressedAssociatedTypesWithDefaults"),
+                .treatWarning("EmbeddedRestrictions", as: .warning),
             ]
         ),
         .target(
             name: "_ElementaryMath",
             dependencies: ["BrowserInterop"],
             swiftSettings: [
-                .enableExperimentalFeature("Extern")
+                .enableExperimentalFeature("Extern"),
+                .treatWarning("EmbeddedRestrictions", as: .warning),
             ]
         ),
         .macro(
@@ -126,6 +135,9 @@ let package = Package(
                 .product(name: "BasicContainers", package: "swift-collections"),
                 "ReactivityMacros",
                 "_UTF8Internals",
+            ],
+            swiftSettings: [
+                .treatWarning("EmbeddedRestrictions", as: .warning)
             ]
         ),
         .macro(
