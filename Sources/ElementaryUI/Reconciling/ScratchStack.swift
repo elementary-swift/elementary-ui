@@ -1,14 +1,15 @@
 import BasicContainers
 import ContainersPreview
+import SpanPreview
 
 struct ScratchStack<Element: ~Copyable>: ~Copyable, ~Escapable {
-    var storage: MutableRef<UniqueArray<Element>>
+    var storage: _MutableRef<UniqueArray<Element>>
     private let startIndex: Int
 
     @_lifetime(&storage)
     init(storage: inout UniqueArray<Element>) {
         let startIndex = storage.count
-        self.storage = MutableRef(&storage)
+        self.storage = _MutableRef(&storage)
         self.startIndex = startIndex
     }
 

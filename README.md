@@ -119,7 +119,12 @@ Swift 6.4 or later with matching *Swift SDKs for WebAssembly* from [swift.org](h
 
 This package is generally licensed as [Apache 2](LICENSE).
 
-The `Reactivity` module is inspired by the Swift stdlib's `Observation` framework, and code in `ReactivityMacros` is directly derived from it ([source](https://github.com/swiftlang/swift/tree/main/lib/Macros/Sources/ObservationMacros)).
+The `Reactivity` module is inspired by the Swift stdlib's `Observation` framework.
+Some code in this repo is derived from Swift.org projects:
+
+- `ReactivityMacros` from [ObservationMacros](https://github.com/swiftlang/swift/tree/main/lib/Macros/Sources/ObservationMacros) in the Swift repo
+- `Sources/ElementaryUI/_Shims/MutableRef.swift` from [Swift Collections](https://github.com/apple/swift-collections/blob/1.7.1/Sources/InternalCollectionsUtilities/MutableRef.swift)
+
 Find a copy of the Swift.org open source project license [here](LICENSE-swift_org.md).
 
 This repo also contains the [BrowserRuntime](BrowserRuntime) JavaScript package which bundles source code from [JavaScriptKit](https://github.com/swiftwasm/JavaScriptKit) (see [license](./BrowserRuntime/LICENSE.md))
