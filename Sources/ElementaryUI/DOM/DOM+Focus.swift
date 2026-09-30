@@ -1,6 +1,7 @@
 // TODO: fix this type
 
 extension DOM {
+
     @_spi(Benchmarking)
     public struct FocusAccessor: ~Copyable {
         let _focus: () -> Void

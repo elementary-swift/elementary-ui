@@ -6,14 +6,7 @@ private extension DOM.Event {
 
 private extension DOM.EventSink {
     init(_ sink: TestDOM.EventSink) { self.init(ref: sink) }
-    var value: TestDOM.EventSink {
-        switch storage {
-        case let .ref(ref):
-            ref as! TestDOM.EventSink
-        default:
-            fatalError("ref is not a TestDOM.EventSink")
-        }
-    }
+    var value: TestDOM.EventSink { ref as! TestDOM.EventSink }
 }
 
 private extension DOM.Node {

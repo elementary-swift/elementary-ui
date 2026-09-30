@@ -1,5 +1,55 @@
 #if os(WASI)
+import BrowserInterop
+import JavaScriptKit
+
 typealias DOMInteractor = BridgeJSDOMInteractor
+
+extension DOM {
+    @_spi(Benchmarking)
+    public struct Node: Hashable {
+        let ref: JSObject
+
+        init(ref: JSObject) {
+            self.ref = ref
+        }
+
+        public func hash(into hasher: inout Hasher) {
+            ref.hash(into: &hasher)
+        }
+
+        public static func == (lhs: Node, rhs: Node) -> Bool {
+            lhs.ref == rhs.ref
+        }
+    }
+
+    @_spi(Benchmarking)
+    public struct Event {
+        let ref: JSObject
+
+        init(ref: JSObject) {
+            self.ref = ref
+        }
+    }
+
+    @_spi(Benchmarking)
+    public struct EventSink: ~Copyable {
+        let ref: JSEventCallback
+
+        init(ref: JSEventCallback) {
+            self.ref = ref
+        }
+
+        deinit {
+            ref.release()
+        }
+    }
+}
+
+extension _TypedDOMEvent {
+    init?(raw: DOM.Event) {
+        self.init(__jsObject: raw.ref)
+    }
+}
 #else
 extension DOM {
     @_spi(Benchmarking)
@@ -47,11 +97,54 @@ extension DOM {
         func getOffsetParent(_ node: Node) -> Node?
         func getScrollOffset() -> (x: Double, y: Double)
     }
+
+    @_spi(Benchmarking)
+    public struct Node: Hashable {
+        public let ref: AnyObject
+
+        public init(ref: AnyObject) {
+            self.ref = ref
+        }
+
+        public func hash(into hasher: inout Hasher) {
+            hasher.combine(ObjectIdentifier(ref))
+        }
+
+        public static func == (lhs: Node, rhs: Node) -> Bool {
+            lhs.ref === rhs.ref
+        }
+    }
+
+    @_spi(Benchmarking)
+    public struct Event {
+        let ref: AnyObject
+
+        init(ref: AnyObject) {
+            self.ref = ref
+        }
+    }
+
+    @_spi(Benchmarking)
+    public struct EventSink: ~Copyable {
+        let ref: AnyObject
+
+        public init(ref: AnyObject) {
+            self.ref = ref
+        }
+    }
 }
 
 typealias DOMInteractor = any DOM.Interactor
 
-extension BridgeJSDOMInteractor: DOM.Interactor {}
+var defaultDOMInteractor: DOMInteractor {
+    fatalError("ElementaryUI apps can only be mounted in a WASI build")
+}
+
+extension _TypedDOMEvent {
+    init?(raw: DOM.Event) {
+        nil
+    }
+}
 
 extension Application {
     @_spi(Benchmarking)
