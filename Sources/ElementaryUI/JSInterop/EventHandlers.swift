@@ -6,16 +6,6 @@ public protocol _TypedDOMEvent {
     init?(__jsObject: JSObject)
 }
 
-extension _TypedDOMEvent {
-    init?(raw: DOM.Event) {
-        guard let rawEvent = raw.ref as? JSObject else {
-            return nil
-        }
-
-        self.init(__jsObject: rawEvent)
-    }
-}
-
 public struct KeyboardEvent: _TypedDOMEvent {
     var rawEvent: JSObject
 

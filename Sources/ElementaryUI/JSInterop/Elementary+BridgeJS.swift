@@ -1,23 +1,13 @@
+#if os(WASI)
 import BrowserInterop
 @_spi(BridgeJS) import JavaScriptKit
 
 extension DOM.Node {
-    init(_ node: JSObject) { self.init(ref: node) }
-    //var jsObject: JSObject { ref as! JSObject }
-    var jsNode: JSNode { JSNode(unsafelyWrapping: ref as! JSObject) }
-    var jsElement: JSElement { JSElement(unsafelyWrapping: ref as! JSObject) }
+    var jsNode: JSNode { JSNode(unsafelyWrapping: ref) }
+    var jsElement: JSElement { JSElement(unsafelyWrapping: ref) }
 }
 
-extension DOM.EventSink {
-    var jsClosure: JSEventCallback {
-        switch self.storage {
-        case let .js(closure):
-            return closure
-        case .ref:
-            fatalError("ref is not a JSEventCallback")
-        }
-    }
-}
+let defaultDOMInteractor = BridgeJSDOMInteractor()
 
 // Keep the concrete interop boundary out of line. Without this, optimized WASI
 // builds duplicate JavaScript bridging code into callers and grow every bundle.
@@ -37,16 +27,16 @@ final class BridgeJSDOMInteractor {
     @inline(never)
     func makeEventSink(_ handler: @escaping () -> Void) -> DOM.EventSink {
         let closure = JSEventCallback { _ in handler() }
-        return .init(js: closure)
+        return .init(ref: closure)
     }
 
     @inline(never)
     func makeEventSink(_ handler: @escaping (DOM.Event) -> Void) -> DOM.EventSink {
         let closure = JSEventCallback { e in
-            handler(DOM.Event(e.jsObject))
+            handler(DOM.Event(ref: e.jsObject))
         }
 
-        return .init(js: closure)
+        return .init(ref: closure)
     }
 
     @inline(never)
@@ -85,14 +75,13 @@ final class BridgeJSDOMInteractor {
     @inline(never)
     func makeFocusAccessor(_ node: DOM.Node, onEvent: @escaping (DOM.FocusEvent) -> Void) -> DOM.FocusAccessor {
         let focusSink = DOM.EventSink(
-            js:
-                JSEventCallback { _ in
-                    onEvent(.focus)
-                }
+            ref: JSEventCallback { _ in
+                onEvent(.focus)
+            }
         )
 
         let blurSink = DOM.EventSink(
-            js: JSEventCallback { _ in
+            ref: JSEventCallback { _ in
                 onEvent(.blur)
             }
         )
@@ -155,12 +144,12 @@ final class BridgeJSDOMInteractor {
 
     @inline(never)
     func addEventListener(_ node: DOM.Node, event: String, sink: borrowing DOM.EventSink) {
-        _ = try? node.jsElement.addEventListener(event, sink.jsClosure)
+        _ = try? node.jsElement.addEventListener(event, sink.ref)
     }
 
     @inline(never)
     func removeEventListener(_ node: DOM.Node, event: String, sink: borrowing DOM.EventSink) {
-        _ = try? node.jsElement.removeEventListener(event, sink.jsClosure)
+        _ = try? node.jsElement.removeEventListener(event, sink.ref)
     }
 
     @inline(never)
@@ -326,11 +315,6 @@ extension DOM.Animation.CompositeOperation {
     }
 }
 
-extension DOM.Event {
-    init(_ event: JSObject) { self.init(ref: event) }
-    var jsObject: JSObject { ref as! JSObject }
-}
-
 extension DOM.PropertyValue {
     var jsValue: JSValue {
         switch self {
@@ -368,3 +352,4 @@ extension DOM.PropertyValue {
         }
     }
 }
+#endif
