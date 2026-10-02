@@ -218,7 +218,7 @@ struct DOMAttributePatcher {
         guard let newStylePairs else {
             if let oldStylePairs {
                 for (oldKey, _) in oldStylePairs {
-                    dom.removeStyleProperty(node, name: String(decoding: oldKey, as: UTF8.self))
+                    dom.removeStyleProperty(node, name: String(Substring(oldKey)))
                 }
             }
             return
@@ -302,7 +302,7 @@ struct DOMAttributePatcher {
 
         while let remaining = oldStyles.popLast() {
             removeStyles(named: remaining.key, from: &oldStyles)
-            dom.removeStyleProperty(node, name: String(decoding: remaining.key, as: UTF8.self))
+            dom.removeStyleProperty(node, name: String(Substring(remaining.key)))
         }
     }
 
@@ -318,8 +318,8 @@ struct DOMAttributePatcher {
         }
         dom.setStyleProperty(
             node,
-            name: String(decoding: new.key, as: UTF8.self),
-            value: String(decoding: new.value, as: UTF8.self)
+            name: String(Substring(new.key)),
+            value: String(Substring(new.value))
         )
     }
 
