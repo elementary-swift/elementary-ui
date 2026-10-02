@@ -63,7 +63,8 @@ extension String {
     @inline(__always)
     @inlinable
     package borrowing func utf8Equals(_ other: borrowing String) -> Bool {
-        _withUTF8Buffer(self) { lhsBuffer in
+        guard !self.isTriviallyIdentical(to: other) else { return true }
+        return _withUTF8Buffer(self) { lhsBuffer in
             _withUTF8Buffer(other) { rhsBuffer in
                 _utf8BuffersEqual(lhsBuffer, rhsBuffer)
             }
@@ -96,7 +97,8 @@ extension Substring.UTF8View {
     @inline(__always)
     @inlinable
     package func utf8Equals(_ other: borrowing Substring.UTF8View) -> Bool {
-        _withUTF8Buffer(self) { lhsBuffer in
+        guard !self.isTriviallyIdentical(to: other) else { return true }
+        return _withUTF8Buffer(self) { lhsBuffer in
             _withUTF8Buffer(other) { rhsBuffer in
                 _utf8BuffersEqual(lhsBuffer, rhsBuffer)
             }
