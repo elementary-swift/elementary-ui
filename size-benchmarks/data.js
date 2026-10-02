@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790857498806,
+  "lastUpdate": 1790942065620,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -12147,6 +12147,53 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/elementary-swift/elementary-ui/commit/113156db1781404e18bf6ee36e6c3e57f4974023"
         },
         "date": 1790857497792,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 178.83,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 103.87,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 89.81,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 158.39,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 211.24,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "113156db1781404e18bf6ee36e6c3e57f4974023",
+          "message": "adjustments for swift-collections 1.7 (#137)\n\n* adjusting for swift-collection 1.7.1\n\n* fix for ownership miscompile",
+          "timestamp": "2026-09-30T21:06:54Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/113156db1781404e18bf6ee36e6c3e57f4974023"
+        },
+        "date": 1790942065114,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
