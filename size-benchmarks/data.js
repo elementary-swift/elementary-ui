@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791206912954,
+  "lastUpdate": 1791290765229,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -12458,6 +12458,53 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 208.89,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "f6780d468be584d57fd1d463bb73f7efee5e23c3",
+          "message": "improved string equating performance (#139)\n\n* use isTriviallyIdentical in string equating\n\n* faster string UTF8 comparisons",
+          "timestamp": "2026-10-02T18:22:58Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/f6780d468be584d57fd1d463bb73f7efee5e23c3"
+        },
+        "date": 1791290764359,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 177.32,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 102.17,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 88.2,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 156.38,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 208.88,
             "unit": "kB"
           }
         ]
