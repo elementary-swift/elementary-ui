@@ -15,7 +15,7 @@ protocol _DOMElementMounting {
 }
 
 extension _DOMElementMounting {
-    public typealias _MountedNode = _TransitionableNode<_ElementNode<Content._MountedNode>>
+    public typealias _MountedNode = _TransitionableNode<_ElementNode>
 
     public static func _makeNode(
         _ view: consuming Self,
@@ -35,7 +35,7 @@ extension _DOMElementMounting {
 }
 
 struct _AnyDOMElement<Content: _Mountable>: _Mountable {
-    typealias _MountedNode = _ElementNode<Content._MountedNode>
+    typealias _MountedNode = _ElementNode
 
     var namespaceURI: String?
     var tag: String
@@ -54,7 +54,7 @@ struct _AnyDOMElement<Content: _Mountable>: _Mountable {
             context: context,
             ctx: &ctx,
             makeChild: { viewContext, ctx in
-                Content._makeNode(view.content, context: viewContext, ctx: &ctx)
+                AnyReconcilable(Content._makeNode(view.content, context: viewContext, ctx: &ctx))
             }
         )
     }
@@ -65,7 +65,9 @@ struct _AnyDOMElement<Content: _Mountable>: _Mountable {
         tx: inout _TransactionContext
     ) {
         node.update(attributes: view.attributes, &tx) { element, tx in
-            Content._patchNode(view.content, node: &element, tx: &tx)
+            element.modify(as: Content._MountedNode.self) { child in
+                Content._patchNode(view.content, node: &child, tx: &tx)
+            }
         }
     }
 }

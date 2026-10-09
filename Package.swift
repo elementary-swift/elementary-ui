@@ -50,6 +50,7 @@ let package = Package(
                 .enableUpcomingFeature("ImplicitOpenExistentials"),
                 .enableExperimentalFeature("Lifetimes"),
                 .enableExperimentalFeature("SuppressedAssociatedTypesWithDefaults"),
+                .enableExperimentalFeature("RawLayout"),
                 .enableExperimentalFeature("BuiltinModule"),  // remove when MutableRef is fair game
                 .treatWarning("EmbeddedRestrictions", as: .warning),
             ]

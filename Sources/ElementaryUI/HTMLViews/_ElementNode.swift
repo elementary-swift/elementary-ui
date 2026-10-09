@@ -1,18 +1,19 @@
-public struct _ElementNode<Child: _Reconcilable & ~Copyable>:
+public struct _ElementNode:
     ~Copyable,
     _Reconcilable
 {
-    private var child: Child
+    private var child: AnyReconcilable
     private var attributes: _ElementAttributes
     private var mountedModifiers: [AnyUnmountable] = []
 
+    @inline(never)
     init(
         tag: String,
         namespaceURI: String? = nil,
         attributes: _AttributeStorage,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
-        makeChild: (borrowing _ViewContext, inout _MountContext) -> Child
+        makeChild: (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
     ) {
         let domNode: DOM.Node
         if let namespaceURI {
@@ -76,10 +77,11 @@ public struct _ElementNode<Child: _Reconcilable & ~Copyable>:
         }
     }
 
+    @inline(never)
     mutating func update(
         attributes: _AttributeStorage,
         _ context: inout _TransactionContext,
-        block: (inout Child, inout _TransactionContext) -> Void
+        block: (inout AnyReconcilable, inout _TransactionContext) -> Void
     ) {
         self.attributes.patch(attributes, context: &context)
         block(&child, &context)
