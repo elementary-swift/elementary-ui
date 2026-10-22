@@ -62,8 +62,9 @@ extension JSTypedClosure where Signature == (JSEvent) -> Void {
 @_cdecl("invoke_swift_closure_BrowserInterop_14BrowserInterop7JSEventC_y")
 public func _invoke_swift_closure_BrowserInterop_14BrowserInterop7JSEventC_y(_ boxPtr: UnsafeMutableRawPointer, _ param0: Int32) -> Void {
     #if arch(wasm32)
+    let param0 = JSEvent.bridgeJSLiftParameter(param0)
     let closure = Unmanaged<_BridgeJSTypedClosureBox<(JSEvent) -> Void>>.fromOpaque(boxPtr).takeUnretainedValue().closure
-    closure(JSEvent.bridgeJSLiftParameter(param0))
+    closure(param0)
     #else
     fatalError("Only available on WebAssembly")
     #endif
@@ -123,8 +124,9 @@ extension JSTypedClosure where Signature == (Double) -> Void {
 @_cdecl("invoke_swift_closure_BrowserInterop_14BrowserInteropSd_y")
 public func _invoke_swift_closure_BrowserInterop_14BrowserInteropSd_y(_ boxPtr: UnsafeMutableRawPointer, _ param0: Float64) -> Void {
     #if arch(wasm32)
+    let param0 = Double.bridgeJSLiftParameter(param0)
     let closure = Unmanaged<_BridgeJSTypedClosureBox<(Double) -> Void>>.fromOpaque(boxPtr).takeUnretainedValue().closure
-    closure(Double.bridgeJSLiftParameter(param0))
+    closure(param0)
     #else
     fatalError("Only available on WebAssembly")
     #endif
@@ -322,74 +324,74 @@ fileprivate func bjs_JSDocument_body_get_extern(_ self: Int32) -> Int32 {
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_createElement")
-fileprivate func bjs_JSDocument_createElement_extern(_ self: Int32, _ tagNameBytes: Int32, _ tagNameLength: Int32) -> Int32
+fileprivate func bjs_JSDocument_createElement_extern(_ self: Int32, _ tagNameWord0: Int32, _ tagNameWord1: Int32, _ tagNameWord2: Int32) -> Int32
 #else
-fileprivate func bjs_JSDocument_createElement_extern(_ self: Int32, _ tagNameBytes: Int32, _ tagNameLength: Int32) -> Int32 {
+fileprivate func bjs_JSDocument_createElement_extern(_ self: Int32, _ tagNameWord0: Int32, _ tagNameWord1: Int32, _ tagNameWord2: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSDocument_createElement(_ self: Int32, _ tagNameBytes: Int32, _ tagNameLength: Int32) -> Int32 {
-    return bjs_JSDocument_createElement_extern(self, tagNameBytes, tagNameLength)
+@inline(never) fileprivate func bjs_JSDocument_createElement(_ self: Int32, _ tagNameWord0: Int32, _ tagNameWord1: Int32, _ tagNameWord2: Int32) -> Int32 {
+    return bjs_JSDocument_createElement_extern(self, tagNameWord0, tagNameWord1, tagNameWord2)
 }
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_createElementNS")
-fileprivate func bjs_JSDocument_createElementNS_extern(_ self: Int32, _ namespaceURIBytes: Int32, _ namespaceURILength: Int32, _ qualifiedNameBytes: Int32, _ qualifiedNameLength: Int32) -> Int32
+fileprivate func bjs_JSDocument_createElementNS_extern(_ self: Int32, _ namespaceURIWord0: Int32, _ namespaceURIWord1: Int32, _ namespaceURIWord2: Int32, _ qualifiedNameWord0: Int32, _ qualifiedNameWord1: Int32, _ qualifiedNameWord2: Int32) -> Int32
 #else
-fileprivate func bjs_JSDocument_createElementNS_extern(_ self: Int32, _ namespaceURIBytes: Int32, _ namespaceURILength: Int32, _ qualifiedNameBytes: Int32, _ qualifiedNameLength: Int32) -> Int32 {
+fileprivate func bjs_JSDocument_createElementNS_extern(_ self: Int32, _ namespaceURIWord0: Int32, _ namespaceURIWord1: Int32, _ namespaceURIWord2: Int32, _ qualifiedNameWord0: Int32, _ qualifiedNameWord1: Int32, _ qualifiedNameWord2: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSDocument_createElementNS(_ self: Int32, _ namespaceURIBytes: Int32, _ namespaceURILength: Int32, _ qualifiedNameBytes: Int32, _ qualifiedNameLength: Int32) -> Int32 {
-    return bjs_JSDocument_createElementNS_extern(self, namespaceURIBytes, namespaceURILength, qualifiedNameBytes, qualifiedNameLength)
+@inline(never) fileprivate func bjs_JSDocument_createElementNS(_ self: Int32, _ namespaceURIWord0: Int32, _ namespaceURIWord1: Int32, _ namespaceURIWord2: Int32, _ qualifiedNameWord0: Int32, _ qualifiedNameWord1: Int32, _ qualifiedNameWord2: Int32) -> Int32 {
+    return bjs_JSDocument_createElementNS_extern(self, namespaceURIWord0, namespaceURIWord1, namespaceURIWord2, qualifiedNameWord0, qualifiedNameWord1, qualifiedNameWord2)
 }
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_createTextNode")
-fileprivate func bjs_JSDocument_createTextNode_extern(_ self: Int32, _ textBytes: Int32, _ textLength: Int32) -> Int32
+fileprivate func bjs_JSDocument_createTextNode_extern(_ self: Int32, _ textWord0: Int32, _ textWord1: Int32, _ textWord2: Int32) -> Int32
 #else
-fileprivate func bjs_JSDocument_createTextNode_extern(_ self: Int32, _ textBytes: Int32, _ textLength: Int32) -> Int32 {
+fileprivate func bjs_JSDocument_createTextNode_extern(_ self: Int32, _ textWord0: Int32, _ textWord1: Int32, _ textWord2: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSDocument_createTextNode(_ self: Int32, _ textBytes: Int32, _ textLength: Int32) -> Int32 {
-    return bjs_JSDocument_createTextNode_extern(self, textBytes, textLength)
+@inline(never) fileprivate func bjs_JSDocument_createTextNode(_ self: Int32, _ textWord0: Int32, _ textWord1: Int32, _ textWord2: Int32) -> Int32 {
+    return bjs_JSDocument_createTextNode_extern(self, textWord0, textWord1, textWord2)
 }
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_querySelector")
-fileprivate func bjs_JSDocument_querySelector_extern(_ self: Int32, _ selectorBytes: Int32, _ selectorLength: Int32) -> Int32
+fileprivate func bjs_JSDocument_querySelector_extern(_ self: Int32, _ selectorWord0: Int32, _ selectorWord1: Int32, _ selectorWord2: Int32) -> Int32
 #else
-fileprivate func bjs_JSDocument_querySelector_extern(_ self: Int32, _ selectorBytes: Int32, _ selectorLength: Int32) -> Int32 {
+fileprivate func bjs_JSDocument_querySelector_extern(_ self: Int32, _ selectorWord0: Int32, _ selectorWord1: Int32, _ selectorWord2: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSDocument_querySelector(_ self: Int32, _ selectorBytes: Int32, _ selectorLength: Int32) -> Int32 {
-    return bjs_JSDocument_querySelector_extern(self, selectorBytes, selectorLength)
+@inline(never) fileprivate func bjs_JSDocument_querySelector(_ self: Int32, _ selectorWord0: Int32, _ selectorWord1: Int32, _ selectorWord2: Int32) -> Int32 {
+    return bjs_JSDocument_querySelector_extern(self, selectorWord0, selectorWord1, selectorWord2)
 }
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_addEventListener")
-fileprivate func bjs_JSDocument_addEventListener_extern(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void
+fileprivate func bjs_JSDocument_addEventListener_extern(_ self: Int32, _ typeWord0: Int32, _ typeWord1: Int32, _ typeWord2: Int32, _ listener: Int32) -> Void
 #else
-fileprivate func bjs_JSDocument_addEventListener_extern(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void {
+fileprivate func bjs_JSDocument_addEventListener_extern(_ self: Int32, _ typeWord0: Int32, _ typeWord1: Int32, _ typeWord2: Int32, _ listener: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSDocument_addEventListener(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void {
-    return bjs_JSDocument_addEventListener_extern(self, typeBytes, typeLength, listener)
+@inline(never) fileprivate func bjs_JSDocument_addEventListener(_ self: Int32, _ typeWord0: Int32, _ typeWord1: Int32, _ typeWord2: Int32, _ listener: Int32) -> Void {
+    return bjs_JSDocument_addEventListener_extern(self, typeWord0, typeWord1, typeWord2, listener)
 }
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSDocument_removeEventListener")
-fileprivate func bjs_JSDocument_removeEventListener_extern(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void
+fileprivate func bjs_JSDocument_removeEventListener_extern(_ self: Int32, _ typeWord0: Int32, _ typeWord1: Int32, _ typeWord2: Int32, _ listener: Int32) -> Void
 #else
-fileprivate func bjs_JSDocument_removeEventListener_extern(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void {
+fileprivate func bjs_JSDocument_removeEventListener_extern(_ self: Int32, _ typeWord0: Int32, _ typeWord1: Int32, _ typeWord2: Int32, _ listener: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSDocument_removeEventListener(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void {
-    return bjs_JSDocument_removeEventListener_extern(self, typeBytes, typeLength, listener)
+@inline(never) fileprivate func bjs_JSDocument_removeEventListener(_ self: Int32, _ typeWord0: Int32, _ typeWord1: Int32, _ typeWord2: Int32, _ listener: Int32) -> Void {
+    return bjs_JSDocument_removeEventListener_extern(self, typeWord0, typeWord1, typeWord2, listener)
 }
 
 func _$JSDocument_body_get(_ self: JSObject) throws(JSException) -> JSElement {
@@ -402,9 +404,9 @@ func _$JSDocument_body_get(_ self: JSObject) throws(JSException) -> JSElement {
 }
 
 func _$JSDocument_createElement(_ self: JSObject, _ tagName: String) throws(JSException) -> JSElement {
-    let ret0 = tagName.bridgeJSWithLoweredParameter { (tagNameBytes, tagNameLength) in
+    let ret0 = tagName.bridgeJSWithLoweredParameter { (tagNameWord0, tagNameWord1, tagNameWord2) in
         let selfValue = self.bridgeJSLowerParameter()
-        let ret = bjs_JSDocument_createElement(selfValue, tagNameBytes, tagNameLength)
+        let ret = bjs_JSDocument_createElement(selfValue, tagNameWord0, tagNameWord1, tagNameWord2)
         return ret
     }
     let ret = ret0
@@ -415,10 +417,10 @@ func _$JSDocument_createElement(_ self: JSObject, _ tagName: String) throws(JSEx
 }
 
 func _$JSDocument_createElementNS(_ self: JSObject, _ namespaceURI: String, _ qualifiedName: String) throws(JSException) -> JSElement {
-    let ret0 = namespaceURI.bridgeJSWithLoweredParameter { (namespaceURIBytes, namespaceURILength) in
-        let ret1 = qualifiedName.bridgeJSWithLoweredParameter { (qualifiedNameBytes, qualifiedNameLength) in
+    let ret0 = namespaceURI.bridgeJSWithLoweredParameter { (namespaceURIWord0, namespaceURIWord1, namespaceURIWord2) in
+        let ret1 = qualifiedName.bridgeJSWithLoweredParameter { (qualifiedNameWord0, qualifiedNameWord1, qualifiedNameWord2) in
             let selfValue = self.bridgeJSLowerParameter()
-            let ret = bjs_JSDocument_createElementNS(selfValue, namespaceURIBytes, namespaceURILength, qualifiedNameBytes, qualifiedNameLength)
+            let ret = bjs_JSDocument_createElementNS(selfValue, namespaceURIWord0, namespaceURIWord1, namespaceURIWord2, qualifiedNameWord0, qualifiedNameWord1, qualifiedNameWord2)
             return ret
         }
         return ret1
@@ -431,9 +433,9 @@ func _$JSDocument_createElementNS(_ self: JSObject, _ namespaceURI: String, _ qu
 }
 
 func _$JSDocument_createTextNode(_ self: JSObject, _ text: String) throws(JSException) -> JSNode {
-    let ret0 = text.bridgeJSWithLoweredParameter { (textBytes, textLength) in
+    let ret0 = text.bridgeJSWithLoweredParameter { (textWord0, textWord1, textWord2) in
         let selfValue = self.bridgeJSLowerParameter()
-        let ret = bjs_JSDocument_createTextNode(selfValue, textBytes, textLength)
+        let ret = bjs_JSDocument_createTextNode(selfValue, textWord0, textWord1, textWord2)
         return ret
     }
     let ret = ret0
@@ -444,9 +446,9 @@ func _$JSDocument_createTextNode(_ self: JSObject, _ text: String) throws(JSExce
 }
 
 func _$JSDocument_querySelector(_ self: JSObject, _ selector: String) throws(JSException) -> JSElement {
-    let ret0 = selector.bridgeJSWithLoweredParameter { (selectorBytes, selectorLength) in
+    let ret0 = selector.bridgeJSWithLoweredParameter { (selectorWord0, selectorWord1, selectorWord2) in
         let selfValue = self.bridgeJSLowerParameter()
-        let ret = bjs_JSDocument_querySelector(selfValue, selectorBytes, selectorLength)
+        let ret = bjs_JSDocument_querySelector(selfValue, selectorWord0, selectorWord1, selectorWord2)
         return ret
     }
     let ret = ret0
@@ -457,10 +459,10 @@ func _$JSDocument_querySelector(_ self: JSObject, _ selector: String) throws(JSE
 }
 
 func _$JSDocument_addEventListener(_ self: JSObject, _ type: String, _ listener: JSTypedClosure<(JSEvent) -> Void>) throws(JSException) -> Void {
-    type.bridgeJSWithLoweredParameter { (typeBytes, typeLength) in
+    type.bridgeJSWithLoweredParameter { (typeWord0, typeWord1, typeWord2) in
         let listenerFuncRef = listener.bridgeJSLowerParameter()
         let selfValue = self.bridgeJSLowerParameter()
-        bjs_JSDocument_addEventListener(selfValue, typeBytes, typeLength, listenerFuncRef)
+        bjs_JSDocument_addEventListener(selfValue, typeWord0, typeWord1, typeWord2, listenerFuncRef)
     }
     if let error = _swift_js_take_exception() {
         throw error
@@ -468,10 +470,10 @@ func _$JSDocument_addEventListener(_ self: JSObject, _ type: String, _ listener:
 }
 
 func _$JSDocument_removeEventListener(_ self: JSObject, _ type: String, _ listener: JSTypedClosure<(JSEvent) -> Void>) throws(JSException) -> Void {
-    type.bridgeJSWithLoweredParameter { (typeBytes, typeLength) in
+    type.bridgeJSWithLoweredParameter { (typeWord0, typeWord1, typeWord2) in
         let listenerFuncRef = listener.bridgeJSLowerParameter()
         let selfValue = self.bridgeJSLowerParameter()
-        bjs_JSDocument_removeEventListener(selfValue, typeBytes, typeLength, listenerFuncRef)
+        bjs_JSDocument_removeEventListener(selfValue, typeWord0, typeWord1, typeWord2, listenerFuncRef)
     }
     if let error = _swift_js_take_exception() {
         throw error
@@ -565,20 +567,20 @@ func _$JSPerformance_now(_ self: JSObject) throws(JSException) -> Double {
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSNode_textContent_set")
-fileprivate func bjs_JSNode_textContent_set_extern(_ self: Int32, _ newValueBytes: Int32, _ newValueLength: Int32) -> Void
+fileprivate func bjs_JSNode_textContent_set_extern(_ self: Int32, _ newValueWord0: Int32, _ newValueWord1: Int32, _ newValueWord2: Int32) -> Void
 #else
-fileprivate func bjs_JSNode_textContent_set_extern(_ self: Int32, _ newValueBytes: Int32, _ newValueLength: Int32) -> Void {
+fileprivate func bjs_JSNode_textContent_set_extern(_ self: Int32, _ newValueWord0: Int32, _ newValueWord1: Int32, _ newValueWord2: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSNode_textContent_set(_ self: Int32, _ newValueBytes: Int32, _ newValueLength: Int32) -> Void {
-    return bjs_JSNode_textContent_set_extern(self, newValueBytes, newValueLength)
+@inline(never) fileprivate func bjs_JSNode_textContent_set(_ self: Int32, _ newValueWord0: Int32, _ newValueWord1: Int32, _ newValueWord2: Int32) -> Void {
+    return bjs_JSNode_textContent_set_extern(self, newValueWord0, newValueWord1, newValueWord2)
 }
 
 func _$JSNode_textContent_set(_ self: JSObject, _ newValue: String) throws(JSException) -> Void {
-    newValue.bridgeJSWithLoweredParameter { (newValueBytes, newValueLength) in
+    newValue.bridgeJSWithLoweredParameter { (newValueWord0, newValueWord1, newValueWord2) in
         let selfValue = self.bridgeJSLowerParameter()
-        bjs_JSNode_textContent_set(selfValue, newValueBytes, newValueLength)
+        bjs_JSNode_textContent_set(selfValue, newValueWord0, newValueWord1, newValueWord2)
     }
     if let error = _swift_js_take_exception() {
         throw error
@@ -611,26 +613,26 @@ fileprivate func bjs_JSElement_offsetParent_get_extern(_ self: Int32) -> Int32 {
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_setAttribute")
-fileprivate func bjs_JSElement_setAttribute_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32, _ valueBytes: Int32, _ valueLength: Int32) -> Void
+fileprivate func bjs_JSElement_setAttribute_extern(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32, _ valueWord0: Int32, _ valueWord1: Int32, _ valueWord2: Int32) -> Void
 #else
-fileprivate func bjs_JSElement_setAttribute_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32, _ valueBytes: Int32, _ valueLength: Int32) -> Void {
+fileprivate func bjs_JSElement_setAttribute_extern(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32, _ valueWord0: Int32, _ valueWord1: Int32, _ valueWord2: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSElement_setAttribute(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32, _ valueBytes: Int32, _ valueLength: Int32) -> Void {
-    return bjs_JSElement_setAttribute_extern(self, nameBytes, nameLength, valueBytes, valueLength)
+@inline(never) fileprivate func bjs_JSElement_setAttribute(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32, _ valueWord0: Int32, _ valueWord1: Int32, _ valueWord2: Int32) -> Void {
+    return bjs_JSElement_setAttribute_extern(self, nameWord0, nameWord1, nameWord2, valueWord0, valueWord1, valueWord2)
 }
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_removeAttribute")
-fileprivate func bjs_JSElement_removeAttribute_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void
+fileprivate func bjs_JSElement_removeAttribute_extern(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32) -> Void
 #else
-fileprivate func bjs_JSElement_removeAttribute_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void {
+fileprivate func bjs_JSElement_removeAttribute_extern(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSElement_removeAttribute(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void {
-    return bjs_JSElement_removeAttribute_extern(self, nameBytes, nameLength)
+@inline(never) fileprivate func bjs_JSElement_removeAttribute(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32) -> Void {
+    return bjs_JSElement_removeAttribute_extern(self, nameWord0, nameWord1, nameWord2)
 }
 
 #if arch(wasm32)
@@ -695,26 +697,26 @@ fileprivate func bjs_JSElement_getBoundingClientRect_extern(_ self: Int32) -> In
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_addEventListener")
-fileprivate func bjs_JSElement_addEventListener_extern(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void
+fileprivate func bjs_JSElement_addEventListener_extern(_ self: Int32, _ typeWord0: Int32, _ typeWord1: Int32, _ typeWord2: Int32, _ listener: Int32) -> Void
 #else
-fileprivate func bjs_JSElement_addEventListener_extern(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void {
+fileprivate func bjs_JSElement_addEventListener_extern(_ self: Int32, _ typeWord0: Int32, _ typeWord1: Int32, _ typeWord2: Int32, _ listener: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSElement_addEventListener(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void {
-    return bjs_JSElement_addEventListener_extern(self, typeBytes, typeLength, listener)
+@inline(never) fileprivate func bjs_JSElement_addEventListener(_ self: Int32, _ typeWord0: Int32, _ typeWord1: Int32, _ typeWord2: Int32, _ listener: Int32) -> Void {
+    return bjs_JSElement_addEventListener_extern(self, typeWord0, typeWord1, typeWord2, listener)
 }
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSElement_removeEventListener")
-fileprivate func bjs_JSElement_removeEventListener_extern(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void
+fileprivate func bjs_JSElement_removeEventListener_extern(_ self: Int32, _ typeWord0: Int32, _ typeWord1: Int32, _ typeWord2: Int32, _ listener: Int32) -> Void
 #else
-fileprivate func bjs_JSElement_removeEventListener_extern(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void {
+fileprivate func bjs_JSElement_removeEventListener_extern(_ self: Int32, _ typeWord0: Int32, _ typeWord1: Int32, _ typeWord2: Int32, _ listener: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSElement_removeEventListener(_ self: Int32, _ typeBytes: Int32, _ typeLength: Int32, _ listener: Int32) -> Void {
-    return bjs_JSElement_removeEventListener_extern(self, typeBytes, typeLength, listener)
+@inline(never) fileprivate func bjs_JSElement_removeEventListener(_ self: Int32, _ typeWord0: Int32, _ typeWord1: Int32, _ typeWord2: Int32, _ listener: Int32) -> Void {
+    return bjs_JSElement_removeEventListener_extern(self, typeWord0, typeWord1, typeWord2, listener)
 }
 
 #if arch(wasm32)
@@ -772,10 +774,10 @@ func _$JSElement_offsetParent_get(_ self: JSObject) throws(JSException) -> JSEle
 }
 
 func _$JSElement_setAttribute(_ self: JSObject, _ name: String, _ value: String) throws(JSException) -> Void {
-    name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
-        value.bridgeJSWithLoweredParameter { (valueBytes, valueLength) in
+    name.bridgeJSWithLoweredParameter { (nameWord0, nameWord1, nameWord2) in
+        value.bridgeJSWithLoweredParameter { (valueWord0, valueWord1, valueWord2) in
             let selfValue = self.bridgeJSLowerParameter()
-            bjs_JSElement_setAttribute(selfValue, nameBytes, nameLength, valueBytes, valueLength)
+            bjs_JSElement_setAttribute(selfValue, nameWord0, nameWord1, nameWord2, valueWord0, valueWord1, valueWord2)
         }
     }
     if let error = _swift_js_take_exception() {
@@ -784,9 +786,9 @@ func _$JSElement_setAttribute(_ self: JSObject, _ name: String, _ value: String)
 }
 
 func _$JSElement_removeAttribute(_ self: JSObject, _ name: String) throws(JSException) -> Void {
-    name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
+    name.bridgeJSWithLoweredParameter { (nameWord0, nameWord1, nameWord2) in
         let selfValue = self.bridgeJSLowerParameter()
-        bjs_JSElement_removeAttribute(selfValue, nameBytes, nameLength)
+        bjs_JSElement_removeAttribute(selfValue, nameWord0, nameWord1, nameWord2)
     }
     if let error = _swift_js_take_exception() {
         throw error
@@ -839,10 +841,10 @@ func _$JSElement_getBoundingClientRect(_ self: JSObject) throws(JSException) -> 
 }
 
 func _$JSElement_addEventListener(_ self: JSObject, _ type: String, _ listener: JSTypedClosure<(JSEvent) -> Void>) throws(JSException) -> Void {
-    type.bridgeJSWithLoweredParameter { (typeBytes, typeLength) in
+    type.bridgeJSWithLoweredParameter { (typeWord0, typeWord1, typeWord2) in
         let listenerFuncRef = listener.bridgeJSLowerParameter()
         let selfValue = self.bridgeJSLowerParameter()
-        bjs_JSElement_addEventListener(selfValue, typeBytes, typeLength, listenerFuncRef)
+        bjs_JSElement_addEventListener(selfValue, typeWord0, typeWord1, typeWord2, listenerFuncRef)
     }
     if let error = _swift_js_take_exception() {
         throw error
@@ -850,10 +852,10 @@ func _$JSElement_addEventListener(_ self: JSObject, _ type: String, _ listener: 
 }
 
 func _$JSElement_removeEventListener(_ self: JSObject, _ type: String, _ listener: JSTypedClosure<(JSEvent) -> Void>) throws(JSException) -> Void {
-    type.bridgeJSWithLoweredParameter { (typeBytes, typeLength) in
+    type.bridgeJSWithLoweredParameter { (typeWord0, typeWord1, typeWord2) in
         let listenerFuncRef = listener.bridgeJSLowerParameter()
         let selfValue = self.bridgeJSLowerParameter()
-        bjs_JSElement_removeEventListener(selfValue, typeBytes, typeLength, listenerFuncRef)
+        bjs_JSElement_removeEventListener(selfValue, typeWord0, typeWord1, typeWord2, listenerFuncRef)
     }
     if let error = _swift_js_take_exception() {
         throw error
@@ -889,44 +891,44 @@ func _$JSElement_animate(_ self: JSObject, _ keyframes: JSObject, _ options: JSK
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSCSSStyleDeclaration_getPropertyValue")
-fileprivate func bjs_JSCSSStyleDeclaration_getPropertyValue_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Int32
+fileprivate func bjs_JSCSSStyleDeclaration_getPropertyValue_extern(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32) -> Int32
 #else
-fileprivate func bjs_JSCSSStyleDeclaration_getPropertyValue_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Int32 {
+fileprivate func bjs_JSCSSStyleDeclaration_getPropertyValue_extern(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32) -> Int32 {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSCSSStyleDeclaration_getPropertyValue(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Int32 {
-    return bjs_JSCSSStyleDeclaration_getPropertyValue_extern(self, nameBytes, nameLength)
+@inline(never) fileprivate func bjs_JSCSSStyleDeclaration_getPropertyValue(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32) -> Int32 {
+    return bjs_JSCSSStyleDeclaration_getPropertyValue_extern(self, nameWord0, nameWord1, nameWord2)
 }
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSCSSStyleDeclaration_setProperty")
-fileprivate func bjs_JSCSSStyleDeclaration_setProperty_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32, _ valueBytes: Int32, _ valueLength: Int32) -> Void
+fileprivate func bjs_JSCSSStyleDeclaration_setProperty_extern(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32, _ valueWord0: Int32, _ valueWord1: Int32, _ valueWord2: Int32) -> Void
 #else
-fileprivate func bjs_JSCSSStyleDeclaration_setProperty_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32, _ valueBytes: Int32, _ valueLength: Int32) -> Void {
+fileprivate func bjs_JSCSSStyleDeclaration_setProperty_extern(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32, _ valueWord0: Int32, _ valueWord1: Int32, _ valueWord2: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSCSSStyleDeclaration_setProperty(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32, _ valueBytes: Int32, _ valueLength: Int32) -> Void {
-    return bjs_JSCSSStyleDeclaration_setProperty_extern(self, nameBytes, nameLength, valueBytes, valueLength)
+@inline(never) fileprivate func bjs_JSCSSStyleDeclaration_setProperty(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32, _ valueWord0: Int32, _ valueWord1: Int32, _ valueWord2: Int32) -> Void {
+    return bjs_JSCSSStyleDeclaration_setProperty_extern(self, nameWord0, nameWord1, nameWord2, valueWord0, valueWord1, valueWord2)
 }
 
 #if arch(wasm32)
 @_extern(wasm, module: "BrowserInterop", name: "bjs_JSCSSStyleDeclaration_removeProperty")
-fileprivate func bjs_JSCSSStyleDeclaration_removeProperty_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void
+fileprivate func bjs_JSCSSStyleDeclaration_removeProperty_extern(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32) -> Void
 #else
-fileprivate func bjs_JSCSSStyleDeclaration_removeProperty_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void {
+fileprivate func bjs_JSCSSStyleDeclaration_removeProperty_extern(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSCSSStyleDeclaration_removeProperty(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void {
-    return bjs_JSCSSStyleDeclaration_removeProperty_extern(self, nameBytes, nameLength)
+@inline(never) fileprivate func bjs_JSCSSStyleDeclaration_removeProperty(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32) -> Void {
+    return bjs_JSCSSStyleDeclaration_removeProperty_extern(self, nameWord0, nameWord1, nameWord2)
 }
 
 func _$JSCSSStyleDeclaration_getPropertyValue(_ self: JSObject, _ name: String) throws(JSException) -> String {
-    let ret0 = name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
+    let ret0 = name.bridgeJSWithLoweredParameter { (nameWord0, nameWord1, nameWord2) in
         let selfValue = self.bridgeJSLowerParameter()
-        let ret = bjs_JSCSSStyleDeclaration_getPropertyValue(selfValue, nameBytes, nameLength)
+        let ret = bjs_JSCSSStyleDeclaration_getPropertyValue(selfValue, nameWord0, nameWord1, nameWord2)
         return ret
     }
     let ret = ret0
@@ -937,10 +939,10 @@ func _$JSCSSStyleDeclaration_getPropertyValue(_ self: JSObject, _ name: String) 
 }
 
 func _$JSCSSStyleDeclaration_setProperty(_ self: JSObject, _ name: String, _ value: String) throws(JSException) -> Void {
-    name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
-        value.bridgeJSWithLoweredParameter { (valueBytes, valueLength) in
+    name.bridgeJSWithLoweredParameter { (nameWord0, nameWord1, nameWord2) in
+        value.bridgeJSWithLoweredParameter { (valueWord0, valueWord1, valueWord2) in
             let selfValue = self.bridgeJSLowerParameter()
-            bjs_JSCSSStyleDeclaration_setProperty(selfValue, nameBytes, nameLength, valueBytes, valueLength)
+            bjs_JSCSSStyleDeclaration_setProperty(selfValue, nameWord0, nameWord1, nameWord2, valueWord0, valueWord1, valueWord2)
         }
     }
     if let error = _swift_js_take_exception() {
@@ -949,9 +951,9 @@ func _$JSCSSStyleDeclaration_setProperty(_ self: JSObject, _ name: String, _ val
 }
 
 func _$JSCSSStyleDeclaration_removeProperty(_ self: JSObject, _ name: String) throws(JSException) -> Void {
-    name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
+    name.bridgeJSWithLoweredParameter { (nameWord0, nameWord1, nameWord2) in
         let selfValue = self.bridgeJSLowerParameter()
-        bjs_JSCSSStyleDeclaration_removeProperty(selfValue, nameBytes, nameLength)
+        bjs_JSCSSStyleDeclaration_removeProperty(selfValue, nameWord0, nameWord1, nameWord2)
     }
     if let error = _swift_js_take_exception() {
         throw error

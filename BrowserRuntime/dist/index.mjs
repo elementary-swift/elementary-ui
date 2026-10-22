@@ -756,7 +756,9 @@ async function createInstantiator(options, swift) {
 	let memory;
 	let setException;
 	let decodeString;
-	const textDecoder = new TextDecoder("utf-8");
+	let decodeUTF8;
+	const immortalStrings = /* @__PURE__ */ new Map();
+	const textDecoder = new TextDecoder("utf-8", { ignoreBOM: true });
 	const textEncoder = new TextEncoder("utf-8");
 	let tmpRetString;
 	let tmpRetBytes;
@@ -793,7 +795,7 @@ async function createInstantiator(options, swift) {
 				const bytes = new Uint8Array(memory.buffer, state.file >>> 0);
 				let length = 0;
 				while (bytes[length] !== 0) length += 1;
-				const fileID = decodeString(state.file, length);
+				const fileID = decodeUTF8(state.file, length);
 				throw new Error(`Attempted to call a released JSTypedClosure created at ${fileID}:${state.line}`);
 			}
 			return func(...args);
@@ -840,16 +842,16 @@ async function createInstantiator(options, swift) {
 		addImports: (importObject, importsContext) => {
 			bjs = {};
 			importObject["bjs"] = bjs;
-			bjs["swift_js_return_string"] = function(ptr, len) {
-				tmpRetString = decodeString(ptr, len);
+			bjs["swift_js_return_string"] = function(word0, word1, word2) {
+				tmpRetString = decodeString(word0, word1, word2);
 			};
 			bjs["swift_js_init_memory"] = function(sourceId, bytesPtr) {
 				const source = swift.memory.getObject(sourceId);
 				swift.memory.release(sourceId);
 				new Uint8Array(memory.buffer, bytesPtr >>> 0).set(source);
 			};
-			bjs["swift_js_make_js_string"] = function(ptr, len) {
-				return swift.memory.retain(decodeString(ptr, len));
+			bjs["swift_js_make_js_string"] = function(word0, word1, word2) {
+				return swift.memory.retain(decodeString(word0, word1, word2));
 			};
 			bjs["swift_js_init_memory_with_result"] = function(ptr, len) {
 				new Uint8Array(memory.buffer, ptr >>> 0, len >>> 0).set(tmpRetBytes);
@@ -873,8 +875,8 @@ async function createInstantiator(options, swift) {
 			bjs["swift_js_push_f64"] = function(v) {
 				f64Stack.push(v);
 			};
-			bjs["swift_js_push_string"] = function(ptr, len) {
-				const value = decodeString(ptr, len);
+			bjs["swift_js_push_string"] = function(word0, word1, word2) {
+				const value = decodeString(word0, word1, word2);
 				strStack.push(value);
 			};
 			bjs["swift_js_pop_i32"] = function() {
@@ -958,9 +960,9 @@ async function createInstantiator(options, swift) {
 				if (isSome === 0) tmpRetOptionalDouble = null;
 				else tmpRetOptionalDouble = value;
 			};
-			bjs["swift_js_return_optional_string"] = function(isSome, ptr, len) {
+			bjs["swift_js_return_optional_string"] = function(isSome, word0, word1, word2) {
 				if (isSome === 0) tmpRetString = null;
-				else tmpRetString = decodeString(ptr, len);
+				else tmpRetString = decodeString(word0, word1, word2);
 			};
 			bjs["swift_js_return_optional_object"] = function(isSome, objectId) {
 				if (isSome === 0) tmpRetString = null;
@@ -1080,9 +1082,9 @@ async function createInstantiator(options, swift) {
 					return 0;
 				}
 			};
-			BrowserInterop["bjs_JSDocument_createElement"] = function bjs_JSDocument_createElement(self, tagNameBytes, tagNameCount) {
+			BrowserInterop["bjs_JSDocument_createElement"] = function bjs_JSDocument_createElement(self, tagNameWord0, tagNameWord1, tagNameWord2) {
 				try {
-					const string = decodeString(tagNameBytes, tagNameCount);
+					const string = decodeString(tagNameWord0, tagNameWord1, tagNameWord2);
 					let ret = swift.memory.getObject(self).createElement(string);
 					return swift.memory.retain(ret);
 				} catch (error) {
@@ -1090,10 +1092,10 @@ async function createInstantiator(options, swift) {
 					return 0;
 				}
 			};
-			BrowserInterop["bjs_JSDocument_createElementNS"] = function bjs_JSDocument_createElementNS(self, namespaceURIBytes, namespaceURICount, qualifiedNameBytes, qualifiedNameCount) {
+			BrowserInterop["bjs_JSDocument_createElementNS"] = function bjs_JSDocument_createElementNS(self, namespaceURIWord0, namespaceURIWord1, namespaceURIWord2, qualifiedNameWord0, qualifiedNameWord1, qualifiedNameWord2) {
 				try {
-					const string = decodeString(namespaceURIBytes, namespaceURICount);
-					const string1 = decodeString(qualifiedNameBytes, qualifiedNameCount);
+					const string = decodeString(namespaceURIWord0, namespaceURIWord1, namespaceURIWord2);
+					const string1 = decodeString(qualifiedNameWord0, qualifiedNameWord1, qualifiedNameWord2);
 					let ret = swift.memory.getObject(self).createElementNS(string, string1);
 					return swift.memory.retain(ret);
 				} catch (error) {
@@ -1101,9 +1103,9 @@ async function createInstantiator(options, swift) {
 					return 0;
 				}
 			};
-			BrowserInterop["bjs_JSDocument_createTextNode"] = function bjs_JSDocument_createTextNode(self, textBytes, textCount) {
+			BrowserInterop["bjs_JSDocument_createTextNode"] = function bjs_JSDocument_createTextNode(self, textWord0, textWord1, textWord2) {
 				try {
-					const string = decodeString(textBytes, textCount);
+					const string = decodeString(textWord0, textWord1, textWord2);
 					let ret = swift.memory.getObject(self).createTextNode(string);
 					return swift.memory.retain(ret);
 				} catch (error) {
@@ -1111,9 +1113,9 @@ async function createInstantiator(options, swift) {
 					return 0;
 				}
 			};
-			BrowserInterop["bjs_JSDocument_querySelector"] = function bjs_JSDocument_querySelector(self, selectorBytes, selectorCount) {
+			BrowserInterop["bjs_JSDocument_querySelector"] = function bjs_JSDocument_querySelector(self, selectorWord0, selectorWord1, selectorWord2) {
 				try {
-					const string = decodeString(selectorBytes, selectorCount);
+					const string = decodeString(selectorWord0, selectorWord1, selectorWord2);
 					let ret = swift.memory.getObject(self).querySelector(string);
 					return swift.memory.retain(ret);
 				} catch (error) {
@@ -1121,17 +1123,17 @@ async function createInstantiator(options, swift) {
 					return 0;
 				}
 			};
-			BrowserInterop["bjs_JSDocument_addEventListener"] = function bjs_JSDocument_addEventListener(self, typeBytes, typeCount, listener) {
+			BrowserInterop["bjs_JSDocument_addEventListener"] = function bjs_JSDocument_addEventListener(self, typeWord0, typeWord1, typeWord2, listener) {
 				try {
-					const string = decodeString(typeBytes, typeCount);
+					const string = decodeString(typeWord0, typeWord1, typeWord2);
 					swift.memory.getObject(self).addEventListener(string, swift.memory.getObject(listener));
 				} catch (error) {
 					setException(error);
 				}
 			};
-			BrowserInterop["bjs_JSDocument_removeEventListener"] = function bjs_JSDocument_removeEventListener(self, typeBytes, typeCount, listener) {
+			BrowserInterop["bjs_JSDocument_removeEventListener"] = function bjs_JSDocument_removeEventListener(self, typeWord0, typeWord1, typeWord2, listener) {
 				try {
-					const string = decodeString(typeBytes, typeCount);
+					const string = decodeString(typeWord0, typeWord1, typeWord2);
 					swift.memory.getObject(self).removeEventListener(string, swift.memory.getObject(listener));
 				} catch (error) {
 					setException(error);
@@ -1170,9 +1172,9 @@ async function createInstantiator(options, swift) {
 					return 0;
 				}
 			};
-			BrowserInterop["bjs_JSNode_textContent_set"] = function bjs_JSNode_textContent_set(self, newValueBytes, newValueCount) {
+			BrowserInterop["bjs_JSNode_textContent_set"] = function bjs_JSNode_textContent_set(self, newValueWord0, newValueWord1, newValueWord2) {
 				try {
-					const string = decodeString(newValueBytes, newValueCount);
+					const string = decodeString(newValueWord0, newValueWord1, newValueWord2);
 					swift.memory.getObject(self).textContent = string;
 				} catch (error) {
 					setException(error);
@@ -1196,18 +1198,18 @@ async function createInstantiator(options, swift) {
 					return 0;
 				}
 			};
-			BrowserInterop["bjs_JSElement_setAttribute"] = function bjs_JSElement_setAttribute(self, nameBytes, nameCount, valueBytes, valueCount) {
+			BrowserInterop["bjs_JSElement_setAttribute"] = function bjs_JSElement_setAttribute(self, nameWord0, nameWord1, nameWord2, valueWord0, valueWord1, valueWord2) {
 				try {
-					const string = decodeString(nameBytes, nameCount);
-					const string1 = decodeString(valueBytes, valueCount);
+					const string = decodeString(nameWord0, nameWord1, nameWord2);
+					const string1 = decodeString(valueWord0, valueWord1, valueWord2);
 					swift.memory.getObject(self).setAttribute(string, string1);
 				} catch (error) {
 					setException(error);
 				}
 			};
-			BrowserInterop["bjs_JSElement_removeAttribute"] = function bjs_JSElement_removeAttribute(self, nameBytes, nameCount) {
+			BrowserInterop["bjs_JSElement_removeAttribute"] = function bjs_JSElement_removeAttribute(self, nameWord0, nameWord1, nameWord2) {
 				try {
-					const string = decodeString(nameBytes, nameCount);
+					const string = decodeString(nameWord0, nameWord1, nameWord2);
 					swift.memory.getObject(self).removeAttribute(string);
 				} catch (error) {
 					setException(error);
@@ -1250,17 +1252,17 @@ async function createInstantiator(options, swift) {
 					return 0;
 				}
 			};
-			BrowserInterop["bjs_JSElement_addEventListener"] = function bjs_JSElement_addEventListener(self, typeBytes, typeCount, listener) {
+			BrowserInterop["bjs_JSElement_addEventListener"] = function bjs_JSElement_addEventListener(self, typeWord0, typeWord1, typeWord2, listener) {
 				try {
-					const string = decodeString(typeBytes, typeCount);
+					const string = decodeString(typeWord0, typeWord1, typeWord2);
 					swift.memory.getObject(self).addEventListener(string, swift.memory.getObject(listener));
 				} catch (error) {
 					setException(error);
 				}
 			};
-			BrowserInterop["bjs_JSElement_removeEventListener"] = function bjs_JSElement_removeEventListener(self, typeBytes, typeCount, listener) {
+			BrowserInterop["bjs_JSElement_removeEventListener"] = function bjs_JSElement_removeEventListener(self, typeWord0, typeWord1, typeWord2, listener) {
 				try {
-					const string = decodeString(typeBytes, typeCount);
+					const string = decodeString(typeWord0, typeWord1, typeWord2);
 					swift.memory.getObject(self).removeEventListener(string, swift.memory.getObject(listener));
 				} catch (error) {
 					setException(error);
@@ -1290,9 +1292,9 @@ async function createInstantiator(options, swift) {
 					return 0;
 				}
 			};
-			BrowserInterop["bjs_JSCSSStyleDeclaration_getPropertyValue"] = function bjs_JSCSSStyleDeclaration_getPropertyValue(self, nameBytes, nameCount) {
+			BrowserInterop["bjs_JSCSSStyleDeclaration_getPropertyValue"] = function bjs_JSCSSStyleDeclaration_getPropertyValue(self, nameWord0, nameWord1, nameWord2) {
 				try {
-					const string = decodeString(nameBytes, nameCount);
+					const string = decodeString(nameWord0, nameWord1, nameWord2);
 					let ret = swift.memory.getObject(self).getPropertyValue(string);
 					tmpRetBytes = textEncoder.encode(ret);
 					return tmpRetBytes.length;
@@ -1300,18 +1302,18 @@ async function createInstantiator(options, swift) {
 					setException(error);
 				}
 			};
-			BrowserInterop["bjs_JSCSSStyleDeclaration_setProperty"] = function bjs_JSCSSStyleDeclaration_setProperty(self, nameBytes, nameCount, valueBytes, valueCount) {
+			BrowserInterop["bjs_JSCSSStyleDeclaration_setProperty"] = function bjs_JSCSSStyleDeclaration_setProperty(self, nameWord0, nameWord1, nameWord2, valueWord0, valueWord1, valueWord2) {
 				try {
-					const string = decodeString(nameBytes, nameCount);
-					const string1 = decodeString(valueBytes, valueCount);
+					const string = decodeString(nameWord0, nameWord1, nameWord2);
+					const string1 = decodeString(valueWord0, valueWord1, valueWord2);
 					swift.memory.getObject(self).setProperty(string, string1);
 				} catch (error) {
 					setException(error);
 				}
 			};
-			BrowserInterop["bjs_JSCSSStyleDeclaration_removeProperty"] = function bjs_JSCSSStyleDeclaration_removeProperty(self, nameBytes, nameCount) {
+			BrowserInterop["bjs_JSCSSStyleDeclaration_removeProperty"] = function bjs_JSCSSStyleDeclaration_removeProperty(self, nameWord0, nameWord1, nameWord2) {
 				try {
-					const string = decodeString(nameBytes, nameCount);
+					const string = decodeString(nameWord0, nameWord1, nameWord2);
 					swift.memory.getObject(self).removeProperty(string);
 				} catch (error) {
 					setException(error);
@@ -1685,12 +1687,130 @@ async function createInstantiator(options, swift) {
 			};
 		},
 		setInstance: (i) => {
+			if (memory !== i.exports.memory) immortalStrings.clear();
 			instance = i;
 			memory = instance.exports.memory;
-			decodeString = (ptr, len) => {
+			decodeUTF8 = (ptr, len) => {
 				const bytes = new Uint8Array(memory.buffer, ptr >>> 0, len >>> 0);
 				return textDecoder.decode(bytes);
 			};
+			decodeString = (() => {
+				const byteAt = (word0, word1, byteIndex) => byteIndex < 4 ? word0 >>> byteIndex * 8 & 255 : word1 >>> (byteIndex - 4) * 8 & 255;
+				const decodeSmallUTF8 = (word0, word1, count) => {
+					if (count > 8) throw new Error(`Unsupported Swift inline String length: ${count} UTF-8 bytes (maximum 8). The Swift String layout may have changed; update JavaScriptKit and regenerate BridgeJS glue.`);
+					let byteIndex = 0, unitCount = 0, u0 = 0, u1 = 0, u2 = 0, u3 = 0, u4 = 0, u5 = 0, u6 = 0, u7 = 0;
+					while (byteIndex < count) {
+						const b0 = byteAt(word0, word1, byteIndex++);
+						let codePoint;
+						if (b0 < 128) codePoint = b0;
+						else if (b0 < 224) codePoint = (b0 & 31) << 6 | byteAt(word0, word1, byteIndex++) & 63;
+						else if (b0 < 240) {
+							const b1 = byteAt(word0, word1, byteIndex++), b2 = byteAt(word0, word1, byteIndex++);
+							codePoint = (b0 & 15) << 12 | (b1 & 63) << 6 | b2 & 63;
+						} else {
+							const b1 = byteAt(word0, word1, byteIndex++), b2 = byteAt(word0, word1, byteIndex++), b3 = byteAt(word0, word1, byteIndex++);
+							codePoint = (b0 & 7) << 18 | (b1 & 63) << 12 | (b2 & 63) << 6 | b3 & 63;
+						}
+						const supplementary = codePoint > 65535;
+						const codeUnit = supplementary ? 55296 + (codePoint - 65536 >>> 10) : codePoint;
+						switch (unitCount++) {
+							case 0:
+								u0 = codeUnit;
+								break;
+							case 1:
+								u1 = codeUnit;
+								break;
+							case 2:
+								u2 = codeUnit;
+								break;
+							case 3:
+								u3 = codeUnit;
+								break;
+							case 4:
+								u4 = codeUnit;
+								break;
+							case 5:
+								u5 = codeUnit;
+								break;
+							case 6:
+								u6 = codeUnit;
+								break;
+							case 7:
+								u7 = codeUnit;
+								break;
+						}
+						if (supplementary) {
+							const lowSurrogate = 56320 + (codePoint - 65536 & 1023);
+							switch (unitCount++) {
+								case 0:
+									u0 = lowSurrogate;
+									break;
+								case 1:
+									u1 = lowSurrogate;
+									break;
+								case 2:
+									u2 = lowSurrogate;
+									break;
+								case 3:
+									u3 = lowSurrogate;
+									break;
+								case 4:
+									u4 = lowSurrogate;
+									break;
+								case 5:
+									u5 = lowSurrogate;
+									break;
+								case 6:
+									u6 = lowSurrogate;
+									break;
+								case 7:
+									u7 = lowSurrogate;
+									break;
+							}
+						}
+					}
+					switch (unitCount) {
+						case 0: return "";
+						case 1: return String.fromCharCode(u0);
+						case 2: return String.fromCharCode(u0, u1);
+						case 3: return String.fromCharCode(u0, u1, u2);
+						case 4: return String.fromCharCode(u0, u1, u2, u3);
+						case 5: return String.fromCharCode(u0, u1, u2, u3, u4);
+						case 6: return String.fromCharCode(u0, u1, u2, u3, u4, u5);
+						case 7: return String.fromCharCode(u0, u1, u2, u3, u4, u5, u6);
+						case 8: return String.fromCharCode(u0, u1, u2, u3, u4, u5, u6, u7);
+					}
+				};
+				const decodeSmall = (word0, word1, word2) => {
+					const count = word2 >>> 8 & 15;
+					if ((word2 & 16384) === 0) return decodeSmallUTF8(word0, word1, count);
+					const char = String.fromCharCode;
+					switch (count) {
+						case 0: return "";
+						case 1: return char(word0 & 255);
+						case 2: return char(word0 & 255, word0 >>> 8 & 255);
+						case 3: return char(word0 & 255, word0 >>> 8 & 255, word0 >>> 16 & 255);
+						case 4: return char(word0 & 255, word0 >>> 8 & 255, word0 >>> 16 & 255, word0 >>> 24);
+						case 5: return char(word0 & 255, word0 >>> 8 & 255, word0 >>> 16 & 255, word0 >>> 24, word1 & 255);
+						case 6: return char(word0 & 255, word0 >>> 8 & 255, word0 >>> 16 & 255, word0 >>> 24, word1 & 255, word1 >>> 8 & 255);
+						case 7: return char(word0 & 255, word0 >>> 8 & 255, word0 >>> 16 & 255, word0 >>> 24, word1 & 255, word1 >>> 8 & 255, word1 >>> 16 & 255);
+						case 8: return char(word0 & 255, word0 >>> 8 & 255, word0 >>> 16 & 255, word0 >>> 24, word1 & 255, word1 >>> 8 & 255, word1 >>> 16 & 255, word1 >>> 24);
+						default: throw new Error(`Unsupported Swift inline String length: ${count} UTF-8 bytes (maximum 8). The Swift String layout may have changed; update JavaScriptKit and regenerate BridgeJS glue.`);
+					}
+				};
+				return (word0, word1, word2) => {
+					if (word2 & 8192) return decodeSmall(word0, word1, word2);
+					const ptr = word1 + 20 >>> 0;
+					const len = word0 >>> 0;
+					if ((word2 & 32768) === 0 || len >= 2097152) return decodeUTF8(ptr, len);
+					const key = ptr + len * 4294967296;
+					const cached = immortalStrings.get(key);
+					if (cached !== void 0) return cached;
+					const value = decodeUTF8(ptr, len);
+					immortalStrings.set(key, value);
+					return value;
+				};
+			})();
 			setException = (error) => {
 				instance.exports._swift_js_exception.value = swift.memory.retain(error);
 			};
