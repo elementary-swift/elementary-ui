@@ -58,8 +58,10 @@ fileprivate func _bjs_struct_lift_JSShadowRootInit_extern() -> Int32 {
 @_cdecl("bjs_CustomElementBridge_connect")
 public func _bjs_CustomElementBridge_connect(_ _self: UnsafeMutableRawPointer, _ element: Int32) -> Void {
     #if arch(wasm32)
+    let element = JSHTMLElement.bridgeJSLiftParameter(element)
+    let _self = CustomElementBridge.bridgeJSLiftParameter(_self)
     do {
-        try CustomElementBridge.bridgeJSLiftParameter(_self).connect(element: JSHTMLElement.bridgeJSLiftParameter(element))
+        try _self.connect(element: element)
     } catch let error {
         if let error = error.thrownValue.object {
             withExtendedLifetime(error) {
@@ -82,7 +84,9 @@ public func _bjs_CustomElementBridge_connect(_ _self: UnsafeMutableRawPointer, _
 @_cdecl("bjs_CustomElementBridge_disconnect")
 public func _bjs_CustomElementBridge_disconnect(_ _self: UnsafeMutableRawPointer, _ element: Int32) -> Void {
     #if arch(wasm32)
-    CustomElementBridge.bridgeJSLiftParameter(_self).disconnect(element: JSHTMLElement.bridgeJSLiftParameter(element))
+    let element = JSHTMLElement.bridgeJSLiftParameter(element)
+    let _self = CustomElementBridge.bridgeJSLiftParameter(_self)
+    _self.disconnect(element: element)
     #else
     fatalError("Only available on WebAssembly")
     #endif
@@ -92,7 +96,11 @@ public func _bjs_CustomElementBridge_disconnect(_ _self: UnsafeMutableRawPointer
 @_cdecl("bjs_CustomElementBridge_setAttribute")
 public func _bjs_CustomElementBridge_setAttribute(_ _self: UnsafeMutableRawPointer, _ element: Int32, _ nameBytes: Int32, _ nameLength: Int32, _ valueIsSome: Int32, _ valueBytes: Int32, _ valueLength: Int32) -> Void {
     #if arch(wasm32)
-    CustomElementBridge.bridgeJSLiftParameter(_self).setAttribute(element: JSHTMLElement.bridgeJSLiftParameter(element), name: String.bridgeJSLiftParameter(nameBytes, nameLength), value: Optional<String>.bridgeJSLiftParameter(valueIsSome, valueBytes, valueLength))
+    let value = Optional<String>.bridgeJSLiftParameter(valueIsSome, valueBytes, valueLength)
+    let name = String.bridgeJSLiftParameter(nameBytes, nameLength)
+    let element = JSHTMLElement.bridgeJSLiftParameter(element)
+    let _self = CustomElementBridge.bridgeJSLiftParameter(_self)
+    _self.setAttribute(element: element, name: name, value: value)
     #else
     fatalError("Only available on WebAssembly")
     #endif
@@ -102,7 +110,8 @@ public func _bjs_CustomElementBridge_setAttribute(_ _self: UnsafeMutableRawPoint
 @_cdecl("bjs_CustomElementBridge_observedAttributes_get")
 public func _bjs_CustomElementBridge_observedAttributes_get(_ _self: UnsafeMutableRawPointer) -> Void {
     #if arch(wasm32)
-    let ret = CustomElementBridge.bridgeJSLiftParameter(_self).observedAttributes
+    let _self = CustomElementBridge.bridgeJSLiftParameter(_self)
+    let ret = _self.observedAttributes
     ret.bridgeJSStackPush()
     #else
     fatalError("Only available on WebAssembly")
@@ -113,7 +122,9 @@ public func _bjs_CustomElementBridge_observedAttributes_get(_ _self: UnsafeMutab
 @_cdecl("bjs_CustomElementBridge_observedAttributes_set")
 public func _bjs_CustomElementBridge_observedAttributes_set(_ _self: UnsafeMutableRawPointer) -> Void {
     #if arch(wasm32)
-    CustomElementBridge.bridgeJSLiftParameter(_self).observedAttributes = [String].bridgeJSStackPop()
+    let value = [String].bridgeJSStackPop()
+    let _self = CustomElementBridge.bridgeJSLiftParameter(_self)
+    _self.observedAttributes = value
     #else
     fatalError("Only available on WebAssembly")
     #endif
@@ -160,20 +171,20 @@ extension CustomElementBridge: BridgedSwiftGenericBridgeable {
 
 #if arch(wasm32)
 @_extern(wasm, module: "ElementaryWebComponents", name: "bjs_defineCustomElement")
-fileprivate func bjs_defineCustomElement_extern(_ nameBytes: Int32, _ nameLength: Int32, _ implementation: UnsafeMutableRawPointer) -> Void
+fileprivate func bjs_defineCustomElement_extern(_ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32, _ implementation: UnsafeMutableRawPointer) -> Void
 #else
-fileprivate func bjs_defineCustomElement_extern(_ nameBytes: Int32, _ nameLength: Int32, _ implementation: UnsafeMutableRawPointer) -> Void {
+fileprivate func bjs_defineCustomElement_extern(_ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32, _ implementation: UnsafeMutableRawPointer) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_defineCustomElement(_ nameBytes: Int32, _ nameLength: Int32, _ implementation: UnsafeMutableRawPointer) -> Void {
-    return bjs_defineCustomElement_extern(nameBytes, nameLength, implementation)
+@inline(never) fileprivate func bjs_defineCustomElement(_ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32, _ implementation: UnsafeMutableRawPointer) -> Void {
+    return bjs_defineCustomElement_extern(nameWord0, nameWord1, nameWord2, implementation)
 }
 
 func _$defineCustomElement(_ name: String, _ implementation: CustomElementBridge) throws(JSException) -> Void {
-    name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
+    name.bridgeJSWithLoweredParameter { (nameWord0, nameWord1, nameWord2) in
         let implementationPointer = implementation.bridgeJSLowerParameter()
-        bjs_defineCustomElement(nameBytes, nameLength, implementationPointer)
+        bjs_defineCustomElement(nameWord0, nameWord1, nameWord2, implementationPointer)
     }
     if let error = _swift_js_take_exception() {
         throw error
@@ -194,14 +205,14 @@ fileprivate func bjs_JSHTMLElement_shadowRoot_get_extern(_ self: Int32) -> Void 
 
 #if arch(wasm32)
 @_extern(wasm, module: "ElementaryWebComponents", name: "bjs_JSHTMLElement_getAttribute")
-fileprivate func bjs_JSHTMLElement_getAttribute_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void
+fileprivate func bjs_JSHTMLElement_getAttribute_extern(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32) -> Void
 #else
-fileprivate func bjs_JSHTMLElement_getAttribute_extern(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void {
+fileprivate func bjs_JSHTMLElement_getAttribute_extern(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSHTMLElement_getAttribute(_ self: Int32, _ nameBytes: Int32, _ nameLength: Int32) -> Void {
-    return bjs_JSHTMLElement_getAttribute_extern(self, nameBytes, nameLength)
+@inline(never) fileprivate func bjs_JSHTMLElement_getAttribute(_ self: Int32, _ nameWord0: Int32, _ nameWord1: Int32, _ nameWord2: Int32) -> Void {
+    return bjs_JSHTMLElement_getAttribute_extern(self, nameWord0, nameWord1, nameWord2)
 }
 
 #if arch(wasm32)
@@ -226,9 +237,9 @@ func _$JSHTMLElement_shadowRoot_get(_ self: JSObject) throws(JSException) -> Opt
 }
 
 func _$JSHTMLElement_getAttribute(_ self: JSObject, _ name: String) throws(JSException) -> Optional<String> {
-    name.bridgeJSWithLoweredParameter { (nameBytes, nameLength) in
+    name.bridgeJSWithLoweredParameter { (nameWord0, nameWord1, nameWord2) in
         let selfValue = self.bridgeJSLowerParameter()
-        bjs_JSHTMLElement_getAttribute(selfValue, nameBytes, nameLength)
+        bjs_JSHTMLElement_getAttribute(selfValue, nameWord0, nameWord1, nameWord2)
     }
     if let error = _swift_js_take_exception() {
         throw error
@@ -281,14 +292,14 @@ fileprivate func bjs_JSCSSStyleSheet_init_extern() -> Int32 {
 
 #if arch(wasm32)
 @_extern(wasm, module: "ElementaryWebComponents", name: "bjs_JSCSSStyleSheet_replaceSync")
-fileprivate func bjs_JSCSSStyleSheet_replaceSync_extern(_ self: Int32, _ cssBytes: Int32, _ cssLength: Int32) -> Void
+fileprivate func bjs_JSCSSStyleSheet_replaceSync_extern(_ self: Int32, _ cssWord0: Int32, _ cssWord1: Int32, _ cssWord2: Int32) -> Void
 #else
-fileprivate func bjs_JSCSSStyleSheet_replaceSync_extern(_ self: Int32, _ cssBytes: Int32, _ cssLength: Int32) -> Void {
+fileprivate func bjs_JSCSSStyleSheet_replaceSync_extern(_ self: Int32, _ cssWord0: Int32, _ cssWord1: Int32, _ cssWord2: Int32) -> Void {
     fatalError("Only available on WebAssembly")
 }
 #endif
-@inline(never) fileprivate func bjs_JSCSSStyleSheet_replaceSync(_ self: Int32, _ cssBytes: Int32, _ cssLength: Int32) -> Void {
-    return bjs_JSCSSStyleSheet_replaceSync_extern(self, cssBytes, cssLength)
+@inline(never) fileprivate func bjs_JSCSSStyleSheet_replaceSync(_ self: Int32, _ cssWord0: Int32, _ cssWord1: Int32, _ cssWord2: Int32) -> Void {
+    return bjs_JSCSSStyleSheet_replaceSync_extern(self, cssWord0, cssWord1, cssWord2)
 }
 
 func _$JSCSSStyleSheet_init() throws(JSException) -> JSObject {
@@ -300,9 +311,9 @@ func _$JSCSSStyleSheet_init() throws(JSException) -> JSObject {
 }
 
 func _$JSCSSStyleSheet_replaceSync(_ self: JSObject, _ css: String) throws(JSException) -> Void {
-    css.bridgeJSWithLoweredParameter { (cssBytes, cssLength) in
+    css.bridgeJSWithLoweredParameter { (cssWord0, cssWord1, cssWord2) in
         let selfValue = self.bridgeJSLowerParameter()
-        bjs_JSCSSStyleSheet_replaceSync(selfValue, cssBytes, cssLength)
+        bjs_JSCSSStyleSheet_replaceSync(selfValue, cssWord0, cssWord1, cssWord2)
     }
     if let error = _swift_js_take_exception() {
         throw error
