@@ -148,14 +148,15 @@ struct DOMAttributePatcher {
 
     private func applyAttributeChange(_ old: borrowing _StoredAttribute, _ new: borrowing _StoredAttribute, to node: DOM.Node) {
         // skips flattening classes and parsing styles for unchanged values
+        // NOTE: rare false negatives (equal values built differently) only cause a redundant setAttribute
         guard !old._hasKnownEqualValue(to: new) else { return }
 
         let oldStyle = old._styleKeyValuePairs
         let newStyle = new._styleKeyValuePairs
         if oldStyle != nil || newStyle != nil {
             applyStyleChanges(node, from: oldStyle, to: newStyle)
-        } else if !old.value.utf8Equals(new.value) {
-            logTrace("updating attribute \(new.name) from \(old.value ?? "") to \(new.value ?? "")")
+        } else {
+            logTrace("updating attribute \(new.name)")
             dom.setAttribute(node, name: new.name, value: new.value)
         }
     }
