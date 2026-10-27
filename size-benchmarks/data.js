@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793100750393,
+  "lastUpdate": 1793129115012,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -13498,6 +13498,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 148.87,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "db9a770da72cb1879f225e8c9904973a13993e90",
+          "message": "basic support for SSR/SSG rendering of ElementaryUI views (#145)\n\n* server rendering for ElementaryUI views\n\n* use ForEach in basic example\n\n* added comment",
+          "timestamp": "2026-10-27T20:12:46+01:00",
+          "tree_id": "a40d4989383f322b920d2e99957ca0498796f55a",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/db9a770da72cb1879f225e8c9904973a13993e90"
+        },
+        "date": 1793129113774,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 168.21,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 95.64,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 80.95,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 131.54,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 148.93,
             "unit": "kB"
           }
         ]
