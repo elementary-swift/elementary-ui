@@ -85,128 +85,88 @@ struct DOMAttributePatcher {
     private typealias StylePair = (key: Substring.UTF8View, value: Substring.UTF8View)
 
     func addHTMLAttributes(_ node: DOM.Node, _ attributes: _AttributeStorage) {
-        guard attributes != .none else { return }
-
-        for attribute in attributes.flattened() {
-            if let newStyle = attribute._styleKeyValuePairs {
-                applyStyleChanges(node, from: nil, to: newStyle)
-            } else {
-                dom.setAttribute(node, name: attribute.name, value: attribute.value)
+        attributes._withSpan { attributes in
+            for index in attributes.indices {
+                addAttribute(attributes[unchecked: index], to: node)
             }
         }
     }
 
     func applyHTMLAttributes(_ node: DOM.Node, from previousAttributes: _AttributeStorage, to newAttributes: _AttributeStorage) {
-        if previousAttributes == .none {
-            addHTMLAttributes(node, newAttributes)
-        } else {
-            var oldIterator = previousAttributes.flattened().makeIterator()
-            var newIterator = newAttributes.flattened().makeIterator()
-            applyAttributeChanges(node, oldIterator: &oldIterator, newIterator: &newIterator)
+        previousAttributes._withSpan { oldAttributes in
+            newAttributes._withSpan { newAttributes in
+                applyAttributeChanges(node, from: oldAttributes, to: newAttributes)
+            }
         }
     }
 
+    // NOTE: attribute names are unique within each span, so attributes can be matched by name without bookkeeping
     private func applyAttributeChanges(
         _ node: DOM.Node,
-        oldIterator: inout _MergedAttributes.Iterator,
-        newIterator: inout _MergedAttributes.Iterator
+        from oldAttributes: Span<_StoredAttribute>,
+        to newAttributes: Span<_StoredAttribute>
     ) {
-        while true {
-            let oldNext = oldIterator.next()
-            let newNext = newIterator.next()
-
-            switch (oldNext, newNext) {
-            case let (.some(old), .some(new)):
-                guard old.name.utf8Equals(new.name) else {
-                    applyAttributesSlowPath(
-                        node,
-                        firstOld: old,
-                        oldIterator: &oldIterator,
-                        firstNew: new,
-                        newIterator: &newIterator
-                    )
-                    return
-                }
-
-                let oldStyle = old._styleKeyValuePairs
-                let newStyle = new._styleKeyValuePairs
-                if oldStyle != nil || newStyle != nil {
-                    applyStyleChanges(node, from: oldStyle, to: newStyle)
-                } else if !old.value.utf8Equals(new.value) {
-                    logTrace("updating attribute \(new.name) from \(old.value ?? "") to \(new.value ?? "")")
-                    dom.setAttribute(node, name: new.name, value: new.value)
-                }
-            case (.none, .none):
-                return
-            default:
-                applyAttributesSlowPath(
-                    node,
-                    firstOld: oldNext,
-                    oldIterator: &oldIterator,
-                    firstNew: newNext,
-                    newIterator: &newIterator
-                )
-                return
-            }
-        }
-    }
-
-    private func applyAttributesSlowPath(
-        _ node: DOM.Node,
-        firstOld: _StoredAttribute?,
-        oldIterator: inout _MergedAttributes.Iterator,
-        firstNew: _StoredAttribute?,
-        newIterator: inout _MergedAttributes.Iterator
-    ) {
-        var oldAttributes = UniqueArray<_StoredAttribute>()
-        oldAttributes.reserveCapacity(4)
-        if let firstOld {
-            oldAttributes.append(firstOld)
-        }
-        while let old = oldIterator.next() {
-            oldAttributes.append(old)
-        }
-
-        if let firstNew {
-            applyAttribute(firstNew, to: node, matching: &oldAttributes)
-        }
-        while let new = newIterator.next() {
-            applyAttribute(new, to: node, matching: &oldAttributes)
-        }
-
-        var oldIndex = 0
-        while oldIndex < oldAttributes.count {
-            let old = oldAttributes[oldIndex]
-            if let oldStylePairs = old._styleKeyValuePairs {
-                applyStyleChanges(node, from: oldStylePairs, to: nil)
-            } else {
-                logTrace("removing attribute \(old.name)")
-                dom.removeAttribute(node, name: old.name)
-            }
-            oldIndex += 1
-        }
-    }
-
-    private func applyAttribute(
-        _ new: _StoredAttribute,
-        to node: DOM.Node,
-        matching oldAttributes: inout UniqueArray<_StoredAttribute>
-    ) {
-        var old: _StoredAttribute?
+        // fast path: the same attributes in the same order
+        let commonCount = min(oldAttributes.count, newAttributes.count)
         var index = 0
-        while index < oldAttributes.count {
-            if oldAttributes[index].name.utf8Equals(new.name) {
-                old = oldAttributes.remove(at: index)
-                break
-            }
-            index += 1
+        while index < commonCount, oldAttributes[unchecked: index].name.utf8Equals(newAttributes[unchecked: index].name) {
+            applyAttributeChange(oldAttributes[unchecked: index], newAttributes[unchecked: index], to: node)
+            index &+= 1
         }
-        let oldStyle = old?._styleKeyValuePairs
+
+        guard index < oldAttributes.count || index < newAttributes.count else { return }
+
+        // slow path: match the remaining attributes by name
+        var newIndex = index
+        while newIndex < newAttributes.count {
+            let new = newAttributes[unchecked: newIndex]
+            if let oldIndex = oldAttributes.firstIndex(named: new.name, from: index) {
+                applyAttributeChange(oldAttributes[unchecked: oldIndex], new, to: node)
+            } else {
+                addAttribute(new, to: node)
+            }
+            newIndex &+= 1
+        }
+
+        var oldIndex = index
+        while oldIndex < oldAttributes.count {
+            let old = oldAttributes[unchecked: oldIndex]
+            if newAttributes.firstIndex(named: old.name, from: index) == nil {
+                removeAttribute(old, from: node)
+            }
+            oldIndex &+= 1
+        }
+    }
+
+    private func addAttribute(_ new: borrowing _StoredAttribute, to node: DOM.Node) {
+        if let newStyle = new._styleKeyValuePairs {
+            applyStyleChanges(node, from: nil, to: newStyle)
+        } else {
+            dom.setAttribute(node, name: new.name, value: new.value)
+        }
+    }
+
+    private func applyAttributeChange(_ old: borrowing _StoredAttribute, _ new: borrowing _StoredAttribute, to node: DOM.Node) {
+        // skips flattening classes and parsing styles for unchanged values
+        // NOTE: rare false negatives (equal values built differently) only cause a redundant setAttribute
+        guard !old._hasKnownEqualValue(to: new) else { return }
+
+        let oldStyle = old._styleKeyValuePairs
         let newStyle = new._styleKeyValuePairs
         if oldStyle != nil || newStyle != nil {
             applyStyleChanges(node, from: oldStyle, to: newStyle)
-        } else if old == nil || !old!.value.utf8Equals(new.value) {
+        } else {
+            logTrace("updating attribute \(new.name)")
             dom.setAttribute(node, name: new.name, value: new.value)
+        }
+    }
+
+    private func removeAttribute(_ old: borrowing _StoredAttribute, from node: DOM.Node) {
+        if let oldStylePairs = old._styleKeyValuePairs {
+            applyStyleChanges(node, from: oldStylePairs, to: nil)
+        } else {
+            logTrace("removing attribute \(old.name)")
+            dom.removeAttribute(node, name: old.name)
         }
     }
 
@@ -340,5 +300,18 @@ struct DOMAttributePatcher {
             oldStyles.remove(at: index)
         }
         return oldValue
+    }
+}
+
+private extension Span<_StoredAttribute> {
+    func firstIndex(named name: borrowing String, from start: Int) -> Int? {
+        var index = start
+        while index < count {
+            if self[unchecked: index].name.utf8Equals(name) {
+                return index
+            }
+            index &+= 1
+        }
+        return nil
     }
 }
