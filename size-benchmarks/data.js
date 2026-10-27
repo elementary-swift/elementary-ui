@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793016903169,
+  "lastUpdate": 1793097312957,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -13402,6 +13402,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 150.89,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "72ec04275e607d466240574f0b2fe785cd19eec4",
+          "message": "faster attribute patching (#144)\n\n* use _withSpan and value fast path for attribute patching\n\n* drop redundant attribute value recheck",
+          "timestamp": "2026-10-27T11:26:11+01:00",
+          "tree_id": "68c6895ec447b097d5a5447b21306df06dc7290a",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/72ec04275e607d466240574f0b2fe785cd19eec4"
+        },
+        "date": 1793097311861,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 168.16,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 95.63,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 80.92,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 131.46,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 148.88,
             "unit": "kB"
           }
         ]
