@@ -69,3 +69,38 @@ public extension __FunctionView {
         false
     }
 }
+
+#if !hasFeature(Embedded)
+// server rendering evaluates the body once: state renders its initial value and reads are not tracked
+public extension __FunctionView {
+    static func _render<Renderer: _HTMLRendering>(
+        _ html: consuming Self,
+        into renderer: inout Renderer,
+        with context: consuming _RenderingContext
+    ) {
+        Body._render(_serverBody(html), into: &renderer, with: context)
+    }
+
+    static func _render<Renderer: _AsyncHTMLRendering>(
+        _ html: consuming Self,
+        into renderer: inout Renderer,
+        with context: consuming _RenderingContext
+    ) async throws {
+        try await Body._render(_serverBody(html), into: &renderer, with: context)
+    }
+}
+#endif
+
+private extension __FunctionView {
+    static func _serverBody(_ view: consuming Self) -> Body {
+        var view = view
+        let state = __initializeState(from: view)
+        if let store = _ServerRenderStore.current {
+            __applyContext(store.context, to: &view)
+        } else {
+            __applyContext(.empty, to: &view)
+        }
+        __restoreState(state, in: &view)
+        return view.body
+    }
+}

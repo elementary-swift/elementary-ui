@@ -6,7 +6,7 @@ final class _TransitionState {
     }
 }
 
-public struct _TransitionNode<V: View>: ~Copyable, _Reconcilable {
+struct _TransitionNode<V: View>: ~Copyable, _Reconcilable {
     private let transition: _TransitionState
     private var wrappedNode: V._MountedNode
 
@@ -41,7 +41,7 @@ public struct _TransitionNode<V: View>: ~Copyable, _Reconcilable {
         V._patchNode(view.wrapped, node: &wrappedNode, tx: &tx)
     }
 
-    public consuming func unmount(_ context: inout _CommitContext) {
+    consuming func unmount(_ context: inout _CommitContext) {
         wrappedNode.unmount(&context)
     }
 }

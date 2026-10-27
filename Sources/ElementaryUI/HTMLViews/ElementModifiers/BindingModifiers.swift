@@ -86,6 +86,10 @@ final class BindingModifier<Configuration>: DOMElementModifier, Unmountable wher
         _ = self.sink.take()
         self.mountedNode = nil
     }
+
+    static func serverAttributes(for value: Value) -> _AttributeStorage {
+        Configuration.serverAttributes(value.wrappedValue)
+    }
 }
 
 protocol BindingConfiguration {
@@ -95,6 +99,8 @@ protocol BindingConfiguration {
     static func readValue(_ jsValue: DOM.PropertyValue) -> Value?
     static func writeValue(_ value: Value) -> DOM.PropertyValue?
     static func equals(_ lhs: Value, _ rhs: Value) -> Bool
+    /// The attributes that show the initial value before the element is mounted.
+    static func serverAttributes(_ value: Value) -> _AttributeStorage
 }
 
 extension BindingConfiguration where Value == String {
@@ -132,6 +138,9 @@ struct TextBindingConfiguration: BindingConfiguration {
     static func writeValue(_ value: Value) -> DOM.PropertyValue? {
         .string(value)
     }
+    static func serverAttributes(_ value: Value) -> _AttributeStorage {
+        .init(HTMLAttribute<HTMLTag.input>.value(value))
+    }
 }
 
 struct NumberBindingConfiguration: BindingConfiguration {
@@ -153,6 +162,14 @@ struct NumberBindingConfiguration: BindingConfiguration {
 
         return .number(value)
     }
+    static func serverAttributes(_ value: Value) -> _AttributeStorage {
+        guard let value, value.isFinite else { return .none }
+        // matches how the browser formats valueAsNumber (3 instead of 3.0)
+        if value == value.rounded(), abs(value) < 1e15 {
+            return .init(HTMLAttribute<HTMLTag.input>.value(String(Int(value))))
+        }
+        return .init(HTMLAttribute<HTMLTag.input>.value("\(value)"))
+    }
 }
 
 struct CheckboxBindingConfiguration: BindingConfiguration {
@@ -169,5 +186,8 @@ struct CheckboxBindingConfiguration: BindingConfiguration {
     }
     static func writeValue(_ value: Value) -> DOM.PropertyValue? {
         .boolean(value)
+    }
+    static func serverAttributes(_ value: Value) -> _AttributeStorage {
+        value ? .init(HTMLAttribute<HTMLTag.input>.checked) : .none
     }
 }
