@@ -89,3 +89,8 @@ struct _OnChangeView<Wrapped: View, Value: Equatable>: View {
         Wrapped._patchNode(view.wrapped, node: &node.child, tx: &tx)
     }
 }
+
+// server rendering never runs change actions
+extension _OnChangeView: _ServerTransparentContent {
+    var _serverContent: Wrapped { wrapped }
+}

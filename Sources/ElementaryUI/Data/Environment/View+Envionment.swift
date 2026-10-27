@@ -164,3 +164,29 @@ public struct _EnvironmentView<V, Wrapped: View>: View {
         Wrapped._patchNode(view.wrapped, node: &node.child, tx: &tx)
     }
 }
+
+#if !hasFeature(Embedded)
+extension _EnvironmentView {
+    public static func _render<Renderer: _HTMLRendering>(
+        _ html: consuming Self,
+        into renderer: inout Renderer,
+        with context: consuming _RenderingContext
+    ) {
+        let view = html
+        _ServerRenderStore.withValue(view.value, for: view.key) {
+            Wrapped._render(view.wrapped, into: &renderer, with: copy context)
+        }
+    }
+
+    public static func _render<Renderer: _AsyncHTMLRendering>(
+        _ html: consuming Self,
+        into renderer: inout Renderer,
+        with context: consuming _RenderingContext
+    ) async throws {
+        let view = html
+        try await _ServerRenderStore.withValue(view.value, for: view.key) {
+            try await Wrapped._render(view.wrapped, into: &renderer, with: copy context)
+        }
+    }
+}
+#endif

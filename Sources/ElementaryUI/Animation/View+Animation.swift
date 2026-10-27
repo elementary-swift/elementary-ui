@@ -110,3 +110,8 @@ extension View {
         _TransactionModifierView(view: self, value: value) { $0.animation = animation }
     }
 }
+
+// server rendering never animates
+extension _TransactionModifierView: _ServerTransparentContent {
+    var _serverContent: Wrapped { view }
+}

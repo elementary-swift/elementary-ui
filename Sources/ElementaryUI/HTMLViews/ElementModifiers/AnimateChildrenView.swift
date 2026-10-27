@@ -73,3 +73,8 @@ public extension View {
         )
     }
 }
+
+// server rendering never animates
+extension AnimateContainerLayoutView: _ServerTransparentContent {
+    var _serverContent: Wrapped { wrapped }
+}

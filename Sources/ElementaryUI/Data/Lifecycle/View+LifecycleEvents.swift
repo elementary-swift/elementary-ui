@@ -156,3 +156,8 @@ struct _LifecycleEventView<Wrapped: View>: View, _Mountable {
         Wrapped._patchNode(view.wrapped, node: &node.child, tx: &tx)
     }
 }
+
+// server rendering never runs lifecycle hooks
+extension _LifecycleEventView: _ServerTransparentContent {
+    var _serverContent: Wrapped { wrapped }
+}

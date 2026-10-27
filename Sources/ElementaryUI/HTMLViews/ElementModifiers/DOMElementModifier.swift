@@ -7,6 +7,13 @@ protocol DOMElementModifier: AnyObject {
     func updateValue(_ value: consuming Value, _ context: inout _TransactionContext)
 
     func mount(_ node: DOM.Node, _ context: inout _MountContext) -> AnyUnmountable
+
+    /// The attributes this modifier adds to its element when rendered on the server.
+    static func serverAttributes(for value: Value) -> _AttributeStorage
+}
+
+extension DOMElementModifier {
+    static func serverAttributes(for value: Value) -> _AttributeStorage { .none }
 }
 
 protocol Unmountable: AnyObject {

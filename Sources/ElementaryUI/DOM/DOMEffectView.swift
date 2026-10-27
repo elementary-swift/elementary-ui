@@ -36,3 +36,35 @@ extension DOMEffectView: _Mountable {}
 extension DOMEffectView: MarkupContent {}
 extension DOMEffectView: HTML, View where Wrapped: View {}
 extension DOMEffectView: SVGContent, SVGView where Wrapped: SVGView {}
+
+#if !hasFeature(Embedded)
+// NOTE: effects are dropped, only bindings render their initial value
+// TODO: render style modifiers once element modifiers can wrap their element
+extension DOMEffectView {
+    static func _render<Renderer: _HTMLRendering>(
+        _ html: consuming Self,
+        into renderer: inout Renderer,
+        with context: consuming _RenderingContext
+    ) {
+        let attributes = Effect.serverAttributes(for: html.value)
+        _AttributedContent._render(
+            _AttributedContent(content: html.wrapped, attributes: attributes),
+            into: &renderer,
+            with: context
+        )
+    }
+
+    static func _render<Renderer: _AsyncHTMLRendering>(
+        _ html: consuming Self,
+        into renderer: inout Renderer,
+        with context: consuming _RenderingContext
+    ) async throws {
+        let attributes = Effect.serverAttributes(for: html.value)
+        try await _AttributedContent._render(
+            _AttributedContent(content: html.wrapped, attributes: attributes),
+            into: &renderer,
+            with: context
+        )
+    }
+}
+#endif

@@ -40,3 +40,23 @@ public struct _PlaceholderNode: ~Copyable, _Reconcilable {
         host.unmountInstance(id, &context)
     }
 }
+
+#if !hasFeature(Embedded)
+extension PlaceholderContentView {
+    public static func _render<Renderer: _HTMLRendering>(
+        _ html: consuming Self,
+        into renderer: inout Renderer,
+        with context: consuming _RenderingContext
+    ) {
+        html.content._renderValue(into: &renderer, with: context)
+    }
+
+    public static func _render<Renderer: _AsyncHTMLRendering>(
+        _ html: consuming Self,
+        into renderer: inout Renderer,
+        with context: consuming _RenderingContext
+    ) async throws {
+        try await html.content._renderValue(into: &renderer, with: context)
+    }
+}
+#endif

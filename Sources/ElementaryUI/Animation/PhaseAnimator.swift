@@ -321,3 +321,46 @@ private struct _PhaseModifierView<Wrapped: View, Phase: Equatable, Content: View
         PhaseAnimator._patchNode(view.animator(node.state), node: &node.child, tx: &tx)
     }
 }
+
+#if !hasFeature(Embedded)
+// server rendering shows the first phase without animating
+extension PhaseAnimator {
+    public static func _render<Renderer: _HTMLRendering>(
+        _ html: consuming Self,
+        into renderer: inout Renderer,
+        with context: consuming _RenderingContext
+    ) {
+        guard let phase = html.phases.first else { return }
+        Content._render(html.content(phase), into: &renderer, with: context)
+    }
+
+    public static func _render<Renderer: _AsyncHTMLRendering>(
+        _ html: consuming Self,
+        into renderer: inout Renderer,
+        with context: consuming _RenderingContext
+    ) async throws {
+        guard let phase = html.phases.first else { return }
+        try await Content._render(html.content(phase), into: &renderer, with: context)
+    }
+}
+
+extension _PhaseModifierView {
+    static func _render<Renderer: _HTMLRendering>(
+        _ html: consuming Self,
+        into renderer: inout Renderer,
+        with context: consuming _RenderingContext
+    ) {
+        let animator = html.animator(PlaceholderContent.make(html.wrapped))
+        PhaseAnimator._render(animator, into: &renderer, with: context)
+    }
+
+    static func _render<Renderer: _AsyncHTMLRendering>(
+        _ html: consuming Self,
+        into renderer: inout Renderer,
+        with context: consuming _RenderingContext
+    ) async throws {
+        let animator = html.animator(PlaceholderContent.make(html.wrapped))
+        try await PhaseAnimator._render(animator, into: &renderer, with: context)
+    }
+}
+#endif
