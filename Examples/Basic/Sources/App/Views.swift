@@ -14,7 +14,7 @@ struct AppView {
 
     var body: some View {
         div {
-            for _ in 0..<bindingViewCount {
+            ForEach(0..<bindingViewCount, key: { $0 }) { _ in
                 BindingsView()
                     .transition(.fade, animation: .bouncy)
             }
