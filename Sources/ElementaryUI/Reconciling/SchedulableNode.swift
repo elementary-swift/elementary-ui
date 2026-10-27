@@ -2,10 +2,13 @@ import Reactivity
 
 public class _SchedulableNode {
     let depthInTree: Int
-    var trackingSession: TrackingSession?
+    var listener: ReactiveTracking.Listener?
 
-    init(depthInTree: Int) {
+    init(depthInTree: Int, scheduler: Scheduler, tracking dependencies: consuming ReactiveTracking.AccessedDependencies? = nil) {
         self.depthInTree = depthInTree
+        listener = ReactiveTracking.Listener(tracking: dependencies) { [self] in
+            scheduler.invalidateFunction(self)
+        }
     }
 
     var identifier: ObjectIdentifier { ObjectIdentifier(self) }
@@ -14,14 +17,5 @@ public class _SchedulableNode {
 
     func progressAnimation(tx: inout _TransactionContext) -> AnimationProgressResult {
         .completed
-    }
-
-    func startTracking(for accessList: ReactivePropertyAccessList, scheduler: Scheduler) {
-        let session = ReactiveTrackingSession()
-        session.trackWillSet(for: accessList) {
-            [self, scheduler] _ in
-            scheduler.invalidateFunction(self)
-        }
-        self.trackingSession = TrackingSession(session.cancel)
     }
 }

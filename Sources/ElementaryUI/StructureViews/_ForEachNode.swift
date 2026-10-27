@@ -20,11 +20,9 @@ where Data: Collection, Content: _KeyReadableContent {
         self.data = data
         self.contentBuilder = contentBuilder
 
-        super.init(depthInTree: context.functionDepth)
+        super.init(depthInTree: context.functionDepth, scheduler: ctx.scheduler)
 
-        let session = evaluateViewsAndKeys(scheduler: ctx.scheduler)
-
-        self.trackingSession = session
+        evaluateViewsAndKeys()
 
         self.container = MountContainer(
             mountedKeyStorage: keysScratch.span,
@@ -53,13 +51,8 @@ where Data: Collection, Content: _KeyReadableContent {
     }
 
     func runFunction(tx: inout _TransactionContext) {
-        self.trackingSession.take()?.cancel()
-
-        let session = evaluateViewsAndKeys(
-            scheduler: tx.scheduler,
-        )
-
-        self.trackingSession = session
+        guard listener != nil else { return }
+        evaluateViewsAndKeys()
 
         patchContainer(tx: &tx)
     }
@@ -82,13 +75,11 @@ where Data: Collection, Content: _KeyReadableContent {
     }
 
     public consuming func unmount(_ context: inout _CommitContext) {
-        self.trackingSession.take()?.cancel()
+        listener = nil
         container.unmount(&context)
     }
 
-    private func evaluateViewsAndKeys(
-        scheduler: Scheduler,
-    ) -> TrackingSession {
+    private func evaluateViewsAndKeys() {
 
         viewsScratch.reserveCapacity(data.underestimatedCount)
         keysScratch.reserveCapacity(data.underestimatedCount)
@@ -96,16 +87,12 @@ where Data: Collection, Content: _KeyReadableContent {
         viewsScratch.removeAll(keepingCapacity: true)
         keysScratch.removeAll()
 
-        let (_, session) = withReactiveTrackingSession {
+        listener!.track {
             for value in data {
                 let view = contentBuilder(value)
                 self.viewsScratch.append(view)
                 self.keysScratch.append(view._key)
             }
-        } onWillSet: { [scheduler, self] in
-            scheduler.invalidateFunction(self)
         }
-
-        return session
     }
 }

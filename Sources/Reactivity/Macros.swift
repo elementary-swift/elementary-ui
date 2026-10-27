@@ -33,10 +33,11 @@ public macro Reactive() = #externalMacro(module: "ReactivityMacros", type: "Reac
 /// the scope will be notified when the property changes.
 ///
 /// The macro generates custom getters/setters that register property access and changes,
-/// enabling automatic dependency tracking.
+/// enabling automatic dependency tracking. `propertyIndex`, which ``Reactive()`` assigns,
+/// identifies the property within its object and makes tracking it cheaper.
 @attached(accessor, names: named(init), named(get), named(set), named(_modify))
 @attached(peer, names: prefixed(_), prefixed($propertyID_))
-public macro ReactiveProperty() = #externalMacro(module: "ReactivityMacros", type: "ReactivePropertyMacro")
+public macro ReactiveProperty(propertyIndex: Int? = nil) = #externalMacro(module: "ReactivityMacros", type: "ReactivePropertyMacro")
 
 /// Excludes a property from reactive tracking while still allowing change notifications.
 ///

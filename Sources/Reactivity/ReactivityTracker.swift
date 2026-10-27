@@ -1,181 +1,125 @@
-import BasicContainers
+import Synchronization
 
-struct ReactivityTracker: Sendable {
-    private struct Subscription: Sendable {
-        private enum Kind {
-            case willSet(@Sendable (PropertyID) -> Void)
-            case didSet(@Sendable (PropertyID) -> Void)
-        }
+/// The listeners subscribed to the properties of one registrar.
+///
+/// A write first checks a bitmask of the property indices that may be observed,
+/// so writes to unobserved properties don't take the lock.
+final class ReactivityTracker: Sendable {
+    private let table = Mutex(_SubscriptionTable())
+    private let observedMask = Atomic<UInt64>(0)
 
-        private var kind: Kind
-        var properties: Set<PropertyID>
+    func subscribe(_ listener: _ListenerCore, to property: PropertyID) {
+        updateTable { $0.insert(listener, for: property) }
+    }
 
-        static func willSetTracking(of properties: Set<PropertyID>, closure: @Sendable @escaping (PropertyID) -> Void) -> Self {
-            Self(kind: .willSet(closure), properties: properties)
-        }
+    func unsubscribe(_ listener: _ListenerCore, from property: PropertyID) {
+        updateTable { $0.remove(for: property) { $0 === listener } }
+    }
 
-        static func didSetTracking(of properties: Set<PropertyID>, closure: @Sendable @escaping (PropertyID) -> Void) -> Self {
-            Self(kind: .didSet(closure), properties: properties)
-        }
+    func notify(_ property: PropertyID) {
+        guard observedMask.load(ordering: .relaxed) & property.observationBit != 0 else { return }
+        notifyListeners(of: property)
+    }
 
-        var willSetTracker: (@Sendable (PropertyID) -> Void)? {
-            switch kind {
-            case let .willSet(tracker):
-                return tracker
-            default:
-                return nil
-            }
-        }
-
-        var didSetTracker: (@Sendable (PropertyID) -> Void)? {
-            switch kind {
-            case let .didSet(tracker):
-                return tracker
-            default:
-                return nil
-            }
+    // Keeps the rarely taken path out of every property setter.
+    @inline(never)
+    private func notifyListeners(of property: PropertyID) {
+        guard let listeners = updateTable({ $0.listeners(for: property) }) else { return }
+        if listeners.notify() {
+            updateTable { $0.remove(for: property) { $0.isCancelled } }
         }
     }
 
-    private struct State: ~Copyable, Sendable {
-        private var usedSubscriptionIDs: UInt64 = 0
-        private var nextOverflowSubscriptionID = 64
-        private var subscriptions = UniqueArray<Subscription?>()
-        private var freeOverflowSubscriptionIDs = UniqueArray<Int>()
-        private var trackedProperties = [PropertyID: Set<Int>]()
-
-        private mutating func generateSubscriptionID() -> Int {
-            let available = (~usedSubscriptionIDs).trailingZeroBitCount
-            if available < UInt64.bitWidth {
-                usedSubscriptionIDs |= 1 << available
-                return available
-            }
-
-            if let available = freeOverflowSubscriptionIDs.popLast() {
-                return available
-            }
-
-            defer { nextOverflowSubscriptionID &+= 1 }
-            return nextOverflowSubscriptionID
+    func updateTable<Result>(_ body: (inout _SubscriptionTable) -> Result) -> Result {
+        table.withLock { table in
+            let mask = table.mask
+            let result = body(&table)
+            // Publish under the lock so that concurrent updates can't reorder the mask.
+            if table.mask != mask { observedMask.store(table.mask, ordering: .relaxed) }
+            return result
         }
-
-        mutating func registerSubscription(_ subscription: Subscription) -> Int {
-            let id = generateSubscriptionID()
-            if id < subscriptions.count {
-                subscriptions[id] = subscription
-            } else {
-                assert(id == subscriptions.count)
-                subscriptions.append(subscription)
-            }
-            for property in subscription.properties {
-                trackedProperties[property, default: []].insert(id)
-            }
-            return id
-        }
-
-        mutating func actionsFor(willSet: PropertyID) -> [@Sendable (PropertyID) -> Void] {
-            var trackers = [@Sendable (PropertyID) -> Void]()
-            if let ids = trackedProperties[willSet] {
-                for id in ids {
-                    if let tracker = subscriptions[id]?.willSetTracker {
-                        trackers.append(tracker)
-                    }
-                }
-            }
-            return trackers
-        }
-
-        mutating func actionsFor(didSet: PropertyID) -> [@Sendable (PropertyID) -> Void] {
-            var trackers = [@Sendable (PropertyID) -> Void]()
-            if let ids = trackedProperties[didSet] {
-                for id in ids {
-                    if let tracker = subscriptions[id]?.didSetTracker {
-                        trackers.append(tracker)
-                    }
-                }
-            }
-            return trackers
-        }
-
-        mutating func cancel(_ id: Int) {
-            guard subscriptions.indices.contains(id),
-                let observation = subscriptions[id].take()
-            else { return }
-
-            if id < UInt64.bitWidth {
-                usedSubscriptionIDs &= ~(1 << id)
-            } else {
-                freeOverflowSubscriptionIDs.append(id)
-            }
-            for property in observation.properties {
-                if let index = trackedProperties.index(forKey: property) {
-                    trackedProperties.values[index].remove(id)
-                    if trackedProperties.values[index].isEmpty {
-                        trackedProperties.remove(at: index)
-                    }
-                }
-            }
-        }
-
-        mutating func cancelAll() {
-            usedSubscriptionIDs = 0
-            nextOverflowSubscriptionID = UInt64.bitWidth
-            subscriptions.removeAll()
-            freeOverflowSubscriptionIDs.removeAll()
-            trackedProperties.removeAll()
-        }
-    }
-
-    private let state = MutexBox(State())
-
-    var id: ObjectIdentifier { state.id }
-
-    func registerTracking(for properties: Set<PropertyID>, willSet observer: @Sendable @escaping (PropertyID) -> Void) -> SubscriptionToken
-    {
-        let id = state.withLock { $0.registerSubscription(.willSetTracking(of: properties, closure: observer)) }
-        return SubscriptionToken(id: id, tracker: self)
-    }
-
-    func registerTracking(for properties: Set<PropertyID>, didSet observer: @Sendable @escaping (PropertyID) -> Void) -> SubscriptionToken {
-        let id = state.withLock { $0.registerSubscription(.didSetTracking(of: properties, closure: observer)) }
-        return SubscriptionToken(id: id, tracker: self)
-    }
-
-    func willSet(property: PropertyID) {
-        let actions = state.withLock { $0.actionsFor(willSet: property) }
-        for action in actions {
-            action(property)
-        }
-    }
-
-    func didSet(property: PropertyID) {
-        let actions = state.withLock { $0.actionsFor(didSet: property) }
-        for action in actions {
-            action(property)
-        }
-    }
-
-    func cancelAll() {
-        state.withLock { $0.cancelAll() }
-    }
-
-    private func cancel(_ id: Int) {
-        state.withLock { $0.cancel(id) }
     }
 }
 
-extension ReactivityTracker {
-    struct SubscriptionToken {
-        private let id: Int
-        private let tracker: ReactivityTracker
+struct _SubscriptionTable: ~Copyable {
+    private var subscribers: [PropertyID: _Subscribers] = [:]
 
-        fileprivate init(id: Int, tracker: ReactivityTracker) {
-            self.id = id
-            self.tracker = tracker
-        }
+    /// A superset of the observed property indices. Subscribing adds bits right away.
+    /// Unsubscribing only marks the mask stale; it is narrowed on the next missed write.
+    private(set) var mask: UInt64 = 0
+    private var isMaskStale = false
 
-        consuming func cancel() {
-            tracker.cancel(id)
+    fileprivate mutating func insert(_ listener: _ListenerCore, for property: PropertyID) {
+        if let index = subscribers.index(forKey: property) {
+            subscribers.values[index].insert(listener)
+        } else {
+            subscribers[property] = _Subscribers(listener)
         }
+        mask |= property.observationBit
+    }
+
+    fileprivate mutating func remove(for property: PropertyID, where shouldRemove: (_ListenerCore) -> Bool) {
+        guard let index = subscribers.index(forKey: property) else { return }
+        if !subscribers.values[index].remove(where: shouldRemove) {
+            subscribers.remove(at: index)
+        }
+        isMaskStale = true
+    }
+
+    mutating func listeners(for property: PropertyID) -> _Subscribers? {
+        if let listeners = subscribers[property] { return listeners }
+        if isMaskStale {
+            mask = subscribers.keys.reduce(0) { $0 | $1.observationBit }
+            isMaskStale = false
+        }
+        return nil
+    }
+}
+
+/// The listeners of one property. Most properties have exactly one, which needs no array.
+struct _Subscribers {
+    private var first: _ListenerCore
+    private var others: [_ListenerCore] = []
+
+    init(_ listener: _ListenerCore) {
+        first = listener
+    }
+
+    /// Adds a listener, dropping finished one-shot listeners.
+    mutating func insert(_ listener: _ListenerCore) {
+        if remove(where: { $0.isCancelled }) {
+            others.append(listener)
+        } else {
+            self = _Subscribers(listener)
+        }
+    }
+
+    /// Returns whether any listener remains.
+    mutating func remove(where shouldRemove: (_ListenerCore) -> Bool) -> Bool {
+        if !others.isEmpty { others.removeAll(where: shouldRemove) }
+        guard shouldRemove(first) else { return true }
+        guard let next = others.popLast() else { return false }
+        first = next
+        return true
+    }
+
+    var count: Int { 1 + others.count }
+
+    /// Notifies all listeners. Returns whether a one-shot listener is now done.
+    func notify() -> Bool {
+        var hasFinishedListeners = first.notify()
+        for listener in others where listener.notify() {
+            hasFinishedListeners = true
+        }
+        return hasFinishedListeners
+    }
+}
+
+extension PropertyID {
+    /// The property's bit in the observed-index mask. Any identifier other than
+    /// an index in `0..<64` uses all bits.
+    var observationBit: UInt64 {
+        guard case let .index(index) = id, (0..<64).contains(index) else { return .max }
+        return 1 << index
     }
 }

@@ -112,28 +112,23 @@ where
         Value.__applyContext(context, to: &value)
         Value.__restoreState(state, in: &value)
 
-        let (body, accessList) = withAccessTracking { value.body }
+        var result = ReactiveTracking.track { value.body }
         lastValue = consume value
+        let dependencies = result.dependencies.take()
 
         let childNode = Value.Body._makeNode(
-            body,
+            result.takeValue(),
             context: self.context,
             ctx: &ctx
         )
 
-        if accessList != nil || Function.boxesWithoutTracking {
-            storage = .box(
-                Storage.makeBox(
-                    child: childNode,
-                    value: lastValue,
-                    depthInTree: depthInTree,
-                    accessList: accessList,
-                    scheduler: ctx.scheduler
-                )
-            )
-        } else {
-            storage = .inline(childNode)
-        }
+        storage = Storage.make(
+            child: childNode,
+            value: lastValue,
+            depthInTree: depthInTree,
+            dependencies: dependencies,
+            scheduler: ctx.scheduler
+        )
     }
 
     mutating func patch(
@@ -169,22 +164,26 @@ where
 }
 
 private extension _FunctionNodeCore.Storage where ChildNode: ~Copyable {
-    static func makeBox(
+    /// Boxes the child in a schedulable function only if it has something to observe.
+    static func make(
         child: consuming ChildNode,
         value: borrowing Value,
         depthInTree: Int,
-        accessList: ReactivePropertyAccessList?,
+        dependencies: consuming ReactiveTracking.AccessedDependencies?,
         scheduler: Scheduler
-    ) -> Function {
-        let function = Function(
-            child: child,
-            wiredValue: copy value,
-            depthInTree: depthInTree
-        )
-        if let accessList {
-            function.startTracking(for: accessList, scheduler: scheduler)
+    ) -> Self {
+        guard dependencies != nil || Function.boxesWithoutTracking else {
+            return .inline(child)
         }
-        return function
+        return .box(
+            Function(
+                child: child,
+                wiredValue: copy value,
+                depthInTree: depthInTree,
+                scheduler: scheduler,
+                tracking: dependencies
+            )
+        )
     }
 
     mutating func patch(
@@ -195,24 +194,17 @@ private extension _FunctionNodeCore.Storage where ChildNode: ~Copyable {
         switch self {
         case .inline(var child):
             let valueForBody = copy value
-            let (body, accessList) = withAccessTracking {
-                valueForBody.body
-            }
-            Value.Body._patchNode(body, node: &child, tx: &tx)
+            var result = ReactiveTracking.track { valueForBody.body }
+            let dependencies = result.dependencies.take()
+            Value.Body._patchNode(result.takeValue(), node: &child, tx: &tx)
 
-            if accessList != nil || Function.boxesWithoutTracking {
-                self = .box(
-                    Self.makeBox(
-                        child: child,
-                        value: value,
-                        depthInTree: childFunctionDepth - 1,
-                        accessList: accessList,
-                        scheduler: tx.scheduler
-                    )
-                )
-            } else {
-                self = .inline(child)
-            }
+            self = Self.make(
+                child: child,
+                value: value,
+                depthInTree: childFunctionDepth - 1,
+                dependencies: dependencies,
+                scheduler: tx.scheduler
+            )
 
         case .box(let function):
             function.updateValue(value, tx: &tx)
@@ -231,7 +223,9 @@ where Self: _SchedulableNode {
     init(
         child: consuming ChildNode,
         wiredValue: View,
-        depthInTree: Int
+        depthInTree: Int,
+        scheduler: Scheduler,
+        tracking dependencies: consuming ReactiveTracking.AccessedDependencies?
     )
 
     func updateValue(
@@ -257,11 +251,13 @@ where MountedBody == Value.Body._MountedNode {
     required init(
         child: consuming MountedBody,
         wiredValue: Value,
-        depthInTree: Int
+        depthInTree: Int,
+        scheduler: Scheduler,
+        tracking dependencies: consuming ReactiveTracking.AccessedDependencies?
     ) {
         self.child = .some(child)
         self.wiredValue = wiredValue
-        super.init(depthInTree: depthInTree)
+        super.init(depthInTree: depthInTree, scheduler: scheduler, tracking: dependencies)
     }
 
     func updateValue(
@@ -281,19 +277,14 @@ where MountedBody == Value.Body._MountedNode {
         _ value: consuming Value,
         tx: inout _TransactionContext
     ) {
-        trackingSession.take()?.cancel()
-
-        let (body, accessList) = withAccessTracking { value.body }
-        if let accessList {
-            startTracking(for: accessList, scheduler: tx.scheduler)
-        }
+        guard let body = listener?.track({ value.body }) else { return }
         Value.Body._patchNode(body, node: &child!, tx: &tx)
     }
 
     func cancelAnimation() {}
 
     final func unmountChild(_ context: inout _CommitContext) {
-        trackingSession.take()?.cancel()
+        listener = nil
         cancelAnimation()
         child.take()?.unmount(&context)
     }
@@ -311,13 +302,17 @@ where MountedBody == Value.Body._MountedNode {
     required init(
         child: consuming MountedBody,
         wiredValue: Value,
-        depthInTree: Int
+        depthInTree: Int,
+        scheduler: Scheduler,
+        tracking dependencies: consuming ReactiveTracking.AccessedDependencies?
     ) {
         animatedValue = AnimatedValue(value: wiredValue.animatableValue)
         super.init(
             child: child,
             wiredValue: wiredValue,
-            depthInTree: depthInTree
+            depthInTree: depthInTree,
+            scheduler: scheduler,
+            tracking: dependencies
         )
     }
 
