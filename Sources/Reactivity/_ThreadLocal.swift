@@ -7,9 +7,12 @@ import Darwin
 #error("Unsupported platform")
 #endif
 
+@usableFromInline
 enum _ThreadLocal {
+    @usableFromInline
     static let key: pthread_key_t = __makeKey()
 
+    @inlinable
     static var value: UnsafeMutableRawPointer? {
         get { pthread_getspecific(key) }
         set { pthread_setspecific(key, newValue) }
@@ -23,7 +26,9 @@ enum _ThreadLocal {
 }
 #else
 // single-threaded runtime
+@usableFromInline
 enum _ThreadLocal {
+    @usableFromInline
     nonisolated(unsafe) static var value: UnsafeMutableRawPointer?
 }
 #endif

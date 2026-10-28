@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "SwiftBenchmarks",
-    platforms: [.macOS(.v15)],
+    platforms: [.macOS(.v26)],
     dependencies: [
         .package(url: "https://github.com/ordo-one/package-benchmark", from: "1.29.0"),
         .package(name: "elementary-ui", path: "../.."),

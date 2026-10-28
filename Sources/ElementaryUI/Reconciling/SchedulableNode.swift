@@ -40,11 +40,12 @@ public class _SchedulableNode {
         if listener != nil {
             return listener!.track(body)
         }
-        var result = ReactiveTracking.track(body)
-        if let dependencies = result.dependencies.take() {
+        var dependencies: ReactiveTracking.AccessedDependencies?
+        let value = ReactiveTracking.track(into: &dependencies, body)
+        if let dependencies = dependencies.take() {
             startTracking(dependencies, scheduler: scheduler)
         }
-        return result.takeValue()
+        return value
     }
 
     final func stopTracking() {

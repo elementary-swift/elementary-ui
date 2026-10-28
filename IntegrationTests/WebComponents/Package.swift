@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "WebComponentsIntegration",
-    platforms: [.macOS(.v15)],
+    platforms: [.macOS(.v26)],
     dependencies: [
         .package(name: "elementary-ui", path: "../.."),
         .package(url: "https://github.com/swiftwasm/JavaScriptKit", from: "0.61.0"),

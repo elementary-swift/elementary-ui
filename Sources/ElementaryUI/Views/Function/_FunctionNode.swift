@@ -112,12 +112,12 @@ where
         Value.__applyContext(context, to: &value)
         Value.__restoreState(state, in: &value)
 
-        var result = ReactiveTracking.track { value.body }
-        let dependencies = result.dependencies.take()
+        var dependencies: ReactiveTracking.AccessedDependencies?
+        let body = ReactiveTracking.track(into: &dependencies) { value.body }
         lastValue = consume value
 
         let childNode = Value.Body._makeNode(
-            result.takeValue(),
+            body,
             context: self.context,
             ctx: &ctx
         )
@@ -149,7 +149,7 @@ where
         Value.__restoreState(state, in: &newValue)
 
         storage.patch(
-            newValue,
+            &newValue,
             childFunctionDepth: context.functionDepth,
             tx: &tx
         )
@@ -188,17 +188,17 @@ private extension _FunctionNodeCore.Storage where ChildNode: ~Copyable {
         return function
     }
 
+    // `value` is inout so the tracking closure can read it without a copy.
     mutating func patch(
-        _ value: borrowing Value,
+        _ value: inout Value,
         childFunctionDepth: Int,
         tx: inout _TransactionContext
     ) {
         switch self {
         case .inline(var child):
-            let valueForBody = copy value
-            var result = ReactiveTracking.track { valueForBody.body }
-            let dependencies = result.dependencies.take()
-            Value.Body._patchNode(result.takeValue(), node: &child, tx: &tx)
+            var dependencies: ReactiveTracking.AccessedDependencies?
+            let body = ReactiveTracking.track(into: &dependencies) { value.body }
+            Value.Body._patchNode(body, node: &child, tx: &tx)
 
             if dependencies != nil || Function.boxesWithoutTracking {
                 self = .box(
@@ -273,8 +273,8 @@ where MountedBody == Value.Body._MountedNode {
     }
 
     override func runUpdate(tx: inout _TransactionContext) {
-        let value = wiredValue
-        render(value, tx: &tx)
+        let body = trackDependencies(scheduler: tx.scheduler) { wiredValue.body }
+        Value.Body._patchNode(body, node: &child!, tx: &tx)
     }
 
     final func render(
