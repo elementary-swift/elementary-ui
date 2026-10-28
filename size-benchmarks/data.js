@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793129115012,
+  "lastUpdate": 1793179253144,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -13547,6 +13547,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 148.93,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "542efcdc365c674e60008949fb9fdd974e06f2e6",
+          "message": "persistent reactive listeners (#146)\n\n* persistent reactive listeners\n\n* code clarity cleanups\n\n* explicit tracking lifecycle on schedulable nodes, drop embedded smoke test\n\n* listeners only for nodes with dependencies\n\n* trim comments",
+          "timestamp": "2026-10-28T10:10:14+01:00",
+          "tree_id": "91eaefbbf1d4a7a985012c3ada9167c51922d12f",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/542efcdc365c674e60008949fb9fdd974e06f2e6"
+        },
+        "date": 1793179252184,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 170.46,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 96.89,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 135.09,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 149.97,
             "unit": "kB"
           }
         ]
