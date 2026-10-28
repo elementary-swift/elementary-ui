@@ -113,8 +113,8 @@ where
         Value.__restoreState(state, in: &value)
 
         var result = ReactiveTracking.track { value.body }
-        lastValue = consume value
         let dependencies = result.dependencies.take()
+        lastValue = consume value
 
         let childNode = Value.Body._makeNode(
             result.takeValue(),
@@ -122,13 +122,19 @@ where
             ctx: &ctx
         )
 
-        storage = Storage.make(
-            child: childNode,
-            value: lastValue,
-            depthInTree: depthInTree,
-            dependencies: dependencies,
-            scheduler: ctx.scheduler
-        )
+        if dependencies != nil || Function.boxesWithoutTracking {
+            storage = .box(
+                Storage.makeBox(
+                    child: childNode,
+                    value: lastValue,
+                    depthInTree: depthInTree,
+                    dependencies: dependencies,
+                    scheduler: ctx.scheduler
+                )
+            )
+        } else {
+            storage = .inline(childNode)
+        }
     }
 
     mutating func patch(
@@ -164,26 +170,20 @@ where
 }
 
 private extension _FunctionNodeCore.Storage where ChildNode: ~Copyable {
-    /// Boxes the child in a schedulable function only if it has something to observe.
-    static func make(
+    static func makeBox(
         child: consuming ChildNode,
         value: borrowing Value,
         depthInTree: Int,
         dependencies: consuming ReactiveTracking.AccessedDependencies?,
         scheduler: Scheduler
-    ) -> Self {
-        guard dependencies != nil || Function.boxesWithoutTracking else {
-            return .inline(child)
-        }
-        return .box(
-            Function(
-                child: child,
-                wiredValue: copy value,
-                depthInTree: depthInTree,
-                scheduler: scheduler,
-                tracking: dependencies
-            )
+    ) -> Function {
+        let function = Function(
+            child: child,
+            wiredValue: copy value,
+            depthInTree: depthInTree
         )
+        function.startTracking(dependencies, scheduler: scheduler)
+        return function
     }
 
     mutating func patch(
@@ -198,13 +198,19 @@ private extension _FunctionNodeCore.Storage where ChildNode: ~Copyable {
             let dependencies = result.dependencies.take()
             Value.Body._patchNode(result.takeValue(), node: &child, tx: &tx)
 
-            self = Self.make(
-                child: child,
-                value: value,
-                depthInTree: childFunctionDepth - 1,
-                dependencies: dependencies,
-                scheduler: tx.scheduler
-            )
+            if dependencies != nil || Function.boxesWithoutTracking {
+                self = .box(
+                    Self.makeBox(
+                        child: child,
+                        value: value,
+                        depthInTree: childFunctionDepth - 1,
+                        dependencies: dependencies,
+                        scheduler: tx.scheduler
+                    )
+                )
+            } else {
+                self = .inline(child)
+            }
 
         case .box(let function):
             function.updateValue(value, tx: &tx)
@@ -223,9 +229,7 @@ where Self: _SchedulableNode {
     init(
         child: consuming ChildNode,
         wiredValue: View,
-        depthInTree: Int,
-        scheduler: Scheduler,
-        tracking dependencies: consuming ReactiveTracking.AccessedDependencies?
+        depthInTree: Int
     )
 
     func updateValue(
@@ -251,13 +255,11 @@ where MountedBody == Value.Body._MountedNode {
     required init(
         child: consuming MountedBody,
         wiredValue: Value,
-        depthInTree: Int,
-        scheduler: Scheduler,
-        tracking dependencies: consuming ReactiveTracking.AccessedDependencies?
+        depthInTree: Int
     ) {
         self.child = .some(child)
         self.wiredValue = wiredValue
-        super.init(depthInTree: depthInTree, scheduler: scheduler, tracking: dependencies)
+        super.init(depthInTree: depthInTree)
     }
 
     func updateValue(
@@ -277,14 +279,15 @@ where MountedBody == Value.Body._MountedNode {
         _ value: consuming Value,
         tx: inout _TransactionContext
     ) {
-        guard let body = listener?.track({ value.body }) else { return }
+        guard isTracking else { return }
+        let body = trackDependencies { value.body }
         Value.Body._patchNode(body, node: &child!, tx: &tx)
     }
 
     func cancelAnimation() {}
 
     final func unmountChild(_ context: inout _CommitContext) {
-        listener = nil
+        stopTracking()
         cancelAnimation()
         child.take()?.unmount(&context)
     }
@@ -302,17 +305,13 @@ where MountedBody == Value.Body._MountedNode {
     required init(
         child: consuming MountedBody,
         wiredValue: Value,
-        depthInTree: Int,
-        scheduler: Scheduler,
-        tracking dependencies: consuming ReactiveTracking.AccessedDependencies?
+        depthInTree: Int
     ) {
         animatedValue = AnimatedValue(value: wiredValue.animatableValue)
         super.init(
             child: child,
             wiredValue: wiredValue,
-            depthInTree: depthInTree,
-            scheduler: scheduler,
-            tracking: dependencies
+            depthInTree: depthInTree
         )
     }
 
