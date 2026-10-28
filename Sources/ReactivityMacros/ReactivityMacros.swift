@@ -250,9 +250,15 @@ extension ReactiveMacro: MemberAttributeMacro {
             return []
         }
 
-        return [
-            AttributeSyntax(attributeName: IdentifierTypeSyntax(name: .identifier(ReactiveMacro.trackedMacroName)))
-        ]
+        // Direct properties are numbered in declaration order; conditional ones keep their name.
+        let properties = declaration.memberBlock.members.compactMap { $0.decl.as(VariableDeclSyntax.self) }
+            .filter { $0.isValidForObservation && !$0.hasMacroApplication(ReactiveMacro.ignoredMacroName) }
+        guard let index = properties.firstIndex(where: { $0.identifier?.text == property.identifier?.text }) else {
+            return [
+                AttributeSyntax(attributeName: IdentifierTypeSyntax(name: .identifier(ReactiveMacro.trackedMacroName)))
+            ]
+        }
+        return [AttributeSyntax("@ReactiveProperty(propertyIndex: \(raw: index))")]
     }
 }
 
@@ -358,14 +364,16 @@ extension ReactivePropertyMacro: PeerMacro {
             return []
         }
 
-        if property.hasMacroApplication(ReactiveMacro.ignoredMacroName) || property.hasMacroApplication(ReactiveMacro.trackedMacroName) {
+        if property.hasMacroApplication(ReactiveMacro.ignoredMacroName) {
             return []
         }
 
         let storage = DeclSyntax(property.privatePrefixed("_", addingAttribute: ReactiveMacro.ignoredAttribute))
+        // An index from `@Reactive` is the identity: cheaper to hash, and usable for the observed mask.
+        let identity = node.propertyIndex.map { "\($0)" } ?? "\"\(property.identifier!.trimmed)\""
         let propertyID = DeclSyntax(
             """
-            private static let $propertyID_\(property.identifier!.trimmed) = PropertyID("\(property.identifier!.trimmed)")
+            private static let $propertyID_\(property.identifier!.trimmed) = PropertyID(\(raw: identity))
             """
         )
         return [storage, propertyID]
@@ -382,5 +390,13 @@ public struct ReactiveIgnoredMacro: AccessorMacro {
         in context: Context
     ) throws -> [AccessorDeclSyntax] {
         []
+    }
+}
+
+private extension AttributeSyntax {
+    /// The `propertyIndex` that `@Reactive` assigns to `@ReactiveProperty`, if any.
+    var propertyIndex: Int? {
+        arguments?.as(LabeledExprListSyntax.self)?.first { $0.label?.text == "propertyIndex" }?.expression
+            .as(IntegerLiteralExprSyntax.self).flatMap { Int($0.literal.text) }
     }
 }

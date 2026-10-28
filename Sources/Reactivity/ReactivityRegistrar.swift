@@ -6,24 +6,8 @@
 ///
 /// The ``Reactive()`` macro automatically creates and manages a `ReactivityRegistrar` for you.
 /// You typically don't need to use this type directly unless you're building custom reactive primitives.
-///
-/// - Note: The registrar automatically cleans up all tracking subscriptions when deallocated.
 public struct ReactivityRegistrar: Sendable {
-    private final class _Lifetime: Sendable {
-        let tracker = ReactivityTracker()
-
-        init() {}
-
-        deinit {
-            tracker.cancelAll()
-        }
-    }
-
-    private var lifetime = _Lifetime()
-
-    var tracker: ReactivityTracker {
-        lifetime.tracker
-    }
+    let tracker = ReactivityTracker()
 
     /// Creates a new reactivity registrar.
     public init() {}
@@ -36,14 +20,14 @@ public struct ReactivityRegistrar: Sendable {
     ///
     /// - Parameter property: The identifier of the property being accessed.
     public func access(_ property: PropertyID) {
-        if let trackingPtr = _ThreadLocal.value?
-            .assumingMemoryBound(to: ReactivePropertyAccessList?.self)
-        {
-            if trackingPtr.pointee == nil {
-                trackingPtr.pointee = ReactivePropertyAccessList()
-            }
-            trackingPtr.pointee?.add(property, tracker: tracker)
-        }
+        guard ReactiveTracking.AccessedDependencies.isTracking else { return }
+        record(property)
+    }
+
+    // Keeps the rarely taken path out of every property getter.
+    @inline(never)
+    private func record(_ property: PropertyID) {
+        ReactiveTracking.AccessedDependencies.record(_Access(tracker: tracker, property: property))
     }
 
     /// Notifies observers that a property is about to change.
@@ -53,7 +37,7 @@ public struct ReactivityRegistrar: Sendable {
     ///
     /// - Parameter property: The identifier of the property about to change.
     public func willSet(_ property: PropertyID) {
-        tracker.willSet(property: property)
+        tracker.notify(property)
     }
 
     /// Notifies observers that a property has changed.
@@ -62,9 +46,8 @@ public struct ReactivityRegistrar: Sendable {
     /// observers to react to the new value.
     ///
     /// - Parameter property: The identifier of the property that changed.
-    public func didSet(_ property: PropertyID) {
-        tracker.didSet(property: property)
-    }
+    /// - Note: Observers are notified in ``willSet(_:)``; this call does nothing.
+    public func didSet(_ property: PropertyID) {}
 }
 
 extension ReactivityRegistrar: Hashable {

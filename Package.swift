@@ -153,6 +153,15 @@ let package = Package(
             ]
         ),
         .testTarget(
+            name: "ReactivityMacrosTests",
+            dependencies: [
+                "ReactivityMacros",
+                .product(name: "SwiftSyntax", package: "swift-syntax"),
+                .product(name: "SwiftSyntaxMacroExpansion", package: "swift-syntax"),
+                .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
+            ]
+        ),
+        .testTarget(
             name: "ReactivityTests",
             dependencies: ["Reactivity", "_UTF8Internals"]
         ),

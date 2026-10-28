@@ -112,22 +112,23 @@ where
         Value.__applyContext(context, to: &value)
         Value.__restoreState(state, in: &value)
 
-        let (body, accessList) = withAccessTracking { value.body }
+        var result = ReactiveTracking.track { value.body }
+        let dependencies = result.dependencies.take()
         lastValue = consume value
 
         let childNode = Value.Body._makeNode(
-            body,
+            result.takeValue(),
             context: self.context,
             ctx: &ctx
         )
 
-        if accessList != nil || Function.boxesWithoutTracking {
+        if dependencies != nil || Function.boxesWithoutTracking {
             storage = .box(
                 Storage.makeBox(
                     child: childNode,
                     value: lastValue,
                     depthInTree: depthInTree,
-                    accessList: accessList,
+                    dependencies: dependencies,
                     scheduler: ctx.scheduler
                 )
             )
@@ -173,7 +174,7 @@ private extension _FunctionNodeCore.Storage where ChildNode: ~Copyable {
         child: consuming ChildNode,
         value: borrowing Value,
         depthInTree: Int,
-        accessList: ReactivePropertyAccessList?,
+        dependencies: consuming ReactiveTracking.AccessedDependencies?,
         scheduler: Scheduler
     ) -> Function {
         let function = Function(
@@ -181,8 +182,8 @@ private extension _FunctionNodeCore.Storage where ChildNode: ~Copyable {
             wiredValue: copy value,
             depthInTree: depthInTree
         )
-        if let accessList {
-            function.startTracking(for: accessList, scheduler: scheduler)
+        if let dependencies {
+            function.startTracking(dependencies, scheduler: scheduler)
         }
         return function
     }
@@ -195,18 +196,17 @@ private extension _FunctionNodeCore.Storage where ChildNode: ~Copyable {
         switch self {
         case .inline(var child):
             let valueForBody = copy value
-            let (body, accessList) = withAccessTracking {
-                valueForBody.body
-            }
-            Value.Body._patchNode(body, node: &child, tx: &tx)
+            var result = ReactiveTracking.track { valueForBody.body }
+            let dependencies = result.dependencies.take()
+            Value.Body._patchNode(result.takeValue(), node: &child, tx: &tx)
 
-            if accessList != nil || Function.boxesWithoutTracking {
+            if dependencies != nil || Function.boxesWithoutTracking {
                 self = .box(
                     Self.makeBox(
                         child: child,
                         value: value,
                         depthInTree: childFunctionDepth - 1,
-                        accessList: accessList,
+                        dependencies: dependencies,
                         scheduler: tx.scheduler
                     )
                 )
@@ -281,19 +281,14 @@ where MountedBody == Value.Body._MountedNode {
         _ value: consuming Value,
         tx: inout _TransactionContext
     ) {
-        trackingSession.take()?.cancel()
-
-        let (body, accessList) = withAccessTracking { value.body }
-        if let accessList {
-            startTracking(for: accessList, scheduler: tx.scheduler)
-        }
+        let body = trackDependencies(scheduler: tx.scheduler) { value.body }
         Value.Body._patchNode(body, node: &child!, tx: &tx)
     }
 
     func cancelAnimation() {}
 
     final func unmountChild(_ context: inout _CommitContext) {
-        trackingSession.take()?.cancel()
+        stopTracking()
         cancelAnimation()
         child.take()?.unmount(&context)
     }

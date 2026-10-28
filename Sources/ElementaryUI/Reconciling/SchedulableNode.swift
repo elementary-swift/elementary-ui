@@ -2,7 +2,8 @@ import Reactivity
 
 public class _SchedulableNode {
     let depthInTree: Int
-    var trackingSession: TrackingSession?
+    /// Created once the node has read anything reactive.
+    private var listener: ReactiveTracking.Listener?
 
     init(depthInTree: Int) {
         self.depthInTree = depthInTree
@@ -16,12 +17,26 @@ public class _SchedulableNode {
         .completed
     }
 
-    func startTracking(for accessList: ReactivePropertyAccessList, scheduler: Scheduler) {
-        let session = ReactiveTrackingSession()
-        session.trackWillSet(for: accessList) {
-            [self, scheduler] _ in
+    /// Schedules the node whenever `dependencies` change.
+    final func startTracking(_ dependencies: consuming ReactiveTracking.AccessedDependencies, scheduler: Scheduler) {
+        listener = ReactiveTracking.Listener(tracking: dependencies) { [self, scheduler] in
             scheduler.invalidateFunction(self)
         }
-        self.trackingSession = TrackingSession(session.cancel)
+    }
+
+    /// Runs `body`, and schedules the node whenever anything it read changes.
+    final func trackDependencies<T>(scheduler: Scheduler, of body: () -> T) -> T {
+        if listener != nil {
+            return listener!.track(body)
+        }
+        var result = ReactiveTracking.track(body)
+        if let dependencies = result.dependencies.take() {
+            startTracking(dependencies, scheduler: scheduler)
+        }
+        return result.takeValue()
+    }
+
+    final func stopTracking() {
+        listener = nil
     }
 }

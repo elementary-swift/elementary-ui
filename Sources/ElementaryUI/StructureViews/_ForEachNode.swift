@@ -22,9 +22,7 @@ where Data: Collection, Content: _KeyReadableContent {
 
         super.init(depthInTree: context.functionDepth)
 
-        let session = evaluateViewsAndKeys(scheduler: ctx.scheduler)
-
-        self.trackingSession = session
+        evaluateViewsAndKeys(scheduler: ctx.scheduler)
 
         self.container = MountContainer(
             mountedKeyStorage: keysScratch.span,
@@ -53,13 +51,7 @@ where Data: Collection, Content: _KeyReadableContent {
     }
 
     func runFunction(tx: inout _TransactionContext) {
-        self.trackingSession.take()?.cancel()
-
-        let session = evaluateViewsAndKeys(
-            scheduler: tx.scheduler,
-        )
-
-        self.trackingSession = session
+        evaluateViewsAndKeys(scheduler: tx.scheduler)
 
         patchContainer(tx: &tx)
     }
@@ -82,13 +74,11 @@ where Data: Collection, Content: _KeyReadableContent {
     }
 
     public consuming func unmount(_ context: inout _CommitContext) {
-        self.trackingSession.take()?.cancel()
+        stopTracking()
         container.unmount(&context)
     }
 
-    private func evaluateViewsAndKeys(
-        scheduler: Scheduler,
-    ) -> TrackingSession {
+    private func evaluateViewsAndKeys(scheduler: Scheduler) {
 
         viewsScratch.reserveCapacity(data.underestimatedCount)
         keysScratch.reserveCapacity(data.underestimatedCount)
@@ -96,16 +86,12 @@ where Data: Collection, Content: _KeyReadableContent {
         viewsScratch.removeAll(keepingCapacity: true)
         keysScratch.removeAll()
 
-        let (_, session) = withReactiveTrackingSession {
+        trackDependencies(scheduler: scheduler) {
             for value in data {
                 let view = contentBuilder(value)
                 self.viewsScratch.append(view)
                 self.keysScratch.append(view._key)
             }
-        } onWillSet: { [scheduler, self] in
-            scheduler.invalidateFunction(self)
         }
-
-        return session
     }
 }
