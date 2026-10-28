@@ -228,7 +228,7 @@ struct ListenerTests {
             }
             registrar.willSet(PropertyID(0))  // fires; the subscription to 1 stays until replaced
         }
-        let remaining = registrar.tracker.updateTable { $0.listeners(for: PropertyID(1))?.count }
+        let remaining = registrar.tracker.withTable { $0.listeners(for: PropertyID(1))?.count }
         #expect(remaining == 1)
     }
 }

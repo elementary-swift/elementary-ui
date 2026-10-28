@@ -9,7 +9,7 @@ import Testing
         let changes = Atomic(0)
         var listener = ReactiveTracking.Listener { changes.wrappingAdd(1, ordering: .relaxed) }
         _ = listener.track { model.second }
-        #expect(model.tracker.updateTable { $0.mask } == 1 << 1)
+        #expect(model.tracker.withTable { $0.mask } == 1 << 1)
         model.first += 1  // index 0: skipped without taking the lock
         model.second += 1
         #expect(changes.load(ordering: .relaxed) == 1)
@@ -21,7 +21,7 @@ import Testing
         listener.track { registrar.access(PropertyID(1)) }
         listener.track { registrar.access(PropertyID(2)) }
         registrar.willSet(PropertyID(1))  // a miss narrows the stale mask
-        #expect(registrar.tracker.updateTable { $0.mask } == 1 << 2)
+        #expect(registrar.tracker.withTable { $0.mask } == 1 << 2)
     }
 
     @Test func otherIdentifiersAlwaysTakeTheSlowPath() {
@@ -30,7 +30,7 @@ import Testing
             let changes = Atomic(0)
             var listener = ReactiveTracking.Listener { changes.wrappingAdd(1, ordering: .relaxed) }
             listener.track { registrar.access(property) }
-            #expect(registrar.tracker.updateTable { $0.mask } == .max)
+            #expect(registrar.tracker.withTable { $0.mask } == .max)
             registrar.willSet(PropertyID(3))
             registrar.willSet(property)
             #expect(changes.load(ordering: .relaxed) == 1)

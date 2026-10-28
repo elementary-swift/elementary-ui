@@ -20,13 +20,20 @@ final class _ListenerCore: Sendable {
 
     /// Calls the handler unless cancelled. Returns whether a one-shot listener is now done.
     func notify() -> Bool {
-        let admitted = state.withLock { state -> _ListenerState? in
-            defer { if state == .oneShot { state = .cancelled } }
-            return state == .cancelled ? nil : state
+        let admittedState = state.withLock { state -> _ListenerState? in
+            switch state {
+            case .cancelled:
+                return nil
+            case .persistent:
+                return .persistent
+            case .oneShot:
+                state = .cancelled
+                return .oneShot
+            }
         }
-        guard let admitted else { return false }
+        guard let admittedState else { return false }
         onChange()
-        return admitted == .oneShot
+        return admittedState == .oneShot
     }
 }
 

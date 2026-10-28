@@ -57,6 +57,7 @@ package enum ReactiveTracking {
         }
 
         deinit {
+            // Cancel first: a notification in progress may still hold a snapshot with `core`.
             core.cancel()
             dependencies.unsubscribe(core)
         }

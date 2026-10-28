@@ -9,11 +9,11 @@ final class ReactivityTracker: Sendable {
     private let observedMask = Atomic<UInt64>(0)
 
     func subscribe(_ listener: _ListenerCore, to property: PropertyID) {
-        updateTable { $0.insert(listener, for: property) }
+        withTable { $0.insert(listener, for: property) }
     }
 
     func unsubscribe(_ listener: _ListenerCore, from property: PropertyID) {
-        updateTable { $0.remove(for: property) { $0 === listener } }
+        withTable { $0.removeAll(for: property) { $0 === listener } }
     }
 
     func notify(_ property: PropertyID) {
@@ -24,13 +24,16 @@ final class ReactivityTracker: Sendable {
     // Keeps the rarely taken path out of every property setter.
     @inline(never)
     private func notifyListeners(of property: PropertyID) {
-        guard let listeners = updateTable({ $0.listeners(for: property) }) else { return }
-        if listeners.notify() {
-            updateTable { $0.remove(for: property) { $0.isCancelled } }
+        // Listeners run outside the lock, from a snapshot; a listener dropped meanwhile is skipped.
+        guard let listeners = withTable({ $0.listeners(for: property) }) else { return }
+        let hasFinishedOneShots = listeners.notify()
+        if hasFinishedOneShots {
+            withTable { $0.removeAll(for: property) { $0.isCancelled } }
         }
     }
 
-    func updateTable<Result>(_ body: (inout _SubscriptionTable) -> Result) -> Result {
+    /// Accesses the table under the lock, and publishes its mask if it changed.
+    func withTable<Result>(_ body: (inout _SubscriptionTable) -> Result) -> Result {
         table.withLock { table in
             let mask = table.mask
             let result = body(&table)
@@ -58,14 +61,16 @@ struct _SubscriptionTable: ~Copyable {
         mask |= property.observationBit
     }
 
-    fileprivate mutating func remove(for property: PropertyID, where shouldRemove: (_ListenerCore) -> Bool) {
+    fileprivate mutating func removeAll(for property: PropertyID, where shouldRemove: (_ListenerCore) -> Bool) {
         guard let index = subscribers.index(forKey: property) else { return }
-        if !subscribers.values[index].remove(where: shouldRemove) {
+        if subscribers.values[index].removeAll(where: shouldRemove) {
             subscribers.remove(at: index)
         }
         isMaskStale = true
     }
 
+    /// The listeners of `property`. When it has none and the mask is stale, this also
+    /// narrows the mask, so that later writes to unobserved properties skip the lock again.
     mutating func listeners(for property: PropertyID) -> _Subscribers? {
         if let listeners = subscribers[property] { return listeners }
         if isMaskStale {
@@ -85,22 +90,22 @@ struct _Subscribers {
         first = listener
     }
 
-    /// Adds a listener, dropping finished one-shot listeners.
+    /// Adds a listener, dropping cancelled ones (such as finished one-shot listeners).
     mutating func insert(_ listener: _ListenerCore) {
-        if remove(where: { $0.isCancelled }) {
-            others.append(listener)
-        } else {
+        if removeAll(where: { $0.isCancelled }) {
             self = _Subscribers(listener)
+        } else {
+            others.append(listener)
         }
     }
 
-    /// Returns whether any listener remains.
-    mutating func remove(where shouldRemove: (_ListenerCore) -> Bool) -> Bool {
+    /// Returns `true` if no listener remains; the value must then be discarded.
+    mutating func removeAll(where shouldRemove: (_ListenerCore) -> Bool) -> Bool {
         if !others.isEmpty { others.removeAll(where: shouldRemove) }
-        guard shouldRemove(first) else { return true }
-        guard let next = others.popLast() else { return false }
+        guard shouldRemove(first) else { return false }
+        guard let next = others.popLast() else { return true }
         first = next
-        return true
+        return false
     }
 
     var count: Int { 1 + others.count }
