@@ -182,7 +182,9 @@ private extension _FunctionNodeCore.Storage where ChildNode: ~Copyable {
             wiredValue: copy value,
             depthInTree: depthInTree
         )
-        function.startTracking(dependencies, scheduler: scheduler)
+        if let dependencies {
+            function.startTracking(dependencies, scheduler: scheduler)
+        }
         return function
     }
 
@@ -279,8 +281,7 @@ where MountedBody == Value.Body._MountedNode {
         _ value: consuming Value,
         tx: inout _TransactionContext
     ) {
-        guard isTracking else { return }
-        let body = trackDependencies { value.body }
+        let body = trackDependencies(scheduler: tx.scheduler) { value.body }
         Value.Body._patchNode(body, node: &child!, tx: &tx)
     }
 

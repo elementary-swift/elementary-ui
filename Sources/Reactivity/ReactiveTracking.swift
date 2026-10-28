@@ -40,13 +40,10 @@ package enum ReactiveTracking {
         private let core: _ListenerCore
         private var dependencies: AccessedDependencies
 
-        /// Starts observing dependencies collected by ``ReactiveTracking/track(_:)``, if any.
-        package init(
-            tracking dependencies: consuming AccessedDependencies? = nil,
-            onChange: @escaping @Sendable () -> Void
-        ) {
+        /// Starts observing dependencies collected by ``ReactiveTracking/track(_:)``.
+        package init(tracking dependencies: consuming AccessedDependencies, onChange: @escaping @Sendable () -> Void) {
             core = _ListenerCore(onChange: onChange)
-            self.dependencies = dependencies ?? AccessedDependencies()
+            self.dependencies = dependencies
             self.dependencies.observe(by: core)
         }
 

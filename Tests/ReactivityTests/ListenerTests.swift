@@ -138,7 +138,7 @@ struct ListenerTests {
             runs += 1
             return model.one
         }
-        var listener: ReactiveTracking.Listener? = ReactiveTracking.Listener(tracking: result.dependencies.take()) {
+        var listener: ReactiveTracking.Listener? = ReactiveTracking.Listener(tracking: result.dependencies.take()!) {
             changes.wrappingAdd(1, ordering: .relaxed)
         }
         #expect(runs == 1)

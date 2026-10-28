@@ -96,6 +96,23 @@ struct PersistentRenderTrackingTests {
         #expect(probe.renders == 3)
         app.unmount()
     }
+
+    @Test func childInvalidatedTogetherWithTheParentThatRemovesItIsNotRunAfterUnmount() {
+        let model = ListenerRenderModel()
+        let probe = ListenerRenderProbe()
+        let dom = TestDOM()
+        let app = dom.mount { ListenerRenderParentView(model: model, probe: probe) }
+        dom.flushMicrotasks()
+        #expect(probe.renders == 1)
+        model.first = 1  // queues the child
+        model.useFirst = false  // queues the parent, which removes the child
+        dom.flushMicrotasks()
+        model.first = 2
+        dom.flushMicrotasks()
+        #expect(!dom.hasWorkScheduled)
+        #expect(probe.renders <= 2)
+        app.unmount()
+    }
 }
 
 @Reactive private final class ListenerRenderModel {
@@ -110,6 +127,23 @@ private final class ListenerRenderProbe {
     init(lifetime: ListenerRenderLifetime? = nil) { self.lifetime = lifetime }
     func recordRender() { renders += 1 }
     deinit { lifetime?.deaths += 1 }
+}
+@View private struct ListenerRenderParentView {
+    let model: ListenerRenderModel
+    let probe: ListenerRenderProbe
+    var body: some View {
+        if model.useFirst {
+            ListenerRenderChildView(model: model, probe: probe)
+        }
+    }
+}
+@View private struct ListenerRenderChildView {
+    let model: ListenerRenderModel
+    let probe: ListenerRenderProbe
+    var body: some View {
+        let _ = probe.recordRender()
+        p { "\(model.first)" }
+    }
 }
 @View private struct ListenerRenderView {
     let model: ListenerRenderModel

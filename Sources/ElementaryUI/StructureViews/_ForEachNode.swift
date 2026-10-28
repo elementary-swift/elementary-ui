@@ -22,8 +22,7 @@ where Data: Collection, Content: _KeyReadableContent {
 
         super.init(depthInTree: context.functionDepth)
 
-        startTracking(scheduler: ctx.scheduler)
-        evaluateViewsAndKeys()
+        evaluateViewsAndKeys(scheduler: ctx.scheduler)
 
         self.container = MountContainer(
             mountedKeyStorage: keysScratch.span,
@@ -52,8 +51,7 @@ where Data: Collection, Content: _KeyReadableContent {
     }
 
     func runFunction(tx: inout _TransactionContext) {
-        guard isTracking else { return }
-        evaluateViewsAndKeys()
+        evaluateViewsAndKeys(scheduler: tx.scheduler)
 
         patchContainer(tx: &tx)
     }
@@ -80,7 +78,7 @@ where Data: Collection, Content: _KeyReadableContent {
         container.unmount(&context)
     }
 
-    private func evaluateViewsAndKeys() {
+    private func evaluateViewsAndKeys(scheduler: Scheduler) {
 
         viewsScratch.reserveCapacity(data.underestimatedCount)
         keysScratch.reserveCapacity(data.underestimatedCount)
@@ -88,7 +86,7 @@ where Data: Collection, Content: _KeyReadableContent {
         viewsScratch.removeAll(keepingCapacity: true)
         keysScratch.removeAll()
 
-        trackDependencies {
+        trackDependencies(scheduler: scheduler) {
             for value in data {
                 let view = contentBuilder(value)
                 self.viewsScratch.append(view)
