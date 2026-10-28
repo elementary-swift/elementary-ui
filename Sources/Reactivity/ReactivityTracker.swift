@@ -32,7 +32,6 @@ final class ReactivityTracker: Sendable {
         }
     }
 
-    /// Accesses the table under the lock, and publishes its mask if it changed.
     func withTable<Result>(_ body: (inout _SubscriptionTable) -> Result) -> Result {
         table.withLock { table in
             let mask = table.mask
@@ -47,8 +46,7 @@ final class ReactivityTracker: Sendable {
 struct _SubscriptionTable: ~Copyable {
     private var subscribers: [PropertyID: _Subscribers] = [:]
 
-    /// A superset of the observed property indices. Subscribing adds bits right away.
-    /// Unsubscribing only marks the mask stale; it is narrowed on the next missed write.
+    /// A superset of the observed property indices. Unsubscribing only marks it stale.
     private(set) var mask: UInt64 = 0
     private var isMaskStale = false
 
@@ -69,8 +67,7 @@ struct _SubscriptionTable: ~Copyable {
         isMaskStale = true
     }
 
-    /// The listeners of `property`. When it has none and the mask is stale, this also
-    /// narrows the mask, so that later writes to unobserved properties skip the lock again.
+    /// On a miss, also narrows a stale mask.
     mutating func listeners(for property: PropertyID) -> _Subscribers? {
         if let listeners = subscribers[property] { return listeners }
         if isMaskStale {
@@ -81,7 +78,7 @@ struct _SubscriptionTable: ~Copyable {
     }
 }
 
-/// The listeners of one property. Most properties have exactly one, which needs no array.
+/// The listeners of one property. Most have exactly one, which needs no array.
 struct _Subscribers {
     private var first: _ListenerCore
     private var others: [_ListenerCore] = []

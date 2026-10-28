@@ -369,7 +369,7 @@ extension ReactivePropertyMacro: PeerMacro {
         }
 
         let storage = DeclSyntax(property.privatePrefixed("_", addingAttribute: ReactiveMacro.ignoredAttribute))
-        // An index from `@Reactive` is the property's identity, which makes tracking cheaper.
+        // An index from `@Reactive` is the identity: cheaper to hash, and usable for the observed mask.
         let identity = node.propertyIndex.map { "\($0)" } ?? "\"\(property.identifier!.trimmed)\""
         let propertyID = DeclSyntax(
             """

@@ -2,7 +2,6 @@ import Reactivity
 
 public class _SchedulableNode {
     let depthInTree: Int
-    /// Observes what the node's last run read; a change schedules the node to run again.
     /// Created once the node has read anything reactive.
     private var listener: ReactiveTracking.Listener?
 
@@ -18,8 +17,7 @@ public class _SchedulableNode {
         .completed
     }
 
-    /// Schedules the node whenever anything in `dependencies`, collected before the node
-    /// existed, changes.
+    /// Schedules the node whenever `dependencies` change.
     final func startTracking(_ dependencies: consuming ReactiveTracking.AccessedDependencies, scheduler: Scheduler) {
         listener = ReactiveTracking.Listener(tracking: dependencies) { [self, scheduler] in
             scheduler.invalidateFunction(self)

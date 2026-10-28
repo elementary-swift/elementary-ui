@@ -1,10 +1,7 @@
 import Synchronization
 
-/// What trackers notify: a change callback that can be cancelled.
-///
-/// Trackers hold their listeners strongly. A ``ReactiveTracking/Listener`` unsubscribes when
-/// it is dropped. A one-shot listener cancels itself when it fires and is dropped by trackers
-/// lazily; it holds no dependencies, so a registrar that dies first releases it as well.
+/// What trackers notify. Trackers hold it strongly: a ``ReactiveTracking/Listener`` unsubscribes
+/// when dropped, a fired one-shot listener is removed lazily.
 final class _ListenerCore: Sendable {
     private let state: Mutex<_ListenerState>
     private let onChange: @Sendable () -> Void
@@ -39,8 +36,7 @@ final class _ListenerCore: Sendable {
 
 enum _ListenerState: Sendable {
     case persistent
-    /// Cancels itself on its first notification, before its handler runs, so writes made
-    /// by the handler can't call it again.
+    /// Cancelled before its handler runs, so writes made by the handler can't call it again.
     case oneShot
     case cancelled
 }

@@ -1,10 +1,9 @@
 extension ReactiveTracking {
     /// The reactive properties read while tracking.
     ///
-    /// A listener re-tracks into the same table. Each tracking pass stamps the accesses
-    /// it reads with a new generation: afterwards, accesses with an older stamp were not
-    /// read again, and accesses that are not subscribed yet are new. Re-tracking stable
-    /// dependencies therefore neither allocates nor touches any tracker.
+    /// Each tracking pass stamps the accesses it reads with a new generation: accesses with an
+    /// older stamp were not read again, unsubscribed ones are new. A listener re-tracks into
+    /// the same table, so stable dependencies cost no allocations.
     package struct AccessedDependencies: ~Copyable, @unchecked Sendable {
         // Unchecked: `enclosingPass` is only set during a tracking pass, which has exclusive access.
         private struct Stamp {
@@ -13,25 +12,19 @@ extension ReactiveTracking {
         }
 
         private var accesses: [_Access: Stamp] = [:]
-        /// The current pass. Wrapping is safe: a stamp is only ever compared with the
-        /// current generation, and after `observe(by:)` all stamps equal the previous one.
+        /// Wrapping is safe: stamps are only compared for equality with the current generation.
         private var generation: UInt32 = 0
-        /// The number of accesses the current pass read that were already in the table.
         private var knownAccessCount = 0
-        /// The number of accesses the current pass read that are new; they are not subscribed yet.
         private var newAccessCount = 0
-        /// While tracking: the enclosing tracking pass, which also records every read.
+        /// While tracking: the enclosing pass, which records every read as well.
         private var enclosingPass: UnsafeMutablePointer<Self>?
 
         init() {}
 
         package var isEmpty: Bool { accesses.isEmpty }
 
-        /// Runs `apply` as a new tracking pass that records the reactive properties it reads.
-        /// With a `listener`, the listener then observes exactly what the pass read.
-        ///
-        /// The current thread's tracking passes form a chain through `enclosingPass`,
-        /// starting at the innermost one.
+        /// Runs `apply` as a new tracking pass. With a `listener`, the listener then observes
+        /// exactly what the pass read.
         mutating func collect<T>(observedBy listener: _ListenerCore? = nil, _ apply: () -> T) -> T {
             generation &+= 1
             knownAccessCount = 0
@@ -49,14 +42,13 @@ extension ReactiveTracking {
             return value
         }
 
-        /// The innermost tracking pass of the current thread, if any.
         private static var current: UnsafeMutablePointer<Self>? {
             _ThreadLocal.value?.assumingMemoryBound(to: Self.self)
         }
 
         static var isTracking: Bool { _ThreadLocal.value != nil }
 
-        /// Records a read in the current tracking pass and all passes enclosing it.
+        /// Records a read in the current pass and all enclosing ones.
         static func record(_ access: _Access) {
             var nextPass = current
             while let pass = nextPass {
@@ -76,8 +68,7 @@ extension ReactiveTracking {
             }
         }
 
-        /// Makes `listener` observe exactly the accesses of the last pass: subscribes it to the
-        /// new ones, and drops the ones the pass did not read. Calling it again changes nothing.
+        /// Makes `listener` observe exactly the accesses of the last pass. Idempotent.
         mutating func observe(by listener: _ListenerCore) {
             let hasUnreadAccesses = accesses.count > knownAccessCount + newAccessCount
             if hasUnreadAccesses {
@@ -99,8 +90,8 @@ extension ReactiveTracking {
         }
 
         /// Calls `onChange` on the first change to any of the dependencies.
-        // Not generic: in Embedded Swift, a class initialized from generic code is initialized in
-        // the client module, which the optimizer doesn't consider when it folds `let` properties.
+        // Not generic, to avoid a Swift 6.4 Embedded miscompile: `let` properties of a class
+        // initialized from generic code in another module can be folded to a wrong constant.
         consuming func observeOnce(_ onChange: @escaping @Sendable () -> Void) {
             observe(by: _ListenerCore(.oneShot, onChange: onChange))
         }

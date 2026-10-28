@@ -1,8 +1,4 @@
 /// Synchronous tracking of reactive dependencies.
-///
-/// Shaped after the persistent listeners pitched for Swift's Observation, with dependencies
-/// collected before a listener exists, and trimmed to what views need: a callback before
-/// each change to anything a body read.
 package enum ReactiveTracking {
     /// The result of ``track(_:)``: the value, and what was read to compute it.
     package struct TrackingResult<Value>: ~Copyable {
@@ -20,9 +16,6 @@ package enum ReactiveTracking {
     }
 
     /// Runs `apply` and collects the reactive properties it reads, without observing them.
-    ///
-    /// Pass the dependencies to ``Listener/init(tracking:onChange:)`` to start observing
-    /// them. If nothing was read, no listener needs to be created.
     package static func track<Value>(_ apply: () -> Value) -> TrackingResult<Value> {
         var dependencies = AccessedDependencies()
         let value = dependencies.collect(apply)
@@ -32,10 +25,8 @@ package enum ReactiveTracking {
         return TrackingResult(value: value, dependencies: dependencies)
     }
 
-    /// Observes a set of reactive properties that can be replaced by tracking again.
-    ///
-    /// `onChange` runs synchronously on the writer's thread, before each change. Dropping
-    /// the listener ends all observation; a handler that is already running may finish.
+    /// Observes reactive properties, which `track` replaces. `onChange` runs synchronously
+    /// on the writer's thread, before each change.
     package struct Listener: ~Copyable, Sendable {
         private let core: _ListenerCore
         private var dependencies: AccessedDependencies
