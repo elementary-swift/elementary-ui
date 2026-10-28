@@ -93,7 +93,7 @@ extension ReactiveTracking {
         // Not generic, to avoid a Swift 6.4 Embedded miscompile: `let` properties of a class
         // initialized from generic code in another module can be folded to a wrong constant.
         consuming func observeOnce(_ onChange: @escaping @Sendable () -> Void) {
-            observe(by: _ListenerCore(.oneShot, onChange: onChange))
+            observe(by: _ListenerCore(.oneShot, handler: .closure(onChange)))
         }
 
         func unsubscribe(_ listener: _ListenerCore) {

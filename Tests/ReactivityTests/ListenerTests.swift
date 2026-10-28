@@ -19,6 +19,17 @@ struct ListenerTests {
         #expect(changes.load(ordering: .relaxed) == 3)
     }
 
+    @Test func cancelledListenerIsNotNotified() {
+        let model = ListenerModel()
+        let changes = Atomic(0)
+        var listener = ReactiveTracking.Listener { changes.wrappingAdd(1, ordering: .relaxed) }
+        _ = listener.track { model.one }
+        model.one = "tracked"
+        listener.cancel()
+        model.one = "cancelled"
+        #expect(changes.load(ordering: .relaxed) == 1)
+    }
+
     @Test func replacesDependenciesAndHandlesEmptyTracking() {
         let a = ListenerModel()
         let b = ListenerModel()
