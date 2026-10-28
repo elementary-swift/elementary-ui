@@ -38,9 +38,10 @@ public func withReactiveTracking<T>(
     _ apply: () -> T,
     onChange: @autoclosure () -> @Sendable () -> Void
 ) -> T {
-    var result = ReactiveTracking.track(apply)
-    if let dependencies = result.dependencies.take() {
+    var dependencies: ReactiveTracking.AccessedDependencies?
+    let value = ReactiveTracking.track(into: &dependencies, apply)
+    if let dependencies = dependencies.take() {
         dependencies.observeOnce(onChange())
     }
-    return result.takeValue()
+    return value
 }

@@ -132,12 +132,13 @@ struct ListenerTests {
 
     @Test func trackWithoutReadsReturnsNoDependencies() {
         let model = ListenerModel()
-        let result = ReactiveTracking.track { 42 }
-        #expect(result.value == 42)
-        let hasDependencies = result.dependencies != nil
+        var dependencies: ReactiveTracking.AccessedDependencies?
+        let value = ReactiveTracking.track(into: &dependencies) { 42 }
+        #expect(value == 42)
+        let hasDependencies = dependencies != nil
         #expect(!hasDependencies)
-        let tracked = ReactiveTracking.track { model.one }
-        let hasTrackedDependencies = tracked.dependencies != nil
+        _ = ReactiveTracking.track(into: &dependencies) { model.one }
+        let hasTrackedDependencies = dependencies != nil
         #expect(hasTrackedDependencies)
     }
 
@@ -145,11 +146,12 @@ struct ListenerTests {
         let model = ListenerModel()
         let changes = Atomic(0)
         var runs = 0
-        var result = ReactiveTracking.track {
+        var dependencies: ReactiveTracking.AccessedDependencies?
+        _ = ReactiveTracking.track(into: &dependencies) {
             runs += 1
             return model.one
         }
-        var listener: ReactiveTracking.Listener? = ReactiveTracking.Listener(tracking: result.dependencies.take()!) {
+        var listener: ReactiveTracking.Listener? = ReactiveTracking.Listener(tracking: dependencies.take()!) {
             changes.wrappingAdd(1, ordering: .relaxed)
         }
         #expect(runs == 1)
@@ -240,7 +242,52 @@ struct ListenerTests {
             registrar.willSet(PropertyID(0))  // fires; the subscription to 1 stays until replaced
         }
         let remaining = registrar.tracker.withTable { $0.listeners(for: PropertyID(1))?.count }
-        #expect(remaining == 1)
+        // Fired one-shots are swept in batches, so they stay bounded.
+        #expect(remaining! <= _Subscribers.minimumSweepThreshold + 1)
+    }
+
+    @Test func manyListenersOfOnePropertyNotifyOnlyLiveOnes() {
+        let registrar = ReactivityRegistrar()
+        let changes = Atomic(0)
+        var listeners: [ListenerOwner] = []
+        for _ in 0..<1000 {
+            let owner = ListenerOwner()
+            owner.listener = ReactiveTracking.Listener { changes.wrappingAdd(1, ordering: .relaxed) }
+            owner.listener!.track { registrar.access(PropertyID(0)) }
+            listeners.append(owner)
+        }
+        for index in listeners.indices where index.isMultiple(of: 2) {
+            listeners[index].listener = nil
+        }
+        registrar.willSet(PropertyID(0))
+        #expect(changes.load(ordering: .relaxed) == 500)
+
+        listeners.removeAll()
+        let remaining = registrar.tracker.withTable { $0.listeners(for: PropertyID(0)) }
+        #expect(remaining == nil)
+    }
+
+    @Test func tracksMoreAccessesThanFitInline() {
+        let registrar = ReactivityRegistrar()
+        let changes = Atomic(0)
+        var listener = ReactiveTracking.Listener { changes.wrappingAdd(1, ordering: .relaxed) }
+        listener.track { for index in 0..<10 { registrar.access(PropertyID(index)) } }
+        registrar.willSet(PropertyID(9))
+        #expect(changes.load(ordering: .relaxed) == 1)
+
+        // Drops 0..<7, keeps 7..<10, adds 10 and 11.
+        listener.track { for index in 7..<12 { registrar.access(PropertyID(index)) } }
+        registrar.willSet(PropertyID(0))
+        registrar.willSet(PropertyID(5))
+        #expect(changes.load(ordering: .relaxed) == 1)
+        registrar.willSet(PropertyID(7))
+        registrar.willSet(PropertyID(11))
+        #expect(changes.load(ordering: .relaxed) == 3)
+
+        _ = consume listener
+        registrar.willSet(PropertyID(8))
+        #expect(changes.load(ordering: .relaxed) == 3)
+        #expect(registrar.tracker.withTable { $0.listeners(for: PropertyID(8)) } == nil)
     }
 }
 

@@ -7,6 +7,7 @@
 /// The ``Reactive()`` macro automatically creates and manages a `ReactivityRegistrar` for you.
 /// You typically don't need to use this type directly unless you're building custom reactive primitives.
 public struct ReactivityRegistrar: Sendable {
+    @usableFromInline
     let tracker = ReactivityTracker()
 
     /// Creates a new reactivity registrar.
@@ -19,14 +20,16 @@ public struct ReactivityRegistrar: Sendable {
     /// this access.
     ///
     /// - Parameter property: The identifier of the property being accessed.
+    @inlinable
     public func access(_ property: PropertyID) {
-        guard ReactiveTracking.AccessedDependencies.isTracking else { return }
+        guard _ThreadLocal.value != nil else { return }
         record(property)
     }
 
     // Keeps the rarely taken path out of every property getter.
+    @usableFromInline
     @inline(never)
-    private func record(_ property: PropertyID) {
+    func record(_ property: PropertyID) {
         ReactiveTracking.AccessedDependencies.record(_Access(tracker: tracker, property: property))
     }
 
@@ -36,6 +39,7 @@ public struct ReactivityRegistrar: Sendable {
     /// observers to react before the change takes effect.
     ///
     /// - Parameter property: The identifier of the property about to change.
+    @inlinable
     public func willSet(_ property: PropertyID) {
         tracker.notify(property)
     }
@@ -47,6 +51,7 @@ public struct ReactivityRegistrar: Sendable {
     ///
     /// - Parameter property: The identifier of the property that changed.
     /// - Note: Observers are notified in ``willSet(_:)``; this call does nothing.
+    @inlinable
     public func didSet(_ property: PropertyID) {}
 }
 

@@ -5,7 +5,7 @@ let traceLogs = Context.environment["TRACE_LOGS"].flatMap { Bool($0) } ?? false
 
 let package = Package(
     name: "BasicExample",
-    platforms: [.macOS(.v15)],
+    platforms: [.macOS(.v26)],
     dependencies: [
         .package(name: "elementary-ui", path: "../../", traits: traceLogs ? ["TraceLogs"] : []),
         .package(url: "https://github.com/swiftwasm/JavaScriptKit", from: "0.61.0"),

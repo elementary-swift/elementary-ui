@@ -1,42 +1,36 @@
 /// Synchronous tracking of reactive dependencies.
 package enum ReactiveTracking {
-    /// The result of ``track(_:)``: the value, and what was read to compute it.
-    package struct TrackingResult<Value>: ~Copyable {
-        package var value: Value
-        /// `nil` if nothing reactive was read.
-        package var dependencies: AccessedDependencies?
-
-        init(value: Value, dependencies: consuming AccessedDependencies?) {
-            self.value = value
-            self.dependencies = dependencies
+    /// Runs `apply` and collects the reactive properties it reads into `dependencies`, without
+    /// observing them; `nil` if nothing reactive was read.
+    @inlinable
+    package static func track<Value>(
+        into dependencies: inout AccessedDependencies?,
+        _ apply: () -> Value
+    ) -> Value {
+        var accessed = AccessedDependencies()
+        let value = accessed.collect(apply)
+        if accessed.isEmpty {
+            dependencies = nil
+        } else {
+            dependencies = consume accessed
         }
-
-        /// Moves the value out of the result, without copying it. Take `dependencies` first.
-        package consuming func takeValue() -> Value { value }
-    }
-
-    /// Runs `apply` and collects the reactive properties it reads, without observing them.
-    package static func track<Value>(_ apply: () -> Value) -> TrackingResult<Value> {
-        var dependencies = AccessedDependencies()
-        let value = dependencies.collect(apply)
-        if dependencies.isEmpty {
-            return TrackingResult(value: value, dependencies: nil)
-        }
-        return TrackingResult(value: value, dependencies: dependencies)
+        return value
     }
 
     /// Observes reactive properties, which `track` replaces. `onChange` runs synchronously
     /// on the writer's thread, before each change.
     package struct Listener: ~Copyable, Sendable {
-        private let core: _ListenerCore
-        private var dependencies: AccessedDependencies
+        @usableFromInline
+        let core: _ListenerCore
+        @usableFromInline
+        var dependencies: AccessedDependencies
 
-        /// Starts observing dependencies collected by ``ReactiveTracking/track(_:)``.
+        /// Starts observing dependencies collected by ``ReactiveTracking/track(into:_:)``.
         package init(tracking dependencies: consuming AccessedDependencies, onChange: @escaping @Sendable () -> Void) {
             self.init(tracking: dependencies, handler: .closure(onChange))
         }
 
-        /// Starts observing dependencies collected by ``ReactiveTracking/track(_:)``, calling
+        /// Starts observing dependencies collected by ``ReactiveTracking/track(into:_:)``, calling
         /// `onChange` with `context`. `context` must stay valid until the listener is cancelled or dropped.
         package init(
             tracking dependencies: consuming AccessedDependencies,
@@ -54,6 +48,7 @@ package enum ReactiveTracking {
 
         /// Runs `apply` and replaces the observed properties with the ones it reads.
         /// The reads are also reported to enclosing tracking scopes.
+        @inlinable
         package mutating func track<T>(_ apply: () -> T) -> T {
             dependencies.collect(observedBy: core, apply)
         }
@@ -66,7 +61,7 @@ package enum ReactiveTracking {
         deinit {
             // Cancel first: a notification in progress may still hold a snapshot with `core`.
             core.cancel()
-            dependencies.unsubscribe(core)
+            dependencies.release(core)
         }
     }
 }
