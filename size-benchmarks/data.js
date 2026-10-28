@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793226935722,
+  "lastUpdate": 1793228263934,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -13692,6 +13692,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 150.12,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9a16ab849861715bbff1ca62cff235b205c06c7a",
+          "message": "cheaper listener fan-in and inline tracked dependencies (#147)",
+          "timestamp": "2026-10-28T23:47:20+01:00",
+          "tree_id": "c2a7ab80b05f6cdd20fb5c4667af45d93c06b94d",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/9a16ab849861715bbff1ca62cff235b205c06c7a"
+        },
+        "date": 1793228262942,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 174.14,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 100.34,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 138.66,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 155.6,
             "unit": "kB"
           }
         ]
