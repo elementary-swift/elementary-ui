@@ -33,7 +33,21 @@ package enum ReactiveTracking {
 
         /// Starts observing dependencies collected by ``ReactiveTracking/track(_:)``.
         package init(tracking dependencies: consuming AccessedDependencies, onChange: @escaping @Sendable () -> Void) {
-            core = _ListenerCore(onChange: onChange)
+            self.init(tracking: dependencies, handler: .closure(onChange))
+        }
+
+        /// Starts observing dependencies collected by ``ReactiveTracking/track(_:)``, calling
+        /// `onChange` with `context`. `context` must stay valid until the listener is cancelled or dropped.
+        package init(
+            tracking dependencies: consuming AccessedDependencies,
+            context: UnsafeMutableRawPointer,
+            onChange: @convention(c) (UnsafeMutableRawPointer) -> Void
+        ) {
+            self.init(tracking: dependencies, handler: .function(context: context, onChange: onChange))
+        }
+
+        private init(tracking dependencies: consuming AccessedDependencies, handler: _ListenerHandler) {
+            core = _ListenerCore(handler: handler)
             self.dependencies = dependencies
             self.dependencies.observe(by: core)
         }
@@ -42,6 +56,11 @@ package enum ReactiveTracking {
         /// The reads are also reported to enclosing tracking scopes.
         package mutating func track<T>(_ apply: () -> T) -> T {
             dependencies.collect(observedBy: core, apply)
+        }
+
+        /// Stops the listener; it is not notified again. Dropping it does the same.
+        package consuming func cancel() {
+            // Consuming `self` runs `deinit`, which cancels and unsubscribes.
         }
 
         deinit {
