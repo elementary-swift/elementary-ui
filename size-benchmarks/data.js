@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793179253144,
+  "lastUpdate": 1793189219672,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -13596,6 +13596,53 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 149.97,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "542efcdc365c674e60008949fb9fdd974e06f2e6",
+          "message": "persistent reactive listeners (#146)\n\n* persistent reactive listeners\n\n* code clarity cleanups\n\n* explicit tracking lifecycle on schedulable nodes, drop embedded smoke test\n\n* listeners only for nodes with dependencies\n\n* trim comments",
+          "timestamp": "2026-10-28T09:10:14Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/542efcdc365c674e60008949fb9fdd974e06f2e6"
+        },
+        "date": 1793189218755,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 170.45,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 96.9,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 135.1,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 149.96,
             "unit": "kB"
           }
         ]
