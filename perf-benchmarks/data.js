@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793228315161,
+  "lastUpdate": 1793290262816,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -5049,6 +5049,85 @@ window.BENCHMARK_DATA = {
           {
             "name": "25_run-clear-memory",
             "value": 1.37,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bcb2f8111e804e592747a9bb199c15d0966de020",
+          "message": "keyed ForEach with id: and per-row tracking (#149)\n\n* keyed ForEach with id: and per-row tracking\n\n* single update entry point for schedulable nodes\n\n* trim tracked-row benchmarks",
+          "timestamp": "2026-10-29T16:59:19+01:00",
+          "tree_id": "f8da8ee6fe10b641eec8c8e3c90564b95128cf77",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/bcb2f8111e804e592747a9bb199c15d0966de020"
+        },
+        "date": 1793290261818,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 118.22,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 136.28,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 245.62,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 17.73,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 71.64,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 53.95,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 136.25,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 69.91,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.06,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.1,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.38,
             "unit": "MB"
           }
         ]
