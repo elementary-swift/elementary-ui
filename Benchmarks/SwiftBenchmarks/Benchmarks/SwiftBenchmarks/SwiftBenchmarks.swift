@@ -27,9 +27,8 @@ final class BenchStore {
 }
 
 @Reactive
-final class SelectionBenchStore: @unchecked Sendable {
-    var selectedID: String?
-    func select(_ id: String?) { selectedID = id }
+final class SelectionBenchStore {
+    var selectedID = ""
 }
 
 @Reactive
@@ -101,7 +100,7 @@ struct BenchSelectionListView {
     let selection: SelectionBenchStore
 
     var body: some View {
-        ForEach(rows, id: \.id) { [selection] row in
+        ForEach(rows, id: \.id) { row in
             p(.class(selection.selectedID == row.id ? "selected" : "")) { row.label }
         }
     }
@@ -381,7 +380,6 @@ private func measureInitialMount<MountedView: View>(
 
 let benchmarks: @Sendable () -> Void = {
     registerReactivityBenchmarks()
-    sharedReadRowsBenchmarks()
     let rowCounts = [10, 1_000]
 
     Benchmark("Mount.initial.text") { benchmark in
@@ -537,12 +535,12 @@ let benchmarks: @Sendable () -> Void = {
                 root: dom.rootNode
             )
             dom.drain()
-            let firstID = baseRows.first?.id
-            let lastID = baseRows.last?.id
+            let firstID = baseRows.first!.id
+            let lastID = baseRows.last!.id
             var toggle = false
             for _ in benchmark.scaledIterations {
                 benchmark.startMeasurement()
-                selection.select(toggle ? firstID : lastID)
+                selection.selectedID = toggle ? firstID : lastID
                 dom.drain()
                 benchmark.stopMeasurement()
                 toggle.toggle()
