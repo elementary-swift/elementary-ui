@@ -27,6 +27,22 @@ final class BenchStore {
 }
 
 @Reactive
+final class SelectionBenchStore {
+    var selectedID = ""
+}
+
+@Reactive
+final class ReactiveBenchRow {
+    let id: String
+    var label: String
+
+    init(id: String, label: String) {
+        self.id = id
+        self.label = label
+    }
+}
+
+@Reactive
 final class ToggleBenchStore {
     var flag = false
     func toggle() { flag.toggle() }
@@ -57,7 +73,7 @@ struct BenchAppView {
     var body: some View {
         table(.class("bench-table")) {
             tbody {
-                ForEach(store.rows, key: { $0.id }) { row in
+                ForEach(store.rows, id: \.id) { row in
                     BenchRowView(row: row)
                 }
             }
@@ -72,9 +88,32 @@ struct BenchLiteAppView {
     var body: some View {
         ForEach(
             store.rows,
-            key: { $0.id },
+            id: \.id,
             content: { _ in EmptyHTML() }
         )
+    }
+}
+
+@View
+struct BenchSelectionListView {
+    let rows: [BenchRow]
+    let selection: SelectionBenchStore
+
+    var body: some View {
+        ForEach(rows, id: \.id) { row in
+            p(.class(selection.selectedID == row.id ? "selected" : "")) { row.label }
+        }
+    }
+}
+
+@View
+struct BenchReactiveRowsView {
+    let rows: [ReactiveBenchRow]
+
+    var body: some View {
+        ForEach(rows, id: \.id) { row in
+            p { row.label }
+        }
     }
 }
 
@@ -184,7 +223,7 @@ struct BenchAnimatedListView {
 
     var body: some View {
         div {
-            ForEach(store.rows, key: { $0.id }) { row in
+            ForEach(store.rows, id: \.id) { row in
                 p { row.label }
             }
         }
@@ -483,6 +522,60 @@ let benchmarks: @Sendable () -> Void = {
                     dom.drain()
                 }
             }
+        }
+
+        Benchmark(
+            "ForEach.trackedRows.selectionToggle",
+            configuration: .init(tags: ["rows": "\(rowCount)"])
+        ) { benchmark in
+            let selection = SelectionBenchStore()
+            let dom = NoOpInteractor()
+            let mounted = Application(BenchSelectionListView(rows: baseRows, selection: selection))._mount(
+                dom: dom,
+                root: dom.rootNode
+            )
+            dom.drain()
+            let firstID = baseRows.first!.id
+            let lastID = baseRows.last!.id
+            var toggle = false
+            for _ in benchmark.scaledIterations {
+                benchmark.startMeasurement()
+                selection.selectedID = toggle ? firstID : lastID
+                dom.drain()
+                benchmark.stopMeasurement()
+                toggle.toggle()
+            }
+            mounted.unmount()
+            dom.drain()
+        }
+
+        Benchmark(
+            "ForEach.trackedRows.singleRowLabel",
+            configuration: .init(tags: ["rows": "\(rowCount)"])
+        ) { benchmark in
+            let rows = baseRows.map { ReactiveBenchRow(id: $0.id, label: $0.label) }
+            let dom = NoOpInteractor()
+            let mounted = Application(BenchReactiveRowsView(rows: rows))._mount(dom: dom, root: dom.rootNode)
+            dom.drain()
+            let target = rows[rows.count / 2]
+            var toggle = false
+            for _ in benchmark.scaledIterations {
+                benchmark.startMeasurement()
+                target.label = toggle ? "a" : "b"
+                dom.drain()
+                benchmark.stopMeasurement()
+                toggle.toggle()
+            }
+            mounted.unmount()
+            dom.drain()
+        }
+
+        Benchmark(
+            "ForEach.trackedRows.mount",
+            configuration: .init(tags: ["rows": "\(rowCount)"])
+        ) { benchmark in
+            let rows = baseRows.map { ReactiveBenchRow(id: $0.id, label: $0.label) }
+            measureInitialMount({ BenchReactiveRowsView(rows: rows) }, benchmark: benchmark)
         }
 
         Benchmark(

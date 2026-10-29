@@ -178,18 +178,6 @@ struct AnyEquatable: Equatable {
     }
 }
 
-// Evaluate user content inside a function view so reactive reads remain tracked.
-// TODO: generalize this and move it to ForEach as well maybe?
-@View
-private struct _PhaseContent<Phase, Content: View> {
-    var phase: Phase
-    var content: (Phase) -> Content
-
-    var body: Content {
-        content(phase)
-    }
-}
-
 public struct _PhaseAnimatorNode<Phase: Equatable, Content: View>: ~Copyable, _Reconcilable {
     fileprivate let controller: PhaseController<Phase, Content>
 
@@ -199,7 +187,7 @@ public struct _PhaseAnimatorNode<Phase: Equatable, Content: View>: ~Copyable, _R
 }
 
 private final class PhaseController<Phase: Equatable, Content: View> {
-    private typealias Rendered = _PhaseContent<Phase, Content>?
+    private typealias Rendered = _TrackedContent<Phase, Content>?
     private var view: PhaseAnimator<Phase, Content>
     private let scheduler: Scheduler
     private var child: Rendered._MountedNode?
@@ -235,7 +223,7 @@ private final class PhaseController<Phase: Equatable, Content: View> {
     }
 
     private var rendered: Rendered {
-        view.phases.isEmpty ? nil : _PhaseContent(phase: view.phases[index], content: view.content)
+        view.phases.isEmpty ? nil : _TrackedContent(input: view.phases[index], content: view.content)
     }
 
     private func render(tx: inout _TransactionContext) {

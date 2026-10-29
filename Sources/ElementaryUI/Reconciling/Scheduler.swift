@@ -40,7 +40,7 @@ final class Scheduler {
     private var pendingCommitActions: UniqueArray<CommitAction> = .init()
     private var pendingEffects: UniqueArray<() -> Void> = .init()
     private var pendingLayoutEffects: UniqueArray<(inout _CommitContext) -> Void> = .init()
-    private var runningAnimations: UniqueArray<_SchedulableNode> = .init()
+    private var runningAnimations: UniqueArray<SchedulableNode> = .init()
 
     // Scheduling state
     // True while an update cycle is either scheduled or currently running.
@@ -79,7 +79,7 @@ final class Scheduler {
 
     // MARK: - Public API
 
-    func invalidateFunction(_ function: _SchedulableNode) {
+    func invalidateFunction(_ function: SchedulableNode) {
         if ambientContext != nil {
             ambientContext!.addFunction(function)
             return
@@ -92,7 +92,7 @@ final class Scheduler {
             currentTransaction = Transaction._current
         }
 
-        pendingFunctions.registerFunctionForUpdate(function, transaction: currentTransaction)
+        pendingFunctions.enqueue(function, transaction: currentTransaction)
     }
 
     func scheduleUpdate(_ callback: @escaping (inout _TransactionContext) -> Void) {
@@ -135,7 +135,7 @@ final class Scheduler {
         pendingLayoutEffects.append(callback)
     }
 
-    func registerAnimation(_ node: _SchedulableNode) {
+    func registerAnimation(_ node: SchedulableNode) {
         runningAnimations.append(node)
         ensureAnimationFrameScheduled()
     }

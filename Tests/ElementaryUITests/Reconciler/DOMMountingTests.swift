@@ -345,7 +345,7 @@ struct DOMMountingTests {
     func mountsKeyedForEach() {
         #expect(
             mountOps {
-                ForEach(0..<2, key: \.self) { i in
+                ForEach(0..<2, id: \.self) { i in
                     "Item \(i)"
                 }
             } == [
@@ -377,8 +377,8 @@ struct DOMMountingTests {
     func mountsDistinctTypedKeysForSameRenderedValue() {
         let ops = mountOps {
             Group {
-                p { "string" }.key("1")
-                p { "number" }.key(1)
+                p { "string" }.id("1")
+                p { "number" }.id(1)
             }
         }
 

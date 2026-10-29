@@ -207,7 +207,7 @@ struct DOMPatchingTests {
     func patchesKeyedForEachAdditionsAndRemovals() {
         let state = StringListState(["A", "B", "C"])
         let ops = patchOps {
-            ForEach(state.items, key: \.self) { item in
+            ForEach(state.items, id: \.self) { item in
                 item
             }
         } toggle: {
@@ -229,7 +229,7 @@ struct DOMPatchingTests {
         let original = ["A", "B", "C"]
         let state = StringListState(original)
         let ops = patchOps {
-            ForEach(state.items, key: \.self) { $0 }
+            ForEach(state.items, id: \.self) { $0 }
         } toggle: {
             state.items.insert(contentsOf: ["X", "Y"], at: index)
         }
@@ -249,7 +249,7 @@ struct DOMPatchingTests {
         let state = StringListState(["A", "B", "C"])
         state.items.insert(contentsOf: ["X", "Y"], at: index)
         let ops = patchOps {
-            ForEach(state.items, key: \.self) { $0 }
+            ForEach(state.items, id: \.self) { $0 }
         } toggle: {
             state.items.removeSubrange(index..<(index + 2))
         }
@@ -263,7 +263,7 @@ struct DOMPatchingTests {
     func patchesKeyedMoves() {
         let state = StringListState(["A", "B", "C"])
         let ops = patchOps {
-            ForEach(state.items, key: \.self) { item in
+            ForEach(state.items, id: \.self) { item in
                 item
             }
         } toggle: {
@@ -284,7 +284,7 @@ struct DOMPatchingTests {
         let dom = TestDOM()
 
         dom.mount {
-            ForEach(state.items, key: \.id) { item in
+            ForEach(state.items, id: \.id) { item in
                 p { item.value }
             }
         }
@@ -308,7 +308,7 @@ struct DOMPatchingTests {
         let dom = TestDOM()
 
         dom.mount {
-            ForEach(state.items, key: \.id) { item in
+            ForEach(state.items, id: \.id) { item in
                 p { item.value }
             }
         }
@@ -337,7 +337,7 @@ struct DOMPatchingTests {
 
         dom.mount {
             div {
-                ForEach(state.items, key: \.self) { item in
+                ForEach(state.items, id: \.self) { item in
                     p { item }
                 }
             }
@@ -364,7 +364,7 @@ struct DOMPatchingTests {
         let state = StringListState(["A", "B", "C"])
         let ops = patchOps {
             div {
-                ForEach(state.items, key: \.self) { item in
+                ForEach(state.items, id: \.self) { item in
                     item
                 }
             }
@@ -379,7 +379,7 @@ struct DOMPatchingTests {
     func patchesListReorderingWithRemovalsAndAdditions() {
         let state = StringListState(["A", "B", "C"])
         let ops = patchOps {
-            ForEach(state.items, key: \.self) { item in
+            ForEach(state.items, id: \.self) { item in
                 item
             }
         } toggle: {
@@ -400,7 +400,7 @@ struct DOMPatchingTests {
     func patchesKeyedMiddleWindowWithUnchangedEdges() {
         let state = StringListState(["A", "B", "C", "D", "E"])
         let ops = patchOps {
-            ForEach(state.items, key: \.self) { item in
+            ForEach(state.items, id: \.self) { item in
                 item
             }
         } toggle: {
@@ -422,7 +422,7 @@ struct DOMPatchingTests {
         let dom = TestDOM()
 
         dom.mount {
-            ForEach(state.items, key: { _ in 0 }) { item in
+            ForEach(state.items, id: { _ in 0 }) { item in
                 p { item }
             }
         }
@@ -442,7 +442,7 @@ struct DOMPatchingTests {
 
         let dom = TestDOM()
         dom.mount {
-            ForEach(items, key: \.self) { item in
+            ForEach(items, id: \.self) { item in
                 p(.class(item == items[state.number] ? "selected" : "")) {}
             }
         }
@@ -452,19 +452,41 @@ struct DOMPatchingTests {
         state.number += 1
         dom.runNextFrame()
 
-        #expect(
-            dom.ops == [
-                .setAttr(node: "<p>", name: "class", value: ""),
-                .setAttr(node: "<p>", name: "class", value: "selected"),
-            ]
-        )
+        // each row tracks its own read; sibling rows may re-run in either order
+        #expect(dom.ops.count == 2)
+        #expect(dom.ops.contains(.setAttr(node: "<p>", name: "class", value: "")))
+        #expect(dom.ops.contains(.setAttr(node: "<p>", name: "class", value: "selected")))
+    }
+
+    @Test
+    func rerunsOnlyForEachItemsThatReadChangedState() {
+        nonisolated(unsafe) let counters = [CounterState(), CounterState(), CounterState()]
+        nonisolated(unsafe) var builds: [Int] = []
+
+        let dom = TestDOM()
+        dom.mount {
+            ForEach(0..<3) { index in
+                let _ = builds.append(index)
+                p { "\(counters[index].number)" }
+            }
+        }
+        dom.runNextFrame()
+        #expect(builds == [0, 1, 2])
+        builds.removeAll()
+        dom.clearOps()
+
+        counters[1].number += 1
+        dom.runNextFrame()
+
+        #expect(builds == [1])
+        #expect(dom.ops == [.patchText(node: "0", to: "1")])
     }
 
     @Test
     func patchesNestedConditionals() {
         let state = StringListState([])
         let ops = patchOps {
-            ForEach(state.items, key: \.self) { item in
+            ForEach(state.items, id: \.self) { item in
                 p {
                     if true {
                         item
@@ -548,7 +570,7 @@ struct DOMPatchingTests {
         nonisolated(unsafe) var deinitCount = 0
         let state = StringListState(["A", "B", "C"])
         _ = patchOps {
-            ForEach(state.items, key: \.self) { item in
+            ForEach(state.items, id: \.self) { item in
                 DeinitSnifferView {
                     deinitCount += 1
                 }
@@ -578,7 +600,7 @@ struct DOMPatchingTests {
                         deinitCount += 2
                     }
                 }
-                ForEach(["A", "B"], key: \.self) { item in
+                ForEach(["A", "B"], id: \.self) { item in
                     p {}
                     p {
                         DeinitSnifferView {

@@ -70,37 +70,31 @@ extension _KeyedView: _Renderable {
 #endif
 
 public extension View {
-    func key<K: LosslessStringConvertible>(_ key: K) -> some View<Tag> & _KeyReadableView {
-        _KeyedView(key: _ViewKey(key), value: self)
+    /// Binds the identity of this view to the given value.
+    ///
+    /// When the id changes, the view is treated as a new view: its state is reset and it is
+    /// mounted again, running its transitions.
+    func id<ID: Hashable>(_ id: ID) -> some View<Tag> {
+        _KeyedView(key: _ViewKey(id), value: self)
+    }
+
+    @available(*, deprecated, renamed: "id(_:)")
+    func key<K: LosslessStringConvertible>(_ key: K) -> some View<Tag> {
+        _KeyedView(key: _ViewKey(_UTF8Key(key)), value: self)
     }
 }
 
 public extension SVGView {
-    func key<K: LosslessStringConvertible>(_ key: K) -> some SVGView<Tag> & _KeyReadableSVGView {
-        _KeyedView(key: _ViewKey(key), value: self)
-    }
-}
-
-public protocol _KeyReadableContent: _Mountable {
-    associatedtype Value: MarkupContent & _Mountable
-
-    var _key: _ViewKey { get }
-    var _value: Value { get }
-}
-
-public protocol _KeyReadableView: _KeyReadableContent, View where Value: View {}
-
-public protocol _KeyReadableSVGView: _KeyReadableContent, SVGView where Value: SVGView {}
-
-extension _KeyedView: _KeyReadableContent {
-    public var _key: _ViewKey {
-        key
+    /// Binds the identity of this view to the given value.
+    ///
+    /// When the id changes, the view is treated as a new view: its state is reset and it is
+    /// mounted again, running its transitions.
+    func id<ID: Hashable>(_ id: ID) -> some SVGView<Tag> {
+        _KeyedView(key: _ViewKey(id), value: self)
     }
 
-    public var _value: Value {
-        value
+    @available(*, deprecated, renamed: "id(_:)")
+    func key<K: LosslessStringConvertible>(_ key: K) -> some SVGView<Tag> {
+        _KeyedView(key: _ViewKey(_UTF8Key(key)), value: self)
     }
 }
-
-extension _KeyedView: _KeyReadableView where Value: View {}
-extension _KeyedView: _KeyReadableSVGView where Value: SVGView {}

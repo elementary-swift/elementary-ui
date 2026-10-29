@@ -19,7 +19,7 @@ struct ServerRenderingTests {
     func rendersForEachWithoutKeys() {
         #expect(
             ul {
-                ForEach([1, 2, 3], key: { $0 }) { number in
+                ForEach([1, 2, 3], id: { $0 }) { number in
                     li { "\(number)" }
                 }
                 ForEach([Item(id: 4)]) { item in
@@ -31,7 +31,7 @@ struct ServerRenderingTests {
 
     @Test
     func rendersKeyedViews() {
-        #expect(p { "a" }.key("k").render() == "<p>a</p>")
+        #expect(p { "a" }.id("k").render() == "<p>a</p>")
     }
 
     @Test

@@ -1,97 +1,86 @@
-import BasicContainers
-import Reactivity
+public struct _ForEachNode<Data: RandomAccessCollection, Content: MarkupContent & _Mountable>: ~Copyable, _Reconcilable {
+    private typealias Item = _TrackedContent<Data.Element, Content>
 
-// TODO: refactor this entire thing - we need to make the key list without the views, and the resolve the views just off the data....
-public final class _ForEachNode<Data, Content>: _SchedulableNode, _Reconcilable
-where Data: Collection, Content: _KeyReadableContent {
-    private var data: Data
-    private var contentBuilder: @Sendable (Data.Element) -> Content
-    private var container: MountContainer!
+    private let container: MountContainer
 
-    private var keysScratch: UniqueArray<_ViewKey> = .init()
-    private var viewsScratch: [Content] = .init()  // TODO: remove this once we refactored everything
-
-    init(
-        data: consuming Data,
-        contentBuilder: @escaping @Sendable (Data.Element) -> Content,
+    init<ID>(
+        _ view: ForEach<Data, ID, Content>,
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) {
-        self.data = data
-        self.contentBuilder = contentBuilder
-
-        super.init(depthInTree: context.functionDepth)
-
-        evaluateViewsAndKeys(scheduler: ctx.scheduler)
-
-        self.container = MountContainer(
-            mountedKeyStorage: keysScratch.span,
-            context: context,
-            ctx: &ctx,
-            makeNode: { index, context, mountCtx in
-                Content.Value._makeNode(self.viewsScratch[index]._value, context: context, ctx: &mountCtx)
-            }
-        )
+        container = Self.withItems(of: view) { item in
+            mountItems(keys: view.keys.span, item: item, context: context, ctx: &ctx)
+        }
 
         ctx.appendContainer(container)
     }
 
-    func patch(
-        data: consuming Data,
-        contentBuilder: @escaping @Sendable (Data.Element) -> Content,
+    mutating func patch<ID>(
+        _ view: ForEach<Data, ID, Content>,
         tx: inout _TransactionContext
     ) {
-        self.data = data
-        self.contentBuilder = contentBuilder
-        runFunction(tx: &tx)
-    }
-
-    override func runUpdate(tx: inout _TransactionContext) {
-        runFunction(tx: &tx)
-    }
-
-    func runFunction(tx: inout _TransactionContext) {
-        evaluateViewsAndKeys(scheduler: tx.scheduler)
-
-        patchContainer(tx: &tx)
-    }
-
-    private borrowing func patchContainer(tx: inout _TransactionContext) {
-        container.patch(
-            keys: self.keysScratch.span,
-            tx: &tx,
-            makeNode: { [viewsScratch] index, context, mountCtx in
-                AnyReconcilable(
-                    Content.Value._makeNode(viewsScratch[index]._value, context: context, ctx: &mountCtx)
-                )
-            },
-            patchNode: { [viewsScratch] index, anyNode, tx in
-                anyNode.modify(as: Content.Value._MountedNode.self) { node in
-                    Content.Value._patchNode(viewsScratch[index]._value, node: &node, tx: &tx)
-                }
-            }
-        )
+        Self.withItems(of: view) { item in
+            patchItems(in: container, keys: view.keys.span, item: item, tx: &tx)
+        }
     }
 
     public consuming func unmount(_ context: inout _CommitContext) {
-        stopTracking()
         container.unmount(&context)
     }
 
-    private func evaluateViewsAndKeys(scheduler: Scheduler) {
+    /// Lends a function that builds the item for the element at an offset.
+    private static func withItems<ID, R>(
+        of view: ForEach<Data, ID, Content>,
+        _ body: ((Int) -> Item) -> R
+    ) -> R {
+        let content = view.content
 
-        viewsScratch.reserveCapacity(data.underestimatedCount)
-        keysScratch.reserveCapacity(data.underestimatedCount)
+        // Generic subscripts go through a `read` coroutine whose frame is heap-allocated in
+        // unspecialized code; contiguous storage avoids that per element.
+        if let result = view.data.withContiguousStorageIfAvailable({ elements in
+            body { Item(input: elements[$0], content: content) }
+        }) {
+            return result
+        }
 
-        viewsScratch.removeAll(keepingCapacity: true)
-        keysScratch.removeAll()
+        let data = view.data
+        return body { Item(input: data[data.index(data.startIndex, offsetBy: $0)], content: content) }
+    }
+}
 
-        trackDependencies(scheduler: scheduler) {
-            for value in data {
-                let view = contentBuilder(value)
-                self.viewsScratch.append(view)
-                self.keysScratch.append(view._key)
+// Generic over the item itself, so per-element work does not go through the ForEach's generics.
+private func mountItems<Item: _Mountable>(
+    keys: borrowing Span<_ViewKey>,
+    item: (Int) -> Item,
+    context: borrowing _ViewContext,
+    ctx: inout _MountContext
+) -> MountContainer {
+    MountContainer(
+        mountedKeyStorage: keys,
+        context: context,
+        ctx: &ctx,
+        makeNode: { index, context, ctx in
+            Item._makeNode(item(index), context: context, ctx: &ctx)
+        }
+    )
+}
+
+private func patchItems<Item: _Mountable>(
+    in container: MountContainer,
+    keys: borrowing Span<_ViewKey>,
+    item: (Int) -> Item,
+    tx: inout _TransactionContext
+) {
+    container.patch(
+        keys: keys,
+        tx: &tx,
+        makeNode: { index, context, ctx in
+            AnyReconcilable(Item._makeNode(item(index), context: context, ctx: &ctx))
+        },
+        patchNode: { index, anyNode, tx in
+            anyNode.modify(as: Item._MountedNode.self) { node in
+                Item._patchNode(item(index), node: &node, tx: &tx)
             }
         }
-    }
+    )
 }

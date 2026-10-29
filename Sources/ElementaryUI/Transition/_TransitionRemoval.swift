@@ -192,6 +192,19 @@ private extension LayoutNode {
     }
 }
 
+private extension SlotLayoutNodes {
+    borrowing func collectTransitionRemovalTargets(
+        into targets: inout _TransitionRemovalTargets
+    ) {
+        switch self {
+        case .one(let node):
+            node.collectTransitionRemovalTargets(into: &targets)
+        case .many(let nodes):
+            nodes.collectTransitionRemovalTargets(into: &targets)
+        }
+    }
+}
+
 private extension RigidArray where Element == LayoutNode {
     borrowing func collectTransitionRemovalTargets(
         into targets: inout _TransitionRemovalTargets

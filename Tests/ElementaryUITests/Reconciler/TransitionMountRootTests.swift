@@ -172,7 +172,7 @@ struct TransitionMountRootTests {
         let dom = TestDOM()
 
         dom.mount {
-            ForEach(state.items, key: \.self) { item in
+            ForEach(state.items, id: \.self) { item in
                 p { item }.transition(RecordingFadeTransition(recorder: recorder))
             }
         }
@@ -196,7 +196,7 @@ struct TransitionMountRootTests {
         dom.mount {
             Group {
                 if state.value {
-                    ForEach(["A", "B", "C"], key: \.self) { item in
+                    ForEach(["A", "B", "C"], id: \.self) { item in
                         p { item }.transition(RecordingFadeTransition(recorder: recorder))
                     }
                 }
@@ -288,7 +288,7 @@ struct TransitionMountRootTests {
         let dom = TestDOM()
 
         dom.mount {
-            ForEach(state.items, key: \.self) { item in
+            ForEach(state.items, id: \.self) { item in
                 Group {
                     if item == "A" {
                         p { item }.transition(RecordingFadeTransition(recorder: recorder))
@@ -373,7 +373,7 @@ struct TransitionMountRootTests {
         dom.mount {
             Group {
                 if visible.value {
-                    ForEach(items.items, key: \.self) { item in
+                    ForEach(items.items, id: \.self) { item in
                         p { item }
                     }
                 }
@@ -678,7 +678,7 @@ struct TransitionMountRootTests {
 
         dom.mount {
             div {
-                ForEach(state.items, key: \.self) { item in
+                ForEach(state.items, id: \.self) { item in
                     p { item }
                 }
             }
@@ -703,7 +703,7 @@ struct TransitionMountRootTests {
 
         dom.mount {
             div {
-                ForEach(state.items, key: \.self) { item in
+                ForEach(state.items, id: \.self) { item in
                     p { item }
                 }
             }
@@ -735,7 +735,7 @@ struct TransitionMountRootTests {
 
         dom.mount {
             div {
-                ForEach(state.items, key: \.self) { item in
+                ForEach(state.items, id: \.self) { item in
                     p { item }.transition(.fade)
                 }
             }
@@ -769,7 +769,7 @@ struct TransitionMountRootTests {
             Group {
                 if visible.value {
                     div {
-                        ForEach(items.items, key: \.self) { item in
+                        ForEach(items.items, id: \.self) { item in
                             p { item }.transition(.fade)
                         }
                     }
@@ -798,7 +798,7 @@ struct TransitionMountRootTests {
         let dom = TestDOM()
 
         dom.mount {
-            ForEach(state.items, key: \.self) { item in
+            ForEach(state.items, id: \.self) { item in
                 p { item }
             }
         }
@@ -823,7 +823,7 @@ struct TransitionMountRootTests {
         let dom = TestDOM()
 
         dom.mount {
-            ForEach(state.items, key: \.self) { item in
+            ForEach(state.items, id: \.self) { item in
                 p { item }.transition(.fade)
             }
         }
@@ -851,7 +851,7 @@ struct TransitionMountRootTests {
         let dom = TestDOM()
 
         dom.mount {
-            ForEach(state.items, key: \.self) { item in
+            ForEach(state.items, id: \.self) { item in
                 p { item }.transition(.fade)
             }
         }
@@ -880,7 +880,7 @@ struct TransitionMountRootTests {
         let dom = TestDOM()
 
         dom.mount {
-            ForEach(state.items, key: \.self) { item in
+            ForEach(state.items, id: \.self) { item in
                 p { item }.transition(.fade)
             }
         }
@@ -915,7 +915,7 @@ struct TransitionMountRootTests {
     //     let dom = TestDOM()
 
     //     dom.mount {
-    //         ForEach(state.items, key: \.self) { item in
+    //         ForEach(state.items, id: \.self) { item in
     //             p { item }
     //         }
     //     }

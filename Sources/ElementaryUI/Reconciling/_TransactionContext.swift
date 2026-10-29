@@ -17,8 +17,8 @@ public struct _TransactionContext: ~Copyable {
         self.transaction = transaction ?? .init()
     }
 
-    mutating func addFunction(_ function: _SchedulableNode) {
-        pendingFunctions.registerFunctionForUpdate(function, transaction: transaction)
+    mutating func addFunction(_ function: SchedulableNode) {
+        pendingFunctions.enqueue(function, transaction: transaction)
     }
 
     // TODO: review this whole ordeal
@@ -30,9 +30,11 @@ public struct _TransactionContext: ~Copyable {
     }
 
     consuming func drain() {
+        // Functions invalidated outside a transaction share one default transaction.
+        lazy var defaultTransaction = Transaction()
         while let (node, transaction) = pendingFunctions.next() {
-            self.transaction = transaction ?? .init()
-            node.runUpdate(tx: &self)
+            self.transaction = transaction ?? defaultTransaction
+            node.update(tx: &self)
         }
     }
 }

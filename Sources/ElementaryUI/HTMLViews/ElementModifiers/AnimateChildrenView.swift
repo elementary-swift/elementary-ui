@@ -52,7 +52,7 @@ public extension View {
     ///
     ///     var body: some View {
     ///         div {
-    ///             ForEach(items, key: { $0 }) { item in
+    ///             ForEach(items, id: { $0 }) { item in
     ///                 p { item }
     ///             }
     ///         }
