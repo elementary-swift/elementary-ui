@@ -84,7 +84,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
             return MountContainer.Slot(
                 key: key,
                 node: node,
-                layoutNodes: slotCtx.takeMaterializedLayoutNodes(),
+                layoutNodes: slotCtx.takeSlotLayoutNodes(),
                 transitions: transitions
             )
         }
@@ -156,6 +156,13 @@ public struct _MountContext: ~Copyable, ~Escapable {
             result.append(moving: &span)
         }
         return result
+    }
+
+    private consuming func takeSlotLayoutNodes() -> SlotLayoutNodes {
+        guard nodeStack.count == 1 else { return .many(takeMaterializedLayoutNodes()) }
+        var node: LayoutNode?
+        nodeStack.consume { span in node = span.removeFirst() }
+        return .one(node!)
     }
 
     private mutating func appendLayoutNode(_ node: LayoutNode) {

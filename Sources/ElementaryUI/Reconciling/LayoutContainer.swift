@@ -205,6 +205,25 @@ struct LayoutPass: ~Copyable, ~Escapable {
     }
 }
 
+/// The layout nodes of one slot. Most slots have exactly one, which needs no allocation.
+enum SlotLayoutNodes: ~Copyable {
+    case one(LayoutNode)
+    case many(RigidArray<LayoutNode>)
+
+    borrowing func collect(
+        into ops: inout LayoutPass,
+        context: inout _CommitContext,
+        op: LayoutPass.Entry.LayoutOp
+    ) {
+        switch self {
+        case .one(let node):
+            node.collect(into: &ops, context: &context, op: op)
+        case .many(let nodes):
+            nodes.collect(into: &ops, context: &context, op: op)
+        }
+    }
+}
+
 extension RigidArray where Element == LayoutNode {
     borrowing func collect(
         into ops: inout LayoutPass,

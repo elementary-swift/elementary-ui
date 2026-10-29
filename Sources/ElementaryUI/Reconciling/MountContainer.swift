@@ -155,6 +155,7 @@ final class MountContainer {
                         )
                     }
                     slot.placement = .added
+                    slot.isMountedByThisPatch = true
                     return slot
                 }
             )
@@ -224,15 +225,17 @@ extension MountContainer {
 
         let key: _ViewKey
         var node: AnyReconcilable
-        var layoutNodes: RigidArray<LayoutNode>
+        var layoutNodes: SlotLayoutNodes
         var placement: Placement
         var transitions: _SlotTransitions
         var pendingRemoval: _PendingRemoval?
+        /// Set when the current patch mounted this slot: its node is already up to date.
+        var isMountedByThisPatch = false
 
         init(
             key: _ViewKey,
             node: consuming AnyReconcilable,
-            layoutNodes: consuming RigidArray<LayoutNode>,
+            layoutNodes: consuming SlotLayoutNodes,
             transitions: consuming _SlotTransitions
         ) {
             self.key = key
@@ -252,6 +255,10 @@ extension MountContainer {
             tx: inout _TransactionContext,
             patchNode: (Int, inout AnyReconcilable, inout _TransactionContext) -> Void
         ) {
+            if isMountedByThisPatch {
+                isMountedByThisPatch = false
+                return
+            }
             if let removal = pendingRemoval {
                 // revived from the leaving lane: abort the exit transition
                 removal.cancel(tx: &tx)

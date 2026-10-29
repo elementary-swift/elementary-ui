@@ -111,7 +111,7 @@ struct LifecycleTests {
         let state = StringListState(["A", "B"])
 
         _ = patchOps {
-            ForEach(state.items, key: \.self) { item in
+            ForEach(state.items, id: \.self) { item in
                 p { item }.onDisappear {
                     if item == "A" {
                         unmountCount += 1
@@ -240,7 +240,7 @@ struct LifecycleTests {
         let items = ["A", "B", "C"]
 
         _ = mountOps {
-            ForEach(items, key: \.self) { item in
+            ForEach(items, id: \.self) { item in
                 p { item }.onAppear { mountCount += 1 }
             }
         }
@@ -255,7 +255,7 @@ struct LifecycleTests {
         let state = CounterState()
 
         _ = patchOps {
-            ForEach(0..<state.number, key: \.self) { i in
+            ForEach(0..<state.number, id: \.self) { i in
                 p { "\(i)" }
                     .onAppear { mountCount += 1 }
                     .onDisappear { unmountCount += 1 }

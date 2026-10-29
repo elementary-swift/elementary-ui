@@ -1,26 +1,17 @@
-import Reactivity
-
-public struct _ViewKey: Equatable, Hashable, CustomStringConvertible {
+public struct _ViewKey: Hashable {
     @usableFromInline
-    let propertyID: PropertyID
+    let value: _AnyHashable
 
     @inlinable
-    public init(_ value: String) {
-        self.propertyID = PropertyID(value)
-    }
-
-    @inlinable
-    public init(_ value: Int) {
-        self.propertyID = PropertyID(value)
-    }
-
-    @inlinable
-    public init<T: LosslessStringConvertible>(_ value: T) {
-        // Keep compatibility for existing call-sites while keeping strict typed equality.
-        self.propertyID = PropertyID(value.description)
-    }
-
-    public var description: String {
-        propertyID.description
+    public init<Value: Hashable>(_ value: Value) {
+        self.value = _AnyHashable(value)
     }
 }
+
+#if !hasFeature(Embedded)
+extension _ViewKey: CustomStringConvertible {
+    public var description: String {
+        value.box._baseDescription
+    }
+}
+#endif

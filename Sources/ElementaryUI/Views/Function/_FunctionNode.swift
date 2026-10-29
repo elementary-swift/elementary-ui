@@ -222,7 +222,7 @@ private extension _FunctionNodeCore.Storage where ChildNode: ~Copyable {
 }
 
 private protocol _FunctionScheduler<View, ChildNode>: AnyObject
-where Self: _SchedulableNode {
+where Self: SchedulableNode {
     associatedtype View: __FunctionView
     associatedtype ChildNode: _Reconcilable & ~Copyable
 
@@ -244,7 +244,7 @@ where Self: _SchedulableNode {
 class SchedulableFunction<
     Value: __FunctionView,
     MountedBody: _Reconcilable & ~Copyable
->: _SchedulableNode, _FunctionScheduler
+>: SchedulableNode, _FunctionScheduler
 where MountedBody == Value.Body._MountedNode {
     typealias View = Value
     typealias ChildNode = MountedBody

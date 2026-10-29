@@ -55,6 +55,8 @@ final class ReactivityTracker: Sendable {
 }
 
 struct _SubscriptionTable: ~Copyable {
+    /// Listeners of the properties with an index below 64, by index, so they need no hashing.
+    private var indexed: [_Subscribers?] = []
     // Not `UniqueDictionary`: stored in the `Mutex`, it crashed with swift-collections 1.7.
     private var subscribers: [PropertyID: _Subscribers] = [:]
 
@@ -63,16 +65,33 @@ struct _SubscriptionTable: ~Copyable {
     private var isMaskStale = false
 
     fileprivate mutating func update(_ property: PropertyID, inserting listener: _ListenerCore) {
-        if let index = subscribers.index(forKey: property) {
+        mask |= property.observationBit
+        if let index = property.observationIndex {
+            if index >= indexed.count {
+                indexed.append(contentsOf: repeatElement(nil, count: index + 1 - indexed.count))
+            }
+            if indexed[index] == nil {
+                indexed[index] = _Subscribers(listener)
+            } else {
+                indexed[index]!.insert(listener)
+            }
+        } else if let index = subscribers.index(forKey: property) {
             subscribers.values[index].insert(listener)
         } else {
             subscribers[property] = _Subscribers(listener)
         }
-        mask |= property.observationBit
     }
 
     /// Applies `body` to the property's listeners; it returns `true` when none remain.
     fileprivate mutating func update(_ property: PropertyID, _ body: (inout _Subscribers) -> Bool) {
+        if let index = property.observationIndex {
+            guard index < indexed.count, indexed[index] != nil else { return }
+            if body(&indexed[index]!) {
+                indexed[index] = nil
+                isMaskStale = true
+            }
+            return
+        }
         guard let index = subscribers.index(forKey: property) else { return }
         if body(&subscribers.values[index]) {
             subscribers.remove(at: index)
@@ -82,9 +101,16 @@ struct _SubscriptionTable: ~Copyable {
 
     /// On a miss, also narrows a stale mask.
     mutating func listeners(for property: PropertyID) -> _Subscribers? {
-        if let listeners = subscribers[property] { return listeners }
+        if let index = property.observationIndex {
+            if index < indexed.count, let listeners = indexed[index] { return listeners }
+        } else if let listeners = subscribers[property] {
+            return listeners
+        }
         if isMaskStale {
             mask = subscribers.keys.reduce(0) { $0 | $1.observationBit }
+            for index in indexed.indices where indexed[index] != nil {
+                mask |= 1 << index
+            }
             isMaskStale = false
         }
         return nil
@@ -175,6 +201,12 @@ struct _Subscribers {
 }
 
 extension PropertyID {
+    /// The index of a property whose listeners are kept by index, without hashing.
+    fileprivate var observationIndex: Int? {
+        guard case let .index(index) = id, (0..<64).contains(index) else { return nil }
+        return index
+    }
+
     /// The property's bit in the observed-index mask. Any identifier other than
     /// an index in `0..<64` uses all bits.
     @inlinable

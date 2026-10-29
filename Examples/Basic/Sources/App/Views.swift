@@ -14,7 +14,7 @@ struct AppView {
 
     var body: some View {
         div {
-            ForEach(0..<bindingViewCount, key: { $0 }) { _ in
+            ForEach(0..<bindingViewCount) { _ in
                 BindingsView()
                     .transition(.fade, animation: .bouncy)
             }
@@ -81,7 +81,7 @@ struct AppView {
                     }
             }
             div(.style(["display": "flex", "flex-direction": "column", "border": "1px solid red"])) {
-                ForEach(counters, key: { String($0) }) { counter in
+                ForEach(counters, id: { $0 }) { counter in
                     div {
                         h3 { "Counter \(counter)" }
                         Counter(count: counter)
