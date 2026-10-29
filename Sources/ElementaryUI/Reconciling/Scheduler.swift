@@ -81,9 +81,7 @@ final class Scheduler {
 
     func invalidateFunction(_ function: SchedulableNode) {
         if ambientContext != nil {
-            if function.markInvalidated() {
-                ambientContext!.addFunction(function)
-            }
+            ambientContext!.addFunction(function)
             return
         }
 
@@ -94,9 +92,7 @@ final class Scheduler {
             currentTransaction = Transaction._current
         }
 
-        if function.markInvalidated() {
-            pendingFunctions.registerFunctionForUpdate(function, transaction: currentTransaction)
-        }
+        pendingFunctions.enqueue(function, transaction: currentTransaction)
     }
 
     func scheduleUpdate(_ callback: @escaping (inout _TransactionContext) -> Void) {

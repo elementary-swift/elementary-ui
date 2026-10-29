@@ -269,10 +269,10 @@ where MountedBody == Value.Body._MountedNode {
         tx: inout _TransactionContext
     ) {
         wiredValue = copy value
-        runUpdate(tx: &tx)
+        update(tx: &tx)
     }
 
-    override func runUpdate(tx: inout _TransactionContext) {
+    override func performUpdate(tx: inout _TransactionContext) {
         let body = trackDependencies(scheduler: tx.scheduler) { wiredValue.body }
         Value.Body._patchNode(body, node: &child!, tx: &tx)
     }
@@ -288,7 +288,7 @@ where MountedBody == Value.Body._MountedNode {
     func cancelAnimation() {}
 
     final func unmountChild(_ context: inout _CommitContext) {
-        stopTracking()
+        stopScheduling()
         cancelAnimation()
         child.take()?.unmount(&context)
     }
@@ -332,10 +332,10 @@ where MountedBody == Value.Body._MountedNode {
         }
 
         wiredValue = copy value
-        runUpdate(tx: &tx)
+        update(tx: &tx)
     }
 
-    override func runUpdate(tx: inout _TransactionContext) {
+    override func performUpdate(tx: inout _TransactionContext) {
         var value = wiredValue
         value.animatableValue = animatedValue.presentation
         render(value, tx: &tx)
@@ -346,7 +346,7 @@ where MountedBody == Value.Body._MountedNode {
     ) -> AnimationProgressResult {
         guard animatedValue.isAnimating else { return .completed }
         animatedValue.progressToTime(tx.currentFrameTime)
-        runUpdate(tx: &tx)
+        update(tx: &tx)
         return animatedValue.isAnimating ? .stillRunning : .completed
     }
 

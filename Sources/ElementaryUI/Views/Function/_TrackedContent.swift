@@ -136,16 +136,16 @@ final class TrackedFunction<Input, Content: _Mountable>: SchedulableNode {
 
     func update(_ view: consuming _TrackedContent<Input, Content>, tx: inout _TransactionContext) {
         self.view = view
-        runUpdate(tx: &tx)
+        update(tx: &tx)
     }
 
-    override func runUpdate(tx: inout _TransactionContext) {
+    override func performUpdate(tx: inout _TransactionContext) {
         let body = trackDependencies(scheduler: tx.scheduler) { view.content(view.input) }
         Content._patchNode(body, node: &child!, tx: &tx)
     }
 
     func unmount(_ context: inout _CommitContext) {
-        stopTracking()
+        stopScheduling()
         child.take()?.unmount(&context)
     }
 }

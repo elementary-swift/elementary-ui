@@ -18,7 +18,7 @@ public struct _TransactionContext: ~Copyable {
     }
 
     mutating func addFunction(_ function: SchedulableNode) {
-        pendingFunctions.registerFunctionForUpdate(function, transaction: transaction)
+        pendingFunctions.enqueue(function, transaction: transaction)
     }
 
     // TODO: review this whole ordeal
@@ -34,7 +34,7 @@ public struct _TransactionContext: ~Copyable {
         lazy var defaultTransaction = Transaction()
         while let (node, transaction) = pendingFunctions.next() {
             self.transaction = transaction ?? defaultTransaction
-            node.runInvalidatedUpdate(tx: &self)
+            node.update(tx: &self)
         }
     }
 }
