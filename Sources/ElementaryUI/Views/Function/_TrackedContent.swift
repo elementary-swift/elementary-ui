@@ -2,8 +2,8 @@ import Reactivity
 
 /// Mounts `content(input)` in its own scheduled node, so reactive reads made while building
 /// the content are tracked by (and re-run) this node alone.
-public struct _TrackedContent<Input, Content: _Mountable>: _Mountable {
-    public typealias _MountedNode = _TrackedNode<Input, Content>
+struct _TrackedContent<Input, Content: _Mountable>: _Mountable {
+    typealias _MountedNode = _TrackedNode<Input, Content>
 
     var input: Input
     var content: (Input) -> Content
@@ -13,7 +13,7 @@ public struct _TrackedContent<Input, Content: _Mountable>: _Mountable {
         self.content = content
     }
 
-    public static func _makeNode(
+    static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
         ctx: inout _MountContext
@@ -21,7 +21,7 @@ public struct _TrackedContent<Input, Content: _Mountable>: _Mountable {
         _MountedNode(view, context: context, ctx: &ctx)
     }
 
-    public static func _patchNode(
+    static func _patchNode(
         _ view: consuming Self,
         node: inout _MountedNode,
         tx: inout _TransactionContext
@@ -31,7 +31,7 @@ public struct _TrackedContent<Input, Content: _Mountable>: _Mountable {
 }
 
 // A single reference, so that type-erased rows are stored without a box.
-public struct _TrackedNode<Input, Content: _Mountable>: ~Copyable, _Reconcilable {
+struct _TrackedNode<Input, Content: _Mountable>: ~Copyable, _Reconcilable {
     private let function: TrackedFunction<Input, Content>
 
     init(
@@ -49,7 +49,7 @@ public struct _TrackedNode<Input, Content: _Mountable>: ~Copyable, _Reconcilable
         function.update(view, tx: &tx)
     }
 
-    public consuming func unmount(_ context: inout _CommitContext) {
+    consuming func unmount(_ context: inout _CommitContext) {
         function.unmount(&context)
     }
 }
