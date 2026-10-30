@@ -67,6 +67,7 @@ class SchedulableNode {
 struct PendingFunctionQueue: ~Copyable {
     private struct Entry {
         let function: SchedulableNode
+        /// Set only if the function must not run in the transaction the queue is drained in.
         let transaction: Transaction?
     }
 
@@ -76,7 +77,7 @@ struct PendingFunctionQueue: ~Copyable {
 
     var isEmpty: Bool { functionsToRun.isEmpty }
 
-    mutating func enqueue(_ function: SchedulableNode, transaction: Transaction?) {
+    mutating func enqueue(_ function: SchedulableNode, transaction: Transaction? = nil) {
         guard !function.hasPendingUpdate else { return }
         function.hasPendingUpdate = true
         logTrace("registering function run \(ObjectIdentifier(function))")

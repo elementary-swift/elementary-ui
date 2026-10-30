@@ -92,7 +92,7 @@ final class Scheduler {
             currentTransaction = Transaction._current
         }
 
-        pendingFunctions.enqueue(function, transaction: currentTransaction)
+        pendingFunctions.enqueue(function)
     }
 
     func scheduleUpdate(_ callback: @escaping (inout _TransactionContext) -> Void) {

@@ -122,11 +122,13 @@ struct _Access: Hashable, Sendable {
 
 /// The accesses of a tracking pass, with their stamps. Passes mostly read a handful of
 /// properties, which are kept inline so that tracking allocates nothing; more are kept in a
-/// dictionary.
+/// dictionary. A struct rather than an enum, so that a read updates it in place.
 @usableFromInline
-enum _AccessTable: ~Copyable {
-    case inline(InlineArray<3, Entry?>, count: Int)
-    case dictionary([_Access: Stamp])
+struct _AccessTable: ~Copyable {
+    private var entries = InlineArray<3, Entry?>(repeating: nil)
+    private var entryCount = 0
+    /// Replaces `entries` once a pass reads more than they hold.
+    private var dictionary: [_Access: Stamp]?
 
     @usableFromInline
     struct Stamp {
@@ -157,116 +159,99 @@ enum _AccessTable: ~Copyable {
 
     private static var inlineCapacity: Int { 3 }
 
-    init() {
-        self = .inline(InlineArray(repeating: nil), count: 0)
-    }
+    init() {}
 
-    var count: Int {
-        switch self {
-        case .inline(_, let count): count
-        case .dictionary(let accesses): accesses.count
-        }
-    }
+    var count: Int { dictionary?.count ?? entryCount }
 
     var isEmpty: Bool { count == 0 }
 
     mutating func record(_ access: _Access, generation: UInt8) -> Recorded {
-        switch consume self {
-        case .inline(var entries, let count):
-            var span = entries.mutableSpan
-            for index in 0..<count where span[index]!.access == access {
-                let recorded = span[index]!.stamp.stamp(generation)
-                self = .inline(entries, count: count)
-                return recorded
-            }
-            guard count == Self.inlineCapacity else {
-                span[count] = Entry(access: access, stamp: Stamp(generation: generation))
-                self = .inline(entries, count: count + 1)
-                return .new
-            }
-            var accesses = [_Access: Stamp](minimumCapacity: 2 * Self.inlineCapacity)
-            for index in span.indices {
-                let entry = span[index]!
-                accesses[entry.access] = entry.stamp
-            }
-            accesses[access] = Stamp(generation: generation)
-            self = .dictionary(accesses)
-            return .new
+        if dictionary != nil { return recordInDictionary(access, generation: generation) }
 
-        case .dictionary(var accesses):
-            let recorded: Recorded
-            if let index = accesses.index(forKey: access) {
-                recorded = accesses.values[index].stamp(generation)
-            } else {
-                accesses[access] = Stamp(generation: generation)
-                recorded = .new
-            }
-            self = .dictionary(accesses)
-            return recorded
+        var span = entries.mutableSpan
+        for index in 0..<entryCount where span[index]!.access == access {
+            return span[index]!.stamp.stamp(generation)
         }
+        guard entryCount == Self.inlineCapacity else {
+            span[entryCount] = Entry(access: access, stamp: Stamp(generation: generation))
+            entryCount += 1
+            return .new
+        }
+        var accesses = [_Access: Stamp](minimumCapacity: 2 * Self.inlineCapacity)
+        for index in span.indices {
+            let entry = span[index].take()!
+            accesses[entry.access] = entry.stamp
+        }
+        entryCount = 0
+        accesses[access] = Stamp(generation: generation)
+        dictionary = accesses
+        return .new
+    }
+
+    private mutating func recordInDictionary(_ access: _Access, generation: UInt8) -> Recorded {
+        if let index = dictionary!.index(forKey: access) {
+            return dictionary!.values[index].stamp(generation)
+        }
+        dictionary![access] = Stamp(generation: generation)
+        return .new
     }
 
     /// Removes the accesses not read in `generation`, passing the subscribed ones to `removed`.
     mutating func removeAll(notReadIn generation: UInt8, _ removed: (_Access) -> Void) {
-        switch consume self {
-        case .inline(var entries, let count):
-            var span = entries.mutableSpan
-            var keptCount = 0
-            for index in 0..<count {
-                let entry = span[index].take()!
-                if entry.stamp.generation == generation {
-                    span[keptCount] = entry
-                    keptCount += 1
-                } else if entry.stamp.isSubscribed {
-                    removed(entry.access)
-                }
-            }
-            self = .inline(entries, count: keptCount)
-
-        case .dictionary(var accesses):
+        if let accesses = dictionary {
             for (access, stamp) in accesses where stamp.generation != generation && stamp.isSubscribed {
                 removed(access)
             }
-            accesses = accesses.filter { $0.value.generation == generation }
-            self = .dictionary(accesses)
+            dictionary = accesses.filter { $0.value.generation == generation }
+            return
         }
+
+        var span = entries.mutableSpan
+        var keptCount = 0
+        for index in 0..<entryCount {
+            let entry = span[index].take()!
+            if entry.stamp.generation == generation {
+                span[keptCount] = entry
+                keptCount += 1
+            } else if entry.stamp.isSubscribed {
+                removed(entry.access)
+            }
+        }
+        entryCount = keptCount
     }
 
     /// Passes each access not yet subscribed to `subscribe`, and marks it subscribed.
     mutating func subscribeNew(_ subscribe: (_Access) -> Void) {
-        switch consume self {
-        case .inline(var entries, let count):
-            var span = entries.mutableSpan
-            for index in 0..<count where !span[index]!.stamp.isSubscribed {
-                subscribe(span[index]!.access)
-                span[index]!.stamp.isSubscribed = true
-            }
-            self = .inline(entries, count: count)
-
-        case .dictionary(var accesses):
-            var index = accesses.startIndex
-            while index != accesses.endIndex {
-                if !accesses.values[index].isSubscribed {
-                    subscribe(accesses.keys[index])
-                    accesses.values[index].isSubscribed = true
+        if dictionary != nil {
+            var index = dictionary!.startIndex
+            while index != dictionary!.endIndex {
+                if !dictionary!.values[index].isSubscribed {
+                    subscribe(dictionary!.keys[index])
+                    dictionary!.values[index].isSubscribed = true
                 }
-                accesses.formIndex(after: &index)
+                dictionary!.formIndex(after: &index)
             }
-            self = .dictionary(accesses)
+            return
+        }
+
+        var span = entries.mutableSpan
+        for index in 0..<entryCount where !span[index]!.stamp.isSubscribed {
+            subscribe(span[index]!.access)
+            span[index]!.stamp.isSubscribed = true
         }
     }
 
     func forEachSubscribed(_ body: (_Access) -> Void) {
-        switch self {
-        case .inline(let entries, let count):
-            let span = entries.span
-            for index in 0..<count where span[index]!.stamp.isSubscribed {
-                body(span[index]!.access)
-            }
-        case .dictionary(let accesses):
+        if let accesses = dictionary {
             for (access, stamp) in accesses where stamp.isSubscribed {
                 body(access)
             }
+            return
+        }
+
+        let span = entries.span
+        for index in 0..<entryCount where span[index]!.stamp.isSubscribed {
+            body(span[index]!.access)
         }
     }
 }

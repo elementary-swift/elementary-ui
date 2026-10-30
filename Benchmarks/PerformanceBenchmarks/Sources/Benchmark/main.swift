@@ -3,13 +3,9 @@ import Reactivity
 
 // MARK: - Data
 
-struct Row: Equatable {
+struct Row: Identifiable {
     let id: Int
     var label: String
-
-    static func == (lhs: Row, rhs: Row) -> Bool {
-        lhs.id == rhs.id && lhs.label.utf8.elementsEqual(rhs.label.utf8)
-    }
 }
 
 private let adjectives = [
@@ -114,24 +110,25 @@ struct ActionButton {
 @View
 struct RowView {
     @Environment(BenchmarkStore.self) var store: BenchmarkStore
-    var row: Row
+    var id: Int
+    var label: String
     var isSelected: Bool
 
     var body: some View {
         tr(.class(isSelected ? "danger" : "")) {
             td(.class("col-md-1")) {
-                "\(row.id)"
+                "\(id)"
             }
             td(.class("col-md-4")) {
-                a { row.label }
-                    .onClick { store.select(row.id) }
+                a { label }
+                    .onClick { store.select(id) }
             }
             td(.class("col-md-1")) {
                 a {
                     span(.class("glyphicon glyphicon-remove")) {}
                         .attributes(.custom(name: "aria-hidden", value: "true"))
                 }
-                .onClick { store.delete(row.id) }
+                .onClick { store.delete(id) }
             }
             td(.class("col-md-6")) {}
         }
@@ -145,9 +142,10 @@ struct DataTable {
     var body: some View {
         table(.class("table table-hover table-striped test-data")) {
             tbody(.id("tbody")) {
-                ForEach(store.rows, id: { $0.id }) { row in
+                ForEach(store.rows) { row in
                     RowView(
-                        row: row,
+                        id: row.id,
+                        label: row.label,
                         isSelected: store.selectedID == row.id
                     )
                 }
