@@ -30,97 +30,27 @@ public struct _TrackedContent<Input, Content: _Mountable>: _Mountable {
     }
 }
 
+// A single reference, so that type-erased rows are stored without a box.
 public struct _TrackedNode<Input, Content: _Mountable>: ~Copyable, _Reconcilable {
-    private let depthInTree: Int
-    private var storage: Storage
+    private let function: TrackedFunction<Input, Content>
 
     init(
         _ view: consuming _TrackedContent<Input, Content>,
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) {
-        depthInTree = context.functionDepth
-        var childContext = copy context
-        childContext.functionDepth += 1
-
-        var dependencies: ReactiveTracking.AccessedDependencies?
-        let content = ReactiveTracking.track(into: &dependencies) { view.content(view.input) }
-        let child = Content._makeNode(content, context: childContext, ctx: &ctx)
-
-        storage = Storage(
-            child: child,
-            view: view,
-            dependencies: dependencies,
-            depthInTree: depthInTree,
-            scheduler: ctx.scheduler
-        )
+        function = TrackedFunction(view, context: context, ctx: &ctx)
     }
 
     mutating func patch(
         _ view: consuming _TrackedContent<Input, Content>,
         tx: inout _TransactionContext
     ) {
-        storage.patch(view, depthInTree: depthInTree, tx: &tx)
+        function.update(view, tx: &tx)
     }
 
     public consuming func unmount(_ context: inout _CommitContext) {
-        storage.unmount(&context)
-    }
-
-    // Kept inline until the content reads reactive state, then boxed so it can be scheduled.
-    private enum Storage: ~Copyable {
-        case inline(Content._MountedNode)
-        case box(TrackedFunction<Input, Content>)
-
-        init(
-            child: consuming Content._MountedNode,
-            view: consuming _TrackedContent<Input, Content>,
-            dependencies: consuming ReactiveTracking.AccessedDependencies?,
-            depthInTree: Int,
-            scheduler: Scheduler
-        ) {
-            guard let dependencies else {
-                self = .inline(child)
-                return
-            }
-            let function = TrackedFunction(child: child, view: view, depthInTree: depthInTree)
-            function.startTracking(dependencies, scheduler: scheduler)
-            self = .box(function)
-        }
-
-        mutating func patch(
-            _ view: consuming _TrackedContent<Input, Content>,
-            depthInTree: Int,
-            tx: inout _TransactionContext
-        ) {
-            switch self {
-            case .inline(var child):
-                var dependencies: ReactiveTracking.AccessedDependencies?
-                let content = ReactiveTracking.track(into: &dependencies) { view.content(view.input) }
-                Content._patchNode(content, node: &child, tx: &tx)
-
-                self = Storage(
-                    child: child,
-                    view: view,
-                    dependencies: dependencies,
-                    depthInTree: depthInTree,
-                    scheduler: tx.scheduler
-                )
-
-            case .box(let function):
-                function.update(view, tx: &tx)
-                self = .box(function)
-            }
-        }
-
-        consuming func unmount(_ context: inout _CommitContext) {
-            switch consume self {
-            case .inline(let child):
-                child.unmount(&context)
-            case .box(let function):
-                function.unmount(&context)
-            }
-        }
+        function.unmount(&context)
     }
 }
 
@@ -128,10 +58,23 @@ final class TrackedFunction<Input, Content: _Mountable>: SchedulableNode {
     private var child: Content._MountedNode?
     private var view: _TrackedContent<Input, Content>
 
-    init(child: consuming Content._MountedNode, view: _TrackedContent<Input, Content>, depthInTree: Int) {
-        self.child = .some(child)
+    init(
+        _ view: consuming _TrackedContent<Input, Content>,
+        context: borrowing _ViewContext,
+        ctx: inout _MountContext
+    ) {
+        var childContext = copy context
+        childContext.functionDepth += 1
+
+        var dependencies: ReactiveTracking.AccessedDependencies?
+        let content = ReactiveTracking.track(into: &dependencies) { view.content(view.input) }
+        child = Content._makeNode(content, context: childContext, ctx: &ctx)
         self.view = view
-        super.init(depthInTree: depthInTree)
+        super.init(depthInTree: context.functionDepth)
+
+        if let dependencies = dependencies.take() {
+            startTracking(dependencies, scheduler: ctx.scheduler)
+        }
     }
 
     func update(_ view: consuming _TrackedContent<Input, Content>, tx: inout _TransactionContext) {
