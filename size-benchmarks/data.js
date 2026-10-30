@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793362118743,
+  "lastUpdate": 1793383260246,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -13884,6 +13884,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 154.96,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9385aafca96a32c60fba06e6049de01ec2d3e597",
+          "message": "cheaper ForEach row tracking and updates (#150)\n\n* update inline accesses in place when tracking\n\n* store tracked rows as one reference\n\n* only store transactions that differ in the function queue\n\n* use synthesized row equating in the performance benchmark\n\n* make tracked content and node internal\n\n* fix test formatting",
+          "timestamp": "2026-10-30T18:53:33+01:00",
+          "tree_id": "5e114359dd3454e88456fab47153f9a7b0cff361",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/9385aafca96a32c60fba06e6049de01ec2d3e597"
+        },
+        "date": 1793383259096,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 171.69,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 98.34,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 80.5,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 135.82,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 151.1,
             "unit": "kB"
           }
         ]
