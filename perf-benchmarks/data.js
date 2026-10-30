@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793290262816,
+  "lastUpdate": 1793383273652,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -5113,6 +5113,85 @@ window.BENCHMARK_DATA = {
           {
             "name": "09_clear1k_x8",
             "value": 69.91,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.06,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.1,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.38,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9385aafca96a32c60fba06e6049de01ec2d3e597",
+          "message": "cheaper ForEach row tracking and updates (#150)\n\n* update inline accesses in place when tracking\n\n* store tracked rows as one reference\n\n* only store transactions that differ in the function queue\n\n* use synthesized row equating in the performance benchmark\n\n* make tracked content and node internal\n\n* fix test formatting",
+          "timestamp": "2026-10-30T18:53:33+01:00",
+          "tree_id": "5e114359dd3454e88456fab47153f9a7b0cff361",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/9385aafca96a32c60fba06e6049de01ec2d3e597"
+        },
+        "date": 1793383272599,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 63.66,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 81.5,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 136.34,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 7.55,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 37.76,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 25.49,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 89.37,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 44.75,
             "unit": "ms"
           },
           {
