@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793289999815,
+  "lastUpdate": 1793362118743,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -13822,6 +13822,53 @@ window.BENCHMARK_DATA = {
           {
             "name": "Counter",
             "value": 99.93,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81.06,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 138.26,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 154.96,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "bcb2f8111e804e592747a9bb199c15d0966de020",
+          "message": "keyed ForEach with id: and per-row tracking (#149)\n\n* keyed ForEach with id: and per-row tracking\n\n* single update entry point for schedulable nodes\n\n* trim tracked-row benchmarks",
+          "timestamp": "2026-10-29T15:59:19Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/bcb2f8111e804e592747a9bb199c15d0966de020"
+        },
+        "date": 1793362118148,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 173.28,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 99.95,
             "unit": "kB"
           },
           {
