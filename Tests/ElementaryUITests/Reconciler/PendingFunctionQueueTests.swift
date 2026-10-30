@@ -15,7 +15,7 @@ struct PendingFunctionQueueTests {
             currentTime: 0,
             pendingFunctions: consume queue
         )
-        context.withModifiedTransaction({ $0.animation = .default }) { $0.addFunction(animated) }
+        context.withModifiedTransaction({ $0.animation = .default }, run: { $0.addFunction(animated) })
         context.drain()
 
         #expect(plain.didRunAnimated == false)
