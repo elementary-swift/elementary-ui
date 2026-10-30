@@ -30,11 +30,12 @@ public struct _TransactionContext: ~Copyable {
     }
 
     consuming func drain() {
-        // Functions invalidated outside a transaction share one default transaction.
-        lazy var defaultTransaction = Transaction()
         while let (node, transaction) = pendingFunctions.next() {
-            self.transaction = transaction ?? defaultTransaction
-            node.update(tx: &self)
+            if let transaction {
+                withModifiedTransaction({ $0 = transaction }, run: node.update(tx:))
+            } else {
+                node.update(tx: &self)
+            }
         }
     }
 }
