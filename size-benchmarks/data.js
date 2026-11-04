@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793446969342,
+  "lastUpdate": 1793812236329,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -14024,6 +14024,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "Inputs",
             "value": 135.81,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 151.09,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "57384e8f02663ebd7b0783e0f4dd8e36d7e75784",
+          "message": "bump JavaScriptKit to 0.63.0 (#152)\n\n* bump JavaScriptKit to 0.63.0\n\n* pin setup-swift jobs to ubuntu-24.04",
+          "timestamp": "2026-11-04T18:02:00+01:00",
+          "tree_id": "472da101477b8f0fdd27bd3433757bf9a33c0a9b",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/57384e8f02663ebd7b0783e0f4dd8e36d7e75784"
+        },
+        "date": 1793812235122,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 171.7,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 98.33,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 80.5,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 135.82,
             "unit": "kB"
           },
           {
