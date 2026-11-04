@@ -64,15 +64,19 @@ class PlaceholderContent: Unmountable {
         }
     }
 
-    final func update<Value: _Mountable>(
-        _ value: consuming Value,
-        tx: inout _TransactionContext,
-        patch: (inout Value._MountedNode, inout _TransactionContext) -> Void
-    ) {
+    final func update<Value: _Mountable>(_ value: consuming Value, tx: inout _TransactionContext) {
         unsafeDowncast(self, to: TypedPlaceholderContent<Value>.self).value = value
-        forEachInstance { instance in
-            instance.modify({ node in patch(&node, &tx) })
-        }
+        patchInstances(&tx)
+    }
+
+    // Patch through the vtable so each content type does not specialize the closure.
+    @inline(never)
+    private final func patchInstances(_ tx: inout _TransactionContext) {
+        forEachInstance { instance in patchInstance(&instance, &tx) }
+    }
+
+    func patchInstance(_ instance: inout AnyReconcilable, _ tx: inout _TransactionContext) {
+        fatalError("abstract")
     }
 
     // Keep registry traversal out of each concrete content specialization.
@@ -102,6 +106,12 @@ private class TypedPlaceholderContent<Value: _Mountable>: PlaceholderContent {
 
     final override func makeInstance(context: borrowing _ViewContext, ctx: inout _MountContext) -> AnyReconcilable {
         AnyReconcilable(Value._makeNode(value, context: context, ctx: &ctx))
+    }
+
+    final override func patchInstance(_ instance: inout AnyReconcilable, _ tx: inout _TransactionContext) {
+        instance.modify(as: Value._MountedNode.self) { node in
+            Value._patchNode(value, node: &node, tx: &tx)
+        }
     }
 }
 

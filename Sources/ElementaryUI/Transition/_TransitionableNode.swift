@@ -6,15 +6,14 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
     private var node: Node?
     private var transitionedElement: _TransitionElement?
 
-    @inline(never)
     init<Content: _Mountable>(
         _ value: consuming Content,
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) where Content._MountedNode == Node {
         defer {
-            precondition(node != nil || transitionedElement != nil)
-            precondition(node == nil || transitionedElement == nil)
+            assert(node != nil || transitionedElement != nil)
+            assert(node == nil || transitionedElement == nil)
         }
 
         guard let transition = context.transition else {
@@ -24,8 +23,7 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
 
         // An element consumes the transition modifier; it must never leak into
         // structural content mounted below that element.
-        var nodeContext = copy context
-        nodeContext.transition = nil
+        let nodeContext = context.withoutTransition()
 
         // Without a structural owner there is nothing that can defer removal.
         guard ctx.slotTransitions != nil else {
@@ -41,7 +39,6 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
         )
     }
 
-    @inline(never)
     mutating func update<Content: _Mountable>(
         _ value: consuming Content,
         _ tx: inout _TransactionContext
@@ -49,9 +46,7 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
         if node != nil {
             Content._patchNode(value, node: &node!, tx: &tx)
         } else if let transitionedElement {
-            transitionedElement.content.update(copy value, tx: &tx) { node, tx in
-                Content._patchNode(copy value, node: &node, tx: &tx)
-            }
+            transitionedElement.content.update(value, tx: &tx)
         }
     }
 
