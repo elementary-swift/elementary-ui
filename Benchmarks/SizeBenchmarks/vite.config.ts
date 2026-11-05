@@ -34,6 +34,7 @@ export default defineConfig({
     injectBenchProduct(),
     swiftWasm({
       useEmbeddedSDK: true,
+      js: { wasiRuntime: "uwasi" },
       linkEmbeddedUnicodeDataTables: false
     })],
 });

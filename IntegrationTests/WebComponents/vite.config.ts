@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [
     swiftWasm({
       useEmbeddedSDK: true,
+      js: { wasiRuntime: "uwasi" },
     }),
     {
       name: "elementary-hmr-test-hook",
