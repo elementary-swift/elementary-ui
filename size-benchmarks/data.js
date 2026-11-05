@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793812236329,
+  "lastUpdate": 1793863136894,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -14078,6 +14078,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 151.09,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9b9ca0d6de29c302dec1ece15cdff9c7cbda1152",
+          "message": "bump elementary to 0.9 and trim transition code size (#154)",
+          "timestamp": "2026-11-05T08:08:19+01:00",
+          "tree_id": "d9c34a264e2fac60a6add674284e5ba3c212608d",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/9b9ca0d6de29c302dec1ece15cdff9c7cbda1152"
+        },
+        "date": 1793863135706,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 172.63,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 98.04,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81.64,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 132.87,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 145.99,
             "unit": "kB"
           }
         ]
