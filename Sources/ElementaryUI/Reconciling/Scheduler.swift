@@ -147,14 +147,17 @@ final class Scheduler {
         context = ambientContext.take()!
     }
 
+    /// Unmount work registered outside any slot goes into `unmounts`.
     func withMountContext<R: ~Copyable>(
         tx: inout _TransactionContext,
+        unmounts: inout UnmountRegistry,
         _ body: (consuming _MountContext) -> R
     ) -> R {
         self.scratch.withLayoutNodeScratchFrame { scratch in
             body(
                 _MountContext(
                     nodeStack: scratch,
+                    unmounts: _MutableRef(&unmounts),
                     dom: dom,
                     scheduler: self,
                     currentFrameTime: tx.currentFrameTime,
@@ -162,6 +165,17 @@ final class Scheduler {
                 )
             )
         }
+    }
+
+    /// For mounts that register only inside the slots they create.
+    func withMountContext<R: ~Copyable>(
+        tx: inout _TransactionContext,
+        _ body: (consuming _MountContext) -> R
+    ) -> R {
+        var unmounts = UnmountRegistry()
+        let result = withMountContext(tx: &tx, unmounts: &unmounts, body)
+        assert(unmounts.isEmpty, "unmount registered outside a slot")
+        return result
     }
 
     func getOrAddExtension<Value: AnyObject>(_ type: Value.Type, make: () -> Value) -> Value {

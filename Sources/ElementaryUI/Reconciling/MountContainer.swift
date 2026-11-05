@@ -19,7 +19,7 @@ import BasicContainers
 ///   DOM stays in place and they can be revived by key.
 /// - `removedSlots`: done; the next `collect` emits their `.removed` layout
 ///   ops and unmounts them.
-final class MountContainer {
+final class MountContainer: Unmountable {
     private let viewContext: _ViewContext
     private var activeSlots: UniqueArray<Slot>
     private var leavingSlots: UniqueArray<Slot> = .init()
@@ -32,7 +32,7 @@ final class MountContainer {
         self.activeSlots = slots
     }
 
-    convenience init<Node: _Reconcilable & ~Copyable>(
+    convenience init<Node: ~Copyable>(
         mountedKey key: _ViewKey,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
@@ -46,7 +46,7 @@ final class MountContainer {
         )
     }
 
-    convenience init<Node: _Reconcilable & ~Copyable>(
+    convenience init<Node: ~Copyable>(
         mountedKeyStorage keys: borrowing Span<_ViewKey>,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
@@ -69,6 +69,8 @@ final class MountContainer {
                 }
             }
         )
+        // after the slots, which took their own registrations
+        ctx.registerUnmount(self)
     }
 
     func collect(into ops: inout LayoutPass, context: inout _CommitContext, op: LayoutPass.Entry.LayoutOp) {
@@ -214,8 +216,9 @@ extension MountContainer {
 }
 
 extension MountContainer {
-    /// One keyed child: its mounted node, the layout nodes it produced, and
-    /// the transition state that decides how it enters and leaves.
+    /// One keyed child: its mounted node, the unmount work registered while
+    /// mounting it, the layout nodes it produced, and the transition state
+    /// that decides how it enters and leaves.
     struct Slot: ~Copyable {
         enum Placement {
             case unchanged
@@ -225,6 +228,7 @@ extension MountContainer {
 
         let key: _ViewKey
         var node: AnyReconcilable
+        var unmounts: UnmountRegistry
         var layoutNodes: SlotLayoutNodes
         var placement: Placement
         var transitions: _SlotTransitions
@@ -235,11 +239,13 @@ extension MountContainer {
         init(
             key: _ViewKey,
             node: consuming AnyReconcilable,
+            unmounts: consuming UnmountRegistry,
             layoutNodes: consuming SlotLayoutNodes,
             transitions: consuming _SlotTransitions
         ) {
             self.key = key
             self.node = node
+            self.unmounts = unmounts
             self.layoutNodes = layoutNodes
             self.placement = .unchanged
             self.transitions = transitions
@@ -323,11 +329,11 @@ extension MountContainer {
             if placement != .added {
                 layoutNodes.collect(into: &ops, context: &context, op: .removed)
             }
-            node.unmount(&context)
+            unmounts.unmount(&context)
         }
 
         consuming func unmount(_ context: inout _CommitContext) {
-            node.unmount(&context)
+            unmounts.unmount(&context)
         }
     }
 }

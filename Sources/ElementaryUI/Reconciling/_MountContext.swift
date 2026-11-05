@@ -7,21 +7,26 @@ public struct _MountContext: ~Copyable, ~Escapable {
 
     private(set) var slotTransitions: _SlotTransitions?
 
+    /// The unmount work of the enclosing slot (or root).
+    private var unmounts: _MutableRef<UnmountRegistry>
+
     // NOTE: we could use a fancy Inout<_CommitContext> here.. but maybe not worth it
     let scheduler: Scheduler
     let dom: DOMInteractor
     let currentFrameTime: Double
     let transaction: Transaction
 
-    @_lifetime(copy nodeStack)
+    @_lifetime(copy nodeStack, copy unmounts)
     init(
         nodeStack: consuming ScratchStack<LayoutNode>,
+        unmounts: consuming _MutableRef<UnmountRegistry>,
         dom: DOMInteractor,
         scheduler: Scheduler,
         currentFrameTime: Double,
         transaction: Transaction,
         slotTransitions: consuming _SlotTransitions? = nil
     ) {
+        self.unmounts = unmounts
         self.nodeStack = consume nodeStack
         self.dom = dom
         self.scheduler = scheduler
@@ -42,6 +47,12 @@ public struct _MountContext: ~Copyable, ~Escapable {
         appendLayoutNode(.container(container))
     }
 
+    /// Registers unmount work for the enclosing slot. Register after mounting
+    /// children so the registry unmounts children first.
+    mutating func registerUnmount(_ entry: any Unmountable) {
+        unmounts.value.register(entry)
+    }
+
     mutating func registerTransition(
         _ transitionedElement: _TransitionElement,
         initialPhase: TransitionPhase
@@ -55,7 +66,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
 
     /// Mounts one structural slot: runs `makeNode` in a nested layout-node
     /// frame with a fresh transition registry, then packages the node, its
-    /// layout nodes, and its transitions into a slot.
+    /// unmount work, its layout nodes, and its transitions into a slot.
     // inline(never): keeps slot mounting out of every mount site (code size)
     @inline(never)
     mutating func mountSlot(
@@ -64,9 +75,11 @@ public struct _MountContext: ~Copyable, ~Escapable {
         env: borrowing _ViewContext,
         makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
     ) -> MountContainer.Slot {
-        nodeStack.withNestedStack { slotStack in
+        var unmounts = UnmountRegistry()
+        return nodeStack.withNestedStack { slotStack in
             var slotCtx = _MountContext(
                 nodeStack: slotStack,
+                unmounts: _MutableRef(&unmounts),
                 dom: dom,
                 scheduler: scheduler,
                 currentFrameTime: currentFrameTime,
@@ -80,28 +93,48 @@ public struct _MountContext: ~Copyable, ~Escapable {
                 scheduler: scheduler,
                 transaction: transaction
             )
+            // consumes the context, ending its borrow of `unmounts`
+            let layoutNodes = slotCtx.takeSlotLayoutNodes()
 
             return MountContainer.Slot(
                 key: key,
                 node: node,
-                layoutNodes: slotCtx.takeSlotLayoutNodes(),
+                unmounts: unmounts.take(),
+                layoutNodes: layoutNodes,
                 transitions: transitions
             )
         }
     }
 
+    /// A context for an element's children: a nested layout-node frame that
+    /// registers unmount work with the same slot.
     mutating func withChildContext<R: ~Copyable>(_ body: (consuming _MountContext) -> R) -> R {
-        nodeStack.withNestedStack { childStack in
+        let dom = dom
+        let scheduler = scheduler
+        let currentFrameTime = currentFrameTime
+        let transaction = transaction
+        return Self.withNestedFrame(&nodeStack, &unmounts) { childStack, childUnmounts in
             body(
                 _MountContext(
                     nodeStack: childStack,
+                    unmounts: childUnmounts,
                     dom: dom,
                     scheduler: scheduler,
                     currentFrameTime: currentFrameTime,
-                    transaction: transaction,
-                    slotTransitions: nil
+                    transaction: transaction
                 )
             )
+        }
+    }
+
+    // Static, so the two exclusive borrows do not overlap an access to self.
+    private static func withNestedFrame<R: ~Copyable>(
+        _ nodeStack: inout ScratchStack<LayoutNode>,
+        _ unmounts: inout _MutableRef<UnmountRegistry>,
+        _ body: (consuming ScratchStack<LayoutNode>, consuming _MutableRef<UnmountRegistry>) -> R
+    ) -> R {
+        nodeStack.withNestedStack { childStack in
+            body(childStack, _MutableRef(&unmounts.value))
         }
     }
 

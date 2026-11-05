@@ -1,10 +1,11 @@
-public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
-    ~Copyable,
-    _Reconcilable
+public struct _TransitionableNode<Node: ~Copyable>:
+    ~Copyable
 {
     // NOTE: this looks like it should be an enum, but that causes code size bloat
-    private var node: Node?
-    private var transitionedElement: _TransitionElement?
+    // Spelled out, these have no implicit nil default: init assigns each once
+    // instead of destroying a default first (code size, per specialization).
+    private var node: Optional<Node>
+    private var transitionedElement: Optional<_TransitionElement>
 
     init<Content: _Mountable>(
         _ value: consuming Content,
@@ -18,6 +19,7 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
 
         guard let transition = context.transition else {
             self.node = Content._makeNode(value, context: context, ctx: &ctx)
+            self.transitionedElement = nil
             return
         }
 
@@ -28,9 +30,11 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
         // Without a structural owner there is nothing that can defer removal.
         guard ctx.slotTransitions != nil else {
             self.node = Content._makeNode(value, context: nodeContext, ctx: &ctx)
+            self.transitionedElement = nil
             return
         }
 
+        self.node = nil
         self.transitionedElement = _TransitionElement.make(
             transition: transition.value,
             context: nodeContext,
@@ -48,12 +52,6 @@ public struct _TransitionableNode<Node: _Reconcilable & ~Copyable>:
         } else if let transitionedElement {
             transitionedElement.content.update(value, tx: &tx)
         }
-    }
-
-    @inline(never)
-    public consuming func unmount(_ context: inout _CommitContext) {
-        node.take()?.unmount(&context)
-        transitionedElement.take()?.unmount(&context)
     }
 }
 
@@ -87,10 +85,6 @@ class _TransitionElement {
         _ phase: TransitionPhase,
         tx: inout _TransactionContext
     ) {
-        fatalError("abstract")
-    }
-
-    func unmount(_ context: inout _CommitContext) {
         fatalError("abstract")
     }
 }
@@ -155,10 +149,5 @@ final class _MountedTransitionElement: _TransitionElement {
             tx: &tx,
             content: content
         )
-    }
-
-    override func unmount(_ context: inout _CommitContext) {
-        bodyNode.take()?.unmount(&context)
-        content.unmount(&context)
     }
 }

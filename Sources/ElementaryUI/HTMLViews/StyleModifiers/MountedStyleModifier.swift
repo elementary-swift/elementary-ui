@@ -1,6 +1,14 @@
 import ContainersPreview
 
-final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: Unmountable, Invalidateable {
+// The conformance lives on a non-generic base: the witness table of a generic
+// conformer is specialized as serialized in Embedded, which duplicates what
+// its `unmount` reaches (code size).
+class _MountedStyleModifierBase: Unmountable {
+    init() {}
+    func unmount(_ context: inout _CommitContext) {}
+}
+
+final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: _MountedStyleModifierBase, Invalidateable {
     let accessor: DOM.StyleAccessor
     var values: [Instance]
 
@@ -14,6 +22,7 @@ final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: Unmountabl
         self.accessor = context.dom.makeStyleAccessor(node, cssName: Instance.CSSValue.styleKey)
         self.values = layers
         self.animations = []
+        super.init()
 
         let selfAsTarget = AnyInvalidateable(self)
         for value in values {
@@ -47,7 +56,7 @@ final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: Unmountabl
         }
     }
 
-    func unmount(_ context: inout _CommitContext) {
+    override func unmount(_ context: inout _CommitContext) {
         for value in values {
             value.unmount(&context)
         }

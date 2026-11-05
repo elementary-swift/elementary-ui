@@ -22,9 +22,10 @@ final class EventHandlerModifier<Config: _DOMEventHandlerConfig>: DOMElementModi
         self.value = value
     }
 
-    func mount(_ node: DOM.Node, _ context: inout _MountContext) -> AnyUnmountable {
+    func mount(_ node: DOM.Node, _ context: inout _MountContext) {
         logTrace("mounting event modifier")
-        return AnyUnmountable(MountedInstance(node, self, &context))
+        let instance = MountedInstance(node, self, &context)
+        context.registerUnmount(instance)
     }
 
     func handleEvent(_ event: DOM.Event) {
@@ -39,6 +40,8 @@ final class EventHandlerModifier<Config: _DOMEventHandlerConfig>: DOMElementModi
 }
 
 extension EventHandlerModifier {
+    // Registered only to stay alive with the element; the sink drops the
+    // listener on deinit.
     final class MountedInstance: Unmountable {
         var sink: DOM.EventSink?
 
@@ -51,9 +54,6 @@ extension EventHandlerModifier {
             self.sink = consume sink
         }
 
-        func unmount(_ context: inout _CommitContext) {
-            _ = self.sink.take()
-        }
     }
 }
 
@@ -74,9 +74,10 @@ final class EventActionModifier<Config: _DOMEventConfig>: DOMElementModifier {
         self.value = value
     }
 
-    func mount(_ node: DOM.Node, _ context: inout _MountContext) -> AnyUnmountable {
+    func mount(_ node: DOM.Node, _ context: inout _MountContext) {
         logTrace("mounting event action modifier")
-        return AnyUnmountable(MountedInstance(node, self, &context))
+        let instance = MountedInstance(node, self, &context)
+        context.registerUnmount(instance)
     }
 
     func handleEvent() {
@@ -86,6 +87,8 @@ final class EventActionModifier<Config: _DOMEventConfig>: DOMElementModifier {
 }
 
 extension EventActionModifier {
+    // Registered only to stay alive with the element; the sink drops the
+    // listener on deinit.
     final class MountedInstance: Unmountable {
         var sink: DOM.EventSink?
 
@@ -98,8 +101,5 @@ extension EventActionModifier {
             self.sink = consume sink
         }
 
-        func unmount(_ context: inout _CommitContext) {
-            _ = sink.take()
-        }
     }
 }

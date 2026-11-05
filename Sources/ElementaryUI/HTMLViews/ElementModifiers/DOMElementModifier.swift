@@ -6,7 +6,9 @@ protocol DOMElementModifier: AnyObject {
     init(value: consuming Value, upstream: borrowing DOMElementModifiers)
     func updateValue(_ value: consuming Value, _ context: inout _TransactionContext)
 
-    func mount(_ node: DOM.Node, _ context: inout _MountContext) -> AnyUnmountable
+    /// Mounts on `node`. Mounted state that must stay alive (or be unmounted)
+    /// with the element registers on `context`.
+    func mount(_ node: DOM.Node, _ context: inout _MountContext)
 
     /// The attributes this modifier adds to its element when rendered on the server.
     /// TODO: this will ideally be replaced once we have an upstream Elementary element modifier API.
@@ -15,10 +17,6 @@ protocol DOMElementModifier: AnyObject {
 
 extension DOMElementModifier {
     static func serverAttributes(for value: Value) -> _AttributeStorage { .none }
-}
-
-protocol Unmountable: AnyObject {
-    func unmount(_ context: inout _CommitContext)
 }
 
 extension DOMElementModifier {
@@ -70,18 +68,6 @@ struct DOMElementModifiers {
         keys.removeAll(keepingCapacity: true)
         values.removeAll(keepingCapacity: true)
         return result
-    }
-}
-
-struct AnyUnmountable {
-    private let _unmount: (inout _CommitContext) -> Void
-
-    init(_ unmountable: some Unmountable) {
-        self._unmount = unmountable.unmount(_:)
-    }
-
-    func unmount(_ context: inout _CommitContext) {
-        _unmount(&context)
     }
 }
 

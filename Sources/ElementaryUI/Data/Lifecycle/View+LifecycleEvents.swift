@@ -136,8 +136,7 @@ struct _LifecycleEventView<Wrapped: View>: View, _Mountable {
         let state = LifecycleState(hook: view.listener, scheduler: ctx.scheduler)
         let child = Wrapped._makeNode(view.wrapped, context: context, ctx: &ctx)
 
-        let node = _StatefulNode(state: state, child: child)
-        return node
+        return _StatefulNode(state: state, child: child, ctx: &ctx)
     }
 
     static func _patchNode(

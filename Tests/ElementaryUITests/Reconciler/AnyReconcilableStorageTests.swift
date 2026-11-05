@@ -4,84 +4,60 @@ import Testing
 
 struct AnyReconcilableStorageTests {
     private final class Counts {
-        var destroyed = 0
-        var unmounted: [Int] = []
+        var destroyed: [Int] = []
     }
 
-    private struct Small: ~Copyable, _Reconcilable {
+    private struct Small: ~Copyable {
         let counts: Counts
         var value: Int
-        deinit { counts.destroyed += 1 }
-        consuming func unmount(_ context: inout _CommitContext) {
-            counts.unmounted.append(value)
-        }
+        deinit { counts.destroyed.append(value) }
     }
 
-    private struct Large: ~Copyable, _Reconcilable {
+    private struct Large: ~Copyable {
         let counts: Counts
         var value: Int
         var padding = (0, 0, 0, 0, 0, 0, 0, 0)
-        deinit { counts.destroyed += 1 }
-        consuming func unmount(_ context: inout _CommitContext) {
-            counts.unmounted.append(value)
-        }
+        deinit { counts.destroyed.append(value) }
     }
 
     @_alignment(16)
-    private struct Aligned: ~Copyable, _Reconcilable {
+    private struct Aligned: ~Copyable {
         let counts: Counts
-        deinit { counts.destroyed += 1 }
-        consuming func unmount(_ context: inout _CommitContext) {
-            counts.unmounted.append(16)
-        }
+        deinit { counts.destroyed.append(16) }
     }
 
     private final class Target {}
 
-    private struct Weak: ~Copyable, _Reconcilable {
+    private struct Weak: ~Copyable {
         let counts: Counts
         weak var target: Target?
         var value: Int
-        deinit { counts.destroyed += 1 }
-        consuming func unmount(_ context: inout _CommitContext) {
-            counts.unmounted.append(target == nil ? value : -value)
-        }
+        deinit { counts.destroyed.append(target == nil ? value : -value) }
     }
 
-    private func makeContext() -> _CommitContext {
-        let dom = TestDOM()
-        let scheduler = Scheduler(dom: dom)
-        return _CommitContext(dom: dom, scheduler: scheduler, currentFrameTime: 0)
-    }
-
-    @Test func inlineMutationAndConsumingUnmount() {
+    @Test func inlineMutationAndDrop() {
         let counts = Counts()
         var erased = AnyReconcilable(Small(counts: counts, value: 1))
         erased.modify(as: Small.self) { $0.value = 42 }
-        var context = makeContext()
-        erased.unmount(&context)
-        #expect(counts.unmounted == [42])
-        #expect(counts.destroyed == 1)
-    }
+        _ = consume erased
+        #expect(counts.destroyed == [42])
+            }
 
-    @Test func heapMutationAndConsumingUnmount() {
+    @Test func heapMutationAndDrop() {
         let counts = Counts()
         var erased = AnyReconcilable(Large(counts: counts, value: 1))
         erased.modify(as: Large.self) { $0.value = 42 }
-        var context = makeContext()
-        erased.unmount(&context)
-        #expect(counts.unmounted == [42])
-        #expect(counts.destroyed == 1)
-    }
+        _ = consume erased
+        #expect(counts.destroyed == [42])
+            }
 
-    @Test func dropWithoutUnmountDestroysEachPayload() {
+    @Test func dropDestroysEachPayload() {
         let counts = Counts()
         let small = AnyReconcilable(Small(counts: counts, value: 1))
         let large = AnyReconcilable(Large(counts: counts, value: 2))
         _ = consume small
         _ = consume large
-        #expect(counts.unmounted.isEmpty)
-        #expect(counts.destroyed == 2)
+        #expect(counts.destroyed == [1, 2])
     }
 
     @Test func arrayRelocationPreservesUniqueOwnership() {
@@ -93,20 +69,16 @@ struct AnyReconcilableStorageTests {
         for index in nodes.indices {
             nodes[index].modify(as: Small.self) { $0.value += 1 }
         }
-        var context = makeContext()
-        while let node = nodes.popLast() { node.unmount(&context) }
-        #expect(counts.unmounted == Array((1...128).reversed()))
-        #expect(counts.destroyed == 128)
-    }
+        while let node = nodes.popLast() { _ = consume node }
+        #expect(counts.destroyed == Array((1...128).reversed()))
+            }
 
     @Test func overAlignedPayloadUsesHeapStorage() {
         let counts = Counts()
         let node = AnyReconcilable(Aligned(counts: counts))
-        var context = makeContext()
-        node.unmount(&context)
-        #expect(counts.unmounted == [16])
-        #expect(counts.destroyed == 1)
-    }
+        _ = consume node
+        #expect(counts.destroyed == [16])
+            }
 
     @Test func smallWeakPayloadSurvivesRelocationAndZeroing() {
         #expect(MemoryLayout<Weak>.size <= MemoryLayout<_TextNode>.stride)
@@ -124,11 +96,9 @@ struct AnyReconcilableStorageTests {
                 $0.value += 1
             }
         }
-        var context = makeContext()
-        while let node = nodes.popLast() { node.unmount(&context) }
-        #expect(counts.unmounted == Array((1...128).reversed()))
-        #expect(counts.destroyed == 128)
-    }
+        while let node = nodes.popLast() { _ = consume node }
+        #expect(counts.destroyed == Array((1...128).reversed()))
+            }
 
     @Test func mixedInlineAndHeapRelocationPreservesOwnership() {
         let counts = Counts()
@@ -147,9 +117,7 @@ struct AnyReconcilableStorageTests {
                 nodes[index].modify(as: Large.self) { $0.value += 1 }
             }
         }
-        var context = makeContext()
-        while let node = nodes.popLast() { node.unmount(&context) }
-        #expect(counts.unmounted == Array((1...128).reversed()))
-        #expect(counts.destroyed == 128)
-    }
+        while let node = nodes.popLast() { _ = consume node }
+        #expect(counts.destroyed == Array((1...128).reversed()))
+            }
 }

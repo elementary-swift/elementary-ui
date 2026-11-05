@@ -1,10 +1,8 @@
 public struct _ElementNode:
-    ~Copyable,
-    _Reconcilable
+    ~Copyable
 {
     private var child: AnyReconcilable
     private var attributes: _ElementAttributes
-    private var mountedModifiers: [AnyUnmountable] = []
 
     @inline(never)
     init(
@@ -61,9 +59,8 @@ public struct _ElementNode:
         let modifiers = childContext.takeModifiers()
         let layoutObservers = childContext.takeLayoutObservers()
 
-        self.mountedModifiers.reserveCapacity(modifiers.count)
         for modifier in modifiers.reversed() {
-            self.mountedModifiers.append(modifier.mount(domNode, &ctx))
+            modifier.mount(domNode, &ctx)
         }
 
         self.child = ctx.withChildContext {
@@ -85,15 +82,6 @@ public struct _ElementNode:
     ) {
         self.attributes.patch(attributes, context: &context)
         block(&child, &context)
-    }
-
-    public consuming func unmount(_ context: inout _CommitContext) {
-        child.unmount(&context)
-
-        for modifier in mountedModifiers {
-            modifier.unmount(&context)
-        }
-        mountedModifiers.removeAll()
     }
 }
 

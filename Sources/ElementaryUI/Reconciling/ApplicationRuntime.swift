@@ -2,6 +2,7 @@ import BasicContainers
 
 final class ApplicationRuntime {
     private var rootNode: _ConditionalNode?
+    private var rootUnmounts = UnmountRegistry()
     private var scheduler: Scheduler
 
     init(dom: DOMInteractor) {
@@ -18,7 +19,7 @@ final class ApplicationRuntime {
                 $0.disablesAnimation = true
             } run: { tx in
 
-                self.rootNode = scheduler.withMountContext(tx: &tx) {
+                self.rootNode = scheduler.withMountContext(tx: &tx, unmounts: &self.rootUnmounts) {
                     (mountCtx: consuming _MountContext) in
                     let node = _ConditionalNode(
                         isA: true,
@@ -45,7 +46,7 @@ final class ApplicationRuntime {
                 rootNode.patchWithB(tx: &tx, makeNode: { _, _ in _EmptyNode() }, updateNode: { _, _ in })
 
                 // Break the root container/layout cycle after patch-driven removals are committed.
-                tx.scheduler.addCommitAction { ctx in rootNode.container.unmount(&ctx) }
+                tx.scheduler.addCommitAction { ctx in self.rootUnmounts.take().unmount(&ctx) }
             }
         }
         scheduler.forceRunUpdateCycleSynchronously()

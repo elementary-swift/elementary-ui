@@ -31,7 +31,7 @@ struct _TrackedContent<Input, Content: _Mountable>: _Mountable {
 }
 
 // A single reference, so that type-erased rows are stored without a box.
-struct _TrackedNode<Input, Content: _Mountable>: ~Copyable, _Reconcilable {
+struct _TrackedNode<Input, Content: _Mountable>: ~Copyable {
     private let function: TrackedFunction<Input, Content>
 
     init(
@@ -48,14 +48,11 @@ struct _TrackedNode<Input, Content: _Mountable>: ~Copyable, _Reconcilable {
     ) {
         function.update(view, tx: &tx)
     }
-
-    consuming func unmount(_ context: inout _CommitContext) {
-        function.unmount(&context)
-    }
 }
 
 final class TrackedFunction<Input, Content: _Mountable>: SchedulableNode {
-    private var child: Content._MountedNode?
+    // Spelled out: no implicit nil default for init to destroy first (code size).
+    private var child: Optional<Content._MountedNode>
     private var view: _TrackedContent<Input, Content>
 
     init(
@@ -85,10 +82,5 @@ final class TrackedFunction<Input, Content: _Mountable>: SchedulableNode {
     override func performUpdate(tx: inout _TransactionContext) {
         let body = trackDependencies(scheduler: tx.scheduler) { view.content(view.input) }
         Content._patchNode(body, node: &child!, tx: &tx)
-    }
-
-    func unmount(_ context: inout _CommitContext) {
-        stopScheduling()
-        child.take()?.unmount(&context)
     }
 }
