@@ -1,9 +1,8 @@
 // Intentionally a base class: protocol witness tables keep the FLIP implementation
 // reachable in minimal Wasm builds, while subclass overrides strip when FLIP is unused.
-class DOMLayoutObserver: Unmountable {
+class DOMLayoutObserver {
     func willLayoutChildren(parent: DOM.Node, context: inout _TransactionContext) {}
     func setLeaveStatus(_ node: DOM.Node, isLeaving: Bool, context: inout _TransactionContext) {}
-    func unmount(_ context: inout _CommitContext) {}
     func didLayoutChildren(
         parent: DOM.Node,
         entries: borrowing Span<LayoutPass.Entry>,

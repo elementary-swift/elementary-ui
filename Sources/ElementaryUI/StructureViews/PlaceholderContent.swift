@@ -52,13 +52,20 @@ class PlaceholderContent: Unmountable {
     }
 
     private final func storeAdditionalInstance(_ instance: consuming AnyReconcilable) -> InstanceID {
-        for id in additionalInstances.indices where additionalInstances[id] == nil {
+        if let id = Self.firstFreeID(in: additionalInstances.span) {
             additionalInstances[id] = .some(instance)
             return id
         }
 
         additionalInstances.append(.some(instance))
         return additionalInstances.count - 1
+    }
+
+    private static func firstFreeID(in instances: borrowing Span<AnyReconcilable?>) -> InstanceID? {
+        for id in instances.indices where instances[id] == nil {
+            return id
+        }
+        return nil
     }
 
     fileprivate final func dropInstance(_ id: InstanceID) {

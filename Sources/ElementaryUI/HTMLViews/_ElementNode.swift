@@ -59,8 +59,9 @@ public struct _ElementNode:
         let modifiers = childContext.takeModifiers()
         let layoutObservers = childContext.takeLayoutObservers()
 
-        for modifier in modifiers.reversed() {
-            modifier.mount(domNode, &ctx)
+        let modifierSpan = modifiers.span
+        for index in modifierSpan.indices.reversed() {
+            modifierSpan[index].mount(domNode, &ctx)
         }
 
         self.child = ctx.withChildContext {

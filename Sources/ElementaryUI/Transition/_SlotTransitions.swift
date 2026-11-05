@@ -55,9 +55,7 @@ struct _SlotTransitions: ~Copyable {
         into result: inout [_TransitionElement]
     ) {
         guard let storage else { return }
-        for element in storage.elements where element.isMounted {
-            result.append(element)
-        }
+        result.append(contentsOf: storage.elements)
     }
 }
 
@@ -93,7 +91,9 @@ func patchTransitionElements(
     tx: inout _TransactionContext,
     transaction: Transaction
 ) {
-    for element in elements where element.isMounted {
+    let elements = elements.span
+    for index in elements.indices {
+        let element = elements[index]
         let animation = transitionEffectiveAnimation(
             defaultAnimation: element.defaultAnimation,
             transaction: transaction

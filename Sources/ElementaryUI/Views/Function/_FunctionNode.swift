@@ -236,8 +236,7 @@ where MountedBody == Value.Body._MountedNode {
 
     class var boxesWithoutTracking: Bool { false }
 
-    // Spelled out: no implicit nil default for init to destroy first (code size).
-    var child: Optional<MountedBody>
+    var child: MountedBody
     var wiredValue: Value
 
     required init(
@@ -245,7 +244,7 @@ where MountedBody == Value.Body._MountedNode {
         wiredValue: Value,
         depthInTree: Int
     ) {
-        self.child = .some(child)
+        self.child = child
         self.wiredValue = wiredValue
         super.init(depthInTree: depthInTree)
     }
@@ -260,7 +259,7 @@ where MountedBody == Value.Body._MountedNode {
 
     override func performUpdate(tx: inout _TransactionContext) {
         let body = trackDependencies(scheduler: tx.scheduler) { wiredValue.body }
-        Value.Body._patchNode(body, node: &child!, tx: &tx)
+        Value.Body._patchNode(body, node: &child, tx: &tx)
     }
 
     final func render(
@@ -268,7 +267,7 @@ where MountedBody == Value.Body._MountedNode {
         tx: inout _TransactionContext
     ) {
         let body = trackDependencies(scheduler: tx.scheduler) { value.body }
-        Value.Body._patchNode(body, node: &child!, tx: &tx)
+        Value.Body._patchNode(body, node: &child, tx: &tx)
     }
 
     // Dropping the box stops its tracking.

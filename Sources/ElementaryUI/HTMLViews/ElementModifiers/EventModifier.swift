@@ -43,7 +43,7 @@ extension EventHandlerModifier {
     // Registered only to stay alive with the element; the sink drops the
     // listener on deinit.
     final class MountedInstance: Unmountable {
-        var sink: DOM.EventSink?
+        let sink: DOM.EventSink
 
         init(_ node: DOM.Node, _ modifier: EventHandlerModifier, _ context: inout _MountContext) {
             let sink = context.dom.makeEventSink { [modifier] event in
@@ -90,7 +90,7 @@ extension EventActionModifier {
     // Registered only to stay alive with the element; the sink drops the
     // listener on deinit.
     final class MountedInstance: Unmountable {
-        var sink: DOM.EventSink?
+        let sink: DOM.EventSink
 
         init(_ node: DOM.Node, _ modifier: EventActionModifier, _ context: inout _MountContext) {
             let sink = context.dom.makeEventSink { [modifier] in

@@ -1,3 +1,5 @@
+import BasicContainers
+
 /// Something mounted that has to do work, break a reference cycle, or just
 /// stay alive until its subtree is removed. Registered on the mount context;
 /// everything else in a removed subtree is simply dropped.
@@ -19,15 +21,10 @@ extension Unmountable {
 /// Nodes register after mounting their children, so running the entries in
 /// order unmounts children before their parents and siblings in order.
 struct UnmountRegistry: ~Copyable {
-    // A plain array: an empty one does not allocate, and its specializations
-    // are much smaller than those of the noncopyable containers.
-    private var entries: [any Unmountable] = []
+    // Empty until something registers, so most slots never allocate.
+    private var entries = UniqueArray<any Unmountable>()
 
     init() {}
-
-    private init(entries: [any Unmountable]) {
-        self.entries = entries
-    }
 
     var isEmpty: Bool { entries.isEmpty }
 
@@ -37,14 +34,16 @@ struct UnmountRegistry: ~Copyable {
 
     /// Moves the entries out, leaving this registry empty.
     mutating func take() -> UnmountRegistry {
-        let entries = self.entries
-        self.entries = []
-        return UnmountRegistry(entries: entries)
+        var taken = UnmountRegistry()
+        swap(&taken.entries, &entries)
+        return taken
     }
 
     consuming func unmount(_ context: inout _CommitContext) {
-        for entry in entries {
-            entry.unmount(&context)
+        entries.consumeAll { span in
+            while let entry = span.popFirst() {
+                entry.unmount(&context)
+            }
         }
     }
 }

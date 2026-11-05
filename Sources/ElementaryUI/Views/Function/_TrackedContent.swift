@@ -51,8 +51,7 @@ struct _TrackedNode<Input, Content: _Mountable>: ~Copyable {
 }
 
 final class TrackedFunction<Input, Content: _Mountable>: SchedulableNode {
-    // Spelled out: no implicit nil default for init to destroy first (code size).
-    private var child: Optional<Content._MountedNode>
+    private var child: Content._MountedNode
     private var view: _TrackedContent<Input, Content>
 
     init(
@@ -81,6 +80,6 @@ final class TrackedFunction<Input, Content: _Mountable>: SchedulableNode {
 
     override func performUpdate(tx: inout _TransactionContext) {
         let body = trackDependencies(scheduler: tx.scheduler) { view.content(view.input) }
-        Content._patchNode(body, node: &child!, tx: &tx)
+        Content._patchNode(body, node: &child, tx: &tx)
     }
 }

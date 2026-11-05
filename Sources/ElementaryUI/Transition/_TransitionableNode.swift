@@ -63,7 +63,6 @@ class _TransitionElement {
     init(content: PlaceholderContent) { self.content = content }
 
     var defaultAnimation: Animation? { fatalError("abstract") }
-    var isMounted: Bool { fatalError("abstract") }
 
     private static var type: _TransitionElement.Type? = nil
 
@@ -93,7 +92,7 @@ class _TransitionElement {
 /// its underlying element. Custom transition bodies may omit or duplicate it.
 final class _MountedTransitionElement: _TransitionElement {
     private let transition: AnyTransition
-    private var bodyNode: AnyReconcilable?
+    private var bodyNode: AnyReconcilable
 
     override class func make(
         transition: AnyTransition,
@@ -117,13 +116,13 @@ final class _MountedTransitionElement: _TransitionElement {
             defaultAnimation: transition.animation,
             transaction: ctx.transaction
         )
-        super.init(content: content)
         self.bodyNode = transition.makeNode(
             phase: initialPhase,
             context: context,
             ctx: &ctx,
             content: content
         )
+        super.init(content: content)
         ctx.registerTransition(
             self,
             initialPhase: initialPhase
@@ -134,18 +133,13 @@ final class _MountedTransitionElement: _TransitionElement {
         transition.animation
     }
 
-    override var isMounted: Bool {
-        bodyNode != nil
-    }
-
     override func patchPhase(
         _ phase: TransitionPhase,
         tx: inout _TransactionContext
     ) {
-        guard bodyNode != nil else { return }
         transition.patchNode(
             to: phase,
-            node: &bodyNode!,
+            node: &bodyNode,
             tx: &tx,
             content: content
         )
