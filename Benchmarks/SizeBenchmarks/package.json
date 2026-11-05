@@ -6,10 +6,10 @@
     "measure": "node scripts/measure-sizes.mjs"
   },
   "dependencies": {
-    "@bjorn3/browser_wasi_shim": "~0.4.2"
+    "uwasi": "^1.6.0"
   },
   "devDependencies": {
-    "@elementary-swift/vite-plugin-swift-wasm": "~0.2.0",
+    "@elementary-swift/vite-plugin-swift-wasm": "~0.3.0",
     "@types/node": "^25.9.5",
     "vite": "^8.2.2"
   }

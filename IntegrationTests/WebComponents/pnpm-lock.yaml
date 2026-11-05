@@ -8,13 +8,13 @@ importers:
 
   .:
     dependencies:
-      '@bjorn3/browser_wasi_shim':
-        specifier: ~0.4.2
-        version: 0.4.2
+      uwasi:
+        specifier: ^1.6.0
+        version: 1.6.0
     devDependencies:
       '@elementary-swift/vite-plugin-swift-wasm':
-        specifier: ~0.2.0
-        version: 0.2.0(vite@8.2.2)
+        specifier: ~0.3.0
+        version: 0.3.0(vite@8.2.2)
       '@playwright/test':
         specifier: ^1.55.0
         version: 1.62.1
@@ -24,11 +24,8 @@ importers:
 
 packages:
 
-  '@bjorn3/browser_wasi_shim@0.4.2':
-    resolution: {integrity: sha512-/iHkCVUG3VbcbmEHn5iIUpIrh7a7WPiwZ3sHy4HZKZzBdSadwdddYDZAII2zBvQYV0Lfi8naZngPCN7WPHI/hA==}
-
-  '@elementary-swift/vite-plugin-swift-wasm@0.2.0':
-    resolution: {integrity: sha512-vjA3D30CZeRPaoBTXT0mJX0Eb2oaJmNRtdAvQ7sL8tVnUdtr/oW56Pau9k2sbtAH/z8FXYNE8eQu9HlUc6aNCw==}
+  '@elementary-swift/vite-plugin-swift-wasm@0.3.0':
+    resolution: {integrity: sha512-Fc123ieuYUB6bJcmN2kNVY3+V/Oisw1rcrn3YXypJJs1S3T/PEe0FejIvkFgWBs/OR3jXS0mGT6Lrst+AGs8cw==}
     peerDependencies:
       vite: ^7.0.0 || ^8.0.0
 
@@ -265,6 +262,9 @@ packages:
     resolution: {integrity: sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==}
     engines: {node: '>=12.0.0'}
 
+  uwasi@1.6.0:
+    resolution: {integrity: sha512-vrTiyc04gR/DSiv6Qk9BaH+DTVQHeltjE/baJioRJJYup69ZYvF6zFjQllz0ku2ZUH+YJyEWnids/qF0J2OaJQ==}
+
   vite@8.2.2:
     resolution: {integrity: sha512-cFKLV/PRgAUlIRm5WjMjJ86jrftzpqcgH+Us+DS8mI3CDNiH30Whrz8uHL3+MOLPAgqbMBAqWdAHAphOAM+z/Q==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -310,9 +310,7 @@ packages:
 
 snapshots:
 
-  '@bjorn3/browser_wasi_shim@0.4.2': {}
-
-  '@elementary-swift/vite-plugin-swift-wasm@0.2.0(vite@8.2.2)':
+  '@elementary-swift/vite-plugin-swift-wasm@0.3.0(vite@8.2.2)':
     dependencies:
       picocolors: 1.1.1
       vite: 8.2.2
@@ -478,6 +476,8 @@ snapshots:
     dependencies:
       fdir: 6.5.0(picomatch@4.0.7)
       picomatch: 4.0.7
+
+  uwasi@1.6.0: {}
 
   vite@8.2.2:
     dependencies:

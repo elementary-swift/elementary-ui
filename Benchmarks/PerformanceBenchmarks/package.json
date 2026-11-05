@@ -6,11 +6,11 @@
     "measure": "node scripts/measure-perf.mjs"
   },
   "dependencies": {
-    "@bjorn3/browser_wasi_shim": "~0.4.2",
+    "uwasi": "^1.6.0",
     "bootstrap": "^3.4.1"
   },
   "devDependencies": {
-    "@elementary-swift/vite-plugin-swift-wasm": "~0.2.0",
+    "@elementary-swift/vite-plugin-swift-wasm": "~0.3.0",
     "@types/node": "^25.9.5",
     "puppeteer": "^24.43.1",
     "vite": "^8.2.2"

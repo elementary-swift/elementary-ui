@@ -8,10 +8,10 @@
     "test": "pnpm build && playwright test"
   },
   "dependencies": {
-    "@bjorn3/browser_wasi_shim": "~0.4.2"
+    "uwasi": "^1.6.0"
   },
   "devDependencies": {
-    "@elementary-swift/vite-plugin-swift-wasm": "~0.2.0",
+    "@elementary-swift/vite-plugin-swift-wasm": "~0.3.0",
     "@playwright/test": "^1.55.0",
     "vite": "^8.2.2"
   }
