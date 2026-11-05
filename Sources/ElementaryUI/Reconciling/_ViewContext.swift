@@ -20,3 +20,13 @@ public struct _ViewContext {
         .init()
     }
 }
+
+extension _ViewContext {
+    // Out of line so every element type shares one copy of the context copy.
+    @inline(never)
+    func withoutTransition() -> _ViewContext {
+        var context = self
+        context.transition = nil
+        return context
+    }
+}

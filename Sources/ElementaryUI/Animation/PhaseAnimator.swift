@@ -302,9 +302,7 @@ private struct _PhaseModifierView<Wrapped: View, Phase: Equatable, Content: View
     }
 
     static func _patchNode(_ view: consuming Self, node: inout _MountedNode, tx: inout _TransactionContext) {
-        node.state.update(view.wrapped, tx: &tx) { child, tx in
-            Wrapped._patchNode(view.wrapped, node: &child, tx: &tx)
-        }
+        node.state.update(view.wrapped, tx: &tx)
 
         PhaseAnimator._patchNode(view.animator(node.state), node: &node.child, tx: &tx)
     }
