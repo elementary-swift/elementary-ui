@@ -1,7 +1,7 @@
 import Reactivity
 import Testing
 
-@testable import ElementaryUI
+@testable @_spi(Benchmarking) import ElementaryUI
 
 @MainActor
 @Suite
@@ -24,6 +24,35 @@ struct UnmountOrderTests {
         dom.runNextFrame()
 
         #expect(log.entries == OrderedContent.expectedOrder)
+    }
+
+    @Test
+    func elementModifiersUnmountAfterChildren() {
+        let state = UnmountOrderState()
+        let log = UnmountLog()
+        let dom = TestDOM()
+        dom.mount {
+            Group {
+                if state.visible {
+                    DOMEffectView<LoggingModifier, _>(
+                        value: LoggingModifier.Value(log: log, name: "div.modifier"),
+                        wrapped: div {
+                            DOMEffectView<LoggingModifier, _>(
+                                value: LoggingModifier.Value(log: log, name: "p.modifier"),
+                                wrapped: p {}
+                            )
+                        }
+                    )
+                }
+            }
+        }
+        dom.runNextFrame()
+
+        state.visible = false
+        dom.runNextFrame()
+
+        // onDisappear runs as a deferred effect; modifiers unmount in place
+        #expect(log.entries == ["p.modifier", "div.modifier"])
     }
 
     @Test
@@ -146,6 +175,29 @@ private struct OrderedContent {
             span {}.onDisappear { log.entries.append("span") }
         }
         .onDisappear { log.entries.append("div") }
+    }
+}
+
+private final class LoggingModifier: DOMElementModifier, Unmountable {
+    struct Value {
+        let log: UnmountLog
+        let name: String
+    }
+
+    private let value: Value
+
+    init(value: consuming Value, upstream: borrowing DOMElementModifiers) {
+        self.value = value
+    }
+
+    func updateValue(_ value: consuming Value, _ context: inout _TransactionContext) {}
+
+    func mount(_ node: DOM.Node, _ context: inout _MountContext) {
+        context.registerUnmount(self)
+    }
+
+    func unmount(_ context: inout _CommitContext) {
+        value.log.entries.append(value.name)
     }
 }
 

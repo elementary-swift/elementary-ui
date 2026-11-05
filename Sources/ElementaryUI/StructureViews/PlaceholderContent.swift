@@ -100,7 +100,7 @@ class PlaceholderContent: Unmountable {
         }
     }
 
-    /// Drops the inline instance; it registers the content itself.
+    /// Drops the inline instance, which registers the content itself.
     final func unmount(_ context: inout _CommitContext) {
         dropInstance(Self.inlineID)
     }

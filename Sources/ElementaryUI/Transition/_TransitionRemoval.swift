@@ -154,9 +154,7 @@ private struct _TransitionRemovalTargets {
     mutating func collect(
         slot: borrowing MountContainer.Slot
     ) {
-        slot.transitions.collectLiveElements(
-            into: &transitionElements
-        )
+        slot.members.collectTransitions(into: &transitionElements)
         slot.layoutNodes.collectTransitionRemovalTargets(into: &self)
     }
 }

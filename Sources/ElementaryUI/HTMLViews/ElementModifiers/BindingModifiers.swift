@@ -1,6 +1,6 @@
 import _UTF8Internals
 
-final class BindingModifier<Configuration>: Unmountable, DOMElementModifier where Configuration: BindingConfiguration {
+final class BindingModifier<Configuration>: DOMElementModifier, Unmountable where Configuration: BindingConfiguration {
     typealias Value = Binding<Configuration.Value>
 
     private var lastValue: Configuration.Value

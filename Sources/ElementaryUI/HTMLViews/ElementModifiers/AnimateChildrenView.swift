@@ -24,7 +24,7 @@ struct AnimateContainerLayoutView<Wrapped: View>: View {
         context.layoutObservers.add(observer)
 
         let child = Wrapped._makeNode(view.wrapped, context: context, ctx: &ctx)
-        return _MountedNode(state: observer, child: child, ctx: &ctx)
+        return _MountedNode(registering: observer, child: child, ctx: &ctx)
     }
 
     static func _patchNode(

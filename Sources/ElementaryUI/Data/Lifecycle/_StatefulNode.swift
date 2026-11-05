@@ -8,7 +8,7 @@ public struct _StatefulNode<State: ~Copyable, Child: ~Copyable>: ~Copyable {
     }
 
     /// Registers `state` for unmounting; call after mounting `child`.
-    init(state: consuming State, child: consuming Child, ctx: inout _MountContext) where State: Unmountable {
+    init(registering state: consuming State, child: consuming Child, ctx: inout _MountContext) where State: Unmountable {
         ctx.registerUnmount(state)
         self.state = state
         self.child = child

@@ -1,14 +1,12 @@
 extension Scheduler {
     final class ScratchStorage {
         // shared scratch storage for various operations
-        private var layoutNodeStorage = ScratchStackSource<LayoutNode>(initialCapacity: 16)
+        private var mountScratch = MountScratch()
         private var layoutEntryStorage = ScratchStackSource<LayoutPass.Entry>(initialCapacity: 16)
         private var diffEngine: KeyedDiffEngine = .init()
 
-        func withLayoutNodeScratchFrame<R: ~Copyable>(
-            _ body: (consuming ScratchStack<LayoutNode>) -> R
-        ) -> R {
-            layoutNodeStorage.withStack(body)
+        func withMountScratch<R: ~Copyable>(_ body: (inout MountScratch) -> R) -> R {
+            body(&mountScratch)
         }
 
         func withLayoutEntryScratchFrame<R: ~Copyable>(

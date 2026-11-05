@@ -6,8 +6,7 @@ protocol DOMElementModifier: AnyObject {
     init(value: consuming Value, upstream: borrowing DOMElementModifiers)
     func updateValue(_ value: consuming Value, _ context: inout _TransactionContext)
 
-    /// Mounts on `node`. Mounted state that must stay alive (or be unmounted)
-    /// with the element registers on `context`.
+    /// Mounts on `node`, registering any unmount work on `context`.
     func mount(_ node: DOM.Node, _ context: inout _MountContext)
 
     /// The attributes this modifier adds to its element when rendered on the server.

@@ -28,7 +28,7 @@ public struct _TransitionableNode<Node: ~Copyable>:
         let nodeContext = context.withoutTransition()
 
         // Without a structural owner there is nothing that can defer removal.
-        guard ctx.slotTransitions != nil else {
+        guard ctx.acceptsTransitions else {
             self.node = Content._makeNode(value, context: nodeContext, ctx: &ctx)
             self.transitionedElement = nil
             return
@@ -59,6 +59,8 @@ public struct _TransitionableNode<Node: ~Copyable>:
 /// branches short and preventing specialization of the concrete implementation.
 class _TransitionElement {
     let content: PlaceholderContent
+    /// Set when the owning slot is dropped; scheduled patches skip it.
+    final var isUnmounted = false
 
     init(content: PlaceholderContent) { self.content = content }
 
@@ -123,10 +125,16 @@ final class _MountedTransitionElement: _TransitionElement {
             content: content
         )
         super.init(content: content)
-        ctx.registerTransition(
-            self,
-            initialPhase: initialPhase
-        )
+        ctx.registerTransition(self)
+
+        if initialPhase == .willAppear {
+            // enter once the mount has committed
+            let transaction = ctx.transaction
+            ctx.scheduler.scheduleUpdate { [self] tx in
+                guard !isUnmounted else { return }
+                patchPhase(.identity, tx: &tx, transaction: transaction)
+            }
+        }
     }
 
     override var defaultAnimation: Animation? {

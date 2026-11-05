@@ -1,38 +1,76 @@
 import BasicContainers
 import ContainersPreview
+import SpanPreview
 
+/// Shared scratch for everything a mount collects before handing it to its
+/// owner. Contexts append at the end; each owner (element, slot, root) moves
+/// out the suffix it opened, so nested mounts never allocate here.
+struct MountScratch: ~Copyable {
+    fileprivate var layoutNodes = UniqueArray<LayoutNode>(minimumCapacity: 16)
+    fileprivate var members = UniqueArray<SlotMember>(minimumCapacity: 16)
+
+    var isEmpty: Bool {
+        layoutNodes.isEmpty && members.isEmpty
+    }
+}
+
+/// Mounts into the shared scratch.
+///
+/// Layout nodes belong to the context that collects them: an element's
+/// children, a slot, or the root. Members belong to the enclosing slot (or
+/// the root), so an element's children keep the mark of their parent.
 public struct _MountContext: ~Copyable, ~Escapable {
-    private var nodeStack: ScratchStack<LayoutNode>
+    private var scratch: _MutableRef<MountScratch>
+    private let layoutStart: Int
+    private let membersStart: Int
+
+    /// Only a slot's top level may hold transition elements: a slot is what
+    /// defers its removal while they play.
+    let acceptsTransitions: Bool
     private(set) var isStatic: Bool = true
 
-    private(set) var slotTransitions: _SlotTransitions?
-
-    /// The unmount work of the enclosing slot (or root).
-    private var unmounts: _MutableRef<UnmountRegistry>
-
-    // NOTE: we could use a fancy Inout<_CommitContext> here.. but maybe not worth it
     let scheduler: Scheduler
     let dom: DOMInteractor
     let currentFrameTime: Double
     let transaction: Transaction
 
-    @_lifetime(copy nodeStack, copy unmounts)
+    /// A root context: owns everything it collects.
+    @_lifetime(copy scratch)
     init(
-        nodeStack: consuming ScratchStack<LayoutNode>,
-        unmounts: consuming _MutableRef<UnmountRegistry>,
+        scratch: consuming _MutableRef<MountScratch>,
         dom: DOMInteractor,
         scheduler: Scheduler,
         currentFrameTime: Double,
-        transaction: Transaction,
-        slotTransitions: consuming _SlotTransitions? = nil
+        transaction: Transaction
     ) {
-        self.unmounts = unmounts
-        self.nodeStack = consume nodeStack
+        self.layoutStart = scratch.value.layoutNodes.count
+        self.membersStart = scratch.value.members.count
+        self.scratch = scratch
+        self.acceptsTransitions = false
         self.dom = dom
         self.scheduler = scheduler
         self.currentFrameTime = currentFrameTime
         self.transaction = transaction
-        self.slotTransitions = consume slotTransitions
+    }
+
+    @_lifetime(copy scratch)
+    private init(
+        scratch: consuming _MutableRef<MountScratch>,
+        membersStart: Int,
+        acceptsTransitions: Bool,
+        dom: DOMInteractor,
+        scheduler: Scheduler,
+        currentFrameTime: Double,
+        transaction: Transaction
+    ) {
+        self.layoutStart = scratch.value.layoutNodes.count
+        self.membersStart = membersStart
+        self.scratch = scratch
+        self.acceptsTransitions = acceptsTransitions
+        self.dom = dom
+        self.scheduler = scheduler
+        self.currentFrameTime = currentFrameTime
+        self.transaction = transaction
     }
 
     mutating func appendStaticElement(_ node: DOM.Node) {
@@ -47,26 +85,27 @@ public struct _MountContext: ~Copyable, ~Escapable {
         appendLayoutNode(.container(container))
     }
 
-    /// Registers unmount work for the enclosing slot. Register after mounting
-    /// children so the registry unmounts children first.
+    /// Registers unmount work with the enclosing slot. Register after mounting
+    /// children so the slot unmounts children first.
     mutating func registerUnmount(_ entry: any Unmountable) {
-        unmounts.value.register(entry)
+        scratch.value.members.append(.unmountable(entry))
     }
 
-    mutating func registerTransition(
-        _ transitionedElement: _TransitionElement,
-        initialPhase: TransitionPhase
-    ) {
-        precondition(slotTransitions != nil)
-        slotTransitions!.register(
-            transitionedElement,
-            initialPhase: initialPhase
-        )
+    mutating func registerTransition(_ element: _TransitionElement) {
+        precondition(acceptsTransitions)
+        scratch.value.members.append(.transition(element))
     }
 
-    /// Mounts one structural slot: runs `makeNode` in a nested layout-node
-    /// frame with a fresh transition registry, then packages the node, its
-    /// unmount work, its layout nodes, and its transitions into a slot.
+    // MARK: nested contexts
+
+    /// A context for an element's children. Finish it with `mountInDOMNode`.
+    @_lifetime(&self)
+    mutating func childContext() -> _MountContext {
+        nested(membersStart: membersStart, acceptsTransitions: false)
+    }
+
+    /// Mounts one structural slot and packages its node, layout nodes, and
+    /// members.
     // inline(never): keeps slot mounting out of every mount site (code size)
     @inline(never)
     mutating func mountSlot(
@@ -75,67 +114,62 @@ public struct _MountContext: ~Copyable, ~Escapable {
         env: borrowing _ViewContext,
         makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
     ) -> MountContainer.Slot {
-        var unmounts = UnmountRegistry()
-        return nodeStack.withNestedStack { slotStack in
-            var slotCtx = _MountContext(
-                nodeStack: slotStack,
-                unmounts: _MutableRef(&unmounts),
-                dom: dom,
-                scheduler: scheduler,
-                currentFrameTime: currentFrameTime,
-                transaction: transaction,
-                slotTransitions: _SlotTransitions()
-            )
-            let node = makeNode(newKeyIndex, env, &slotCtx)
-
-            let transitions = slotCtx.slotTransitions.take()!
-            transitions.scheduleEnterIdentityIfNeeded(
-                scheduler: scheduler,
-                transaction: transaction
-            )
-            // consumes the context, ending its borrow of `unmounts`
-            let layoutNodes = slotCtx.takeSlotLayoutNodes()
-
-            return MountContainer.Slot(
-                key: key,
-                node: node,
-                unmounts: unmounts.take(),
-                layoutNodes: layoutNodes,
-                transitions: transitions
-            )
-        }
+        var slotCtx = nested(
+            membersStart: scratch.value.members.count,
+            acceptsTransitions: true
+        )
+        let node = makeNode(newKeyIndex, env, &slotCtx)
+        return slotCtx.finishSlot(key: key, node: node)
     }
 
-    /// A context for an element's children: a nested layout-node frame that
-    /// registers unmount work with the same slot.
-    mutating func withChildContext<R: ~Copyable>(_ body: (consuming _MountContext) -> R) -> R {
+    @_lifetime(&self)
+    private mutating func nested(
+        membersStart: Int,
+        acceptsTransitions: Bool
+    ) -> _MountContext {
         let dom = dom
         let scheduler = scheduler
         let currentFrameTime = currentFrameTime
         let transaction = transaction
-        return Self.withNestedFrame(&nodeStack, &unmounts) { childStack, childUnmounts in
-            body(
-                _MountContext(
-                    nodeStack: childStack,
-                    unmounts: childUnmounts,
-                    dom: dom,
-                    scheduler: scheduler,
-                    currentFrameTime: currentFrameTime,
-                    transaction: transaction
-                )
-            )
-        }
+        return _MountContext(
+            scratch: _MutableRef(&scratch.value),
+            membersStart: membersStart,
+            acceptsTransitions: acceptsTransitions,
+            dom: dom,
+            scheduler: scheduler,
+            currentFrameTime: currentFrameTime,
+            transaction: transaction
+        )
     }
 
-    // Static, so the two exclusive borrows do not overlap an access to self.
-    private static func withNestedFrame<R: ~Copyable>(
-        _ nodeStack: inout ScratchStack<LayoutNode>,
-        _ unmounts: inout _MutableRef<UnmountRegistry>,
-        _ body: (consuming ScratchStack<LayoutNode>, consuming _MutableRef<UnmountRegistry>) -> R
-    ) -> R {
-        nodeStack.withNestedStack { childStack in
-            body(childStack, _MutableRef(&unmounts.value))
-        }
+    // MARK: finishing
+
+    private consuming func finishSlot(
+        key: _ViewKey,
+        node: consuming AnyReconcilable
+    ) -> MountContainer.Slot {
+        let members = takeMembers()
+        return MountContainer.Slot(
+            key: key,
+            node: node,
+            layoutNodes: takeSlotLayoutNodes(),
+            members: members
+        )
+    }
+
+    /// Mounts the root's layout into `domNode` and hands over its members.
+    consuming func mountRoot(in domNode: DOM.Node) -> SlotMembers {
+        mountLayout(in: domNode, observers: [], ownsAllChildren: false)
+        return takeMembers()
+    }
+
+    /// Mounts an element's children into `domNode`. Their members stay with
+    /// the enclosing slot.
+    consuming func mountInDOMNode(
+        _ domNode: DOM.Node,
+        observers: [DOMLayoutObserver] = []
+    ) {
+        mountLayout(in: domNode, observers: observers, ownsAllChildren: true)
     }
 
     func withCommitContext<R>(_ body: (inout _CommitContext) -> R) -> R {
@@ -147,28 +181,25 @@ public struct _MountContext: ~Copyable, ~Escapable {
         return body(&commitContext)
     }
 
-    consuming func mountInDOMNode(
-        _ domNode: DOM.Node,
-        observers: [DOMLayoutObserver] = [],
-        ownsAllChildren: Bool = true
-    ) -> LayoutContainer? {
+    private mutating func mountLayout(
+        in domNode: DOM.Node,
+        observers: [DOMLayoutObserver],
+        ownsAllChildren: Bool
+    ) {
         if isStatic {
             let dom = dom
-            nodeStack.consume { span in
+            scratch.value.layoutNodes.consumeLast(layoutCount) { span in
                 for index in span.indices {
                     dom.appendChild(span[unchecked: index].staticDOMNode, to: domNode)
                 }
             }
-            return nil
+            return
         }
 
-        let dom = dom
-        let scheduler = scheduler
-        let currentFrameTime = currentFrameTime
         let container = LayoutContainer(
             domNode: domNode,
             scheduler: scheduler,
-            layoutNodes: takeMaterializedLayoutNodes(),
+            layoutNodes: takeLayoutNodes(),
             layoutObservers: observers,
             ownsAllChildren: ownsAllChildren
         )
@@ -180,27 +211,44 @@ public struct _MountContext: ~Copyable, ~Escapable {
         )
 
         container.commitInitialLayout(&commit)
-        return container
     }
 
-    private consuming func takeMaterializedLayoutNodes() -> RigidArray<LayoutNode> {
-        var result = RigidArray<LayoutNode>(capacity: nodeStack.count)
-        self.nodeStack.consume { span in
+    private var layoutCount: Int {
+        scratch.value.layoutNodes.count - layoutStart
+    }
+
+    private mutating func takeLayoutNodes() -> RigidArray<LayoutNode> {
+        var result = RigidArray<LayoutNode>(capacity: layoutCount)
+        scratch.value.layoutNodes.consumeLast(layoutCount) { span in
             result.append(moving: &span)
         }
         return result
     }
 
-    private consuming func takeSlotLayoutNodes() -> SlotLayoutNodes {
-        guard nodeStack.count == 1 else { return .many(takeMaterializedLayoutNodes()) }
-        var node: LayoutNode?
-        nodeStack.consume { span in node = span.removeFirst() }
-        return .one(node!)
+    private mutating func takeSlotLayoutNodes() -> SlotLayoutNodes {
+        guard layoutCount == 1 else { return .many(takeLayoutNodes()) }
+        return .one(scratch.value.layoutNodes.popLast()!)
+    }
+
+    private mutating func takeMembers() -> SlotMembers {
+        let count = scratch.value.members.count - membersStart
+        guard count > 0 else { return SlotMembers() }
+        var members: SlotMembers?
+        scratch.value.members.consumeLast(count) { span in
+            members = SlotMembers(moving: &span)
+        }
+        return members.take()!
     }
 
     private mutating func appendLayoutNode(_ node: LayoutNode) {
         isStatic = isStatic && node.isStatic
-        nodeStack.append(node)
+        scratch.value.layoutNodes.append(node)
+    }
+
+    deinit {
+        // finishing moves the layout nodes out; anything left would leak into
+        // the enclosing context's layout
+        assert(layoutCount == 0, "mount context dropped without finishing")
     }
 }
 

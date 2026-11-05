@@ -31,12 +31,9 @@ public struct _ElementNode:
                 on: domNode,
                 using: ctx.dom
             )
-            self.child = ctx.withChildContext {
-                (mctx: consuming _MountContext) in
-                let child = makeChild(context, &mctx)
-                _ = mctx.mountInDOMNode(domNode, observers: [])
-                return child
-            }
+            var childCtx = ctx.childContext()
+            self.child = makeChild(context, &childCtx)
+            childCtx.mountInDOMNode(domNode)
             return
         }
 
@@ -59,19 +56,14 @@ public struct _ElementNode:
         let modifiers = childContext.takeModifiers()
         let layoutObservers = childContext.takeLayoutObservers()
 
+        var childCtx = ctx.childContext()
+        self.child = makeChild(childContext, &childCtx)
+        childCtx.mountInDOMNode(domNode, observers: layoutObservers)
+
+        // after the children, so the slot unmounts them first
         let modifierSpan = modifiers.span
         for index in modifierSpan.indices.reversed() {
             modifierSpan[index].mount(domNode, &ctx)
-        }
-
-        self.child = ctx.withChildContext {
-            (mctx: consuming _MountContext) in
-            let child = makeChild(childContext, &mctx)
-            _ = mctx.mountInDOMNode(
-                domNode,
-                observers: layoutObservers
-            )
-            return child
         }
     }
 

@@ -1,4 +1,5 @@
 import BasicContainers
+import SpanPreview
 
 /// Owns the keyed child slots of one structural view (conditional content,
 /// keyed lists, ...).
@@ -216,9 +217,9 @@ extension MountContainer {
 }
 
 extension MountContainer {
-    /// One keyed child: its mounted node, the unmount work registered while
-    /// mounting it, the layout nodes it produced, and the transition state
-    /// that decides how it enters and leaves.
+    /// One keyed child: its mounted node, the layout nodes it produced, and
+    /// the members (unmount work, transition elements) registered while
+    /// mounting it.
     struct Slot: ~Copyable {
         enum Placement {
             case unchanged
@@ -228,10 +229,9 @@ extension MountContainer {
 
         let key: _ViewKey
         var node: AnyReconcilable
-        var unmounts: UnmountRegistry
         var layoutNodes: SlotLayoutNodes
+        var members: SlotMembers
         var placement: Placement
-        var transitions: _SlotTransitions
         var pendingRemoval: _PendingRemoval?
         /// Set when the current patch mounted this slot: its node is already up to date.
         var isMountedByThisPatch = false
@@ -239,16 +239,14 @@ extension MountContainer {
         init(
             key: _ViewKey,
             node: consuming AnyReconcilable,
-            unmounts: consuming UnmountRegistry,
             layoutNodes: consuming SlotLayoutNodes,
-            transitions: consuming _SlotTransitions
+            members: consuming SlotMembers
         ) {
             self.key = key
             self.node = node
-            self.unmounts = unmounts
             self.layoutNodes = layoutNodes
+            self.members = members
             self.placement = .unchanged
-            self.transitions = transitions
             self.pendingRemoval = nil
         }
 
@@ -329,11 +327,11 @@ extension MountContainer {
             if placement != .added {
                 layoutNodes.collect(into: &ops, context: &context, op: .removed)
             }
-            unmounts.unmount(&context)
+            members.unmount(&context)
         }
 
         consuming func unmount(_ context: inout _CommitContext) {
-            unmounts.unmount(&context)
+            members.unmount(&context)
         }
     }
 }

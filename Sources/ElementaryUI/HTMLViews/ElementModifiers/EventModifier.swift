@@ -40,10 +40,8 @@ final class EventHandlerModifier<Config: _DOMEventHandlerConfig>: DOMElementModi
 }
 
 extension EventHandlerModifier {
-    // Registered only to stay alive with the element; the sink drops the
-    // listener on deinit.
     final class MountedInstance: Unmountable {
-        let sink: DOM.EventSink
+        private var sink: DOM.EventSink?
 
         init(_ node: DOM.Node, _ modifier: EventHandlerModifier, _ context: inout _MountContext) {
             let sink = context.dom.makeEventSink { [modifier] event in
@@ -54,6 +52,10 @@ extension EventHandlerModifier {
             self.sink = consume sink
         }
 
+        func unmount(_ context: inout _CommitContext) {
+            // releases the JS listener callback
+            sink = nil
+        }
     }
 }
 
@@ -87,10 +89,8 @@ final class EventActionModifier<Config: _DOMEventConfig>: DOMElementModifier {
 }
 
 extension EventActionModifier {
-    // Registered only to stay alive with the element; the sink drops the
-    // listener on deinit.
     final class MountedInstance: Unmountable {
-        let sink: DOM.EventSink
+        private var sink: DOM.EventSink?
 
         init(_ node: DOM.Node, _ modifier: EventActionModifier, _ context: inout _MountContext) {
             let sink = context.dom.makeEventSink { [modifier] in
@@ -101,5 +101,9 @@ extension EventActionModifier {
             self.sink = consume sink
         }
 
+        func unmount(_ context: inout _CommitContext) {
+            // releases the JS listener callback
+            sink = nil
+        }
     }
 }

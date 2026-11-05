@@ -180,7 +180,6 @@ struct AnyEquatable: Equatable {
 
 public struct _PhaseAnimatorNode<Phase: Equatable, Content: View>: ~Copyable {
     fileprivate let controller: PhaseController<Phase, Content>
-
 }
 
 private final class PhaseController<Phase: Equatable, Content: View>: Unmountable {

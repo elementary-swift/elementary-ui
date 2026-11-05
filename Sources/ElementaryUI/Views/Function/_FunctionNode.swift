@@ -59,6 +59,8 @@ where ChildNode == Value.Body._MountedNode {
         ctx: inout _MountContext
     ) {
         core = .init(value: value, context: context, ctx: &ctx)
+        // always boxed at mount, after its child registered
+        ctx.registerUnmount(core.mountedBox!)
     }
 
     mutating func patch(
@@ -122,9 +124,6 @@ where
                 dependencies: dependencies,
                 scheduler: ctx.scheduler
             )
-            // Boxes created later by a patch have no mount context; only
-            // boxes that always box (and so exist from mount) may need one.
-            function.registerUnmount(&ctx)
             storage = .box(function)
         } else {
             storage = .inline(childNode)
@@ -151,7 +150,12 @@ where
         lastValue = consume newValue
     }
 
-
+    var mountedBox: Function? {
+        switch storage {
+        case .box(let function): function
+        case .inline: nil
+        }
+    }
 }
 
 private extension _FunctionNodeCore.Storage where ChildNode: ~Copyable {
@@ -223,7 +227,6 @@ where Self: SchedulableNode {
         _ value: borrowing View,
         tx: inout _TransactionContext
     )
-    func registerUnmount(_ ctx: inout _MountContext)
 }
 
 class SchedulableFunction<
@@ -269,9 +272,6 @@ where MountedBody == Value.Body._MountedNode {
         let body = trackDependencies(scheduler: tx.scheduler) { value.body }
         Value.Body._patchNode(body, node: &child, tx: &tx)
     }
-
-    // Dropping the box stops its tracking.
-    func registerUnmount(_ ctx: inout _MountContext) {}
 }
 
 final class AnimatableFunction<
@@ -328,10 +328,6 @@ where MountedBody == Value.Body._MountedNode {
         animatedValue.progressToTime(tx.currentFrameTime)
         update(tx: &tx)
         return animatedValue.isAnimating ? .stillRunning : .completed
-    }
-
-    override func registerUnmount(_ ctx: inout _MountContext) {
-        ctx.registerUnmount(self)
     }
 
     // A running animation retains the box; it must not update removed content.
