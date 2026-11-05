@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793863136894,
+  "lastUpdate": 1793877539444,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -14127,6 +14127,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 145.99,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ea9a12b3a0e3539b7080604dd54c15d37831dc6d",
+          "message": "switch examples, benchmarks and integration tests to uwasi (#155)\n\n* examples: vite plugin 0.3.0 with uwasi\n\n* benchmarks and integration tests: vite plugin 0.3.0 with uwasi",
+          "timestamp": "2026-11-05T12:10:09+01:00",
+          "tree_id": "ae2d36691cf9c7897dcb7fdc1910fcdf4398ddf0",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/ea9a12b3a0e3539b7080604dd54c15d37831dc6d"
+        },
+        "date": 1793877538654,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 172.62,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 98.03,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81.64,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 132.87,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 145.98,
             "unit": "kB"
           }
         ]
