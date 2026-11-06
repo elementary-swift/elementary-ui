@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793877529659,
+  "lastUpdate": 1793968385492,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -5518,6 +5518,85 @@ window.BENCHMARK_DATA = {
           {
             "name": "22_run-memory",
             "value": 2.1,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.38,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "52a11666e2f05e0837c3258caf3280e5255b641b",
+          "message": "Replace _Reconcilable unmount with per-slot unmount registry (#156)\n\n* replace reconcilable unmount with per-slot unmount registry\n\n* use UniqueArray for unmount registry and drop leftover unmount state\n\n* unify mount scratch and slot members, review touch-ups\n\n* replace scratch stacks with a single scratch frame primitive\n\n* swift-format",
+          "timestamp": "2026-11-06T13:24:46+01:00",
+          "tree_id": "1d45cd5199d791834d5ee6f93ea9d1cc7c56694f",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/52a11666e2f05e0837c3258caf3280e5255b641b"
+        },
+        "date": 1793968384682,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 64.5,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 76.35,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 100.25,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 8.43,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 33.51,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 23.52,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 87.35,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 30.88,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.05,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.09,
             "unit": "MB"
           },
           {
