@@ -1,5 +1,6 @@
 import BasicContainers
 import Testing
+
 @testable import ElementaryUI
 
 struct AnyReconcilableStorageTests {
@@ -41,7 +42,7 @@ struct AnyReconcilableStorageTests {
         erased.modify(as: Small.self) { $0.value = 42 }
         _ = consume erased
         #expect(counts.destroyed == [42])
-            }
+    }
 
     @Test func heapMutationAndDrop() {
         let counts = Counts()
@@ -49,7 +50,7 @@ struct AnyReconcilableStorageTests {
         erased.modify(as: Large.self) { $0.value = 42 }
         _ = consume erased
         #expect(counts.destroyed == [42])
-            }
+    }
 
     @Test func dropDestroysEachPayload() {
         let counts = Counts()
@@ -71,14 +72,14 @@ struct AnyReconcilableStorageTests {
         }
         while let node = nodes.popLast() { _ = consume node }
         #expect(counts.destroyed == Array((1...128).reversed()))
-            }
+    }
 
     @Test func overAlignedPayloadUsesHeapStorage() {
         let counts = Counts()
         let node = AnyReconcilable(Aligned(counts: counts))
         _ = consume node
         #expect(counts.destroyed == [16])
-            }
+    }
 
     @Test func smallWeakPayloadSurvivesRelocationAndZeroing() {
         #expect(MemoryLayout<Weak>.size <= MemoryLayout<_TextNode>.stride)
@@ -98,7 +99,7 @@ struct AnyReconcilableStorageTests {
         }
         while let node = nodes.popLast() { _ = consume node }
         #expect(counts.destroyed == Array((1...128).reversed()))
-            }
+    }
 
     @Test func mixedInlineAndHeapRelocationPreservesOwnership() {
         let counts = Counts()
@@ -119,5 +120,5 @@ struct AnyReconcilableStorageTests {
         }
         while let node = nodes.popLast() { _ = consume node }
         #expect(counts.destroyed == Array((1...128).reversed()))
-            }
+    }
 }

@@ -24,7 +24,6 @@ public struct _ForEachNode<Data: RandomAccessCollection, Content: MarkupContent 
         }
     }
 
-
     /// Lends a function that builds the item for the element at an offset.
     private static func withItems<ID, R>(
         of view: ForEach<Data, ID, Content>,

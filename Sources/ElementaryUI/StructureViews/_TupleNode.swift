@@ -17,8 +17,7 @@ public struct _TupleNode2<N0: ~Copyable, N1: ~Copyable>: ~Copyable {
     }
 }
 
-public struct _TupleNode3<N0: ~Copyable, N1: ~Copyable, N2: ~Copyable>: ~Copyable
-{
+public struct _TupleNode3<N0: ~Copyable, N1: ~Copyable, N2: ~Copyable>: ~Copyable {
     var n0: N0
     var n1: N1
     var n2: N2
