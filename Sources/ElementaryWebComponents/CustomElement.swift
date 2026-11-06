@@ -26,6 +26,8 @@ public protocol CustomElement: View {
     named(__initializeState),
     named(__restoreState),
     named(__applyContext),
+    named(__visitEnvironment),
+    named(__readsEnvironment),
     named(__ViewState),
     named(_MountedNode),
     named(__arePropertiesEqual)

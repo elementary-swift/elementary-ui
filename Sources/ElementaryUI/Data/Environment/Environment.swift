@@ -45,9 +45,9 @@ import Reactivity
 public struct Environment<V> {
     enum Storage {
         case value(V)
-        case slot(StateAccessor<V>)
+        case slot(_EnvironmentSlot)
         case valueKey(EnvironmentValues._Key<V>)
-        case objectReader(ObjectStorageReader<V>, _ViewStateStorage?)
+        case objectReader(ObjectStorageReader<V>, _EnvironmentSlot?)
     }
 
     var storage: Storage
@@ -72,7 +72,7 @@ public struct Environment<V> {
         case let .value(value):
             value
         case let .slot(slot):
-            slot.storage[slot.index]
+            slot.value[as: V.self]
         case let .valueKey(accessor):
             accessor.defaultValue
         case let .objectReader(reader, box):
@@ -88,7 +88,7 @@ public struct Environment<V> {
         switch storage {
         case let .valueKey(key):
             if let slot = values.entries[key.propertyID] {
-                storage = .slot(StateAccessor(storage: slot, index: 0))
+                storage = .slot(slot)
             } else {
                 storage = .value(key.defaultValue)
             }
@@ -96,6 +96,18 @@ public struct Environment<V> {
             storage = .objectReader(reader, values.entries[reader.propertyID])
         default:
             fatalError("Cannot load environment value twice")
+        }
+    }
+
+    /// Calls `visit` with the slot this property was loaded from, if any.
+    public func __visitSlot(_ visit: (_EnvironmentSlot) -> Void) {
+        switch storage {
+        case let .slot(slot):
+            visit(slot)
+        case let .objectReader(_, slot?):
+            visit(slot)
+        default:
+            break
         }
     }
 }
@@ -146,8 +158,8 @@ public struct EnvironmentValues {
     /// Do not create instances of this type manually. Use the ``#Key`` macro to create keys.
     public typealias _Key<Value> = _StorageKey<Self, Value>
 
-    /// The one-value storage of the innermost modifier setting each key.
-    var entries: [PropertyID: _ViewStateStorage] = [:]
+    /// The slot of the innermost modifier setting each key.
+    var entries: [PropertyID: _EnvironmentSlot] = [:]
 
     package init() {}
 
@@ -157,10 +169,10 @@ public struct EnvironmentValues {
     /// - Returns: The value for the key, or the key's default value if not set.
     public subscript<Value>(key: _Key<Value>) -> Value {
         get {
-            entries[key.propertyID].map { $0[0, as: Value.self] } ?? key.defaultValue
+            entries[key.propertyID].map { $0.value[as: Value.self] } ?? key.defaultValue
         }
         set {
-            entries[key.propertyID] = _ViewStateStorage(newValue)
+            entries[key.propertyID] = _EnvironmentSlot(newValue)
         }
     }
 }
