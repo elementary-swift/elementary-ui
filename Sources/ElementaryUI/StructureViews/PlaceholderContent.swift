@@ -2,8 +2,8 @@ import BasicContainers
 
 /// A single content source shared by every instance in a modifier body.
 /// The content owns the instance nodes so content updates can reach them
-/// without re-evaluating the body. Each instance's lifetime is driven by its
-/// placeholder node in the body tree, which unmounts it through the content.
+/// without re-evaluating the body. Each instance is dropped when the slot that
+/// mounted its placeholder node unmounts.
 class PlaceholderContent: Unmountable {
     typealias InstanceID = Int
 
@@ -40,14 +40,19 @@ class PlaceholderContent: Unmountable {
     }
     #endif
 
-    final func mountInstance(context: borrowing _ViewContext, ctx: inout _MountContext) -> InstanceID {
+    final func mountInstance(context: borrowing _ViewContext, ctx: inout _MountContext) {
         let instance = makeInstance(context: context, ctx: &ctx)
         if inlineInstance == nil {
             inlineInstance = .some(instance)
-            return Self.inlineID
+            ctx.registerUnmount(self)
+            return
         }
 
-        for id in additionalInstances.indices where additionalInstances[id] == nil {
+        ctx.registerUnmount(AdditionalPlaceholderInstance(host: self, id: storeAdditionalInstance(instance)))
+    }
+
+    private final func storeAdditionalInstance(_ instance: consuming AnyReconcilable) -> InstanceID {
+        if let id = Self.firstFreeID(in: additionalInstances.span) {
             additionalInstances[id] = .some(instance)
             return id
         }
@@ -56,11 +61,18 @@ class PlaceholderContent: Unmountable {
         return additionalInstances.count - 1
     }
 
-    final func unmountInstance(_ id: InstanceID, _ context: inout _CommitContext) {
+    private static func firstFreeID(in instances: borrowing Span<AnyReconcilable?>) -> InstanceID? {
+        for id in instances.indices where instances[id] == nil {
+            return id
+        }
+        return nil
+    }
+
+    fileprivate final func dropInstance(_ id: InstanceID) {
         if id == Self.inlineID {
-            inlineInstance.take()?.unmount(&context)
+            inlineInstance = nil
         } else {
-            additionalInstances[id].take()?.unmount(&context)
+            additionalInstances[id] = nil
         }
     }
 
@@ -88,11 +100,24 @@ class PlaceholderContent: Unmountable {
         }
     }
 
+    /// Drops the inline instance, which registers the content itself.
     final func unmount(_ context: inout _CommitContext) {
-        assert(
-            inlineInstance == nil && additionalInstances.indices.allSatisfy { additionalInstances[$0] == nil },
-            "Placeholder instances must be unmounted by their placeholder nodes"
-        )
+        dropInstance(Self.inlineID)
+    }
+}
+
+/// Drops a further instance of a content that is mounted more than once.
+private final class AdditionalPlaceholderInstance: Unmountable {
+    let host: PlaceholderContent
+    let id: PlaceholderContent.InstanceID
+
+    init(host: PlaceholderContent, id: PlaceholderContent.InstanceID) {
+        self.host = host
+        self.id = id
+    }
+
+    func unmount(_ context: inout _CommitContext) {
+        host.dropInstance(id)
     }
 }
 

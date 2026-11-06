@@ -147,20 +147,24 @@ final class Scheduler {
         context = ambientContext.take()!
     }
 
+    /// Runs `body` with a root mount context. Everything collected must end
+    /// up with an owner (a slot, or `mountRoot`).
     func withMountContext<R: ~Copyable>(
         tx: inout _TransactionContext,
-        _ body: (consuming _MountContext) -> R
+        _ body: (inout _MountContext) -> R
     ) -> R {
-        self.scratch.withLayoutNodeScratchFrame { scratch in
-            body(
-                _MountContext(
-                    nodeStack: scratch,
-                    dom: dom,
-                    scheduler: self,
-                    currentFrameTime: tx.currentFrameTime,
-                    transaction: tx.transaction
-                )
+        let currentFrameTime = tx.currentFrameTime
+        let transaction = tx.transaction
+        return scratch.withMountFrames { layoutNodes, members in
+            var ctx = _MountContext(
+                layoutNodes: layoutNodes,
+                members: members,
+                dom: dom,
+                scheduler: self,
+                currentFrameTime: currentFrameTime,
+                transaction: transaction
             )
+            return body(&ctx)
         }
     }
 

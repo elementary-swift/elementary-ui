@@ -1,4 +1,4 @@
-final class FLIPLayoutObserver: DOMLayoutObserver {
+final class FLIPLayoutObserver: DOMLayoutObserver, Unmountable {
     private var activeChildNodes: [DOM.Node] = []
     private var outOfBandLeavingNodes: [DOM.Node] = []
     private var animateContainerSize: Bool
@@ -67,7 +67,7 @@ final class FLIPLayoutObserver: DOMLayoutObserver {
         }
     }
 
-    override func unmount(_ context: inout _CommitContext) {
+    func unmount(_ context: inout _CommitContext) {
         var seen: Set<DOM.Node> = []
         for node in activeChildNodes where seen.insert(node).inserted {
             scheduler.markAsRemoved(node)

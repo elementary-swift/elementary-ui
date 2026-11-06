@@ -25,8 +25,9 @@ final class FilterModifier: DOMElementModifier {
         }
     }
 
-    func mount(_ node: DOM.Node, _ context: inout _MountContext) -> AnyUnmountable {
-        AnyUnmountable(MountedStyleModifier(node, makeLayers(&context), &context))
+    func mount(_ node: DOM.Node, _ context: inout _MountContext) {
+        let modifier = MountedStyleModifier(node, makeLayers(&context), &context)
+        context.registerUnmount(modifier)
     }
 
     private func makeLayers(_ context: inout _MountContext) -> [AnyCSSAnimatedValueInstance<CSSFilter>] {

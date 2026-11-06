@@ -1,4 +1,5 @@
 import BasicContainers
+import SpanPreview
 
 /// Owns the keyed child slots of one structural view (conditional content,
 /// keyed lists, ...).
@@ -19,7 +20,7 @@ import BasicContainers
 ///   DOM stays in place and they can be revived by key.
 /// - `removedSlots`: done; the next `collect` emits their `.removed` layout
 ///   ops and unmounts them.
-final class MountContainer {
+final class MountContainer: Unmountable {
     private let viewContext: _ViewContext
     private var activeSlots: UniqueArray<Slot>
     private var leavingSlots: UniqueArray<Slot> = .init()
@@ -32,7 +33,7 @@ final class MountContainer {
         self.activeSlots = slots
     }
 
-    convenience init<Node: _Reconcilable & ~Copyable>(
+    convenience init<Node: ~Copyable>(
         mountedKey key: _ViewKey,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
@@ -46,7 +47,7 @@ final class MountContainer {
         )
     }
 
-    convenience init<Node: _Reconcilable & ~Copyable>(
+    convenience init<Node: ~Copyable>(
         mountedKeyStorage keys: borrowing Span<_ViewKey>,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
@@ -69,6 +70,8 @@ final class MountContainer {
                 }
             }
         )
+        // after the slots, which took their own registrations
+        ctx.registerUnmount(self)
     }
 
     func collect(into ops: inout LayoutPass, context: inout _CommitContext, op: LayoutPass.Entry.LayoutOp) {
@@ -145,9 +148,8 @@ final class MountContainer {
                 removedSlots: &removedSlots,
                 keys: newKeys,
                 makeNewSlot: { [viewContext] newKeyIndex, key in
-                    var slot = tx.scheduler.withMountContext(tx: &tx) { (ctx: consuming _MountContext) in
-                        var ctx = ctx
-                        return ctx.mountSlot(
+                    var slot = tx.scheduler.withMountContext(tx: &tx) { ctx in
+                        ctx.mountSlot(
                             key: key,
                             newKeyIndex: newKeyIndex,
                             env: viewContext,
@@ -215,7 +217,8 @@ extension MountContainer {
 
 extension MountContainer {
     /// One keyed child: its mounted node, the layout nodes it produced, and
-    /// the transition state that decides how it enters and leaves.
+    /// the members (unmount work, transition elements) registered while
+    /// mounting it.
     struct Slot: ~Copyable {
         enum Placement {
             case unchanged
@@ -226,8 +229,8 @@ extension MountContainer {
         let key: _ViewKey
         var node: AnyReconcilable
         var layoutNodes: SlotLayoutNodes
+        var members: SlotMembers
         var placement: Placement
-        var transitions: _SlotTransitions
         var pendingRemoval: _PendingRemoval?
         /// Set when the current patch mounted this slot: its node is already up to date.
         var isMountedByThisPatch = false
@@ -236,13 +239,13 @@ extension MountContainer {
             key: _ViewKey,
             node: consuming AnyReconcilable,
             layoutNodes: consuming SlotLayoutNodes,
-            transitions: consuming _SlotTransitions
+            members: consuming SlotMembers
         ) {
             self.key = key
             self.node = node
             self.layoutNodes = layoutNodes
+            self.members = members
             self.placement = .unchanged
-            self.transitions = transitions
             self.pendingRemoval = nil
         }
 
@@ -323,11 +326,11 @@ extension MountContainer {
             if placement != .added {
                 layoutNodes.collect(into: &ops, context: &context, op: .removed)
             }
-            node.unmount(&context)
+            members.unmount(&context)
         }
 
         consuming func unmount(_ context: inout _CommitContext) {
-            node.unmount(&context)
+            members.unmount(&context)
         }
     }
 }

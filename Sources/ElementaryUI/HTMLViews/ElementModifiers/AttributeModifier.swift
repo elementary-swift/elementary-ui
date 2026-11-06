@@ -28,9 +28,10 @@ public final class _AttributeModifier: DOMElementModifier, Invalidateable {
         }
     }
 
-    func mount(_ node: DOM.Node, _ context: inout _MountContext) -> AnyUnmountable {
+    func mount(_ node: DOM.Node, _ context: inout _MountContext) {
         logTrace("mounting attribute modifier")
-        return AnyUnmountable(MountedInstance(node, self, &context))
+        let instance = MountedInstance(node, self, &context)
+        context.registerUnmount(instance)
     }
 
     func invalidate(_ context: inout _TransactionContext) {

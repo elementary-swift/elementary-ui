@@ -178,15 +178,11 @@ struct AnyEquatable: Equatable {
     }
 }
 
-public struct _PhaseAnimatorNode<Phase: Equatable, Content: View>: ~Copyable, _Reconcilable {
+public struct _PhaseAnimatorNode<Phase: Equatable, Content: View>: ~Copyable {
     fileprivate let controller: PhaseController<Phase, Content>
-
-    public consuming func unmount(_ context: inout _CommitContext) {
-        controller.unmount(&context)
-    }
 }
 
-private final class PhaseController<Phase: Equatable, Content: View> {
+private final class PhaseController<Phase: Equatable, Content: View>: Unmountable {
     private typealias Rendered = _TrackedContent<Phase, Content>?
     private var view: PhaseAnimator<Phase, Content>
     private let scheduler: Scheduler
@@ -198,6 +194,7 @@ private final class PhaseController<Phase: Equatable, Content: View> {
         self.view = view
         self.scheduler = ctx.scheduler
         self.child = Rendered._makeNode(rendered, context: context, ctx: &ctx)
+        ctx.registerUnmount(self)
         if view.trigger == nil { transition(to: 1) }
     }
 
@@ -265,8 +262,9 @@ private final class PhaseController<Phase: Equatable, Content: View> {
     }
 
     func unmount(_ context: inout _CommitContext) {
+        // Pending phase updates retain the controller; they must not render.
         generation &+= 1
-        child.take()?.unmount(&context)
+        child = nil
     }
 }
 

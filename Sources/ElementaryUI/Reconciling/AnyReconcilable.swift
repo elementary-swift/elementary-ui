@@ -1,10 +1,6 @@
 import Builtin
 import ContainersPreview
 
-public protocol _Reconcilable: ~Copyable {
-    consuming func unmount(_ context: inout _CommitContext)
-}
-
 // Holds either R directly or a UniqueBox<R>, as selected by _ReconcilableLayout.
 // This buffer owns no cleanup; the matching witness handles its hidden value.
 @_rawLayout(likeArrayOf: _TextNode, count: 1)
@@ -45,28 +41,17 @@ private func _unsafeTake<R: ~Copyable>(_ pointer: UnsafeMutablePointer<R>) -> R 
 // Used through metatypes only: no instances or stored closure contexts.
 private class _ReconcilableWitness {
     class func destroy(_ storage: UnsafeMutableRawPointer) { fatalError("abstract") }
-    class func unmount(_ storage: UnsafeMutableRawPointer, _ context: inout _CommitContext) {
-        fatalError("abstract")
-    }
 }
 
-private final class _InlineReconcilableWitness<R: _Reconcilable & ~Copyable>: _ReconcilableWitness {
+private final class _InlineReconcilableWitness<R: ~Copyable>: _ReconcilableWitness {
     override class func destroy(_ storage: UnsafeMutableRawPointer) {
         storage.assumingMemoryBound(to: R.self).deinitialize(count: 1)
     }
-
-    override class func unmount(_ storage: UnsafeMutableRawPointer, _ context: inout _CommitContext) {
-        _unsafeTake(storage.assumingMemoryBound(to: R.self)).unmount(&context)
-    }
 }
 
-private final class _HeapReconcilableWitness<R: _Reconcilable & ~Copyable>: _ReconcilableWitness {
+private final class _HeapReconcilableWitness<R: ~Copyable>: _ReconcilableWitness {
     override class func destroy(_ storage: UnsafeMutableRawPointer) {
         _ = _unsafeTake(storage.assumingMemoryBound(to: UniqueBox<R>.self))
-    }
-
-    override class func unmount(_ storage: UnsafeMutableRawPointer, _ context: inout _CommitContext) {
-        _unsafeTake(storage.assumingMemoryBound(to: UniqueBox<R>.self)).consume().unmount(&context)
     }
 }
 
@@ -78,7 +63,7 @@ private struct _ReconcilableLayout: ~Copyable {
     let witness: _ReconcilableWitness.Type
 
     @inline(__always)
-    init<R: _Reconcilable & ~Copyable>(_ value: consuming R) {
+    init<R: ~Copyable>(_ value: consuming R) {
         if _fitsInline(R.self) {
             storage = _ReconcilableStorage(storing: value)
             witness = _InlineReconcilableWitness<R>.self
@@ -89,15 +74,13 @@ private struct _ReconcilableLayout: ~Copyable {
     }
 }
 
-// A raw-layout owner can discard itself after consuming its hidden payload.
-// A Swift stored raw-layout property would prevent discard in Swift 6.4.
-// Embedded Swift additionally requires this owner to have a frozen layout.
+// Embedded Swift requires this raw-layout owner to have a frozen layout.
 @usableFromInline
 @frozen
 @_rawLayout(like: _ReconcilableLayout)
 struct AnyReconcilable: ~Copyable {
     @inline(__always)
-    init<R: _Reconcilable & ~Copyable>(_ value: consuming R) {
+    init<R: ~Copyable>(_ value: consuming R) {
         let address = UnsafeMutableRawPointer(Builtin.addressOfRawLayout(self))
         address.bindMemory(to: _ReconcilableLayout.self, capacity: 1)
             .initialize(to: _ReconcilableLayout(value))
@@ -122,7 +105,7 @@ struct AnyReconcilable: ~Copyable {
 
     // Precondition: R is exactly the type passed to init.
     @inline(__always)
-    mutating func modify<R: _Reconcilable & ~Copyable>(as type: R.Type = R.self, _ body: (inout R) -> Void) {
+    mutating func modify<R: ~Copyable>(as type: R.Type = R.self, _ body: (inout R) -> Void) {
         withUnsafeMutableStorage { storage, witness in
             if _fitsInline(R.self) {
                 precondition(
@@ -138,10 +121,5 @@ struct AnyReconcilable: ~Copyable {
                 body(&storage.assumingMemoryBound(to: UniqueBox<R>.self).pointee.value)
             }
         }
-    }
-
-    consuming func unmount(_ context: inout _CommitContext) {
-        withUnsafeMutableStorage { storage, witness in witness.unmount(storage, &context) }
-        discard self  // this is load-bearing
     }
 }

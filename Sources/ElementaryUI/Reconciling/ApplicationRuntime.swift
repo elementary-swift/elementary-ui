@@ -2,6 +2,7 @@ import BasicContainers
 
 final class ApplicationRuntime {
     private var rootNode: _ConditionalNode?
+    private var rootMembers: SlotMembers?
     private var scheduler: Scheduler
 
     init(dom: DOMInteractor) {
@@ -18,8 +19,7 @@ final class ApplicationRuntime {
                 $0.disablesAnimation = true
             } run: { tx in
 
-                self.rootNode = scheduler.withMountContext(tx: &tx) {
-                    (mountCtx: consuming _MountContext) in
+                self.rootNode = scheduler.withMountContext(tx: &tx) { mountCtx in
                     let node = _ConditionalNode(
                         isA: true,
                         context: _ViewContext(),
@@ -29,7 +29,7 @@ final class ApplicationRuntime {
                         }
                     )
 
-                    _ = mountCtx.mountInDOMNode(domRoot, ownsAllChildren: false)
+                    self.rootMembers = mountCtx.mountRoot(in: domRoot)
                     return node
                 }
             }
@@ -45,7 +45,7 @@ final class ApplicationRuntime {
                 rootNode.patchWithB(tx: &tx, makeNode: { _, _ in _EmptyNode() }, updateNode: { _, _ in })
 
                 // Break the root container/layout cycle after patch-driven removals are committed.
-                tx.scheduler.addCommitAction { ctx in rootNode.container.unmount(&ctx) }
+                tx.scheduler.addCommitAction { ctx in self.rootMembers.take()?.unmount(&ctx) }
             }
         }
         scheduler.forceRunUpdateCycleSynchronously()

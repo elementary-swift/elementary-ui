@@ -1,7 +1,7 @@
-public struct _KeyedNode: ~Copyable, _Reconcilable {
+public struct _KeyedNode: ~Copyable {
     let container: MountContainer
 
-    init<Node: _Reconcilable & ~Copyable>(
+    init<Node: ~Copyable>(
         keys: borrowing Span<_ViewKey>,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
@@ -16,7 +16,7 @@ public struct _KeyedNode: ~Copyable, _Reconcilable {
         ctx.appendContainer(container)
     }
 
-    init<Node: _Reconcilable & ~Copyable>(
+    init<Node: ~Copyable>(
         key: _ViewKey,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
@@ -57,9 +57,5 @@ public struct _KeyedNode: ~Copyable, _Reconcilable {
             makeNode: makeNode,
             patchNode: patchNode
         )
-    }
-
-    public consuming func unmount(_ context: inout _CommitContext) {
-        container.unmount(&context)
     }
 }

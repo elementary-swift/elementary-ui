@@ -1,4 +1,4 @@
-public struct _ForEachNode<Data: RandomAccessCollection, Content: MarkupContent & _Mountable>: ~Copyable, _Reconcilable {
+public struct _ForEachNode<Data: RandomAccessCollection, Content: MarkupContent & _Mountable>: ~Copyable {
     private typealias Item = _TrackedContent<Data.Element, Content>
 
     private let container: MountContainer
@@ -22,10 +22,6 @@ public struct _ForEachNode<Data: RandomAccessCollection, Content: MarkupContent 
         Self.withItems(of: view) { item in
             patchItems(in: container, keys: view.keys.span, item: item, tx: &tx)
         }
-    }
-
-    public consuming func unmount(_ context: inout _CommitContext) {
-        container.unmount(&context)
     }
 
     /// Lends a function that builds the item for the element at an offset.

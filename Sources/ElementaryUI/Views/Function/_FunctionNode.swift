@@ -15,8 +15,8 @@ public typealias _AnimatableFunctionNode<Value: __FunctionView & Animatable> =
 
 public struct __FunctionNode<
     Value: __FunctionView,
-    ChildNode: _Reconcilable & ~Copyable
->: ~Copyable, _Reconcilable
+    ChildNode: ~Copyable
+>: ~Copyable
 where ChildNode == Value.Body._MountedNode {
     private var core:
         _FunctionNodeCore<
@@ -39,16 +39,12 @@ where ChildNode == Value.Body._MountedNode {
     ) {
         core.patch(value, tx: &tx)
     }
-
-    public consuming func unmount(_ context: inout _CommitContext) {
-        core.unmount(&context)
-    }
 }
 
 public struct __AnimatableFunctionNode<
     Value: __FunctionView & Animatable,
-    ChildNode: _Reconcilable & ~Copyable
->: ~Copyable, _Reconcilable
+    ChildNode: ~Copyable
+>: ~Copyable
 where ChildNode == Value.Body._MountedNode {
     private var core:
         _FunctionNodeCore<
@@ -63,6 +59,8 @@ where ChildNode == Value.Body._MountedNode {
         ctx: inout _MountContext
     ) {
         core = .init(value: value, context: context, ctx: &ctx)
+        // always boxed at mount, after its child registered
+        ctx.registerUnmount(core.mountedBox!)
     }
 
     mutating func patch(
@@ -71,15 +69,11 @@ where ChildNode == Value.Body._MountedNode {
     ) {
         core.patch(value, tx: &tx)
     }
-
-    public consuming func unmount(_ context: inout _CommitContext) {
-        core.unmount(&context)
-    }
 }
 
 private struct _FunctionNodeCore<
     Value: __FunctionView,
-    ChildNode: _Reconcilable & ~Copyable,
+    ChildNode: ~Copyable,
     Function: _FunctionScheduler
 >: ~Copyable
 where
@@ -123,15 +117,14 @@ where
         )
 
         if dependencies != nil || Function.boxesWithoutTracking {
-            storage = .box(
-                Storage.makeBox(
-                    child: childNode,
-                    value: lastValue,
-                    depthInTree: depthInTree,
-                    dependencies: dependencies,
-                    scheduler: ctx.scheduler
-                )
+            let function = Storage.makeBox(
+                child: childNode,
+                value: lastValue,
+                depthInTree: depthInTree,
+                dependencies: dependencies,
+                scheduler: ctx.scheduler
             )
+            storage = .box(function)
         } else {
             storage = .inline(childNode)
         }
@@ -157,16 +150,12 @@ where
         lastValue = consume newValue
     }
 
-    consuming func unmount(_ context: inout _CommitContext) {
+    var mountedBox: Function? {
         switch storage {
-        case .inline(var child):
-            __noOpModifyForStupidWarning(&child)
-            child.unmount(&context)
-        case .box(let function):
-            function.unmountChild(&context)
+        case .box(let function): function
+        case .inline: nil
         }
     }
-
 }
 
 private extension _FunctionNodeCore.Storage where ChildNode: ~Copyable {
@@ -224,7 +213,7 @@ private extension _FunctionNodeCore.Storage where ChildNode: ~Copyable {
 private protocol _FunctionScheduler<View, ChildNode>: AnyObject
 where Self: SchedulableNode {
     associatedtype View: __FunctionView
-    associatedtype ChildNode: _Reconcilable & ~Copyable
+    associatedtype ChildNode: ~Copyable
 
     static var boxesWithoutTracking: Bool { get }
 
@@ -238,12 +227,11 @@ where Self: SchedulableNode {
         _ value: borrowing View,
         tx: inout _TransactionContext
     )
-    func unmountChild(_ context: inout _CommitContext)
 }
 
 class SchedulableFunction<
     Value: __FunctionView,
-    MountedBody: _Reconcilable & ~Copyable
+    MountedBody: ~Copyable
 >: SchedulableNode, _FunctionScheduler
 where MountedBody == Value.Body._MountedNode {
     typealias View = Value
@@ -251,7 +239,7 @@ where MountedBody == Value.Body._MountedNode {
 
     class var boxesWithoutTracking: Bool { false }
 
-    var child: MountedBody?
+    var child: MountedBody
     var wiredValue: Value
 
     required init(
@@ -259,7 +247,7 @@ where MountedBody == Value.Body._MountedNode {
         wiredValue: Value,
         depthInTree: Int
     ) {
-        self.child = .some(child)
+        self.child = child
         self.wiredValue = wiredValue
         super.init(depthInTree: depthInTree)
     }
@@ -274,7 +262,7 @@ where MountedBody == Value.Body._MountedNode {
 
     override func performUpdate(tx: inout _TransactionContext) {
         let body = trackDependencies(scheduler: tx.scheduler) { wiredValue.body }
-        Value.Body._patchNode(body, node: &child!, tx: &tx)
+        Value.Body._patchNode(body, node: &child, tx: &tx)
     }
 
     final func render(
@@ -282,22 +270,14 @@ where MountedBody == Value.Body._MountedNode {
         tx: inout _TransactionContext
     ) {
         let body = trackDependencies(scheduler: tx.scheduler) { value.body }
-        Value.Body._patchNode(body, node: &child!, tx: &tx)
-    }
-
-    func cancelAnimation() {}
-
-    final func unmountChild(_ context: inout _CommitContext) {
-        stopScheduling()
-        cancelAnimation()
-        child.take()?.unmount(&context)
+        Value.Body._patchNode(body, node: &child, tx: &tx)
     }
 }
 
 final class AnimatableFunction<
     Value: __FunctionView & Animatable,
-    MountedBody: _Reconcilable & ~Copyable
->: SchedulableFunction<Value, MountedBody>
+    MountedBody: ~Copyable
+>: SchedulableFunction<Value, MountedBody>, Unmountable
 where MountedBody == Value.Body._MountedNode {
     override class var boxesWithoutTracking: Bool { true }
 
@@ -350,14 +330,9 @@ where MountedBody == Value.Body._MountedNode {
         return animatedValue.isAnimating ? .stillRunning : .completed
     }
 
-    override func cancelAnimation() {
+    // A running animation retains the box; it must not update removed content.
+    func unmount(_ context: inout _CommitContext) {
+        stopScheduling()
         animatedValue.cancelAnimation()
     }
-}
-
-@_transparent
-private func __noOpModifyForStupidWarning<R: ~Copyable>(
-    _ value: inout R
-) {
-    // do nothing
 }

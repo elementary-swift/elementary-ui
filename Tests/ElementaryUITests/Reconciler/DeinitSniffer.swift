@@ -18,11 +18,7 @@ struct DeinitSnifferView: View {
         node.callback = view.callback
     }
 
-    class _MountedNode: _Reconcilable {
-        func unmount(_ context: inout _CommitContext) {
-            print("sniffer unmount")
-        }
-
+    class _MountedNode {
         var callback: () -> Void
 
         init(callback: @escaping () -> Void) {

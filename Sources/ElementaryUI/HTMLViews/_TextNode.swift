@@ -1,6 +1,6 @@
 import _UTF8Internals
 
-public struct _TextNode: _Reconcilable {
+public struct _TextNode {
     let domNode: DOM.Node
     var value: String
 
@@ -15,8 +15,5 @@ public struct _TextNode: _Reconcilable {
         self.value = newValue
 
         tx.scheduler.addCommitAction(.patchText(node: domNode, text: value))
-    }
-
-    public consuming func unmount(_ context: inout _CommitContext) {
     }
 }

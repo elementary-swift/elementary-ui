@@ -1,10 +1,8 @@
 public struct _ElementNode:
-    ~Copyable,
-    _Reconcilable
+    ~Copyable
 {
     private var child: AnyReconcilable
     private var attributes: _ElementAttributes
-    private var mountedModifiers: [AnyUnmountable] = []
 
     @inline(never)
     init(
@@ -33,12 +31,9 @@ public struct _ElementNode:
                 on: domNode,
                 using: ctx.dom
             )
-            self.child = ctx.withChildContext {
-                (mctx: consuming _MountContext) in
-                let child = makeChild(context, &mctx)
-                _ = mctx.mountInDOMNode(domNode, observers: [])
-                return child
-            }
+            var childCtx = ctx.childContext()
+            self.child = makeChild(context, &childCtx)
+            childCtx.mountInDOMNode(domNode)
             return
         }
 
@@ -61,19 +56,14 @@ public struct _ElementNode:
         let modifiers = childContext.takeModifiers()
         let layoutObservers = childContext.takeLayoutObservers()
 
-        self.mountedModifiers.reserveCapacity(modifiers.count)
-        for modifier in modifiers.reversed() {
-            self.mountedModifiers.append(modifier.mount(domNode, &ctx))
-        }
+        var childCtx = ctx.childContext()
+        self.child = makeChild(childContext, &childCtx)
+        childCtx.mountInDOMNode(domNode, observers: layoutObservers)
 
-        self.child = ctx.withChildContext {
-            (mctx: consuming _MountContext) in
-            let child = makeChild(childContext, &mctx)
-            _ = mctx.mountInDOMNode(
-                domNode,
-                observers: layoutObservers
-            )
-            return child
+        // after the children, so the slot unmounts them first
+        let modifierSpan = modifiers.span
+        for index in modifierSpan.indices.reversed() {
+            modifierSpan[index].mount(domNode, &ctx)
         }
     }
 
@@ -85,15 +75,6 @@ public struct _ElementNode:
     ) {
         self.attributes.patch(attributes, context: &context)
         block(&child, &context)
-    }
-
-    public consuming func unmount(_ context: inout _CommitContext) {
-        child.unmount(&context)
-
-        for modifier in mountedModifiers {
-            modifier.unmount(&context)
-        }
-        mountedModifiers.removeAll()
     }
 }
 

@@ -27,17 +27,10 @@ extension PlaceholderContentView: _Mountable {
     }
 }
 
-public struct _PlaceholderNode: ~Copyable, _Reconcilable {
-    private let host: PlaceholderContent
-    private let id: PlaceholderContent.InstanceID
-
+/// The instance itself lives in the content, so updates reach it directly.
+public struct _PlaceholderNode: ~Copyable {
     init(host: PlaceholderContent, context: borrowing _ViewContext, ctx: inout _MountContext) {
-        self.host = host
-        self.id = host.mountInstance(context: context, ctx: &ctx)
-    }
-
-    public consuming func unmount(_ context: inout _CommitContext) {
-        host.unmountInstance(id, &context)
+        host.mountInstance(context: context, ctx: &ctx)
     }
 }
 
