@@ -64,7 +64,7 @@ public struct FocusState<Value: Hashable> {
             guard let storage else {
                 assertionFailure("FocusState not initialized")
                 logWarning("FocusState not initialized")
-                return Binding(storage: Storage(noneValue: noneValue))
+                return Binding(storage: Storage(detachedWith: noneValue))
             }
             return Binding(storage: storage)
         }
@@ -73,11 +73,11 @@ public struct FocusState<Value: Hashable> {
 
 public extension FocusState {
     mutating func __restoreState(storage: _ViewStateStorage, index: Int) {
-        self.storage = storage[index, as: Storage.self]
+        self.storage = Storage(StateAccessor(storage: storage, index: index))
     }
 
     func __initializeState(storage: _ViewStateStorage, index: Int) {
-        storage.initializeValueStorage(initialValue: Storage(noneValue: noneValue), index: index)
+        storage.initializeValueStorage(initialValue: FocusStateSlot(noneValue: noneValue), index: index)
     }
 }
 
@@ -94,42 +94,64 @@ public extension FocusState {
     }
 }
 
-internal final class FocusStateStorage<Value: Hashable> {
-    private let registrar = ReactivityRegistrar()
-    private let _valueID = PropertyID(0)
+/// What one `@FocusState` keeps in its view's state: the focused value, tracked like
+/// `@State`, and the elements that can take focus.
+struct FocusStateSlot<Value: Hashable> {
+    var value: Value
+    let registry: FocusRegistry<Value>
 
-    private let noneValue: Value
-
-    private var _value: Value
-
-    private(set) var value: Value {
-        get {
-            registrar.access(_valueID)
-            return _value
-        }
-        set {
-            registrar.willSet(_valueID)
-            _value = newValue
-            registrar.didSet(_valueID)
-        }
+    init(noneValue: Value) {
+        value = noneValue
+        registry = FocusRegistry(noneValue: noneValue)
     }
+}
 
-    private var focusables: [Value: any Focusable] = [:]
+/// The focusable elements of one `@FocusState`, by focus value.
+final class FocusRegistry<Value: Hashable> {
+    let noneValue: Value
+    var focusables: [Value: any Focusable] = [:]
 
     init(noneValue: Value) {
         self.noneValue = noneValue
-        self._value = noneValue
+    }
+}
+
+/// One `@FocusState` in its view's state.
+///
+/// The registry doesn't reference the view's state, so the two don't form a cycle.
+struct FocusStateStorage<Value: Hashable> {
+    private let accessor: StateAccessor<FocusStateSlot<Value>>
+    let registry: FocusRegistry<Value>
+
+    init(_ accessor: StateAccessor<FocusStateSlot<Value>>) {
+        self.accessor = accessor
+        // Restoring runs outside body tracking, so this read isn't recorded.
+        self.registry = accessor.storage[accessor.index, as: FocusStateSlot<Value>.self].registry
+    }
+
+    /// A storage of its own, for a `FocusState` used outside a view.
+    init(detachedWith noneValue: Value) {
+        let storage = _ViewStateStorage(capacity: 1)
+        storage.initializeValueStorage(initialValue: FocusStateSlot(noneValue: noneValue), index: 0)
+        self.init(StateAccessor(storage: storage, index: 0))
+    }
+
+    private var noneValue: Value { registry.noneValue }
+
+    private(set) var value: Value {
+        get { accessor.storage[accessor.index, as: FocusStateSlot<Value>.self].value }
+        nonmutating set { accessor.storage[accessor.index, as: FocusStateSlot<Value>.self].value = newValue }
     }
 
     func tryFocus(value: Value) {
         if value == noneValue {
-            guard let currentFocusable = focusables[self._value] else {
+            guard let currentFocusable = registry.focusables[self.value] else {
                 self.value = noneValue
                 return
             }
             currentFocusable.blur()
         } else {
-            guard let focusable = focusables[value] else {
+            guard let focusable = registry.focusables[value] else {
                 logWarning("No element found for focus value \(value)")
                 return
             }
@@ -152,25 +174,25 @@ internal final class FocusStateStorage<Value: Hashable> {
     func register(_ focusable: any Focusable, for value: Value) {
         assert(value != noneValue, "Cannot register focusable for none value")
 
-        guard !focusables.keys.contains(value) else {
+        guard !registry.focusables.keys.contains(value) else {
             logWarning("Multiple views registered for focus value \(value)")
             return
         }
 
-        focusables[value] = focusable
+        registry.focusables[value] = focusable
     }
 
     func unregister(_ focusable: any Focusable, for value: Value) {
-        guard let index = focusables.index(forKey: value) else { return }
+        guard let index = registry.focusables.index(forKey: value) else { return }
 
         // NOTE: written like this to avoid an Embedded compiler crash (I guess it needs the type here)
-        let currentFocusable: any Focusable = focusables.values[index]
+        let currentFocusable: any Focusable = registry.focusables.values[index]
         guard currentFocusable === focusable else { return }
 
-        focusables.remove(at: index)
+        registry.focusables.remove(at: index)
 
         // clean up focus if this element was currently focused
-        if value == self._value {
+        if value == self.value {
             self.value = noneValue
         }
     }
