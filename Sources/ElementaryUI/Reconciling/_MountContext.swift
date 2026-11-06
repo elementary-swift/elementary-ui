@@ -78,7 +78,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
         key: _ViewKey,
         newKeyIndex: Int,
         env: borrowing _ViewContext,
-        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
+        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> UniqueAny
     ) -> MountContainer.Slot {
         var slotCtx = nested(acceptsTransitions: true)
         let node = makeNode(newKeyIndex, env, &slotCtx)
@@ -103,7 +103,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
     // Finishing a nested context consumes it: a context with a deinit lives
     // until the end of its scope otherwise, past where its parent appends again.
 
-    private consuming func finishSlot(key: _ViewKey, node: consuming AnyReconcilable) -> MountContainer.Slot {
+    private consuming func finishSlot(key: _ViewKey, node: consuming UniqueAny) -> MountContainer.Slot {
         let layoutNodes = takeSlotLayoutNodes()
         return MountContainer.Slot(
             key: key,

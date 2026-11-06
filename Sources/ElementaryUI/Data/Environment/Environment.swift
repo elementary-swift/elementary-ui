@@ -45,9 +45,9 @@ import Reactivity
 public struct Environment<V> {
     enum Storage {
         case value(V)
-        case valueBox(EnvironmentValues._Box<V>)
+        case slot(StateAccessor<V>)
         case valueKey(EnvironmentValues._Key<V>)
-        case objectReader(ObjectStorageReader<V>, AnyObject?)
+        case objectReader(ObjectStorageReader<V>, _ViewStateStorage?)
     }
 
     var storage: Storage
@@ -71,8 +71,8 @@ public struct Environment<V> {
         switch storage {
         case let .value(value):
             value
-        case let .valueBox(box):
-            box.value
+        case let .slot(slot):
+            slot.storage[slot.index]
         case let .valueKey(accessor):
             accessor.defaultValue
         case let .objectReader(reader, box):
@@ -87,13 +87,13 @@ public struct Environment<V> {
     mutating func __load(from values: borrowing EnvironmentValues) {
         switch storage {
         case let .valueKey(key):
-            if let box = values.boxes[key.propertyID] {
-                storage = .valueBox(box as! EnvironmentValues._Box<V>)
+            if let slot = values.entries[key.propertyID] {
+                storage = .slot(StateAccessor(storage: slot, index: 0))
             } else {
                 storage = .value(key.defaultValue)
             }
         case let .objectReader(reader, _):
-            storage = .objectReader(reader, values.boxes[reader.propertyID])
+            storage = .objectReader(reader, values.entries[reader.propertyID])
         default:
             fatalError("Cannot load environment value twice")
         }
@@ -146,7 +146,8 @@ public struct EnvironmentValues {
     /// Do not create instances of this type manually. Use the ``#Key`` macro to create keys.
     public typealias _Key<Value> = _StorageKey<Self, Value>
 
-    var boxes: [PropertyID: AnyObject] = [:]
+    /// The one-value storage of the innermost modifier setting each key.
+    var entries: [PropertyID: _ViewStateStorage] = [:]
 
     package init() {}
 
@@ -156,41 +157,10 @@ public struct EnvironmentValues {
     /// - Returns: The value for the key, or the key's default value if not set.
     public subscript<Value>(key: _Key<Value>) -> Value {
         get {
-            (boxes[key.propertyID] as? _Box<Value>)?.value ?? key.defaultValue
+            entries[key.propertyID].map { $0[0, as: Value.self] } ?? key.defaultValue
         }
         set {
-            boxes[key.propertyID] = _Box<Value>(newValue)
-        }
-    }
-}
-
-extension EnvironmentValues {
-    public final class _Box<Value> {
-        let _value_id = PropertyID(0)
-        var _registrar = ReactivityRegistrar()
-
-        var _value: Value
-
-        var value: Value {
-            get {
-                _registrar.access(_value_id)
-                return _value
-            }
-            set {
-                _registrar.willSet(_value_id)
-                _value = newValue
-                _registrar.didSet(_value_id)
-            }
-            _modify {
-                _registrar.access(_value_id)
-                _registrar.willSet(_value_id)
-                defer { _registrar.didSet(_value_id) }
-                yield &_value
-            }
-        }
-
-        init(_ value: Value) {
-            self._value = value
+            entries[key.propertyID] = _ViewStateStorage(newValue)
         }
     }
 }

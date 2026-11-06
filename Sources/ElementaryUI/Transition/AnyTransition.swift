@@ -21,13 +21,13 @@ public struct AnyTransition {
             context: borrowing _ViewContext,
             ctx: inout _MountContext,
             content: PlaceholderContent
-        ) -> AnyReconcilable {
+        ) -> UniqueAny {
             fatalError("abstract")
         }
 
         func patchNode(
             to phase: TransitionPhase,
-            node: inout AnyReconcilable,
+            node: inout UniqueAny,
             tx: inout _TransactionContext,
             content: PlaceholderContent
         ) {
@@ -52,9 +52,9 @@ public struct AnyTransition {
             context: borrowing _ViewContext,
             ctx: inout _MountContext,
             content: PlaceholderContent
-        ) -> AnyReconcilable {
+        ) -> UniqueAny {
             let placeholder = PlaceholderContentView<T>(content: content)
-            return AnyReconcilable(
+            return UniqueAny(
                 T.Body._makeNode(
                     transition.body(content: placeholder, phase: phase),
                     context: context,
@@ -65,18 +65,16 @@ public struct AnyTransition {
 
         override func patchNode(
             to phase: TransitionPhase,
-            node: inout AnyReconcilable,
+            node: inout UniqueAny,
             tx: inout _TransactionContext,
             content: PlaceholderContent
         ) {
             let placeholder = PlaceholderContentView<T>(content: content)
-            node.modify(as: T.Body._MountedNode.self) { node in
-                T.Body._patchNode(
-                    transition.body(content: placeholder, phase: phase),
-                    node: &node,
-                    tx: &tx
-                )
-            }
+            T.Body._patchNode(
+                transition.body(content: placeholder, phase: phase),
+                node: &node[as: T.Body._MountedNode.self],
+                tx: &tx
+            )
         }
 
         override func withAnimation(_ animation: Animation?) -> Box {
@@ -115,7 +113,7 @@ public struct AnyTransition {
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
         content: PlaceholderContent
-    ) -> AnyReconcilable {
+    ) -> UniqueAny {
         box.makeNode(
             phase: phase,
             context: context,
@@ -126,7 +124,7 @@ public struct AnyTransition {
 
     func patchNode(
         to phase: TransitionPhase,
-        node: inout AnyReconcilable,
+        node: inout UniqueAny,
         tx: inout _TransactionContext,
         content: PlaceholderContent
     ) {

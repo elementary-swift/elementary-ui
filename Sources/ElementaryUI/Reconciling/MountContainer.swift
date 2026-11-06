@@ -63,7 +63,7 @@ final class MountContainer: Unmountable {
                             newKeyIndex: index,
                             env: context,
                             makeNode: { index, context, ctx in
-                                AnyReconcilable(makeNode(index, context, &ctx))
+                                UniqueAny(makeNode(index, context, &ctx))
                             }
                         )
                     )
@@ -120,8 +120,8 @@ final class MountContainer: Unmountable {
     func patch(
         key newKey: _ViewKey,
         tx: inout _TransactionContext,
-        makeNode: (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
-        patchNode: (inout AnyReconcilable, inout _TransactionContext) -> Void
+        makeNode: (borrowing _ViewContext, inout _MountContext) -> UniqueAny,
+        patchNode: (inout UniqueAny, inout _TransactionContext) -> Void
     ) {
         patch(
             keys: CollectionOfOne(newKey).span,
@@ -134,8 +134,8 @@ final class MountContainer: Unmountable {
     func patch(
         keys newKeys: borrowing Span<_ViewKey>,
         tx: inout _TransactionContext,
-        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
-        patchNode: (Int, inout AnyReconcilable, inout _TransactionContext) -> Void
+        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> UniqueAny,
+        patchNode: (Int, inout UniqueAny, inout _TransactionContext) -> Void
     ) {
         activeSlots.reserveCapacity(newKeys.count)
 
@@ -227,7 +227,7 @@ extension MountContainer {
         }
 
         let key: _ViewKey
-        var node: AnyReconcilable
+        var node: UniqueAny
         var layoutNodes: SlotLayoutNodes
         var members: SlotMembers
         var placement: Placement
@@ -237,7 +237,7 @@ extension MountContainer {
 
         init(
             key: _ViewKey,
-            node: consuming AnyReconcilable,
+            node: consuming UniqueAny,
             layoutNodes: consuming SlotLayoutNodes,
             members: consuming SlotMembers
         ) {
@@ -256,7 +256,7 @@ extension MountContainer {
         mutating func patch(
             newKeyIndex: Int,
             tx: inout _TransactionContext,
-            patchNode: (Int, inout AnyReconcilable, inout _TransactionContext) -> Void
+            patchNode: (Int, inout UniqueAny, inout _TransactionContext) -> Void
         ) {
             if isMountedByThisPatch {
                 isMountedByThisPatch = false

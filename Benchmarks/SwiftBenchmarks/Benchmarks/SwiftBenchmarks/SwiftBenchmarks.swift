@@ -380,6 +380,7 @@ private func measureInitialMount<MountedView: View>(
 
 let benchmarks: @Sendable () -> Void = {
     registerReactivityBenchmarks()
+    registerDataStorageBenchmarks()
     let rowCounts = [10, 1_000]
 
     Benchmark("Mount.initial.text") { benchmark in
