@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793887283534,
+  "lastUpdate": 1793968314710,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -14223,6 +14223,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 145.97,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "52a11666e2f05e0837c3258caf3280e5255b641b",
+          "message": "Replace _Reconcilable unmount with per-slot unmount registry (#156)\n\n* replace reconcilable unmount with per-slot unmount registry\n\n* use UniqueArray for unmount registry and drop leftover unmount state\n\n* unify mount scratch and slot members, review touch-ups\n\n* replace scratch stacks with a single scratch frame primitive\n\n* swift-format",
+          "timestamp": "2026-11-06T13:24:46+01:00",
+          "tree_id": "1d45cd5199d791834d5ee6f93ea9d1cc7c56694f",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/52a11666e2f05e0837c3258caf3280e5255b641b"
+        },
+        "date": 1793968313750,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 173.08,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 97.57,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81.78,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 131.41,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 144.98,
             "unit": "kB"
           }
         ]
