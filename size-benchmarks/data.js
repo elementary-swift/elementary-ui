@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793968314710,
+  "lastUpdate": 1793972694462,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -14272,6 +14272,53 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 144.98,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "52a11666e2f05e0837c3258caf3280e5255b641b",
+          "message": "Replace _Reconcilable unmount with per-slot unmount registry (#156)\n\n* replace reconcilable unmount with per-slot unmount registry\n\n* use UniqueArray for unmount registry and drop leftover unmount state\n\n* unify mount scratch and slot members, review touch-ups\n\n* replace scratch stacks with a single scratch frame primitive\n\n* swift-format",
+          "timestamp": "2026-11-06T12:24:46Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/52a11666e2f05e0837c3258caf3280e5255b641b"
+        },
+        "date": 1793972693438,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 173.1,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 97.59,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81.79,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 131.42,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 145,
             "unit": "kB"
           }
         ]
