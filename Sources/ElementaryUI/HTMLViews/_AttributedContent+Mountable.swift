@@ -13,10 +13,9 @@ extension _AttributedContent: _Mountable where Content: _Mountable {
         var context = copy context
         context.modifiers[_AttributeModifier.key] = attributeModifier
 
-        return _MountedNode(
-            state: attributeModifier,
-            child: Content._makeNode(view.content, context: context, ctx: &ctx)
-        )
+        let child = Content._makeNode(view.content, context: context, ctx: &ctx)
+        // Not mounted on an element, so it leaves its upstream modifier when the slot drops it.
+        return _MountedNode(registering: attributeModifier, child: child, ctx: &ctx)
     }
 
     public static func _patchNode(
