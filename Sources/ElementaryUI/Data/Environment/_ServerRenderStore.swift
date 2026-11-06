@@ -41,9 +41,8 @@ final class _ServerRenderStore: @unchecked Sendable {
         for key: EnvironmentValues._Key<V>,
         _ body: () throws -> R
     ) rethrows -> R {
-        let previous = context.environment.entries
-        context.environment[key] = value
-        defer { context.environment.entries = previous }
+        let previous = context.environment.entries.updateValue(_ViewStateStorage(value), forKey: key.propertyID)
+        defer { context.environment.entries[key.propertyID] = previous }
         return try body()
     }
 
@@ -52,9 +51,8 @@ final class _ServerRenderStore: @unchecked Sendable {
         for key: EnvironmentValues._Key<V>,
         _ body: () async throws -> R
     ) async rethrows -> R {
-        let previous = context.environment.entries
-        context.environment[key] = value
-        defer { context.environment.entries = previous }
+        let previous = context.environment.entries.updateValue(_ViewStateStorage(value), forKey: key.propertyID)
+        defer { context.environment.entries[key.propertyID] = previous }
         return try await body()
     }
 }
