@@ -75,8 +75,8 @@ public struct Environment<V> {
             slot.value[as: V.self]
         case let .valueKey(accessor):
             accessor.defaultValue
-        case let .objectReader(reader, box):
-            reader.read(box)
+        case let .objectReader(reader, slot):
+            reader.read(slot)
         }
     }
 
