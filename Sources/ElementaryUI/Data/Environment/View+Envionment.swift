@@ -148,7 +148,8 @@ public struct _EnvironmentView<V, Wrapped: View>: View {
         tx: inout _TransactionContext
     ) {
         let slot = node.state
-        let isUnchanged = view.isEqual?(slot.value[as: V.self], view.value) ?? true
+        // Without an equality check, every new value counts as a change.
+        let isUnchanged = view.isEqual?(slot.value[as: V.self], view.value) ?? false
         slot.value[as: V.self] = view.value
         if !isUnchanged {
             // Readers update in this transaction, before or while the subtree is patched.
