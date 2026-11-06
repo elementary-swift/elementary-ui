@@ -67,7 +67,8 @@ final class CSSValueSource<Value: CSSAnimatable & Equatable> {
         let source: CSSValueSource<Value>
         private var animatedValue: AnimatedValue<Value>
         var isDirty: Bool = false
-        var target: AnyInvalidateable?
+        /// Invalidates the mounted modifier that combines this value.
+        var invalidateTarget: ((inout _TransactionContext) -> Void)?
 
         var value: CSSAnimatedValue<Value.CSSValue>
 
@@ -79,9 +80,9 @@ final class CSSValueSource<Value: CSSAnimatable & Equatable> {
             source.dependencies.addDependency(self)
         }
 
-        func setTarget(_ target: AnyInvalidateable) {
-            precondition(self.target == nil, "target already set")
-            self.target = target
+        func setTarget(_ invalidate: @escaping (inout _TransactionContext) -> Void) {
+            precondition(invalidateTarget == nil, "target already set")
+            invalidateTarget = invalidate
         }
 
         func invalidate(_ context: inout _TransactionContext) {
@@ -107,7 +108,7 @@ final class CSSValueSource<Value: CSSAnimatable & Equatable> {
         private func updateValue(_ context: inout _TransactionContext) {
             value = animatedValue.nextCSSAnimationValue(frameTime: context.currentFrameTime)
             isDirty = true
-            target?.invalidate(&context)
+            invalidateTarget?(&context)
         }
     }
 }
@@ -116,7 +117,7 @@ protocol CSSAnimatedValueInstance<CSSValue> {
     associatedtype CSSValue: CSSPropertyValue
     var value: CSSAnimatedValue<CSSValue> { get }
     var isDirty: Bool { get nonmutating set }
-    func setTarget(_ target: AnyInvalidateable)
+    func setTarget(_ invalidate: @escaping (inout _TransactionContext) -> Void)
     func unmount(_ context: inout _CommitContext)
     func progressAnimation(_ context: inout _TransactionContext)
 }
@@ -126,7 +127,7 @@ struct AnyCSSAnimatedValueInstance<CSSProperty: CSSPropertyValue>: CSSAnimatedVa
     let _getValue: () -> CSSAnimatedValue<CSSProperty>
     let _getIsDirty: () -> Bool
     let _setIsDirty: (Bool) -> Void
-    let _setTarget: (AnyInvalidateable) -> Void
+    let _setTarget: (@escaping (inout _TransactionContext) -> Void) -> Void
     let _unmount: (inout _CommitContext) -> Void
 
     init<Instance: CSSAnimatedValueInstance>(_ value: Instance) where Instance.CSSValue == CSSProperty {
@@ -155,8 +156,8 @@ struct AnyCSSAnimatedValueInstance<CSSProperty: CSSPropertyValue>: CSSAnimatedVa
         }
     }
 
-    func setTarget(_ target: AnyInvalidateable) {
-        _setTarget(target)
+    func setTarget(_ invalidate: @escaping (inout _TransactionContext) -> Void) {
+        _setTarget(invalidate)
     }
 
     func unmount(_ context: inout _CommitContext) {

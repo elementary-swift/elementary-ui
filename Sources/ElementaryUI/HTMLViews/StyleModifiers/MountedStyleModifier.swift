@@ -24,9 +24,8 @@ final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: _MountedSt
         self.animations = []
         super.init()
 
-        let selfAsTarget = AnyInvalidateable(self)
         for value in values {
-            value.setTarget(selfAsTarget)
+            value.setTarget(invalidate(_:))
         }
 
         if let combined = reduceCombinedSingleValue() {
