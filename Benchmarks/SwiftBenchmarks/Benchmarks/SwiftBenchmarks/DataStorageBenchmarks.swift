@@ -74,6 +74,26 @@ struct EnvironmentDeepReadersView {
     }
 }
 
+@Reactive
+final class EnvironmentBenchStore {
+    var number = 0
+}
+
+@View
+struct EnvironmentBroadcastView {
+    @Environment(EnvironmentBenchStore.self) var store
+    let ids: [Int]
+
+    var body: some View {
+        div {
+            ForEach(ids, id: \.self) { _ in
+                EnvironmentReaderView()
+            }
+        }
+        .environment(#Key(\.benchNumber), store.number)
+    }
+}
+
 func registerDataStorageBenchmarks() {
     let config = Benchmark.Configuration(
         metrics: [.instructions, .mallocCountTotal],
@@ -135,6 +155,36 @@ func registerDataStorageBenchmarks() {
             benchmark.stopMeasurement()
             mounted.unmount()
             dom.drain()
+        }
+    }
+
+    Benchmark("Environment.update.1000", configuration: config) { benchmark in
+        let store = EnvironmentBenchStore()
+        let dom = NoOpInteractor()
+        let mounted = Application(EnvironmentBroadcastView(ids: ids).environment(store))
+            ._mount(dom: dom, root: dom.rootNode)
+        dom.drain()
+        for _ in benchmark.scaledIterations {
+            benchmark.startMeasurement()
+            store.number += 1
+            dom.drain()
+            benchmark.stopMeasurement()
+        }
+        mounted.unmount()
+        dom.drain()
+    }
+
+    Benchmark("Environment.unmount.1000", configuration: config) { benchmark in
+        let store = EnvironmentBenchStore()
+        for _ in benchmark.scaledIterations {
+            let dom = NoOpInteractor()
+            let mounted = Application(EnvironmentBroadcastView(ids: ids).environment(store))
+                ._mount(dom: dom, root: dom.rootNode)
+            dom.drain()
+            benchmark.startMeasurement()
+            mounted.unmount()
+            dom.drain()
+            benchmark.stopMeasurement()
         }
     }
 }
