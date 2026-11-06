@@ -19,8 +19,7 @@ final class ApplicationRuntime {
                 $0.disablesAnimation = true
             } run: { tx in
 
-                self.rootNode = scheduler.withMountContext(tx: &tx) {
-                    (mountCtx: consuming _MountContext) in
+                self.rootNode = scheduler.withMountContext(tx: &tx) { mountCtx in
                     let node = _ConditionalNode(
                         isA: true,
                         context: _ViewContext(),

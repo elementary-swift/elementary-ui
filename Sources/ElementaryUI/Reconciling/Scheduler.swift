@@ -147,26 +147,24 @@ final class Scheduler {
         context = ambientContext.take()!
     }
 
-    /// Runs `body` with a root mount context. Whatever it collects must be
-    /// handed to an owner (a slot, or `mountRoot`) before it returns.
+    /// Runs `body` with a root mount context. Everything collected must end
+    /// up with an owner (a slot, or `mountRoot`).
     func withMountContext<R: ~Copyable>(
         tx: inout _TransactionContext,
-        _ body: (consuming _MountContext) -> R
+        _ body: (inout _MountContext) -> R
     ) -> R {
         let currentFrameTime = tx.currentFrameTime
         let transaction = tx.transaction
-        return scratch.withMountScratch { mountScratch in
-            let result = body(
-                _MountContext(
-                    scratch: _MutableRef(&mountScratch),
-                    dom: dom,
-                    scheduler: self,
-                    currentFrameTime: currentFrameTime,
-                    transaction: transaction
-                )
+        return scratch.withMountFrames { layoutNodes, members in
+            var ctx = _MountContext(
+                layoutNodes: layoutNodes,
+                members: members,
+                dom: dom,
+                scheduler: self,
+                currentFrameTime: currentFrameTime,
+                transaction: transaction
             )
-            assert(mountScratch.isEmpty, "mount left unowned layout nodes or members")
-            return result
+            return body(&ctx)
         }
     }
 

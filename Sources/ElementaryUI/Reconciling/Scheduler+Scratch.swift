@@ -1,22 +1,35 @@
 extension Scheduler {
+    /// Buffers reused across updates; see ``ScratchFrame``.
     final class ScratchStorage {
-        // shared scratch storage for various operations
-        private var mountScratch = MountScratch()
-        private var layoutEntryStorage = ScratchStackSource<LayoutPass.Entry>(initialCapacity: 16)
+        private var mount = MountBuffers()
+        private var layoutEntries = ScratchBuffer<LayoutPass.Entry>(minimumCapacity: 16)
         private var diffEngine: KeyedDiffEngine = .init()
 
-        func withMountScratch<R: ~Copyable>(_ body: (inout MountScratch) -> R) -> R {
-            body(&mountScratch)
+        func withMountFrames<R: ~Copyable>(
+            _ body: (consuming ScratchFrame<LayoutNode>, consuming ScratchFrame<SlotMember>) -> R
+        ) -> R {
+            mount.withFrames(body)
         }
 
-        func withLayoutEntryScratchFrame<R: ~Copyable>(
-            _ body: (consuming ScratchStack<LayoutPass.Entry>) -> R
+        func withLayoutEntryFrame<R: ~Copyable>(
+            _ body: (consuming ScratchFrame<LayoutPass.Entry>) -> R
         ) -> R {
-            layoutEntryStorage.withStack(body)
+            layoutEntries.withFrame(body)
         }
 
         func withDiffEngine<R: ~Copyable>(_ body: (inout KeyedDiffEngine) -> R) -> R {
             body(&diffEngine)
+        }
+    }
+
+    private struct MountBuffers: ~Copyable {
+        var layoutNodes = ScratchBuffer<LayoutNode>(minimumCapacity: 16)
+        var members = ScratchBuffer<SlotMember>(minimumCapacity: 16)
+
+        mutating func withFrames<R: ~Copyable>(
+            _ body: (consuming ScratchFrame<LayoutNode>, consuming ScratchFrame<SlotMember>) -> R
+        ) -> R {
+            body(layoutNodes.frame(), members.frame())
         }
     }
 }

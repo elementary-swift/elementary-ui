@@ -23,11 +23,11 @@ final class LayoutContainer {
     }
 
     func commitInitialLayout(_ context: inout _CommitContext) {
-        context.scheduler.scratch.withLayoutEntryScratchFrame { scratch in
-            var ops = LayoutPass(layoutContainer: self, scratch: consume scratch)
+        context.scheduler.scratch.withLayoutEntryFrame { frame in
+            var ops = LayoutPass(layoutContainer: self, entries: frame)
             layoutNodes.collect(into: &ops, context: &context, op: .added)
 
-            ops.consume { entries in
+            ops.drain { entries in
                 for index in entries.indices {
                     context.dom.appendChild(entries[unchecked: index].reference, to: domNode)
                 }
@@ -64,42 +64,56 @@ final class LayoutContainer {
         guard isDirty else { return }
         isDirty = false
 
-        context.scheduler.scratch.withLayoutEntryScratchFrame { scratch in
-            var ops = LayoutPass(layoutContainer: self, scratch: consume scratch)
+        context.scheduler.scratch.withLayoutEntryFrame { frame in
+            var ops = LayoutPass(layoutContainer: self, entries: frame)
             layoutNodes.collect(into: &ops, context: &context, op: .unchanged)
+
             let canBatchReplace = ops.canBatchReplace
             let isAllRemovals = ops.isAllRemovals
             let isAllAdditions = ops.isAllAdditions
+            ops.drain { entries in
+                apply(
+                    entries.span,
+                    batchRemove: canBatchReplace && isAllRemovals && ownsAllChildren,
+                    batchAppend: canBatchReplace && isAllAdditions,
+                    &context
+                )
+            }
+        }
+    }
 
-            ops.consume { entries in
-                if canBatchReplace && isAllRemovals && ownsAllChildren {
-                    context.dom.clearChildren(in: domNode)
-                } else if canBatchReplace && isAllAdditions {
-                    for index in entries.indices {
-                        context.dom.appendChild(entries[unchecked: index].reference, to: domNode)
-                    }
-                } else {
-                    var sibling: DOM.Node?
-                    var index = entries.count
-                    while index > 0 {
-                        index -= 1
-                        let entry = entries[unchecked: index]
-                        switch entry.op {
-                        case .added, .moved:
-                            context.dom.insertChild(entry.reference, before: sibling, in: domNode)
-                            sibling = entry.reference
-                        case .removed:
-                            context.dom.removeChild(entry.reference, from: domNode)
-                        case .unchanged:
-                            sibling = entry.reference
-                        }
-                    }
-                }
-
-                for observer in layoutObservers {
-                    observer.didLayoutChildren(parent: domNode, entries: entries.span, context: &context)
+    private func apply(
+        _ entries: borrowing Span<LayoutPass.Entry>,
+        batchRemove: Bool,
+        batchAppend: Bool,
+        _ context: inout _CommitContext
+    ) {
+        if batchRemove {
+            context.dom.clearChildren(in: domNode)
+        } else if batchAppend {
+            for index in entries.indices {
+                context.dom.appendChild(entries[unchecked: index].reference, to: domNode)
+            }
+        } else {
+            var sibling: DOM.Node?
+            var index = entries.count
+            while index > 0 {
+                index -= 1
+                let entry = entries[unchecked: index]
+                switch entry.op {
+                case .added, .moved:
+                    context.dom.insertChild(entry.reference, before: sibling, in: domNode)
+                    sibling = entry.reference
+                case .removed:
+                    context.dom.removeChild(entry.reference, from: domNode)
+                case .unchanged:
+                    sibling = entry.reference
                 }
             }
+        }
+
+        for observer in layoutObservers {
+            observer.didLayoutChildren(parent: domNode, entries: entries, context: &context)
         }
     }
 
@@ -155,8 +169,10 @@ enum LayoutNode {
 
 }
 
+/// The DOM entries of one layout pass, collected into a scratch frame that
+/// is discarded once the pass has applied them.
 struct LayoutPass: ~Copyable, ~Escapable {
-    private var entryScratch: ScratchStack<Entry>
+    private var frame: ScratchFrame<Entry>
     var containerHandle: LayoutContainer.Handle
 
     private(set) var isAllRemovals: Bool = true
@@ -166,22 +182,23 @@ struct LayoutPass: ~Copyable, ~Escapable {
         (isAllRemovals || isAllAdditions) && count > 1
     }
 
-    @_lifetime(copy scratch)
-    fileprivate init(layoutContainer: LayoutContainer, scratch: consuming ScratchStack<Entry>) {
-        self.entryScratch = consume scratch
+    @_lifetime(copy entries)
+    fileprivate init(layoutContainer: LayoutContainer, entries: consuming ScratchFrame<Entry>) {
+        self.frame = entries
         self.containerHandle = .init(container: layoutContainer)
     }
 
     var count: Int {
-        entryScratch.count
+        frame.count
     }
 
-    consuming func consume(_ body: (inout InputSpan<Entry>) -> Void) {
-        entryScratch.consume(body)
+    /// Hands the entries to `body`, then discards them.
+    mutating func drain(_ body: (inout InputSpan<Entry>) -> Void) {
+        frame.drain(body)
     }
 
     mutating func append(_ entry: Entry) {
-        entryScratch.append(entry)
+        frame.append(entry)
         isAllAdditions = isAllAdditions && entry.op == .added
         isAllRemovals = isAllRemovals && entry.op == .removed
     }

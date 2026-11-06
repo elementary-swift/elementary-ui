@@ -1,28 +1,14 @@
 import BasicContainers
-import ContainersPreview
 import SpanPreview
 
-/// Shared scratch for everything a mount collects before handing it to its
-/// owner. Contexts append at the end; each owner (element, slot, root) moves
-/// out the suffix it opened, so nested mounts never allocate here.
-struct MountScratch: ~Copyable {
-    fileprivate var layoutNodes = UniqueArray<LayoutNode>(minimumCapacity: 16)
-    fileprivate var members = UniqueArray<SlotMember>(minimumCapacity: 16)
-
-    var isEmpty: Bool {
-        layoutNodes.isEmpty && members.isEmpty
-    }
-}
-
-/// Mounts into the shared scratch.
+/// Collects what a mount produces into scratch frames, then hands it to its
+/// owner: an element takes its children's layout nodes, a slot takes its
+/// layout nodes and members, the root takes both.
 ///
-/// Layout nodes belong to the context that collects them: an element's
-/// children, a slot, or the root. Members belong to the enclosing slot (or
-/// the root), so an element's children keep the mark of their parent.
+/// An element's children pass their members on to the enclosing slot.
 public struct _MountContext: ~Copyable, ~Escapable {
-    private var scratch: _MutableRef<MountScratch>
-    private let layoutStart: Int
-    private let membersStart: Int
+    private var layoutNodes: ScratchFrame<LayoutNode>
+    private var members: ScratchFrame<SlotMember>
 
     /// Only a slot's top level may hold transition elements: a slot is what
     /// defers its removal while they play.
@@ -34,38 +20,18 @@ public struct _MountContext: ~Copyable, ~Escapable {
     let currentFrameTime: Double
     let transaction: Transaction
 
-    /// A root context: owns everything it collects.
-    @_lifetime(copy scratch)
+    @_lifetime(copy layoutNodes, copy members)
     init(
-        scratch: consuming _MutableRef<MountScratch>,
+        layoutNodes: consuming ScratchFrame<LayoutNode>,
+        members: consuming ScratchFrame<SlotMember>,
+        acceptsTransitions: Bool = false,
         dom: DOMInteractor,
         scheduler: Scheduler,
         currentFrameTime: Double,
         transaction: Transaction
     ) {
-        self.layoutStart = scratch.value.layoutNodes.count
-        self.membersStart = scratch.value.members.count
-        self.scratch = scratch
-        self.acceptsTransitions = false
-        self.dom = dom
-        self.scheduler = scheduler
-        self.currentFrameTime = currentFrameTime
-        self.transaction = transaction
-    }
-
-    @_lifetime(copy scratch)
-    private init(
-        scratch: consuming _MutableRef<MountScratch>,
-        membersStart: Int,
-        acceptsTransitions: Bool,
-        dom: DOMInteractor,
-        scheduler: Scheduler,
-        currentFrameTime: Double,
-        transaction: Transaction
-    ) {
-        self.layoutStart = scratch.value.layoutNodes.count
-        self.membersStart = membersStart
-        self.scratch = scratch
+        self.layoutNodes = layoutNodes
+        self.members = members
         self.acceptsTransitions = acceptsTransitions
         self.dom = dom
         self.scheduler = scheduler
@@ -88,12 +54,12 @@ public struct _MountContext: ~Copyable, ~Escapable {
     /// Registers unmount work with the enclosing slot. Register after mounting
     /// children so the slot unmounts children first.
     mutating func registerUnmount(_ entry: any Unmountable) {
-        scratch.value.members.append(.unmountable(entry))
+        members.append(.unmountable(entry))
     }
 
     mutating func registerTransition(_ element: _TransitionElement) {
         precondition(acceptsTransitions)
-        scratch.value.members.append(.transition(element))
+        members.append(.transition(element))
     }
 
     // MARK: nested contexts
@@ -101,7 +67,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
     /// A context for an element's children. Finish it with `mountInDOMNode`.
     @_lifetime(&self)
     mutating func childContext() -> _MountContext {
-        nested(membersStart: membersStart, acceptsTransitions: false)
+        nested(acceptsTransitions: false)
     }
 
     /// Mounts one structural slot and packages its node, layout nodes, and
@@ -114,26 +80,16 @@ public struct _MountContext: ~Copyable, ~Escapable {
         env: borrowing _ViewContext,
         makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
     ) -> MountContainer.Slot {
-        var slotCtx = nested(
-            membersStart: scratch.value.members.count,
-            acceptsTransitions: true
-        )
+        var slotCtx = nested(acceptsTransitions: true)
         let node = makeNode(newKeyIndex, env, &slotCtx)
         return slotCtx.finishSlot(key: key, node: node)
     }
 
     @_lifetime(&self)
-    private mutating func nested(
-        membersStart: Int,
-        acceptsTransitions: Bool
-    ) -> _MountContext {
-        let dom = dom
-        let scheduler = scheduler
-        let currentFrameTime = currentFrameTime
-        let transaction = transaction
-        return _MountContext(
-            scratch: _MutableRef(&scratch.value),
-            membersStart: membersStart,
+    private mutating func nested(acceptsTransitions: Bool) -> _MountContext {
+        _MountContext(
+            layoutNodes: layoutNodes.nested(),
+            members: members.nested(),
             acceptsTransitions: acceptsTransitions,
             dom: dom,
             scheduler: scheduler,
@@ -143,24 +99,24 @@ public struct _MountContext: ~Copyable, ~Escapable {
     }
 
     // MARK: finishing
+    //
+    // Finishing a nested context consumes it: a context with a deinit lives
+    // until the end of its scope otherwise, past where its parent appends again.
 
-    private consuming func finishSlot(
-        key: _ViewKey,
-        node: consuming AnyReconcilable
-    ) -> MountContainer.Slot {
-        let members = takeMembers()
+    private consuming func finishSlot(key: _ViewKey, node: consuming AnyReconcilable) -> MountContainer.Slot {
+        let layoutNodes = takeSlotLayoutNodes()
         return MountContainer.Slot(
             key: key,
             node: node,
-            layoutNodes: takeSlotLayoutNodes(),
-            members: members
+            layoutNodes: layoutNodes,
+            members: SlotMembers(members.take())
         )
     }
 
     /// Mounts the root's layout into `domNode` and hands over its members.
-    consuming func mountRoot(in domNode: DOM.Node) -> SlotMembers {
+    mutating func mountRoot(in domNode: DOM.Node) -> SlotMembers {
         mountLayout(in: domNode, observers: [], ownsAllChildren: false)
-        return takeMembers()
+        return SlotMembers(members.take())
     }
 
     /// Mounts an element's children into `domNode`. Their members stay with
@@ -170,6 +126,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
         observers: [DOMLayoutObserver] = []
     ) {
         mountLayout(in: domNode, observers: observers, ownsAllChildren: true)
+        members.passToParent()
     }
 
     func withCommitContext<R>(_ body: (inout _CommitContext) -> R) -> R {
@@ -188,9 +145,9 @@ public struct _MountContext: ~Copyable, ~Escapable {
     ) {
         if isStatic {
             let dom = dom
-            scratch.value.layoutNodes.consumeLast(layoutCount) { span in
-                for index in span.indices {
-                    dom.appendChild(span[unchecked: index].staticDOMNode, to: domNode)
+            layoutNodes.drain { nodes in
+                for index in nodes.indices {
+                    dom.appendChild(nodes[unchecked: index].staticDOMNode, to: domNode)
                 }
             }
             return
@@ -199,7 +156,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
         let container = LayoutContainer(
             domNode: domNode,
             scheduler: scheduler,
-            layoutNodes: takeLayoutNodes(),
+            layoutNodes: layoutNodes.take(),
             layoutObservers: observers,
             ownsAllChildren: ownsAllChildren
         )
@@ -213,42 +170,14 @@ public struct _MountContext: ~Copyable, ~Escapable {
         container.commitInitialLayout(&commit)
     }
 
-    private var layoutCount: Int {
-        scratch.value.layoutNodes.count - layoutStart
-    }
-
-    private mutating func takeLayoutNodes() -> RigidArray<LayoutNode> {
-        var result = RigidArray<LayoutNode>(capacity: layoutCount)
-        scratch.value.layoutNodes.consumeLast(layoutCount) { span in
-            result.append(moving: &span)
-        }
-        return result
-    }
-
     private mutating func takeSlotLayoutNodes() -> SlotLayoutNodes {
-        guard layoutCount == 1 else { return .many(takeLayoutNodes()) }
-        return .one(scratch.value.layoutNodes.popLast()!)
-    }
-
-    private mutating func takeMembers() -> SlotMembers {
-        let count = scratch.value.members.count - membersStart
-        guard count > 0 else { return SlotMembers() }
-        var members: SlotMembers?
-        scratch.value.members.consumeLast(count) { span in
-            members = SlotMembers(moving: &span)
-        }
-        return members.take()!
+        guard layoutNodes.count == 1 else { return .many(layoutNodes.take()) }
+        return .one(layoutNodes.popLast()!)
     }
 
     private mutating func appendLayoutNode(_ node: LayoutNode) {
         isStatic = isStatic && node.isStatic
-        scratch.value.layoutNodes.append(node)
-    }
-
-    deinit {
-        // finishing moves the layout nodes out; anything left would leak into
-        // the enclosing context's layout
-        assert(layoutCount == 0, "mount context dropped without finishing")
+        layoutNodes.append(node)
     }
 }
 

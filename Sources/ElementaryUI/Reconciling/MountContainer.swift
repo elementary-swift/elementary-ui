@@ -148,9 +148,8 @@ final class MountContainer: Unmountable {
                 removedSlots: &removedSlots,
                 keys: newKeys,
                 makeNewSlot: { [viewContext] newKeyIndex, key in
-                    var slot = tx.scheduler.withMountContext(tx: &tx) { (ctx: consuming _MountContext) in
-                        var ctx = ctx
-                        return ctx.mountSlot(
+                    var slot = tx.scheduler.withMountContext(tx: &tx) { ctx in
+                        ctx.mountSlot(
                             key: key,
                             newKeyIndex: newKeyIndex,
                             env: viewContext,

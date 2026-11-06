@@ -29,13 +29,8 @@ enum SlotMember {
 struct SlotMembers: ~Copyable {
     private var members: RigidArray<SlotMember>
 
-    init() {
-        members = RigidArray(capacity: 0)
-    }
-
-    init(moving span: inout InputSpan<SlotMember>) {
-        members = RigidArray(capacity: span.count)
-        members.append(moving: &span)
+    init(_ members: consuming RigidArray<SlotMember>) {
+        self.members = members
     }
 
     borrowing func collectTransitions(into result: inout [_TransitionElement]) {
