@@ -71,12 +71,10 @@ private func patchItems<Item: _Mountable>(
         keys: keys,
         tx: &tx,
         makeNode: { index, context, ctx in
-            AnyReconcilable(Item._makeNode(item(index), context: context, ctx: &ctx))
+            UniqueAny(Item._makeNode(item(index), context: context, ctx: &ctx))
         },
         patchNode: { index, anyNode, tx in
-            anyNode.modify(as: Item._MountedNode.self) { node in
-                Item._patchNode(item(index), node: &node, tx: &tx)
-            }
+            Item._patchNode(item(index), node: &anyNode[as: Item._MountedNode.self], tx: &tx)
         }
     )
 }

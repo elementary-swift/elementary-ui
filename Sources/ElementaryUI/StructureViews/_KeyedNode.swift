@@ -34,8 +34,8 @@ public struct _KeyedNode: ~Copyable {
     mutating func patch(
         key: _ViewKey,
         context: inout _TransactionContext,
-        makeNode: (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
-        patchNode: (inout AnyReconcilable, inout _TransactionContext) -> Void
+        makeNode: (borrowing _ViewContext, inout _MountContext) -> UniqueAny,
+        patchNode: (inout UniqueAny, inout _TransactionContext) -> Void
     ) {
         container.patch(
             key: key,
@@ -48,8 +48,8 @@ public struct _KeyedNode: ~Copyable {
     mutating func patch(
         _ newKeys: borrowing Span<_ViewKey>,
         context: inout _TransactionContext,
-        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> AnyReconcilable,
-        patchNode: (Int, inout AnyReconcilable, inout _TransactionContext) -> Void
+        makeNode: (Int, borrowing _ViewContext, inout _MountContext) -> UniqueAny,
+        patchNode: (Int, inout UniqueAny, inout _TransactionContext) -> Void
     ) {
         container.patch(
             keys: newKeys,

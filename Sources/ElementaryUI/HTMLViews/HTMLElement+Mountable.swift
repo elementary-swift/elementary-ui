@@ -54,7 +54,7 @@ struct _AnyDOMElement<Content: _Mountable>: _Mountable {
             context: context,
             ctx: &ctx,
             makeChild: { viewContext, ctx in
-                AnyReconcilable(Content._makeNode(view.content, context: viewContext, ctx: &ctx))
+                UniqueAny(Content._makeNode(view.content, context: viewContext, ctx: &ctx))
             }
         )
     }
@@ -65,9 +65,7 @@ struct _AnyDOMElement<Content: _Mountable>: _Mountable {
         tx: inout _TransactionContext
     ) {
         node.update(attributes: view.attributes, &tx) { element, tx in
-            element.modify(as: Content._MountedNode.self) { child in
-                Content._patchNode(view.content, node: &child, tx: &tx)
-            }
+            Content._patchNode(view.content, node: &element[as: Content._MountedNode.self], tx: &tx)
         }
     }
 }

@@ -81,8 +81,7 @@ extension ViewMacro: ExtensionMacro {
                     DeclSyntax(
                         """
                         \(access)static func __initializeState(from view: borrowing Self) -> _ViewStateStorage {
-                            let storage = _ViewStateStorage()
-                            storage.reserveCapacity(\(raw: stateMembers.count))
+                            let storage = _ViewStateStorage(capacity: \(raw: stateMembers.count))
                             \(raw: initCalls.map { $0.description }.joined(separator: "\n"))
                             return storage
                         }

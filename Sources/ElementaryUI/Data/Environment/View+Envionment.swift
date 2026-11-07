@@ -122,7 +122,7 @@ public extension View {
 }
 
 public struct _EnvironmentView<V, Wrapped: View>: View {
-    public typealias _MountedNode = _StatefulNode<EnvironmentValues._Box<V>, Wrapped._MountedNode>
+    public typealias _MountedNode = _StatefulNode<_ViewStateStorage, Wrapped._MountedNode>
     public typealias Tag = Wrapped.Tag
 
     let wrapped: Wrapped
@@ -136,10 +136,10 @@ public struct _EnvironmentView<V, Wrapped: View>: View {
         ctx: inout _MountContext
     ) -> _MountedNode {
         var context = copy context
-        let box = EnvironmentValues._Box<V>(view.value)
-        context.environment.boxes[view.key.propertyID] = box
+        let slot = _ViewStateStorage(view.value)
+        context.environment.entries[view.key.propertyID] = slot
 
-        return .init(state: box, child: Wrapped._makeNode(view.wrapped, context: context, ctx: &ctx))
+        return .init(state: slot, child: Wrapped._makeNode(view.wrapped, context: context, ctx: &ctx))
     }
 
     public static func _patchNode(
@@ -147,16 +147,16 @@ public struct _EnvironmentView<V, Wrapped: View>: View {
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        // IMPORTANT: _value does not cause access tracking!
-        if view.isEqual?(node.state._value, view.value) ?? true {
-            node.state._value = view.value
+        // Without an equality check, every new value counts as a change.
+        if view.isEqual?(node.state[untracked: 0, as: V.self], view.value) ?? false {
+            node.state[untracked: 0, as: V.self] = view.value
         } else {
             // TODO: rework this to explicit dependencies
             // NOTE: a bit of a hack to allow dependent functions to run in the same transaction run
             tx.scheduler.withAmbientTransactionContext(
                 &tx,
                 {
-                    node.state.value = view.value
+                    node.state[0, as: V.self] = view.value
                 }
             )
         }

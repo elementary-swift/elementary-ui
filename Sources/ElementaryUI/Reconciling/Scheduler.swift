@@ -32,7 +32,7 @@ final class Scheduler {
 
     // Scheduler extensions are few and accessed off the patch/frame hot paths.
     // A small linear list avoids pulling dictionary machinery into Wasm builds.
-    private var extensions: UniqueArray<AnyObject> = .init()
+    private var extensions: UniqueArray<(type: ObjectIdentifier, value: AnyObject)> = .init()
 
     // Work queues
     private var pendingFunctions: PendingFunctionQueue = .init()
@@ -169,14 +169,12 @@ final class Scheduler {
     }
 
     func getOrAddExtension<Value: AnyObject>(_ type: Value.Type, make: () -> Value) -> Value {
-        // TODO: think about how to do this more efficiently
-        for index in extensions.indices {
-            if let value = extensions[index] as? Value {
-                return value
-            }
+        let key = ObjectIdentifier(Value.self)
+        for index in extensions.indices where extensions[index].type == key {
+            return unsafeDowncast(extensions[index].value, to: Value.self)
         }
         let value = make()
-        extensions.append(value)
+        extensions.append((key, value))
         return value
     }
 

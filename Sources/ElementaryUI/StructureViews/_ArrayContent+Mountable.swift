@@ -32,14 +32,12 @@ extension _ArrayContent: _Mountable where Element: _Mountable {
                 keys,
                 context: &tx,
                 makeNode: { index, context, ctx in
-                    AnyReconcilable(
+                    UniqueAny(
                         Element._makeNode(view.value[index], context: context, ctx: &ctx)
                     )
                 },
                 patchNode: { index, anyNode, tx in
-                    anyNode.modify(as: Element._MountedNode.self) { node in
-                        Element._patchNode(view.value[index], node: &node, tx: &tx)
-                    }
+                    Element._patchNode(view.value[index], node: &anyNode[as: Element._MountedNode.self], tx: &tx)
                 }
             )
         }

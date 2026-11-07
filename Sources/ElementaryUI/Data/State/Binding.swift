@@ -66,7 +66,7 @@ public struct Binding<V> {
         get {
             switch storage {
             case let .stateAccessor(accessor):
-                return accessor.value
+                return accessor.storage[accessor.index]
             case let .getSet(get, _):
                 return get()
             }
@@ -74,7 +74,7 @@ public struct Binding<V> {
         nonmutating set {
             switch storage {
             case let .stateAccessor(accessor):
-                accessor.value = newValue
+                accessor.storage[accessor.index] = newValue
             case let .getSet(_, set):
                 set(newValue)
             }

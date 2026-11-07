@@ -94,7 +94,7 @@ class _TransitionElement {
 /// its underlying element. Custom transition bodies may omit or duplicate it.
 final class _MountedTransitionElement: _TransitionElement {
     private let transition: AnyTransition
-    private var bodyNode: AnyReconcilable
+    private var bodyNode: UniqueAny
 
     override class func make(
         transition: AnyTransition,
