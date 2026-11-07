@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794087192865,
+  "lastUpdate": 1794092669732,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -5829,6 +5829,90 @@ window.BENCHMARK_DATA = {
           {
             "name": "09_clear1k_x8",
             "value": 40.34,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.04,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.07,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.36,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c74287d3444c74d851504072636eb10bb2057b7a",
+          "message": "assert instead of precondition on hot typed-access checks (#161)",
+          "timestamp": "2026-11-07T23:57:37+01:00",
+          "tree_id": "7ec2cfa1c95261b1b56e7bee0090a167a738f39b",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/c74287d3444c74d851504072636eb10bb2057b7a"
+        },
+        "date": 1794092668675,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 54.16,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 66.36,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 107.72,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 6.52,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 28.54,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 19.96,
+            "unit": "ms"
+          },
+          {
+            "name": "07_create10k",
+            "value": 641.14,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 68.87,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 29.21,
             "unit": "ms"
           },
           {
