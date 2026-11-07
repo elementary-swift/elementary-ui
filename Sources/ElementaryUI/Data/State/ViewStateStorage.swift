@@ -60,7 +60,7 @@ final class _ViewStateBuffer: ManagedBuffer<_ViewStateBuffer.Header, _ViewStateV
 
     @inlinable
     func slot(_ index: Int) -> UnsafeMutablePointer<_ViewStateValue> {
-        precondition(index >= 0 && index < headerPointer.pointee.count, "State index out of range")
+        assert(index >= 0 && index < headerPointer.pointee.count, "State index out of range")
         return withUnsafeMutablePointerToElements { $0 + index }
     }
 
