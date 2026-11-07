@@ -1,7 +1,7 @@
 import BasicContainers
 import _UTF8Internals
 
-public final class _AttributeModifier: _Invalidateable, DOMElementModifier, Unmountable {
+public final class _AttributeModifier: DOMElementModifier, Invalidateable, Unmountable {
     typealias Value = _AttributeStorage
 
     let upstream: _AttributeModifier?
@@ -18,7 +18,6 @@ public final class _AttributeModifier: _Invalidateable, DOMElementModifier, Unmo
     init(value: consuming Value, upstream: borrowing DOMElementModifiers) {
         self.lastValue = value
         self.upstream = upstream[_AttributeModifier.key]
-        super.init()
         self.upstream?.tracker.addDependency(self)
     }
 
@@ -35,7 +34,7 @@ public final class _AttributeModifier: _Invalidateable, DOMElementModifier, Unmo
         context.registerUnmount(instance)
     }
 
-    override func invalidate(_ context: inout _TransactionContext) {
+    func invalidate(_ context: inout _TransactionContext) {
         self.tracker.invalidateAll(&context)
     }
 
@@ -46,7 +45,7 @@ public final class _AttributeModifier: _Invalidateable, DOMElementModifier, Unmo
 }
 
 extension _AttributeModifier {
-    final class MountedInstance: _Invalidateable, Unmountable {
+    final class MountedInstance: Unmountable, Invalidateable {
         let modifier: _AttributeModifier
         let node: DOM.Node
 
@@ -56,14 +55,13 @@ extension _AttributeModifier {
         init(_ node: DOM.Node, _ modifier: _AttributeModifier, _ context: inout _MountContext) {
             self.node = node
             self.modifier = modifier
-            super.init()
             self.modifier.tracker.addDependency(self)
             let initialValue = modifier.value
             addHTMLAttributes(initialValue, to: node, using: context.dom)
             previousAttributes = initialValue
         }
 
-        override func invalidate(_ context: inout _TransactionContext) {
+        func invalidate(_ context: inout _TransactionContext) {
             guard !isDirty else { return }
             logTrace("invalidating attribute modifier")
             isDirty = true

@@ -1,10 +1,6 @@
 /// Something that updates in the running transaction when a value it depends on changes.
-// A base class rather than a protocol: in Embedded, an existential needs a witness
-// table per generic conformer, and closures need a context per registration.
-public class _Invalidateable {
-    func invalidate(_ context: inout _TransactionContext) {
-        fatalError("abstract")
-    }
+protocol Invalidateable: AnyObject {
+    func invalidate(_ context: inout _TransactionContext)
 }
 
 /// The dependents to invalidate when a value changes, in registration order.
@@ -13,8 +9,17 @@ public class _Invalidateable {
 /// searches on from the previous removal, so removing in registration order
 /// (the order slots unmount in) is O(1); tombstones are compacted at half.
 struct DependencyTracker: ~Copyable {
-    /// `nil` once removed.
-    private var dependents: [_Invalidateable?] = []
+    // A closure per dependent rather than `any Invalidateable`: an existential
+    // needs a witness table per generic conformer, which is large in Embedded.
+    private struct Dependent {
+        /// `nil` once removed.
+        var id: ObjectIdentifier?
+        var invalidate: (inout _TransactionContext) -> Void
+
+        static var removed: Dependent { Dependent(id: nil, invalidate: { _ in }) }
+    }
+
+    private var dependents: [Dependent] = []
     private var removedCount = 0
     private var searchStart = 0
 
@@ -22,18 +27,23 @@ struct DependencyTracker: ~Copyable {
         dependents.count == removedCount
     }
 
-    mutating func addDependency(_ dependent: _Invalidateable) {
-        dependents.append(dependent)
+    mutating func addDependency(_ dependent: some Invalidateable) {
+        dependents.append(Dependent(id: ObjectIdentifier(dependent), invalidate: dependent.invalidate(_:)))
     }
 
-    mutating func removeDependency(_ dependent: _Invalidateable) {
-        guard let index = index(of: dependent) else { return }
+    mutating func removeDependency(_ dependent: some Invalidateable) {
+        remove(ObjectIdentifier(dependent))
+    }
 
-        dependents[index] = nil
+    // Not generic, so it isn't specialized for every kind of dependent (code size).
+    private mutating func remove(_ id: ObjectIdentifier) {
+        guard let index = index(of: id) else { return }
+
+        dependents[index] = .removed
         removedCount &+= 1
 
         if removedCount &* 2 > dependents.count {
-            dependents.removeAll { $0 == nil }
+            dependents.removeAll { $0.id == nil }
             removedCount = 0
             searchStart = 0
         } else {
@@ -41,15 +51,15 @@ struct DependencyTracker: ~Copyable {
         }
     }
 
-    private func index(of dependent: _Invalidateable) -> Int? {
-        dependents[searchStart...].firstIndex { $0 === dependent }
-            ?? dependents[..<searchStart].firstIndex { $0 === dependent }
+    private func index(of id: ObjectIdentifier) -> Int? {
+        dependents[searchStart...].firstIndex { $0.id == id }
+            ?? dependents[..<searchStart].firstIndex { $0.id == id }
     }
 
     borrowing func invalidateAll(_ context: inout _TransactionContext) {
         // Iterates a copy of the storage, so dependents may register or remove others meanwhile.
         for dependent in dependents {
-            dependent?.invalidate(&context)
+            dependent.invalidate(&context)
         }
     }
 }

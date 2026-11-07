@@ -3,11 +3,12 @@ import ContainersPreview
 // The conformance lives on a non-generic base: the witness table of a generic
 // conformer is specialized as serialized in Embedded, which duplicates what
 // its `unmount` reaches (code size).
-class _MountedStyleModifierBase: _Invalidateable, Unmountable {
+class _MountedStyleModifierBase: Unmountable {
+    init() {}
     func unmount(_ context: inout _CommitContext) {}
 }
 
-final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: _MountedStyleModifierBase {
+final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: _MountedStyleModifierBase, Invalidateable {
     let accessor: DOM.StyleAccessor
     var values: [Instance]
 
@@ -24,7 +25,7 @@ final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: _MountedSt
         super.init()
 
         for value in values {
-            value.setTarget(self)
+            value.setTarget(invalidate(_:))
         }
 
         if let combined = reduceCombinedSingleValue() {
@@ -34,7 +35,7 @@ final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: _MountedSt
         }
     }
 
-    override func invalidate(_ context: inout _TransactionContext) {
+    func invalidate(_ context: inout _TransactionContext) {
         guard !isDirty else { return }
         isDirty = true
         context.scheduler.addCommitAction(updateDOMNode(_:))

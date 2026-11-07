@@ -30,7 +30,7 @@ private final class InvalidationLog {
     var ids: [Int] = []
 }
 
-private final class Dependent: _Invalidateable {
+private final class Dependent: Invalidateable {
     let id: Int
     let log: InvalidationLog
 
@@ -39,7 +39,7 @@ private final class Dependent: _Invalidateable {
         self.log = log
     }
 
-    override func invalidate(_ context: inout _TransactionContext) {
+    func invalidate(_ context: inout _TransactionContext) {
         log.ids.append(id)
     }
 }
