@@ -267,8 +267,8 @@ public protocol CustomAnimation {
     func shouldMerge(previous: Animation, value: AnimatableVector, time: Double, context: inout AnimationContext) -> Bool
 }
 
-extension CustomAnimation {
-    func velocity(at time: Double, context: borrowing AnimationContext) -> AnimatableVector? { nil }
+public extension CustomAnimation {
+    func velocity(value: AnimatableVector, time: Double, context: borrowing AnimationContext) -> AnimatableVector? { nil }
     func shouldMerge(previous: Animation, value: AnimatableVector, time: Double, context: inout AnimationContext) -> Bool { false }
 }
 
