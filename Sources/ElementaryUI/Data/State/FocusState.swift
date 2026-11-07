@@ -76,8 +76,8 @@ public extension FocusState {
         self.storage = Storage(StateAccessor(storage: storage, index: index))
     }
 
-    func __initializeState(storage: _ViewStateStorage, index: Int) {
-        storage.initializeValueStorage(initialValue: FocusStateSlot(noneValue: noneValue), index: index)
+    func __initializeState(into values: inout OutputSpan<_ViewStateValue>) {
+        values.append(_ViewStateValue(FocusStateSlot(noneValue: noneValue)))
     }
 }
 

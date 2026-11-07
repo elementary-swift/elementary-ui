@@ -11,9 +11,8 @@ struct FocusStateTests {
     }
 
     private func restored() -> FocusState<Field?> {
-        let storage = _ViewStateStorage(capacity: 1)
         var state = FocusState<Field?>()
-        state.__initializeState(storage: storage, index: 0)
+        let storage = _ViewStateStorage(count: 1) { state.__initializeState(into: &$0) }
         state.__restoreState(storage: storage, index: 0)
         return state
     }

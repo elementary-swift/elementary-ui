@@ -2,40 +2,44 @@ import Builtin
 
 // Holds either T directly or an UnsafeMutablePointer<T> to a heap slot, as selected by _UniqueAnyLayout.
 // This buffer owns no cleanup; the matching witness handles its hidden value.
+@usableFromInline
 @_rawLayout(likeArrayOf: _TextNode, count: 1)
-private struct _UniqueAnyStorage: ~Copyable {
+struct _UniqueAnyStorage: ~Copyable {
     // Stored must fit and be bitwise-takable.
-    @inline(__always)
+    @inlinable @inline(__always)
     init<Stored: ~Copyable>(storing value: consuming Stored) {
         address.bindMemory(to: Stored.self, capacity: 1).initialize(to: value)
     }
 
     // Valid only while self is not moved; callers must not escape it.
-    @inline(__always)
+    @inlinable @inline(__always)
     var address: UnsafeMutableRawPointer {
         UnsafeMutableRawPointer(Builtin.addressOfRawLayout(self))
     }
 }
 
-@inline(__always)
-private func _fitsInline<T: ~Copyable>(_: T.Type) -> Bool {
+@inlinable @inline(__always)
+func _fitsInline<T: ~Copyable>(_: T.Type) -> Bool {
     MemoryLayout<T>.size <= MemoryLayout<_UniqueAnyStorage>.size
         && MemoryLayout<T>.alignment <= MemoryLayout<_UniqueAnyStorage>.alignment
         && Bool(Builtin.isbitwisetakable(T.self))
 }
 
 // Used through metatypes only: no instances or stored closure contexts.
-private class _UniqueAnyWitness {
+@usableFromInline
+class _UniqueAnyWitness {
     class func destroy(_ storage: UnsafeMutableRawPointer) { fatalError("abstract") }
 }
 
-private final class _InlineWitness<T: ~Copyable>: _UniqueAnyWitness {
+@usableFromInline
+final class _InlineWitness<T: ~Copyable>: _UniqueAnyWitness {
     override class func destroy(_ storage: UnsafeMutableRawPointer) {
         storage.assumingMemoryBound(to: T.self).deinitialize(count: 1)
     }
 }
 
-private final class _HeapWitness<T: ~Copyable>: _UniqueAnyWitness {
+@usableFromInline
+final class _HeapWitness<T: ~Copyable>: _UniqueAnyWitness {
     override class func destroy(_ storage: UnsafeMutableRawPointer) {
         let pointer = storage.assumingMemoryBound(to: UnsafeMutablePointer<T>.self).pointee
         pointer.deinitialize(count: 1)
@@ -45,11 +49,12 @@ private final class _HeapWitness<T: ~Copyable>: _UniqueAnyWitness {
 
 // Raw bytes relocate without a typed move, so only bitwise-takable values may
 // live directly in the buffer. Other values stay at a stable heap address.
-private struct _UniqueAnyLayout: ~Copyable {
-    var storage: _UniqueAnyStorage
-    let witness: _UniqueAnyWitness.Type
+@usableFromInline
+struct _UniqueAnyLayout: ~Copyable {
+    @usableFromInline var storage: _UniqueAnyStorage
+    @usableFromInline let witness: _UniqueAnyWitness.Type
 
-    @inline(__always)
+    @inlinable @inline(__always)
     init<T: ~Copyable>(_ value: consuming T) {
         if _fitsInline(T.self) {
             storage = _UniqueAnyStorage(storing: value)
@@ -72,7 +77,7 @@ private struct _UniqueAnyLayout: ~Copyable {
 @frozen
 @_rawLayout(like: _UniqueAnyLayout)
 struct UniqueAny: ~Copyable {
-    @inline(__always)
+    @inlinable @inline(__always)
     init<T: ~Copyable>(_ value: consuming T) {
         _layout.initialize(to: _UniqueAnyLayout(value))
     }
@@ -81,15 +86,15 @@ struct UniqueAny: ~Copyable {
         _layout.pointee.witness.destroy(_layout.pointee.storage.address)
     }
 
-    @inline(__always)
-    private var _layout: UnsafeMutablePointer<_UniqueAnyLayout> {
+    @inlinable @inline(__always)
+    var _layout: UnsafeMutablePointer<_UniqueAnyLayout> {
         UnsafeMutableRawPointer(Builtin.addressOfRawLayout(self))
             .assumingMemoryBound(to: _UniqueAnyLayout.self)
     }
 
     // Precondition: T is exactly the type passed to init.
-    @inline(__always)
-    private func _address<T: ~Copyable>(of _: T.Type) -> UnsafeMutablePointer<T> {
+    @inlinable @inline(__always)
+    func _address<T: ~Copyable>(of _: T.Type) -> UnsafeMutablePointer<T> {
         let witness = _layout.pointee.witness
         let storage = _layout.pointee.storage.address
         if _fitsInline(T.self) {
@@ -107,7 +112,7 @@ struct UniqueAny: ~Copyable {
     // Keep these as addressors, not `borrow`/`mutate`: on Swift 6.4, a `_modify` that
     // yields through a `mutate` accessor miscompiles, and assigning a reference value
     // double-frees it. `_ViewStateStorage`'s tracked subscript is such a `_modify`.
-    @inline(__always)
+    @inlinable @inline(__always)
     subscript<T: ~Copyable>(as type: T.Type = T.self) -> T {
         unsafeAddress { UnsafePointer(_address(of: T.self)) }
         unsafeMutableAddress { _address(of: T.self) }

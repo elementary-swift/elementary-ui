@@ -73,7 +73,7 @@ extension ViewMacro: ExtensionMacro {
                 for (index, member) in stateMembers.enumerated() {
                     let name = member.trimmedIdentifier!.text
 
-                    initCalls.append("view._\(raw: name).__initializeState(storage: storage, index: \(raw: index))")
+                    initCalls.append("view._\(raw: name).__initializeState(into: &values)")
                     restoreCalls.append("view._\(raw: name).__restoreState(storage: storage, index: \(raw: index))")
                 }
 
@@ -81,9 +81,9 @@ extension ViewMacro: ExtensionMacro {
                     DeclSyntax(
                         """
                         \(access)static func __initializeState(from view: borrowing Self) -> _ViewStateStorage {
-                            let storage = _ViewStateStorage(capacity: \(raw: stateMembers.count))
-                            \(raw: initCalls.map { $0.description }.joined(separator: "\n"))
-                            return storage
+                            _ViewStateStorage(count: \(raw: stateMembers.count)) { values in
+                                \(raw: initCalls.map { $0.description }.joined(separator: "\n"))
+                            }
                         }
                         """
                     )
