@@ -5,10 +5,9 @@ protocol Invalidateable: AnyObject {
 
 /// The dependents to invalidate when a value changes, in registration order.
 ///
-/// Dependents are held strongly until removed, which also breaks the cycles
-/// they usually form with their source. Removal leaves a tombstone, so
-/// removing dependents in registration order (the order slots unmount in)
-/// stays O(1); the storage is compacted once half of it is tombstones.
+/// Dependents are held strongly until removed. Removal leaves a tombstone and
+/// searches on from the previous removal, so removing in registration order
+/// (the order slots unmount in) is O(1); tombstones are compacted at half.
 struct DependencyTracker: ~Copyable {
     // A closure per dependent rather than `any Invalidateable`: an existential
     // needs a witness table per generic conformer, which is large in Embedded.
@@ -16,11 +15,13 @@ struct DependencyTracker: ~Copyable {
         /// `nil` once removed.
         var id: ObjectIdentifier?
         var invalidate: (inout _TransactionContext) -> Void
+
+        static var removed: Dependent { Dependent(id: nil, invalidate: { _ in }) }
     }
 
     private var dependents: [Dependent] = []
-    private var firstLive = 0
     private var removedCount = 0
+    private var searchStart = 0
 
     var isEmpty: Bool {
         dependents.count == removedCount
@@ -36,27 +37,27 @@ struct DependencyTracker: ~Copyable {
 
     // Not generic, so it isn't specialized for every kind of dependent (code size).
     private mutating func remove(_ id: ObjectIdentifier) {
-        var index = firstLive
-        while index < dependents.count, dependents[index].id != id {
-            index &+= 1
-        }
-        guard index < dependents.count else { return }
+        guard let index = index(of: id) else { return }
 
-        dependents[index] = Dependent(id: nil, invalidate: { _ in })
+        dependents[index] = .removed
         removedCount &+= 1
 
-        if removedCount * 2 > dependents.count {
+        if removedCount &* 2 > dependents.count {
             dependents.removeAll { $0.id == nil }
-            firstLive = 0
             removedCount = 0
-        } else if index == firstLive {
-            while dependents[firstLive].id == nil { firstLive &+= 1 }
+            searchStart = 0
+        } else {
+            searchStart = index &+ 1
         }
     }
 
+    private func index(of id: ObjectIdentifier) -> Int? {
+        dependents[searchStart...].firstIndex { $0.id == id }
+            ?? dependents[..<searchStart].firstIndex { $0.id == id }
+    }
+
     borrowing func invalidateAll(_ context: inout _TransactionContext) {
-        // Tombstones invalidate nothing. Iterating holds the storage, so
-        // dependents may register or remove others meanwhile.
+        // Iterates a copy of the storage, so dependents may register or remove others meanwhile.
         for dependent in dependents {
             dependent.invalidate(&context)
         }

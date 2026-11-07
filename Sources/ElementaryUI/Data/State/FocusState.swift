@@ -125,15 +125,12 @@ struct FocusStateStorage<Value: Hashable> {
 
     init(_ accessor: StateAccessor<FocusStateSlot<Value>>) {
         self.accessor = accessor
-        // Restoring runs outside body tracking, so this read isn't recorded.
-        self.registry = accessor.storage[accessor.index, as: FocusStateSlot<Value>.self].registry
+        self.registry = accessor.storage[untracked: accessor.index, as: FocusStateSlot<Value>.self].registry
     }
 
     /// A storage of its own, for a `FocusState` used outside a view.
     init(detachedWith noneValue: Value) {
-        let storage = _ViewStateStorage(capacity: 1)
-        storage.initializeValueStorage(initialValue: FocusStateSlot(noneValue: noneValue), index: 0)
-        self.init(StateAccessor(storage: storage, index: 0))
+        self.init(StateAccessor(storage: _ViewStateStorage(FocusStateSlot(noneValue: noneValue)), index: 0))
     }
 
     private var noneValue: Value { registry.noneValue }

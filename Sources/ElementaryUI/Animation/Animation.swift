@@ -272,8 +272,6 @@ public extension CustomAnimation {
     func shouldMerge(previous: Animation, value: AnimatableVector, time: Double, context: inout AnimationContext) -> Bool { false }
 }
 
-// Closures rather than an existential: copying an `Animation` then only retains,
-// which keeps transaction copies cheap.
 struct AnyAnimation {
     var animate: (AnimatableVector, Double, inout AnimationContext) -> AnimatableVector?
     var velocity: (AnimatableVector, Double, borrowing AnimationContext) -> AnimatableVector?

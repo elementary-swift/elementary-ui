@@ -79,7 +79,7 @@ extension _AttributeModifier {
         func unmount(_ context: inout _CommitContext) {
             logTrace("unmounting attribute modifier")
             self.modifier.tracker.removeDependency(self)
-            // A mounted modifier belongs to exactly one element, so it ends here too.
+            // Elements mount only the modifier they own, so it ends with the element.
             self.modifier.unmount(&context)
         }
     }

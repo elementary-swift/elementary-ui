@@ -4,11 +4,13 @@ import Reactivity
 final class _ViewStateBuffer: ManagedBuffer<_ViewStateBuffer.Header, UniqueAny> {
     struct Header {
         let registrar = ReactivityRegistrar()
+        // `ManagedBuffer.capacity` asks the allocator on every read.
+        let capacity: Int
         var count = 0
     }
 
     static func create(capacity: Int) -> _ViewStateBuffer {
-        unsafeDowncast(create(minimumCapacity: capacity) { _ in Header() }, to: _ViewStateBuffer.self)
+        unsafeDowncast(create(minimumCapacity: capacity) { _ in Header(capacity: capacity) }, to: _ViewStateBuffer.self)
     }
 
     deinit {
@@ -17,17 +19,29 @@ final class _ViewStateBuffer: ManagedBuffer<_ViewStateBuffer.Header, UniqueAny> 
         }
     }
 
-    func append(_ value: consuming UniqueAny) {
-        precondition(header.count < capacity, "State storage capacity exceeded")
-        let count = header.count
-        withUnsafeMutablePointerToElements { $0 + count }.initialize(to: value)
-        header.count = count + 1
+    // ManagedBuffer never moves its header or elements, so the addresses outlive the closures.
+    // Reading `header` directly copies the whole header.
+    private var headerPointer: UnsafeMutablePointer<Header> {
+        withUnsafeMutablePointerToHeader { $0 }
     }
 
-    // ManagedBuffer never moves its elements, so the address outlives the closure.
+    private var elementsPointer: UnsafeMutablePointer<UniqueAny> {
+        withUnsafeMutablePointerToElements { $0 }
+    }
+
+    var registrar: ReactivityRegistrar { headerPointer.pointee.registrar }
+
+    func append(_ value: consuming UniqueAny, at index: Int) {
+        let header = headerPointer
+        precondition(index == header.pointee.count, "State storage must be initialized in order")
+        precondition(index < header.pointee.capacity, "State storage capacity exceeded")
+        (elementsPointer + index).initialize(to: value)
+        header.pointee.count = index &+ 1
+    }
+
     private func slot(_ index: Int) -> UnsafeMutablePointer<UniqueAny> {
-        precondition(index >= 0 && index < header.count, "State index out of range")
-        return withUnsafeMutablePointerToElements { $0 + index }
+        precondition(index >= 0 && index < headerPointer.pointee.count, "State index out of range")
+        return elementsPointer + index
     }
 
     // Addressors, not `borrow`/`mutate`: see `UniqueAny.subscript(as:)`.
@@ -52,15 +66,12 @@ public struct _ViewStateStorage {
     }
 
     public func initializeValueStorage<V: ~Copyable>(initialValue: consuming V, index: Int) {
-        precondition(index == buffer.header.count, "State storage must be initialized in order")
-        buffer.append(UniqueAny(initialValue))
+        buffer.append(UniqueAny(initialValue), at: index)
     }
 
-    var registrar: ReactivityRegistrar { buffer.header.registrar }
+    var registrar: ReactivityRegistrar { buffer.registrar }
 
     /// Tracks reads, and notifies observers before and after each write.
-    ///
-    /// All side effects live here; the layers below are pure addressors.
     public subscript<V: ~Copyable>(_ index: Int, as type: V.Type = V.self) -> V {
         _read {
             registrar.access(PropertyID(index))

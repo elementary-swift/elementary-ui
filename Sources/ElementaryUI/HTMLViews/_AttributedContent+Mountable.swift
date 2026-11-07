@@ -14,7 +14,7 @@ extension _AttributedContent: _Mountable where Content: _Mountable {
         context.modifiers[_AttributeModifier.key] = attributeModifier
 
         let child = Content._makeNode(view.content, context: context, ctx: &ctx)
-        // Not mounted on an element, so it leaves its upstream modifier when the slot drops it.
+        // Not mounted on an element, so the slot unmounts it.
         return _MountedNode(registering: attributeModifier, child: child, ctx: &ctx)
     }
 
