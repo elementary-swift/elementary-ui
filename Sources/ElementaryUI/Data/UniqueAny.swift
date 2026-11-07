@@ -98,10 +98,10 @@ struct UniqueAny: ~Copyable {
         let witness = _layout.pointee.witness
         let storage = _layout.pointee.storage.address
         if _fitsInline(T.self) {
-            precondition(witness == _InlineWitness<T>.self, "Incorrect erased value type")
+            assert(witness == _InlineWitness<T>.self, "Incorrect erased value type")
             return storage.assumingMemoryBound(to: T.self)
         } else {
-            precondition(witness == _HeapWitness<T>.self, "Incorrect erased value type")
+            assert(witness == _HeapWitness<T>.self, "Incorrect erased value type")
             return storage.assumingMemoryBound(to: UnsafeMutablePointer<T>.self).pointee
         }
     }
