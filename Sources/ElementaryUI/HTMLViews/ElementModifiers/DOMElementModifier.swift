@@ -45,7 +45,8 @@ struct DOMElementModifiers {
     subscript<Directive: DOMElementModifier>(_ key: Key<Directive>) -> Directive? {
         get {
             guard let i = keys.firstIndex(of: key.typeID) else { return nil }
-            return values[i] as? Directive
+            // The key identifies the type, so no dynamic cast is needed.
+            return unsafeDowncast(values[i], to: Directive.self)
         }
         set {
             if let i = keys.firstIndex(of: key.typeID) {
@@ -67,50 +68,5 @@ struct DOMElementModifiers {
         keys.removeAll(keepingCapacity: true)
         values.removeAll(keepingCapacity: true)
         return result
-    }
-}
-
-protocol Invalidateable {
-    func invalidate(_ context: inout _TransactionContext)
-}
-
-struct AnyInvalidateable: Equatable {
-    fileprivate let ref: ObjectIdentifier
-    private let _invalidate: (inout _TransactionContext) -> Void
-
-    init(_ invalidateable: some Invalidateable & AnyObject) {
-        self.ref = ObjectIdentifier(invalidateable)
-        self._invalidate = invalidateable.invalidate(_:)
-    }
-
-    func invalidate(_ context: inout _TransactionContext) {
-        _invalidate(&context)
-    }
-
-    static func == (lhs: AnyInvalidateable, rhs: AnyInvalidateable) -> Bool {
-        lhs.ref == rhs.ref
-    }
-}
-
-struct DependencyTracker: ~Copyable {
-    // NOTE: my best guess is that this will be very flat most of the time, so a dictionary is probably more wasteful
-    private var dependencies: [AnyInvalidateable] = []
-
-    var isEmpty: Bool {
-        dependencies.isEmpty
-    }
-
-    mutating func addDependency(_ dependency: some Invalidateable & AnyObject) {
-        dependencies.append(AnyInvalidateable(dependency))
-    }
-
-    mutating func removeDependency(_ dependency: some Invalidateable & AnyObject) {
-        dependencies.removeAll { $0.ref == ObjectIdentifier(dependency) }
-    }
-
-    borrowing func invalidateAll(_ context: inout _TransactionContext) {
-        for dependency in dependencies {
-            dependency.invalidate(&context)
-        }
     }
 }

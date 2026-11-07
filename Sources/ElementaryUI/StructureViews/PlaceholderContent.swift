@@ -9,9 +9,9 @@ class PlaceholderContent: Unmountable {
 
     private static let inlineID: InstanceID = -1
 
-    final private var inlineInstance: AnyReconcilable?
+    final private var inlineInstance: UniqueAny?
     // Slot indices are the instance IDs; unmounted slots are reused.
-    final private var additionalInstances = UniqueArray<AnyReconcilable?>()
+    final private var additionalInstances = UniqueArray<UniqueAny?>()
 
     static func make<Value: _Mountable>(
         _ value: consuming Value
@@ -19,7 +19,7 @@ class PlaceholderContent: Unmountable {
         TypedPlaceholderContent(value)
     }
 
-    func makeInstance(context: borrowing _ViewContext, ctx: inout _MountContext) -> AnyReconcilable {
+    func makeInstance(context: borrowing _ViewContext, ctx: inout _MountContext) -> UniqueAny {
         fatalError("abstract")
     }
 
@@ -51,7 +51,7 @@ class PlaceholderContent: Unmountable {
         ctx.registerUnmount(AdditionalPlaceholderInstance(host: self, id: storeAdditionalInstance(instance)))
     }
 
-    private final func storeAdditionalInstance(_ instance: consuming AnyReconcilable) -> InstanceID {
+    private final func storeAdditionalInstance(_ instance: consuming UniqueAny) -> InstanceID {
         if let id = Self.firstFreeID(in: additionalInstances.span) {
             additionalInstances[id] = .some(instance)
             return id
@@ -61,7 +61,7 @@ class PlaceholderContent: Unmountable {
         return additionalInstances.count - 1
     }
 
-    private static func firstFreeID(in instances: borrowing Span<AnyReconcilable?>) -> InstanceID? {
+    private static func firstFreeID(in instances: borrowing Span<UniqueAny?>) -> InstanceID? {
         for id in instances.indices where instances[id] == nil {
             return id
         }
@@ -87,13 +87,13 @@ class PlaceholderContent: Unmountable {
         forEachInstance { instance in patchInstance(&instance, &tx) }
     }
 
-    func patchInstance(_ instance: inout AnyReconcilable, _ tx: inout _TransactionContext) {
+    func patchInstance(_ instance: inout UniqueAny, _ tx: inout _TransactionContext) {
         fatalError("abstract")
     }
 
     // Keep registry traversal out of each concrete content specialization.
     @inline(never)
-    private final func forEachInstance(_ body: (inout AnyReconcilable) -> Void) {
+    private final func forEachInstance(_ body: (inout UniqueAny) -> Void) {
         if inlineInstance != nil { body(&inlineInstance!) }
         for id in additionalInstances.indices where additionalInstances[id] != nil {
             body(&additionalInstances[id]!)
@@ -129,14 +129,12 @@ private class TypedPlaceholderContent<Value: _Mountable>: PlaceholderContent {
         self.value = value
     }
 
-    final override func makeInstance(context: borrowing _ViewContext, ctx: inout _MountContext) -> AnyReconcilable {
-        AnyReconcilable(Value._makeNode(value, context: context, ctx: &ctx))
+    final override func makeInstance(context: borrowing _ViewContext, ctx: inout _MountContext) -> UniqueAny {
+        UniqueAny(Value._makeNode(value, context: context, ctx: &ctx))
     }
 
-    final override func patchInstance(_ instance: inout AnyReconcilable, _ tx: inout _TransactionContext) {
-        instance.modify(as: Value._MountedNode.self) { node in
-            Value._patchNode(value, node: &node, tx: &tx)
-        }
+    final override func patchInstance(_ instance: inout UniqueAny, _ tx: inout _TransactionContext) {
+        Value._patchNode(value, node: &instance[as: Value._MountedNode.self], tx: &tx)
     }
 }
 

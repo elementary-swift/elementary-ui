@@ -58,12 +58,10 @@ private extension _ConditionalNode {
             key: key,
             tx: &tx,
             makeNode: { viewContext, mountCtx in
-                AnyReconcilable(makeNode(viewContext, &mountCtx))
+                UniqueAny(makeNode(viewContext, &mountCtx))
             },
             patchNode: { anyNode, tx in
-                anyNode.modify(as: Node.self) { node in
-                    updateNode(&node, &tx)
-                }
+                updateNode(&anyNode[as: Node.self], &tx)
             }
         )
     }

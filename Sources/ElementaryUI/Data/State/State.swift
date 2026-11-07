@@ -39,25 +39,26 @@
 /// ```
 @propertyWrapper
 public struct State<V> {
-    let initialValue: V
-    var accessor: StateAccessor<V>?
+    @usableFromInline let initialValue: V
+    @usableFromInline var accessor: StateAccessor<V>?
 
     /// The current value of the state.
     ///
     /// Reading this property returns the current state value. Writing to it updates
     /// the state and triggers a view update.
+    @inlinable
     public var wrappedValue: V {
         get {
             guard let accessor else { return initialValue }
-            return accessor.value
+            return accessor.storage[accessor.index]
         }
         nonmutating set {
             guard let accessor else { fatalError("State.set called outside of content") }
-            accessor.value = newValue
+            accessor.storage[accessor.index] = newValue
         }
         nonmutating _modify {
             guard let accessor else { fatalError("State._modify called outside of content") }
-            yield &accessor.value
+            yield &accessor.storage[accessor.index]
         }
     }
 
@@ -84,23 +85,13 @@ public struct State<V> {
 }
 
 public extension State {
+    @inlinable
     mutating func __restoreState(storage: _ViewStateStorage, index: Int) {
-        accessor = storage.accessor(for: index, as: V.self)
+        accessor = StateAccessor(storage: storage, index: index)
     }
 
-    func __initializeState(storage: _ViewStateStorage, index: Int) {
-        storage.initializeValueStorage(initialValue: initialValue, index: index)
-    }
-}
-
-public extension State where V: AnyObject {
-    func __initializeState(storage: _ViewStateStorage, index: Int) {
-        storage.initializeValueStorage(initialValue: initialValue, index: index)
-    }
-}
-
-private extension _ViewStateStorage {
-    func accessor<V>(for index: Int, as type: V.Type) -> StateAccessor<V> {
-        StateAccessor(storage: self, index: index)
+    @inlinable
+    func __initializeState(into values: inout OutputSpan<_ViewStateValue>) {
+        values.append(_ViewStateValue(initialValue))
     }
 }

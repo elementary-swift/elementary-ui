@@ -6,9 +6,12 @@ import Testing
 struct StateTests {
     @Test
     func initializesValueStorage() {
-        let storage = _ViewStateStorage()
-        storage.initializeValueStorage(initialValue: 42, index: 0)
-        storage.initializeValueStorage(initialValue: "hello", index: 1)
+        let number = State(wrappedValue: 42)
+        let text = State(wrappedValue: "hello")
+        let storage = _ViewStateStorage(count: 2) { values in
+            number.__initializeState(into: &values)
+            text.__initializeState(into: &values)
+        }
 
         storage[1] = "goodbye"
 
@@ -18,9 +21,8 @@ struct StateTests {
 
     @Test
     func restoresState() {
-        let storage = _ViewStateStorage()
         var state = State(wrappedValue: 42)
-        state.__initializeState(storage: storage, index: 0)
+        let storage = _ViewStateStorage(count: 1) { state.__initializeState(into: &$0) }
         state.__restoreState(storage: storage, index: 0)
         state.wrappedValue += 1
 
@@ -33,9 +35,8 @@ struct StateTests {
 
     @Test
     func createsBinding() {
-        let storage = _ViewStateStorage()
         var state = State(wrappedValue: 42)
-        state.__initializeState(storage: storage, index: 0)
+        let storage = _ViewStateStorage(count: 1) { state.__initializeState(into: &$0) }
         state.__restoreState(storage: storage, index: 0)
 
         let binding = state.projectedValue
@@ -48,9 +49,8 @@ struct StateTests {
 
     @Test
     func createsBindingWithKeypath() {
-        let storage = _ViewStateStorage()
         var state = State(wrappedValue: TestState())
-        state.__initializeState(storage: storage, index: 0)
+        let storage = _ViewStateStorage(count: 1) { state.__initializeState(into: &$0) }
         state.__restoreState(storage: storage, index: 0)
 
         let binding = state.projectedValue.value
@@ -63,13 +63,14 @@ struct StateTests {
 
     @Test
     func tracksReactiveChanges() {
-        let storage = _ViewStateStorage()
         var state1 = State(wrappedValue: 42)
         var state2 = State(wrappedValue: "no change")
         nonisolated(unsafe) var hasChanged = false
 
-        state1.__initializeState(storage: storage, index: 0)
-        state2.__initializeState(storage: storage, index: 1)
+        let storage = _ViewStateStorage(count: 2) { values in
+            state1.__initializeState(into: &values)
+            state2.__initializeState(into: &values)
+        }
         state1.__restoreState(storage: storage, index: 0)
         state2.__restoreState(storage: storage, index: 1)
 
@@ -83,6 +84,22 @@ struct StateTests {
         #expect(!hasChanged)
         state1.wrappedValue = 43
         #expect(hasChanged)
+    }
+
+    @Test
+    func replacesReferenceValues() {
+        var state = State(wrappedValue: TestState())
+        let storage = _ViewStateStorage(count: 1) { state.__initializeState(into: &$0) }
+        state.__restoreState(storage: storage, index: 0)
+
+        let assigned = TestState()
+        state.wrappedValue = assigned
+        #expect(state.wrappedValue === assigned)
+
+        let bound = TestState()
+        state.projectedValue.wrappedValue = bound
+        #expect(state.wrappedValue === bound)
+        #expect(state.wrappedValue.value == 42)
     }
 }
 

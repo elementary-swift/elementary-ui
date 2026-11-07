@@ -1,7 +1,7 @@
 import BasicContainers
 import _UTF8Internals
 
-public final class _AttributeModifier: DOMElementModifier, Invalidateable {
+public final class _AttributeModifier: DOMElementModifier, Invalidateable, Unmountable {
     typealias Value = _AttributeStorage
 
     let upstream: _AttributeModifier?
@@ -36,6 +36,11 @@ public final class _AttributeModifier: DOMElementModifier, Invalidateable {
 
     func invalidate(_ context: inout _TransactionContext) {
         self.tracker.invalidateAll(&context)
+    }
+
+    /// Stops following the upstream modifier, which also breaks the cycle with it.
+    func unmount(_ context: inout _CommitContext) {
+        upstream?.tracker.removeDependency(self)
     }
 }
 
@@ -74,6 +79,8 @@ extension _AttributeModifier {
         func unmount(_ context: inout _CommitContext) {
             logTrace("unmounting attribute modifier")
             self.modifier.tracker.removeDependency(self)
+            // Elements mount only the modifier they own, so it ends with the element.
+            self.modifier.unmount(&context)
         }
     }
 }

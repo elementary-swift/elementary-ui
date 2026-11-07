@@ -7,7 +7,7 @@ final class FocusModifier<FocusValue: Hashable>: DOMElementModifier, Unmountable
     }
 
     func updateValue(_ value: consuming Binding, _ context: inout _TransactionContext) {
-        guard value.storage === self.binding.storage else {
+        guard value.storage.registry === self.binding.storage.registry else {
             logWarning("Updating FocusState.Binding is not supported")
             return
         }

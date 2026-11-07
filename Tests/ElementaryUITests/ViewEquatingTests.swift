@@ -41,8 +41,7 @@ struct ViewEquatingTests {
     func ignoresStateBindings() {
         let closureBinding = Binding(get: { 42 }, set: { _ in })
         @State var state = 42
-        let storage = _ViewStateStorage()
-        _state.__initializeState(storage: storage, index: 0)
+        let storage = _ViewStateStorage(count: 1) { _state.__initializeState(into: &$0) }
         _state.__restoreState(storage: storage, index: 0)
 
         #expect(areEqual(ViewWithBinding(binding: $state), ViewWithBinding(binding: $state)))

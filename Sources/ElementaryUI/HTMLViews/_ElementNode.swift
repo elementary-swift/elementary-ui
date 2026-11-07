@@ -1,7 +1,7 @@
 public struct _ElementNode:
     ~Copyable
 {
-    private var child: AnyReconcilable
+    private var child: UniqueAny
     private var attributes: _ElementAttributes
 
     @inline(never)
@@ -11,7 +11,7 @@ public struct _ElementNode:
         attributes: _AttributeStorage,
         context: borrowing _ViewContext,
         ctx: inout _MountContext,
-        makeChild: (borrowing _ViewContext, inout _MountContext) -> AnyReconcilable
+        makeChild: (borrowing _ViewContext, inout _MountContext) -> UniqueAny
     ) {
         let domNode: DOM.Node
         if let namespaceURI {
@@ -71,7 +71,7 @@ public struct _ElementNode:
     mutating func update(
         attributes: _AttributeStorage,
         _ context: inout _TransactionContext,
-        block: (inout AnyReconcilable, inout _TransactionContext) -> Void
+        block: (inout UniqueAny, inout _TransactionContext) -> Void
     ) {
         self.attributes.patch(attributes, context: &context)
         block(&child, &context)

@@ -47,10 +47,10 @@ struct EnvionmentTests {
         let reader = ObjectStorageReader(TestObject.self)
         let optionalReader = ObjectStorageReader(TestObject?.self)
 
-        #expect(optionalReader.read(v.boxes[optionalReader.propertyID]) === nil)
+        #expect(optionalReader.read(v.entries[optionalReader.propertyID]) === nil)
 
         v[TestObject.environmentKey] = o
-        #expect(reader.read(v.boxes[reader.propertyID]) === o)
+        #expect(reader.read(v.entries[reader.propertyID]) === o)
         // #expect(optionalReader.read(v.values) === o)
     }
 

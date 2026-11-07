@@ -30,14 +30,12 @@ public struct _KeyedView<Value: MarkupContent & _Mountable>: _Mountable {
             key: view.key,
             context: &tx,
             makeNode: { context, ctx in
-                AnyReconcilable(
+                UniqueAny(
                     Value._makeNode(view.value, context: context, ctx: &ctx)
                 )
             },
             patchNode: { anyNode, tx in
-                anyNode.modify(as: Value._MountedNode.self) { node in
-                    Value._patchNode(view.value, node: &node, tx: &tx)
-                }
+                Value._patchNode(view.value, node: &anyNode[as: Value._MountedNode.self], tx: &tx)
             }
         )
     }
