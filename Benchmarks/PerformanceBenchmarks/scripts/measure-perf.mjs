@@ -535,27 +535,26 @@ const timingBenchmarks = [
       );
     },
   },
-  // Temporarily disabled to keep CI runtime reasonable.
-  // {
-  //   id: "07_create10k",
-  //   label: "create many rows",
-  //   warmup: 5,
-  //   additionalRuns: 0,
-  //   cpuThrottle: undefined,
-  //   init: async (page) => {
-  //     await checkElementExists(page, "#run");
-  //     for (let i = 0; i < 5; i++) {
-  //       await clickElement(page, "#run");
-  //       await checkElementContainsText(page, "#tbody tr:nth-of-type(1) td:nth-of-type(1)", String(i * 1000 + 1));
-  //       await clickElement(page, "#clear");
-  //       await checkElementNotExists(page, "#tbody tr:nth-of-type(1000) td:nth-of-type(1)");
-  //     }
-  //   },
-  //   run: async (page) => {
-  //     await clickElement(page, "#runlots");
-  //     await checkElementExists(page, "#tbody tr:nth-of-type(10000) td:nth-of-type(2) a");
-  //   },
-  // },
+  {
+    id: "07_create10k",
+    label: "create many rows",
+    warmup: 5,
+    additionalRuns: 0,
+    cpuThrottle: undefined,
+    init: async (page) => {
+      await checkElementExists(page, "#run");
+      for (let i = 0; i < 5; i++) {
+        await clickElement(page, "#run");
+        await checkElementContainsText(page, "#tbody tr:nth-of-type(1) td:nth-of-type(1)", String(i * 1000 + 1));
+        await clickElement(page, "#clear");
+        await checkElementNotExists(page, "#tbody tr:nth-of-type(1000) td:nth-of-type(1)");
+      }
+    },
+    run: async (page) => {
+      await clickElement(page, "#runlots");
+      await checkElementExists(page, "#tbody tr:nth-of-type(10000) td:nth-of-type(2) a");
+    },
+  },
   {
     id: "08_create1k-after1k_x2",
     label: "append rows to large table",
