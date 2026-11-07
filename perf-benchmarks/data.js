@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794085174017,
+  "lastUpdate": 1794087192865,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -5760,6 +5760,90 @@ window.BENCHMARK_DATA = {
           {
             "name": "25_run-clear-memory",
             "value": 1.38,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "63e9baf21741007e3eb82ad9f3afb02cf1525ddb",
+          "message": "Sync benchmarks with js-framework-benchmark 0.9.0 entry (#159)\n\n* sync benchmarks with js-framework-benchmark 0.9.0 entry, enable create10k\n\n* swift format",
+          "timestamp": "2026-11-07T22:25:33+01:00",
+          "tree_id": "c6fc53add2bda1a1cb42e4f097f255dbbc2e1783",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/63e9baf21741007e3eb82ad9f3afb02cf1525ddb"
+        },
+        "date": 1794087192048,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 57.78,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 76.46,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 143.54,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 9.07,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 41.27,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 27.8,
+            "unit": "ms"
+          },
+          {
+            "name": "07_create10k",
+            "value": 737.46,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 75.37,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 40.34,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.04,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.07,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.36,
             "unit": "MB"
           }
         ]
