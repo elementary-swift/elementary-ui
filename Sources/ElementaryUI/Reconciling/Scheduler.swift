@@ -50,6 +50,9 @@ final class Scheduler {
     private var isAnimationFramePending = false
     private var currentTransaction: Transaction?
 
+    // TODO: this is a bit hacky, ideally we can use explicit dependencies on Environment
+    private var ambientContext: _TransactionContext?
+
     // Safety limits
     private let maxTransactionPasses = 100
     private let maxCommitPasses = 100
@@ -77,6 +80,11 @@ final class Scheduler {
     // MARK: - Public API
 
     func invalidateFunction(_ function: SchedulableNode) {
+        if ambientContext != nil {
+            ambientContext!.addFunction(function)
+            return
+        }
+
         ensureUpdateCycleScheduled()
 
         if currentTransaction?._id != Transaction._current?._id {
@@ -130,6 +138,13 @@ final class Scheduler {
     func registerAnimation(_ node: SchedulableNode) {
         runningAnimations.append(node)
         ensureAnimationFrameScheduled()
+    }
+
+    func withAmbientTransactionContext(_ context: inout _TransactionContext, _ block: () -> Void) {
+        precondition(ambientContext == nil)
+        ambientContext = consume context
+        block()
+        context = ambientContext.take()!
     }
 
     /// Runs `body` with a root mount context. Everything collected must end

@@ -5,19 +5,6 @@ import Testing
 
 struct EnvironmentInvalidationTests {
     @Test
-    func rerunsReadersThatDeclareButDoNotReadTheValue() {
-        let model = Model()
-
-        let calls = trackUpdating {
-            Provider(model: model) { DeclaringReader() }
-        } toggle: {
-            model.outer += 1
-        }
-
-        #expect(calls == ["Provider", "declaring"])
-    }
-
-    @Test
     func rerunsReadersOfValuesWithoutEquality() {
         let model = Model()
 
@@ -125,15 +112,6 @@ private struct Provider<Content: View> {
             content
         }
         .environment(#Key(\.invalidationValue), model.outer)
-    }
-}
-
-@View
-private struct DeclaringReader {
-    @Environment(#Key(\.invalidationValue)) var value
-
-    var body: some View {
-        Track(name: "declaring") {}
     }
 }
 

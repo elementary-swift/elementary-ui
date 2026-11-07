@@ -1,11 +1,7 @@
 import BasicContainers
 import Reactivity
 
-/// A node that re-runs its content when what it depends on changes.
-///
-/// Invalidation and unmounting are implemented here, on a non-generic base:
-/// in Embedded, a generic conformer's witness table is specialized as serialized (code size).
-class SchedulableNode: Invalidateable, Unmountable {
+class SchedulableNode {
     let depthInTree: Int
     /// Created once the node has read anything reactive.
     private var listener: ReactiveTracking.Listener?
@@ -25,24 +21,6 @@ class SchedulableNode: Invalidateable, Unmountable {
 
     /// Only called by ``update(tx:)``.
     func performUpdate(tx: inout _TransactionContext) {}
-
-    /// Queues the node in the running transaction, for example after an environment value changed.
-    final func invalidate(_ context: inout _TransactionContext) {
-        context.addFunction(self)
-    }
-
-    func unmount(_ context: inout _CommitContext) {
-        stopScheduling()
-    }
-
-    // Not generic, so registering is the same code for every view (code size).
-    final func addEnvironmentDependency(_ slot: _EnvironmentSlot) {
-        slot.dependents.addDependency(self)
-    }
-
-    final func removeEnvironmentDependency(_ slot: _EnvironmentSlot) {
-        slot.dependents.removeDependency(self)
-    }
 
     func progressAnimation(tx: inout _TransactionContext) -> AnimationProgressResult {
         .completed

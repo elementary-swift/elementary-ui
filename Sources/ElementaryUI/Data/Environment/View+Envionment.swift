@@ -122,7 +122,7 @@ public extension View {
 }
 
 public struct _EnvironmentView<V, Wrapped: View>: View {
-    public typealias _MountedNode = _StatefulNode<_EnvironmentSlot, Wrapped._MountedNode>
+    public typealias _MountedNode = _StatefulNode<_ViewStateStorage, Wrapped._MountedNode>
     public typealias Tag = Wrapped.Tag
 
     let wrapped: Wrapped
@@ -136,7 +136,7 @@ public struct _EnvironmentView<V, Wrapped: View>: View {
         ctx: inout _MountContext
     ) -> _MountedNode {
         var context = copy context
-        let slot = _EnvironmentSlot(view.value)
+        let slot = _ViewStateStorage(view.value)
         context.environment.entries[view.key.propertyID] = slot
 
         return .init(state: slot, child: Wrapped._makeNode(view.wrapped, context: context, ctx: &ctx))
@@ -147,13 +147,18 @@ public struct _EnvironmentView<V, Wrapped: View>: View {
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        let slot = node.state
         // Without an equality check, every new value counts as a change.
-        let isUnchanged = view.isEqual?(slot.value[as: V.self], view.value) ?? false
-        slot.value[as: V.self] = view.value
-        if !isUnchanged {
-            // Readers update in this transaction, before or while the subtree is patched.
-            slot.dependents.invalidateAll(&tx)
+        if view.isEqual?(node.state[untracked: 0, as: V.self], view.value) ?? false {
+            node.state[untracked: 0, as: V.self] = view.value
+        } else {
+            // TODO: rework this to explicit dependencies
+            // NOTE: a bit of a hack to allow dependent functions to run in the same transaction run
+            tx.scheduler.withAmbientTransactionContext(
+                &tx,
+                {
+                    node.state[0, as: V.self] = view.value
+                }
+            )
         }
 
         Wrapped._patchNode(view.wrapped, node: &node.child, tx: &tx)

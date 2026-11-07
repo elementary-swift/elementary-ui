@@ -37,12 +37,18 @@ final class _ViewStateBuffer: ManagedBuffer<_ViewStateBuffer.Header, UniqueAny> 
     }
 }
 
-/// The reactive values of one view's state.
+/// The reactive values of one view's state, or of one environment modifier.
 public struct _ViewStateStorage {
     let buffer: _ViewStateBuffer
 
     public init(capacity: Int) {
         buffer = .create(capacity: capacity)
+    }
+
+    /// A storage holding one value at index 0.
+    init<V: ~Copyable>(_ value: consuming V) {
+        self.init(capacity: 1)
+        initializeValueStorage(initialValue: value, index: 0)
     }
 
     public func initializeValueStorage<V: ~Copyable>(initialValue: consuming V, index: Int) {
@@ -67,6 +73,12 @@ public struct _ViewStateStorage {
             defer { registrar.didSet(PropertyID(index)) }
             yield &buffer[index][as: V.self]
         }
+    }
+
+    /// Direct access that neither tracks reads nor notifies observers.
+    subscript<V: ~Copyable>(untracked index: Int, as type: V.Type = V.self) -> V {
+        _read { yield buffer[index][as: V.self] }
+        nonmutating _modify { yield &buffer[index][as: V.self] }
     }
 }
 

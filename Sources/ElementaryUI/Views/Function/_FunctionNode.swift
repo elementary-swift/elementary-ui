@@ -59,6 +59,8 @@ where ChildNode == Value.Body._MountedNode {
         ctx: inout _MountContext
     ) {
         core = .init(value: value, context: context, ctx: &ctx)
+        // always boxed at mount, after its child registered
+        ctx.registerUnmount(core.mountedBox!)
     }
 
     mutating func patch(
@@ -114,8 +116,7 @@ where
             ctx: &ctx
         )
 
-        // Environment slots are fixed for the node's lifetime, so readers register once, here.
-        if dependencies != nil || Function.boxesWithoutTracking || Value.__readsEnvironment {
+        if dependencies != nil || Function.boxesWithoutTracking {
             let function = Storage.makeBox(
                 child: childNode,
                 value: lastValue,
@@ -123,13 +124,6 @@ where
                 dependencies: dependencies,
                 scheduler: ctx.scheduler
             )
-            if Value.__readsEnvironment {
-                Value.__visitEnvironment(of: lastValue, function.addEnvironmentDependency)
-            }
-            if Value.__readsEnvironment || Function.boxesWithoutTracking {
-                // after the child registered, so it unmounts first
-                ctx.registerUnmount(function)
-            }
             storage = .box(function)
         } else {
             storage = .inline(childNode)
@@ -278,19 +272,12 @@ where MountedBody == Value.Body._MountedNode {
         let body = trackDependencies(scheduler: tx.scheduler) { value.body }
         Value.Body._patchNode(body, node: &child, tx: &tx)
     }
-
-    override func unmount(_ context: inout _CommitContext) {
-        if Value.__readsEnvironment {
-            Value.__visitEnvironment(of: wiredValue, removeEnvironmentDependency)
-        }
-        super.unmount(&context)
-    }
 }
 
 final class AnimatableFunction<
     Value: __FunctionView & Animatable,
     MountedBody: ~Copyable
->: SchedulableFunction<Value, MountedBody>
+>: SchedulableFunction<Value, MountedBody>, Unmountable
 where MountedBody == Value.Body._MountedNode {
     override class var boxesWithoutTracking: Bool { true }
 
@@ -344,8 +331,8 @@ where MountedBody == Value.Body._MountedNode {
     }
 
     // A running animation retains the box; it must not update removed content.
-    override func unmount(_ context: inout _CommitContext) {
-        super.unmount(&context)
+    func unmount(_ context: inout _CommitContext) {
+        stopScheduling()
         animatedValue.cancelAnimation()
     }
 }

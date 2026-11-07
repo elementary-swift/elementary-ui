@@ -6,13 +6,6 @@ public protocol __FunctionView: _Mountable, MarkupContent where Body: _Mountable
 
     static func __applyContext(_ context: borrowing _ViewContext, to view: inout Self)
 
-    /// Whether the view has `@Environment` properties. Known statically, so views
-    /// without any carry no environment code (code size).
-    static var __readsEnvironment: Bool { get }
-
-    /// Calls `visit` with each environment slot the view's `@Environment` properties were loaded from.
-    static func __visitEnvironment(of view: borrowing Self, _ visit: (_EnvironmentSlot) -> Void)
-
     static func __areEqual(a: borrowing Self, b: borrowing Self) -> Bool
 }
 
@@ -38,8 +31,6 @@ public extension __FunctionView {
 public extension __FunctionView {
     static func __initializeState(from view: borrowing Self) {}
     static func __restoreState(_ storage: __ViewState, in view: inout Self) {}
-    static var __readsEnvironment: Bool { false }
-    static func __visitEnvironment(of view: borrowing Self, _ visit: (_EnvironmentSlot) -> Void) {}
 }
 
 public extension __FunctionView where Self: Animatable {
