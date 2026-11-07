@@ -178,14 +178,22 @@ struct Jumbotron {
                     div(.class("row")) {
                         ActionButton(buttonID: "run", title: "Create 1,000 rows", action: store.run)
                         ActionButton(
-                            buttonID: "runlots", title: "Create 10,000 rows", action: store.runLots)
+                            buttonID: "runlots",
+                            title: "Create 10,000 rows",
+                            action: store.runLots
+                        )
                         ActionButton(buttonID: "add", title: "Append 1,000 rows", action: store.add)
                         ActionButton(
-                            buttonID: "update", title: "Update every 10th row", action: store.update
+                            buttonID: "update",
+                            title: "Update every 10th row",
+                            action: store.update
                         )
                         ActionButton(buttonID: "clear", title: "Clear", action: store.clear)
                         ActionButton(
-                            buttonID: "swaprows", title: "Swap Rows", action: store.swapRows)
+                            buttonID: "swaprows",
+                            title: "Swap Rows",
+                            action: store.swapRows
+                        )
                     }
                 }
             }
