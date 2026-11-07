@@ -30,7 +30,11 @@ final class _ViewStateBuffer: ManagedBuffer<_ViewStateBuffer.Header, _ViewStateV
         count: Int,
         initializingWith initializer: (inout OutputSpan<_ViewStateValue>) -> Void
     ) -> _ViewStateBuffer {
-        let buffer = unsafeDowncast(create(minimumCapacity: count) { _ in Header() }, to: _ViewStateBuffer.self)
+        // Spelled out: through `Self`, Embedded IRGen on main snapshots asserts on the dynamic allocation.
+        let buffer = unsafeDowncast(
+            _ViewStateBuffer.create(minimumCapacity: count) { _ in Header() },
+            to: _ViewStateBuffer.self
+        )
         buffer.withUnsafeMutablePointers { header, elements in
             let slots = UnsafeMutableBufferPointer(start: elements, count: count)
             var span = OutputSpan(buffer: slots, initializedCount: 0)
