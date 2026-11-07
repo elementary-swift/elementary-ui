@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794087396694,
+  "lastUpdate": 1794092892567,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -14513,6 +14513,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 143,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c74287d3444c74d851504072636eb10bb2057b7a",
+          "message": "assert instead of precondition on hot typed-access checks (#161)",
+          "timestamp": "2026-11-07T23:57:37+01:00",
+          "tree_id": "7ec2cfa1c95261b1b56e7bee0090a167a738f39b",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/c74287d3444c74d851504072636eb10bb2057b7a"
+        },
+        "date": 1794092891605,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 172.31,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 97.94,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81.9,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 130.41,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 143.28,
             "unit": "kB"
           }
         ]
