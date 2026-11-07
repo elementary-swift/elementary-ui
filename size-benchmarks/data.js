@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794083072918,
+  "lastUpdate": 1794084964179,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -14415,6 +14415,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 145,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5296e1267e0c63aaca4cd7b13a3e836abaa11b1f",
+          "message": "store state and environment values in UniqueAny (#157)\n\n* store state and environment values in UniqueAny\n\n* add environment update and unmount benchmarks\n\n* restore only the replaced entry in server render environment\n\n* make CustomAnimation defaults public\n\n* remove dependents in O(1) and drop dynamic casts in modifier and extension lookup\n\n* invalidate environment readers explicitly instead of through reactivity\n\n* keep FocusState values in the view state storage\n\n* move dependency tracking to its own file and name environment slots consistently\n\n* propagate environment values without equality to readers\n\n* detach attribute modifiers from their upstream on unmount\n\n* move environment back to reactivity\n\n* clean up state storage and dependency tracker\n\n* invalidate dependents through a base class instead of closures\n\n* initialize view state in one shot through an output span\n\n* work around embedded snapshot crash in state buffer allocation\n\n* drop redundant tests\n\n* move CustomAnimation defaults fix to its own PR\n\n* go back to an internal invalidation protocol",
+          "timestamp": "2026-11-07T21:48:48+01:00",
+          "tree_id": "2da862a3ef035bfef3563c1a046be87bd19ffcf9",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/5296e1267e0c63aaca4cd7b13a3e836abaa11b1f"
+        },
+        "date": 1794084963354,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 172.34,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 97.97,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81.92,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 130.7,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 144.18,
             "unit": "kB"
           }
         ]
