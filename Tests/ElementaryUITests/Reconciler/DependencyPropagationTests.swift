@@ -4,7 +4,6 @@ import Testing
 @testable import ElementaryUI
 
 struct DependencyPropagationTests {
-    // Readers at equal depth run last-registered first (the pending queue pops from the back).
     @Test
     func environmentChangeRerunsEveryRow() {
         let model = PropagationModel()
@@ -15,7 +14,8 @@ struct DependencyPropagationTests {
             model.value += 1
         }
 
-        #expect(calls == ["provider"] + (0..<20).reversed().map { "row \($0): 1" })
+        #expect(calls.first == "provider")
+        #expect(calls.dropFirst().sorted() == (0..<20).map { "row \($0): 1" }.sorted())
     }
 
     @Test
@@ -75,6 +75,49 @@ struct DependencyPropagationTests {
         model.value += 1
         dom.runNextFrame()
         #expect(tracker.calls == ["conditional", "reader 0: 1", "reader 1: 1", "reader 2: 1"])
+    }
+
+    // Views follow the environment values they load, whether or not their body reads them.
+    @Test
+    func environmentChangeRerunsViewsThatLoadButDoNotReadTheValue() {
+        let model = PropagationModel()
+
+        let calls = trackUpdating {
+            UnreadProvider(model: model)
+        } toggle: {
+            model.value += 1
+        }
+
+        #expect(calls == ["unread provider", "unread"])
+    }
+
+    @Test
+    func swappedEnvironmentObjectRerunsReaders() {
+        let model = PropagationModel()
+        let first = PropagationObject(name: "first")
+        let second = PropagationObject(name: "second")
+
+        let calls = trackUpdating {
+            ObjectProvider(model: model, objects: [first, second])
+        } toggle: {
+            model.value += 1
+        }
+
+        #expect(calls == ["object provider", "object: second"])
+    }
+
+    @Test
+    func environmentObjectPropertyChangeRerunsReaders() {
+        let model = PropagationModel()
+        let object = PropagationObject(name: "first")
+
+        let calls = trackUpdating {
+            ObjectProvider(model: model, objects: [object, object])
+        } toggle: {
+            object.name = "renamed"
+        }
+
+        #expect(calls == ["object: renamed"])
     }
 
     @Test
@@ -236,6 +279,58 @@ private struct SniffedReader {
         Track(name: "reader \(index): \(value)") {
             DeinitSnifferView(callback: onRelease)
         }
+    }
+}
+
+@View
+private struct UnreadProvider {
+    let model: PropagationModel
+
+    var body: some View {
+        Track(name: "unread provider") {
+            UnreadReader()
+        }
+        .environment(#Key(\.propagationValue), model.value)
+    }
+}
+
+@View
+private struct UnreadReader {
+    @Environment(#Key(\.propagationValue)) var value
+
+    var body: some View {
+        Track(name: "unread") {}
+    }
+}
+
+@Reactive
+private final class PropagationObject {
+    var name: String
+
+    init(name: String) {
+        self.name = name
+    }
+}
+
+@View
+private struct ObjectProvider {
+    let model: PropagationModel
+    let objects: [PropagationObject]
+
+    var body: some View {
+        Track(name: "object provider") {
+            ObjectReader()
+        }
+        .environment(objects[min(model.value, 1)])
+    }
+}
+
+@View
+private struct ObjectReader {
+    @Environment(PropagationObject.self) var object
+
+    var body: some View {
+        Track(name: "object: \(object.name)") {}
     }
 }
 

@@ -2,7 +2,7 @@ final class FocusModifier<FocusValue: Hashable>: DOMElementModifier, Unmountable
     private var binding: Binding
     private var focusAccessor: DOM.FocusAccessor?
 
-    init(value: consuming Binding, upstream: borrowing DOMElementModifiers) {
+    init(value: consuming Binding, upstream: borrowing DOMElementModifiers, ctx: inout _MountContext) {
         self.binding = value
     }
 

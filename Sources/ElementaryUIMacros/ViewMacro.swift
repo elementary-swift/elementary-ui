@@ -46,23 +46,33 @@ extension ViewMacro: ExtensionMacro {
             var decls: [DeclSyntax] = []
 
             // add loading environment properties
-            let environmentLoads =
-                members
-                .filter { $0.isEnvironmentProperty }
-                .map { variable -> DeclSyntax in
-                    let name = variable.trimmedIdentifier!.text
-                    return "view._\(raw: name).__load(from: context)"
-                }
+            let environmentNames = members.filter { $0.isEnvironmentProperty }.map { $0.trimmedIdentifier!.text }
+            let environmentLoads = environmentNames.map { "view._\($0).__load(from: context)" }
 
             decls.append(
                 DeclSyntax(
                     """
                     \(access)static func __applyContext(_ context: borrowing _ViewContext, to view: inout Self) {
-                        \(raw: environmentLoads.map { $0.description }.joined(separator: "\n"))
+                        \(raw: environmentLoads.joined(separator: "\n"))
                     }
                     """
                 )
             )
+
+            // add following environment properties
+            if !environmentNames.isEmpty {
+                let environmentFollows = environmentNames.map { "view._\($0).__follow(follower, ctx: &ctx)" }
+                decls.append(
+                    DeclSyntax(
+                        """
+                        \(access)static var __followsEnvironment: Bool { true }
+                        \(access)static func __followEnvironment(_ view: borrowing Self, _ follower: borrowing _EnvironmentFollower, ctx: inout _MountContext) {
+                            \(raw: environmentFollows.joined(separator: "\n"))
+                        }
+                        """
+                    )
+                )
+            }
 
             // add state members
             let stateMembers = members.filter { $0.isStateProperty }

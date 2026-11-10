@@ -217,7 +217,7 @@ extension MountContainer {
 
 extension MountContainer {
     /// One keyed child: its mounted node, the layout nodes it produced, and
-    /// the members (unmount work, transition elements) registered while
+    /// the members (unmount work, transition elements, followed sources) registered while
     /// mounting it.
     struct Slot: ~Copyable {
         enum Placement {

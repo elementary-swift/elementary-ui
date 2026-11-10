@@ -6,7 +6,7 @@ final class FilterModifier: DOMElementModifier {
 
     var value: CSSFilter.AnyFunction.ValueSource
 
-    init(value: consuming Value, upstream: borrowing DOMElementModifiers) {
+    init(value: consuming Value, upstream: borrowing DOMElementModifiers, ctx: inout _MountContext) {
         self.value = value.makeSource()
         self.upstream = upstream[FilterModifier.key]
         self.layerNumber = (self.upstream?.layerNumber ?? 0) + 1
@@ -32,10 +32,10 @@ final class FilterModifier: DOMElementModifier {
 
     private func makeLayers(_ context: inout _MountContext) -> [AnyCSSAnimatedValueInstance<CSSFilter>] {
         if var layers = upstream.map({ $0.makeLayers(&context) }) {
-            layers.append(AnyCSSAnimatedValueInstance(value.makeInstance()))
+            layers.append(AnyCSSAnimatedValueInstance(value.makeInstance(&context)))
             return layers
         } else {
-            return [AnyCSSAnimatedValueInstance(value.makeInstance())]
+            return [AnyCSSAnimatedValueInstance(value.makeInstance(&context))]
         }
     }
 }
@@ -46,14 +46,14 @@ extension CSSFilter.AnyFunction {
         case saturation(CSSValueSource<CSSFilter.Saturation>)
         case brightness(CSSValueSource<CSSFilter.Brightness>)
 
-        func makeInstance() -> AnyCSSAnimatedValueInstance<CSSFilter> {
+        func makeInstance(_ context: inout _MountContext) -> AnyCSSAnimatedValueInstance<CSSFilter> {
             switch self {
             case .blur(let value):
-                AnyCSSAnimatedValueInstance(value.makeInstance())
+                AnyCSSAnimatedValueInstance(value.makeInstance(&context))
             case .saturation(let value):
-                AnyCSSAnimatedValueInstance(value.makeInstance())
+                AnyCSSAnimatedValueInstance(value.makeInstance(&context))
             case .brightness(let value):
-                AnyCSSAnimatedValueInstance(value.makeInstance())
+                AnyCSSAnimatedValueInstance(value.makeInstance(&context))
             }
         }
     }

@@ -121,8 +121,13 @@ public extension View {
     }
 }
 
+/// The mounted state of an environment modifier; keeps the slot type internal.
+public struct _EnvironmentState {
+    let slot: EnvironmentSlot
+}
+
 public struct _EnvironmentView<V, Wrapped: View>: View {
-    public typealias _MountedNode = _StatefulNode<_ViewStateStorage, Wrapped._MountedNode>
+    public typealias _MountedNode = _StatefulNode<_EnvironmentState, Wrapped._MountedNode>
     public typealias Tag = Wrapped.Tag
 
     let wrapped: Wrapped
@@ -136,10 +141,10 @@ public struct _EnvironmentView<V, Wrapped: View>: View {
         ctx: inout _MountContext
     ) -> _MountedNode {
         var context = copy context
-        let slot = _ViewStateStorage(view.value)
+        let slot = EnvironmentSlot(view.value)
         context.environment.entries[view.key.propertyID] = slot
 
-        return .init(state: slot, child: Wrapped._makeNode(view.wrapped, context: context, ctx: &ctx))
+        return .init(state: _EnvironmentState(slot: slot), child: Wrapped._makeNode(view.wrapped, context: context, ctx: &ctx))
     }
 
     public static func _patchNode(
@@ -147,18 +152,12 @@ public struct _EnvironmentView<V, Wrapped: View>: View {
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
+        let slot = node.state.slot
         // Without an equality check, every new value counts as a change.
-        if view.isEqual?(node.state[untracked: 0, as: V.self], view.value) ?? false {
-            node.state[untracked: 0, as: V.self] = view.value
-        } else {
-            // TODO: rework this to explicit dependencies
-            // NOTE: a bit of a hack to allow dependent functions to run in the same transaction run
-            tx.scheduler.withAmbientTransactionContext(
-                &tx,
-                {
-                    node.state[0, as: V.self] = view.value
-                }
-            )
+        let isUnchanged = view.isEqual?(slot.value[as: V.self], view.value) ?? false
+        slot.value[as: V.self] = view.value
+        if !isUnchanged {
+            slot.dependents.invalidateAll(&tx)
         }
 
         Wrapped._patchNode(view.wrapped, node: &node.child, tx: &tx)

@@ -22,20 +22,20 @@ public extension Environment {
 
 struct ObjectStorageReader<Value> {
     let propertyID: PropertyID
-    let read: (_ViewStateStorage?) -> Value
+    let read: (EnvironmentSlot?) -> Value
 
     init(_: Value.Type) where Value: ReactiveObject {
         propertyID = Value._$typeID
         read = { slot in
             guard let slot else { fatalError("No value for \(Value._$typeID) in environment") }
-            return slot[0, as: Value.self]
+            return slot.value[as: Value.self]
         }
     }
 
     init<O: ReactiveObject>(_: Value.Type) where Value == O? {
         propertyID = O._$typeID
         read = { slot in
-            slot.map { $0[0, as: O.self] }
+            slot.map { $0.value[as: O.self] }
         }
     }
 }

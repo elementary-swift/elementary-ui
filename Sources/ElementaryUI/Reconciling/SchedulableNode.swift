@@ -1,7 +1,7 @@
 import BasicContainers
 import Reactivity
 
-class SchedulableNode {
+class SchedulableNode: DependencyNode {
     let depthInTree: Int
     /// Created once the node has read anything reactive.
     private var listener: ReactiveTracking.Listener?
@@ -11,6 +11,12 @@ class SchedulableNode {
 
     init(depthInTree: Int) {
         self.depthInTree = depthInTree
+        super.init()
+    }
+
+    /// Queues the node in the running transaction.
+    final override func invalidate(_ context: inout _TransactionContext) {
+        context.addFunction(self)
     }
 
     /// Updates the node, whether it was queued or is updated by its parent or an animation.

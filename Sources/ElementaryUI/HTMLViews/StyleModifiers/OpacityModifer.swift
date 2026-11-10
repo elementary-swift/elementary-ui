@@ -6,7 +6,7 @@ final class OpacityModifier: DOMElementModifier {
 
     var value: CSSValueSource<CSSOpacity>
 
-    init(value: consuming Value, upstream: borrowing DOMElementModifiers) {
+    init(value: consuming Value, upstream: borrowing DOMElementModifiers, ctx: inout _MountContext) {
         self.value = CSSValueSource(value: value)
         self.upstream = upstream[OpacityModifier.key]
         self.layerNumber = (self.upstream?.layerNumber ?? 0) + 1
@@ -23,10 +23,10 @@ final class OpacityModifier: DOMElementModifier {
 
     private func makeLayers(_ context: inout _MountContext) -> [CSSValueSource<CSSOpacity>.Instance] {
         if var layers = upstream.map({ $0.makeLayers(&context) }) {
-            layers.append(value.makeInstance())
+            layers.append(value.makeInstance(&context))
             return layers
         } else {
-            return [value.makeInstance()]
+            return [value.makeInstance(&context)]
         }
     }
 }

@@ -1,13 +1,20 @@
 import BasicContainers
 import _UTF8Internals
 
-public final class _AttributeModifier: DOMElementModifier, Invalidateable, Unmountable {
+/// Attributes for the elements below it, combined with the attributes of the modifier above.
+///
+/// An element gets its own modifier on top of the inherited one and mounts only that, so a
+/// mounted modifier belongs to exactly one element. Modifiers that are not mounted only pass
+/// their changes down.
+final class AttributeModifier: DependencyNode, DOMElementModifier {
     typealias Value = _AttributeStorage
 
-    let upstream: _AttributeModifier?
-    var tracker: DependencyTracker = .init()
+    let upstream: AttributeModifier?
 
     private var lastValue: Value
+    private var mountedNode: DOM.Node?
+    private var previousAttributes: _AttributeStorage = .none
+    private var isDirty = false
 
     var value: Value {
         var combined = lastValue
@@ -15,74 +22,54 @@ public final class _AttributeModifier: DOMElementModifier, Invalidateable, Unmou
         return combined
     }
 
-    init(value: consuming Value, upstream: borrowing DOMElementModifiers) {
+    /// Follows the inherited modifier until the enclosing slot is dropped.
+    init(value: consuming Value, upstream: borrowing DOMElementModifiers, ctx: inout _MountContext) {
         self.lastValue = value
-        self.upstream = upstream[_AttributeModifier.key]
-        self.upstream?.tracker.addDependency(self)
+        self.upstream = upstream[AttributeModifier.key]
+        super.init()
+        if let upstream = self.upstream {
+            ctx.follow(upstream, with: self)
+        }
     }
 
+    // inline(never): keeps the change check out of every element patch (code size)
+    @inline(never)
     func updateValue(_ value: consuming Value, _ context: inout _TransactionContext) {
         if value != lastValue {
             lastValue = value
-            tracker.invalidateAll(&context)
+            invalidate(&context)
         }
     }
 
     func mount(_ node: DOM.Node, _ context: inout _MountContext) {
         logTrace("mounting attribute modifier")
-        let instance = MountedInstance(node, self, &context)
-        context.registerUnmount(instance)
+        precondition(mountedNode == nil, "attribute modifier mounted twice")
+        mountedNode = node
+        let initialValue = value
+        addHTMLAttributes(initialValue, to: node, using: context.dom)
+        previousAttributes = initialValue
     }
 
-    func invalidate(_ context: inout _TransactionContext) {
-        self.tracker.invalidateAll(&context)
+    override func invalidate(_ context: inout _TransactionContext) {
+        dependents.invalidateAll(&context)
+        guard mountedNode != nil, !isDirty else { return }
+        logTrace("invalidating attribute modifier")
+        isDirty = true
+        context.scheduler.addCommitAction(updateDOMNode(_:))
     }
 
-    /// Stops following the upstream modifier, which also breaks the cycle with it.
-    func unmount(_ context: inout _CommitContext) {
-        upstream?.tracker.removeDependency(self)
+    private func updateDOMNode(_ context: inout _CommitContext) {
+        logTrace("updating attribute modifier")
+        let newValue = value
+        applyHTMLAttributes(from: previousAttributes, to: newValue, on: mountedNode!, using: context.dom)
+        previousAttributes = newValue
+        isDirty = false
     }
 }
 
-extension _AttributeModifier {
-    final class MountedInstance: Unmountable, Invalidateable {
-        let modifier: _AttributeModifier
-        let node: DOM.Node
-
-        var isDirty: Bool = false
-        var previousAttributes: _AttributeStorage = .none
-
-        init(_ node: DOM.Node, _ modifier: _AttributeModifier, _ context: inout _MountContext) {
-            self.node = node
-            self.modifier = modifier
-            self.modifier.tracker.addDependency(self)
-            let initialValue = modifier.value
-            addHTMLAttributes(initialValue, to: node, using: context.dom)
-            previousAttributes = initialValue
-        }
-
-        func invalidate(_ context: inout _TransactionContext) {
-            guard !isDirty else { return }
-            logTrace("invalidating attribute modifier")
-            isDirty = true
-            context.scheduler.addCommitAction(updateDOMNode(_:))
-        }
-
-        func updateDOMNode(_ context: inout _CommitContext) {
-            logTrace("updating attribute modifier")
-            let newValue = modifier.value
-            applyHTMLAttributes(from: previousAttributes, to: newValue, on: node, using: context.dom)
-            previousAttributes = newValue
-            isDirty = false
-        }
-
-        func unmount(_ context: inout _CommitContext) {
-            logTrace("unmounting attribute modifier")
-            self.modifier.tracker.removeDependency(self)
-            // Elements mount only the modifier they own, so it ends with the element.
-            self.modifier.unmount(&context)
-        }
-    }
+/// The mounted state of attributes applied to content; keeps the modifier type internal.
+public struct _AttributedContentState {
+    let modifier: AttributeModifier
 }
 
 // MARK: - Attribute patching

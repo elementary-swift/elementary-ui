@@ -72,7 +72,7 @@ final class _ViewStateBuffer: ManagedBuffer<_ViewStateBuffer.Header, _ViewStateV
     }
 }
 
-/// The reactive values of one view's state, or of one environment modifier.
+/// The reactive values of one view's state.
 public struct _ViewStateStorage {
     @usableFromInline let buffer: _ViewStateBuffer
 

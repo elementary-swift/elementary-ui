@@ -19,6 +19,9 @@ enum SlotMember {
     /// A transition element at the slot's top level: it plays when the slot
     /// leaves, and is marked unmounted when the slot is dropped.
     case transition(_TransitionElement)
+    /// A node of the slot follows `source`, at `position` among its dependents,
+    /// until the slot is dropped.
+    case following(source: DependencyNode, position: Int32)
 }
 
 /// A slot's members in registration order, in one exactly sized allocation
@@ -50,6 +53,8 @@ struct SlotMembers: ~Copyable {
                     entry.unmount(&context)
                 case .transition(let element):
                     element.isUnmounted = true
+                case .following(let source, let position):
+                    source.dependents.remove(at: position)
                 }
             }
         }
