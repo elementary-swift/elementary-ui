@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794092669732,
+  "lastUpdate": 1794344460377,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -5913,6 +5913,90 @@ window.BENCHMARK_DATA = {
           {
             "name": "09_clear1k_x8",
             "value": 29.21,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.04,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.07,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.36,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5af2801481fbf148c085b0a1af8a044f85bac6fa",
+          "message": "implement @ViewEquatableIgnored (#163)\n\n* implement @ViewEquatableIgnored\n\n* trim @ViewEquatableIgnored docs\n\n* restore @ViewEquatableIgnored usage docs",
+          "timestamp": "2026-11-10T21:50:41+01:00",
+          "tree_id": "0f82130c79164255ea0d8ec082fad8ecaec4db13",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/5af2801481fbf148c085b0a1af8a044f85bac6fa"
+        },
+        "date": 1794344459612,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 81.06,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 99.03,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 160.01,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 10.64,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 47.34,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 35.1,
+            "unit": "ms"
+          },
+          {
+            "name": "07_create10k",
+            "value": 933.94,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 94.54,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 43.23,
             "unit": "ms"
           },
           {
