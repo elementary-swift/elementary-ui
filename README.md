@@ -94,7 +94,7 @@ Swift 6.4 or later with matching *Swift SDKs for WebAssembly* from [swift.org](h
 - support for combined and reversible transitions
 - more unit testing (FLIP handling, animations, reactivity, ...)
 - more built-in animatable CSS modifiers (colors, borders) (maybe in extra module with more SwiftUI shims?)
-- implement @ViewEquatableIgnored
+- ~~implement @ViewEquatableIgnored~~
 - ~~split out JavaScriptKit stuff in separate module to contain spread, maybe one day we can switch to faster interop somehow~~
 - ~~add basic docs, a good intro readme, and push a 0.1 out the door! (probably best to wait for Swift 6.2 to drop)~~
 - a router implementation (probably in extra module?)

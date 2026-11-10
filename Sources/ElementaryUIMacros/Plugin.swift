@@ -9,5 +9,6 @@ struct MacrosPlugin: CompilerPlugin {
         EntryMacro.self,
         EnvironmentKeyMacro.self,
         BindingMacro.self,
+        ViewEquatableIgnoredMacro.self,
     ]
 }

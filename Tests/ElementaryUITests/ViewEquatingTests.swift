@@ -48,6 +48,23 @@ struct ViewEquatingTests {
         #expect(!areEqual(ViewWithBinding(binding: closureBinding), ViewWithBinding(binding: closureBinding)))
         #expect(!areEqual(ViewWithBinding(binding: closureBinding), ViewWithBinding(binding: $state)))
     }
+
+    @Test
+    func neverEqualsViewWithClosure() {
+        #expect(!areEqual(ViewWithClosure(number: 42, action: {}), ViewWithClosure(number: 42, action: {})))
+    }
+
+    @Test
+    func ignoresViewEquatableIgnoredClosures() {
+        #expect(areEqual(ViewWithIgnoredClosure(number: 42, action: {}), ViewWithIgnoredClosure(number: 42, action: {})))
+        #expect(!areEqual(ViewWithIgnoredClosure(number: 42, action: {}), ViewWithIgnoredClosure(number: 43, action: {})))
+    }
+
+    @Test
+    func ignoresViewEquatableIgnoredProperties() {
+        #expect(areEqual(ViewWithIgnoredProperty(number: 42, ignored: 1), ViewWithIgnoredProperty(number: 42, ignored: 2)))
+        #expect(!areEqual(ViewWithIgnoredProperty(number: 42, ignored: 1), ViewWithIgnoredProperty(number: 43, ignored: 1)))
+    }
 }
 
 private func areEqual<V: __FunctionView>(_ a: V, _ b: V) -> Bool {
@@ -107,6 +124,30 @@ private struct ViewWithState {
 @View
 private struct ViewWithBinding {
     @Binding var binding: Int
+}
+
+@View
+private struct ViewWithClosure {
+    let number: Int
+    let action: () -> Void
+
+    var body: some View {}
+}
+
+@View
+private struct ViewWithIgnoredClosure {
+    let number: Int
+    @ViewEquatableIgnored let action: () -> Void
+
+    var body: some View {}
+}
+
+@View
+private struct ViewWithIgnoredProperty {
+    let number: Int
+    @ViewEquatableIgnored var ignored: Int
+
+    var body: some View {}
 }
 
 @Reactive
