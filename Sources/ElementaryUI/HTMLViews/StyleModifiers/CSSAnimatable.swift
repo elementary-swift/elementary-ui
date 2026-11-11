@@ -45,30 +45,32 @@ extension DOM.Animation.KeyframeEffect {
     }
 }
 
-final class CSSValueSource<Value: CSSAnimatable & Equatable> {
-    var dependencies: DependencyTracker = .init()
+final class CSSValueSource<Value: CSSAnimatable & Equatable>: DependencyNode {
     var value: Value
 
     init(value: consuming Value) {
         self.value = value
+        super.init()
     }
 
     func updateValue(_ value: consuming Value, _ context: inout _TransactionContext) {
         guard value != self.value else { return }
         self.value = value
-        dependencies.invalidateAll(&context)
+        dependents.invalidateAll(&context)
     }
 
-    func makeInstance() -> Instance {
-        Instance(source: self)
+    /// An instance that follows this source until the enclosing slot is dropped.
+    func makeInstance(_ context: inout _MountContext) -> Instance {
+        let instance = Instance(source: self)
+        context.follow(self, with: instance)
+        return instance
     }
 
-    final class Instance: Invalidateable, CSSAnimatedValueInstance {
+    /// Followed by the mounted modifier that combines its value.
+    final class Instance: DependencyNode, CSSAnimatedValueInstance {
         let source: CSSValueSource<Value>
         private var animatedValue: AnimatedValue<Value>
         var isDirty: Bool = false
-        /// Invalidates the mounted modifier that combines this value.
-        var invalidateTarget: ((inout _TransactionContext) -> Void)?
 
         var value: CSSAnimatedValue<Value.CSSValue>
 
@@ -76,16 +78,12 @@ final class CSSValueSource<Value: CSSAnimatable & Equatable> {
             self.source = source
             self.animatedValue = AnimatedValue(value: source.value)
             self.value = .single(animatedValue.presentation.cssValue)
-
-            source.dependencies.addDependency(self)
+            super.init()
         }
 
-        func setTarget(_ invalidate: @escaping (inout _TransactionContext) -> Void) {
-            precondition(invalidateTarget == nil, "target already set")
-            invalidateTarget = invalidate
-        }
+        var dependencySource: DependencyNode { self }
 
-        func invalidate(_ context: inout _TransactionContext) {
+        override func invalidate(_ context: inout _TransactionContext) {
             _ = animatedValue.setValueAndReturnIfAnimationWasStarted(
                 source.value,
                 transaction: context.transaction,
@@ -102,13 +100,12 @@ final class CSSValueSource<Value: CSSAnimatable & Equatable> {
 
         func unmount(_ context: inout _CommitContext) {
             animatedValue.cancelAnimation()
-            source.dependencies.removeDependency(self)
         }
 
         private func updateValue(_ context: inout _TransactionContext) {
             value = animatedValue.nextCSSAnimationValue(frameTime: context.currentFrameTime)
             isDirty = true
-            invalidateTarget?(&context)
+            dependents.invalidateAll(&context)
         }
     }
 }
@@ -117,7 +114,8 @@ protocol CSSAnimatedValueInstance<CSSValue> {
     associatedtype CSSValue: CSSPropertyValue
     var value: CSSAnimatedValue<CSSValue> { get }
     var isDirty: Bool { get nonmutating set }
-    func setTarget(_ invalidate: @escaping (inout _TransactionContext) -> Void)
+    /// What a mounted modifier follows to learn that `value` changed.
+    var dependencySource: DependencyNode { get }
     func unmount(_ context: inout _CommitContext)
     func progressAnimation(_ context: inout _TransactionContext)
 }
@@ -127,7 +125,7 @@ struct AnyCSSAnimatedValueInstance<CSSProperty: CSSPropertyValue>: CSSAnimatedVa
     let _getValue: () -> CSSAnimatedValue<CSSProperty>
     let _getIsDirty: () -> Bool
     let _setIsDirty: (Bool) -> Void
-    let _setTarget: (@escaping (inout _TransactionContext) -> Void) -> Void
+    let dependencySource: DependencyNode
     let _unmount: (inout _CommitContext) -> Void
 
     init<Instance: CSSAnimatedValueInstance>(_ value: Instance) where Instance.CSSValue == CSSProperty {
@@ -135,7 +133,7 @@ struct AnyCSSAnimatedValueInstance<CSSProperty: CSSPropertyValue>: CSSAnimatedVa
         self._getValue = { value.value }
         self._getIsDirty = { value.isDirty }
         self._setIsDirty = { value.isDirty = $0 }
-        self._setTarget = { value.setTarget($0) }
+        self.dependencySource = value.dependencySource
         self._unmount = { value.unmount(&$0) }
     }
 
@@ -154,10 +152,6 @@ struct AnyCSSAnimatedValueInstance<CSSProperty: CSSPropertyValue>: CSSAnimatedVa
         nonmutating set {
             _setIsDirty(newValue)
         }
-    }
-
-    func setTarget(_ invalidate: @escaping (inout _TransactionContext) -> Void) {
-        _setTarget(invalidate)
     }
 
     func unmount(_ context: inout _CommitContext) {

@@ -57,6 +57,12 @@ public struct _MountContext: ~Copyable, ~Escapable {
         members.append(.unmountable(entry))
     }
 
+    /// Makes `dependent` follow `source` until the enclosing slot is dropped.
+    /// `dependent` must live in that slot: it is not retained.
+    mutating func follow(_ source: DependencyNode, with dependent: DependencyNode) {
+        members.append(.following(source: source, position: source.dependents.add(dependent)))
+    }
+
     mutating func registerTransition(_ element: _TransitionElement) {
         precondition(acceptsTransitions)
         members.append(.transition(element))

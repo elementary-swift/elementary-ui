@@ -45,9 +45,9 @@ import Reactivity
 public struct Environment<V> {
     enum Storage {
         case value(V)
-        case slot(_ViewStateStorage)
+        case slot(EnvironmentSlot)
         case valueKey(EnvironmentValues._Key<V>)
-        case objectReader(ObjectStorageReader<V>, _ViewStateStorage?)
+        case objectReader(ObjectStorageReader<V>, EnvironmentSlot?)
     }
 
     var storage: Storage
@@ -72,7 +72,7 @@ public struct Environment<V> {
         case let .value(value):
             value
         case let .slot(slot):
-            slot[0, as: V.self]
+            slot.value[as: V.self]
         case let .valueKey(accessor):
             accessor.defaultValue
         case let .objectReader(reader, slot):
@@ -96,6 +96,16 @@ public struct Environment<V> {
             storage = .objectReader(reader, values.entries[reader.propertyID])
         default:
             fatalError("Cannot load environment value twice")
+        }
+    }
+
+    /// Makes `follower` follow the slot this property loaded, if it loaded one.
+    public func __follow(_ follower: borrowing _EnvironmentFollower, ctx: inout _MountContext) {
+        switch storage {
+        case let .slot(slot), let .objectReader(_, slot?):
+            follower.follow(slot, ctx: &ctx)
+        default:
+            break
         }
     }
 }
@@ -146,8 +156,8 @@ public struct EnvironmentValues {
     /// Do not create instances of this type manually. Use the ``#Key`` macro to create keys.
     public typealias _Key<Value> = _StorageKey<Self, Value>
 
-    /// The one-value storage of the innermost modifier setting each key.
-    var entries: [PropertyID: _ViewStateStorage] = [:]
+    /// The slot of the innermost modifier setting each key.
+    var entries: [PropertyID: EnvironmentSlot] = [:]
 
     package init() {}
 
@@ -157,10 +167,10 @@ public struct EnvironmentValues {
     /// - Returns: The value for the key, or the key's default value if not set.
     public subscript<Value>(key: _Key<Value>) -> Value {
         get {
-            entries[key.propertyID].map { $0[0, as: Value.self] } ?? key.defaultValue
+            entries[key.propertyID].map { $0.value[as: Value.self] } ?? key.defaultValue
         }
         set {
-            entries[key.propertyID] = _ViewStateStorage(newValue)
+            entries[key.propertyID] = EnvironmentSlot(newValue)
         }
     }
 }

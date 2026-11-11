@@ -39,6 +39,8 @@
     names: named(__initializeState),
     named(__restoreState),
     named(__applyContext),
+    named(__followsEnvironment),
+    named(__followEnvironment),
     named(__ViewState),
     named(_MountedNode),
     named(__arePropertiesEqual)
