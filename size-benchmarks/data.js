@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794749103364,
+  "lastUpdate": 1794772382800,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -14987,6 +14987,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 143.35,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fb585fc386ed4cfecbfef50a509a8dcb1d778b44",
+          "message": "unify modifier and environment dependency tracking (#162)\n\n* add dependency propagation characterization tests\n\n* unify modifier and environment dependencies in one unretained dependency graph\n\n* return a Dependency from addDependency and retain dependents",
+          "timestamp": "2026-11-15T20:42:02+01:00",
+          "tree_id": "cd2f6cc76ec0e4c5ba779ce60946497d504f6c16",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/fb585fc386ed4cfecbfef50a509a8dcb1d778b44"
+        },
+        "date": 1794772381621,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 171.3,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 97.82,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81.41,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 130.03,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 143.02,
             "unit": "kB"
           }
         ]
