@@ -1,21 +1,20 @@
 extension _AttributedContent: View where Content: View {}
 extension _AttributedContent: SVGView where Content: SVGView {}
 extension _AttributedContent: _Mountable where Content: _Mountable {
-    public typealias _MountedNode = _StatefulNode<_AttributeModifier, Content._MountedNode>
+    public typealias _MountedNode = _StatefulNode<_AttributedContentState, Content._MountedNode>
 
     public static func _makeNode(
         _ view: consuming Self,
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) -> _MountedNode {
-        let attributeModifier = _AttributeModifier(value: view._attributes, upstream: context.modifiers)
+        let attributeModifier = AttributeModifier(value: view._attributes, upstream: context.modifiers, ctx: &ctx)
 
         var context = copy context
-        context.modifiers[_AttributeModifier.key] = attributeModifier
+        context.modifiers[AttributeModifier.key] = attributeModifier
 
         let child = Content._makeNode(view.content, context: context, ctx: &ctx)
-        // Not mounted on an element, so the slot unmounts it.
-        return _MountedNode(registering: attributeModifier, child: child, ctx: &ctx)
+        return _MountedNode(state: _AttributedContentState(modifier: attributeModifier), child: child)
     }
 
     public static func _patchNode(
@@ -23,7 +22,7 @@ extension _AttributedContent: _Mountable where Content: _Mountable {
         node: inout _MountedNode,
         tx: inout _TransactionContext
     ) {
-        node.state.updateValue(view._attributes, &tx)
+        node.state.modifier.updateValue(view._attributes, &tx)
 
         Content._patchNode(
             view.content,

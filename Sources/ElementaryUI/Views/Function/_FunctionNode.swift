@@ -116,7 +116,7 @@ where
             ctx: &ctx
         )
 
-        if dependencies != nil || Function.boxesWithoutTracking {
+        if dependencies != nil || Value.__hasEnvironmentDependencies || Function.boxesWithoutTracking {
             let function = Storage.makeBox(
                 child: childNode,
                 value: lastValue,
@@ -124,6 +124,7 @@ where
                 dependencies: dependencies,
                 scheduler: ctx.scheduler
             )
+            Value.__addEnvironmentDependencies(lastValue, _EnvironmentDependent(node: function), ctx: &ctx)
             storage = .box(function)
         } else {
             storage = .inline(childNode)

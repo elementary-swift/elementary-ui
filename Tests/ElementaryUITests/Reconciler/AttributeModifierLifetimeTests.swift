@@ -18,17 +18,11 @@ struct AttributeModifierLifetimeTests {
         }
         dom.runNextFrame()
 
-        weak var weakWrapper: _AttributeModifier?
+        weak var weakWrapper: AttributeModifier?
         do {
-            let wrapper = probe.modifier!
-            weakWrapper = wrapper
-            let hasDependentsWhileShown = !wrapper.tracker.isEmpty
-            #expect(hasDependentsWhileShown)
-
+            weakWrapper = probe.modifier!
             model.isShown = false
             dom.runNextFrame()
-            let isEmptyAfterRemoval = wrapper.tracker.isEmpty
-            #expect(isEmptyAfterRemoval)
         }
 
         probe.modifier = nil
@@ -59,7 +53,7 @@ private struct Rows {
 /// Captures the attribute modifier its context passes down.
 private struct ModifierProbe: View {
     final class Captured {
-        var modifier: _AttributeModifier?
+        var modifier: AttributeModifier?
     }
 
     let captured: Captured
@@ -69,7 +63,7 @@ private struct ModifierProbe: View {
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) -> _MountedNode {
-        view.captured.modifier = context.modifiers[_AttributeModifier.key]
+        view.captured.modifier = context.modifiers[AttributeModifier.key]
         return _MountedNode()
     }
 

@@ -6,7 +6,7 @@ extension Scheduler {
         private var diffEngine: KeyedDiffEngine = .init()
 
         func withMountFrames<R: ~Copyable>(
-            _ body: (consuming ScratchFrame<LayoutNode>, consuming ScratchFrame<SlotMember>) -> R
+            _ body: (consuming ScratchFrame<LayoutNode>, consuming ScratchFrame<SlotRegistration>) -> R
         ) -> R {
             mount.withFrames(body)
         }
@@ -24,12 +24,12 @@ extension Scheduler {
 
     private struct MountBuffers: ~Copyable {
         var layoutNodes = ScratchBuffer<LayoutNode>(minimumCapacity: 16)
-        var members = ScratchBuffer<SlotMember>(minimumCapacity: 16)
+        var registrations = ScratchBuffer<SlotRegistration>(minimumCapacity: 16)
 
         mutating func withFrames<R: ~Copyable>(
-            _ body: (consuming ScratchFrame<LayoutNode>, consuming ScratchFrame<SlotMember>) -> R
+            _ body: (consuming ScratchFrame<LayoutNode>, consuming ScratchFrame<SlotRegistration>) -> R
         ) -> R {
-            body(layoutNodes.frame(), members.frame())
+            body(layoutNodes.frame(), registrations.frame())
         }
     }
 }

@@ -6,7 +6,7 @@ final class TransformModifier: DOMElementModifier {
 
     var value: CSSTransform.AnyFunction.ValueSource
 
-    init(value: consuming Value, upstream: borrowing DOMElementModifiers) {
+    init(value: consuming Value, upstream: borrowing DOMElementModifiers, ctx: inout _MountContext) {
         self.value = value.makeSource()
         self.upstream = upstream[TransformModifier.key]
         self.layerNumber = (self.upstream?.layerNumber ?? 0) + 1
@@ -32,10 +32,10 @@ final class TransformModifier: DOMElementModifier {
 
     private func makeLayers(_ context: inout _MountContext) -> [AnyCSSAnimatedValueInstance<CSSTransform>] {
         if var layers = upstream.map({ $0.makeLayers(&context) }) {
-            layers.append(AnyCSSAnimatedValueInstance(value.makeInstance()))
+            layers.append(AnyCSSAnimatedValueInstance(value.makeInstance(&context)))
             return layers
         } else {
-            return [AnyCSSAnimatedValueInstance(value.makeInstance())]
+            return [AnyCSSAnimatedValueInstance(value.makeInstance(&context))]
         }
     }
 }
@@ -46,14 +46,14 @@ extension CSSTransform.AnyFunction {
         case translation(CSSValueSource<CSSTransform.Translation>)
         case scale(CSSValueSource<CSSTransform.Scale>)
 
-        func makeInstance() -> AnyCSSAnimatedValueInstance<CSSTransform> {
+        func makeInstance(_ context: inout _MountContext) -> AnyCSSAnimatedValueInstance<CSSTransform> {
             switch self {
             case .rotation(let value):
-                AnyCSSAnimatedValueInstance(value.makeInstance())
+                AnyCSSAnimatedValueInstance(value.makeInstance(&context))
             case .translation(let value):
-                AnyCSSAnimatedValueInstance(value.makeInstance())
+                AnyCSSAnimatedValueInstance(value.makeInstance(&context))
             case .scale(let value):
-                AnyCSSAnimatedValueInstance(value.makeInstance())
+                AnyCSSAnimatedValueInstance(value.makeInstance(&context))
             }
         }
     }

@@ -13,7 +13,7 @@ final class EventHandlerModifier<Config: _DOMEventHandlerConfig>: DOMElementModi
 
     private var value: Value
 
-    init(value: consuming @escaping Value, upstream: borrowing DOMElementModifiers) {
+    init(value: consuming @escaping Value, upstream: borrowing DOMElementModifiers, ctx: inout _MountContext) {
         self.value = value
         self.upstream = upstream[EventHandlerModifier.key]
     }
@@ -67,7 +67,7 @@ final class EventActionModifier<Config: _DOMEventConfig>: DOMElementModifier {
     let upstream: EventActionModifier?
     private var value: Value
 
-    init(value: consuming @escaping Value, upstream: borrowing DOMElementModifiers) {
+    init(value: consuming @escaping Value, upstream: borrowing DOMElementModifiers, ctx: inout _MountContext) {
         self.value = value
         self.upstream = upstream[EventActionModifier.key]
     }

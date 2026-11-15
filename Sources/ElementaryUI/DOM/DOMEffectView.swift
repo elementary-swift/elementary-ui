@@ -12,7 +12,7 @@ struct DOMEffectView<Effect: DOMElementModifier, Wrapped: MarkupContent & _Mount
         context: borrowing _ViewContext,
         ctx: inout _MountContext
     ) -> _MountedNode {
-        let effect = Effect(value: view.value, upstream: context.modifiers)
+        let effect = Effect(value: view.value, upstream: context.modifiers, ctx: &ctx)
 
         var context = copy context
         context.modifiers[Effect.key] = effect

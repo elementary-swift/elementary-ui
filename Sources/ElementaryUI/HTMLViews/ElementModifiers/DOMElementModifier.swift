@@ -3,7 +3,7 @@ protocol DOMElementModifier: AnyObject {
 
     static var key: DOMElementModifiers.Key<Self> { get }
 
-    init(value: consuming Value, upstream: borrowing DOMElementModifiers)
+    init(value: consuming Value, upstream: borrowing DOMElementModifiers, ctx: inout _MountContext)
     func updateValue(_ value: consuming Value, _ context: inout _TransactionContext)
 
     /// Mounts on `node`, registering any unmount work on `context`.

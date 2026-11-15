@@ -186,7 +186,7 @@ private final class LoggingModifier: DOMElementModifier, Unmountable {
 
     private let value: Value
 
-    init(value: consuming Value, upstream: borrowing DOMElementModifiers) {
+    init(value: consuming Value, upstream: borrowing DOMElementModifiers, ctx: inout _MountContext) {
         self.value = value
     }
 

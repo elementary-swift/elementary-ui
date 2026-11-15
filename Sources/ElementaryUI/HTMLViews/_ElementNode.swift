@@ -38,13 +38,14 @@ public struct _ElementNode:
         }
 
         var childContext = copy context
-        if childContext.modifiers[_AttributeModifier.key] != nil {
-            let modifier = _AttributeModifier(
+        if childContext.modifiers[AttributeModifier.key] != nil {
+            let modifier = AttributeModifier(
                 value: attributes,
-                upstream: childContext.modifiers
+                upstream: childContext.modifiers,
+                ctx: &ctx
             )
             self.attributes = .mountModifier(modifier)
-            childContext.modifiers[_AttributeModifier.key] = modifier
+            childContext.modifiers[AttributeModifier.key] = modifier
         } else {
             self.attributes = .mountInline(
                 attributes,
@@ -87,7 +88,7 @@ private extension _ViewContext {
 struct _ElementAttributes {
     private enum Storage {
         case inline(node: DOM.Node, lastApplied: _AttributeStorage)
-        case modifier(_AttributeModifier)
+        case modifier(AttributeModifier)
     }
 
     private var storage: Storage
@@ -108,7 +109,7 @@ struct _ElementAttributes {
     }
 
     static func mountModifier(
-        _ modifier: consuming _AttributeModifier
+        _ modifier: consuming AttributeModifier
     ) -> Self {
         Self(storage: .modifier(modifier))
     }
