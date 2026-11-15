@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794344460377,
+  "lastUpdate": 1794772240122,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -5997,6 +5997,90 @@ window.BENCHMARK_DATA = {
           {
             "name": "09_clear1k_x8",
             "value": 43.23,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.04,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.07,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.36,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "52261246+sliemeobn@users.noreply.github.com",
+            "name": "Simon Leeb",
+            "username": "sliemeobn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fb585fc386ed4cfecbfef50a509a8dcb1d778b44",
+          "message": "unify modifier and environment dependency tracking (#162)\n\n* add dependency propagation characterization tests\n\n* unify modifier and environment dependencies in one unretained dependency graph\n\n* return a Dependency from addDependency and retain dependents",
+          "timestamp": "2026-11-15T20:42:02+01:00",
+          "tree_id": "cd2f6cc76ec0e4c5ba779ce60946497d504f6c16",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/fb585fc386ed4cfecbfef50a509a8dcb1d778b44"
+        },
+        "date": 1794772239731,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 62.13,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 74.95,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 124.61,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 9.33,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 36.16,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 24.56,
+            "unit": "ms"
+          },
+          {
+            "name": "07_create10k",
+            "value": 732.94,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 75.64,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 34.84,
             "unit": "ms"
           },
           {
