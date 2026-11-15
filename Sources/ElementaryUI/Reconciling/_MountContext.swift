@@ -3,12 +3,12 @@ import SpanPreview
 
 /// Collects what a mount produces into scratch frames, then hands it to its
 /// owner: an element takes its children's layout nodes, a slot takes its
-/// layout nodes and members, the root takes both.
+/// layout nodes and registrations, the root takes both.
 ///
-/// An element's children pass their members on to the enclosing slot.
+/// An element's children pass their registrations on to the enclosing slot.
 public struct _MountContext: ~Copyable, ~Escapable {
     private var layoutNodes: ScratchFrame<LayoutNode>
-    private var members: ScratchFrame<SlotMember>
+    private var registrations: ScratchFrame<SlotRegistration>
 
     /// Only a slot's top level may hold transition elements: a slot is what
     /// defers its removal while they play.
@@ -20,10 +20,10 @@ public struct _MountContext: ~Copyable, ~Escapable {
     let currentFrameTime: Double
     let transaction: Transaction
 
-    @_lifetime(copy layoutNodes, copy members)
+    @_lifetime(copy layoutNodes, copy registrations)
     init(
         layoutNodes: consuming ScratchFrame<LayoutNode>,
-        members: consuming ScratchFrame<SlotMember>,
+        registrations: consuming ScratchFrame<SlotRegistration>,
         acceptsTransitions: Bool = false,
         dom: DOMInteractor,
         scheduler: Scheduler,
@@ -31,7 +31,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
         transaction: Transaction
     ) {
         self.layoutNodes = layoutNodes
-        self.members = members
+        self.registrations = registrations
         self.acceptsTransitions = acceptsTransitions
         self.dom = dom
         self.scheduler = scheduler
@@ -54,18 +54,17 @@ public struct _MountContext: ~Copyable, ~Escapable {
     /// Registers unmount work with the enclosing slot. Register after mounting
     /// children so the slot unmounts children first.
     mutating func registerUnmount(_ entry: any Unmountable) {
-        members.append(.unmountable(entry))
+        registrations.append(.unmountable(entry))
     }
 
-    /// Makes `dependent` follow `source` until the enclosing slot is dropped.
-    /// `dependent` must live in that slot: it is not retained.
-    mutating func follow(_ source: DependencyNode, with dependent: DependencyNode) {
-        members.append(.following(source: source, position: source.dependents.add(dependent)))
+    /// Makes `dependent` depend on `source` until the enclosing slot is dropped.
+    mutating func addDependency(of dependent: DependencyNode, on source: DependencyNode) {
+        registrations.append(.dependency(dependent.addDependency(on: source)))
     }
 
     mutating func registerTransition(_ element: _TransitionElement) {
         precondition(acceptsTransitions)
-        members.append(.transition(element))
+        registrations.append(.transition(element))
     }
 
     // MARK: nested contexts
@@ -77,7 +76,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
     }
 
     /// Mounts one structural slot and packages its node, layout nodes, and
-    /// members.
+    /// registrations.
     // inline(never): keeps slot mounting out of every mount site (code size)
     @inline(never)
     mutating func mountSlot(
@@ -95,7 +94,7 @@ public struct _MountContext: ~Copyable, ~Escapable {
     private mutating func nested(acceptsTransitions: Bool) -> _MountContext {
         _MountContext(
             layoutNodes: layoutNodes.nested(),
-            members: members.nested(),
+            registrations: registrations.nested(),
             acceptsTransitions: acceptsTransitions,
             dom: dom,
             scheduler: scheduler,
@@ -115,24 +114,24 @@ public struct _MountContext: ~Copyable, ~Escapable {
             key: key,
             node: node,
             layoutNodes: layoutNodes,
-            members: SlotMembers(members.take())
+            registrations: SlotRegistrations(registrations.take())
         )
     }
 
-    /// Mounts the root's layout into `domNode` and hands over its members.
-    mutating func mountRoot(in domNode: DOM.Node) -> SlotMembers {
+    /// Mounts the root's layout into `domNode` and hands over its registrations.
+    mutating func mountRoot(in domNode: DOM.Node) -> SlotRegistrations {
         mountLayout(in: domNode, observers: [], ownsAllChildren: false)
-        return SlotMembers(members.take())
+        return SlotRegistrations(registrations.take())
     }
 
-    /// Mounts an element's children into `domNode`. Their members stay with
+    /// Mounts an element's children into `domNode`. Their registrations stay with
     /// the enclosing slot.
     consuming func mountInDOMNode(
         _ domNode: DOM.Node,
         observers: [DOMLayoutObserver] = []
     ) {
         mountLayout(in: domNode, observers: observers, ownsAllChildren: true)
-        members.passToParent()
+        registrations.passToParent()
     }
 
     func withCommitContext<R>(_ body: (inout _CommitContext) -> R) -> R {

@@ -22,13 +22,13 @@ final class AttributeModifier: DependencyNode, DOMElementModifier {
         return combined
     }
 
-    /// Follows the inherited modifier until the enclosing slot is dropped.
+    /// Depends on the inherited modifier until the enclosing slot is dropped.
     init(value: consuming Value, upstream: borrowing DOMElementModifiers, ctx: inout _MountContext) {
         self.lastValue = value
         self.upstream = upstream[AttributeModifier.key]
         super.init()
         if let upstream = self.upstream {
-            ctx.follow(upstream, with: self)
+            ctx.addDependency(of: self, on: upstream)
         }
     }
 
@@ -51,7 +51,7 @@ final class AttributeModifier: DependencyNode, DOMElementModifier {
     }
 
     override func invalidate(_ context: inout _TransactionContext) {
-        dependents.invalidateAll(&context)
+        invalidateDependents(&context)
         guard mountedNode != nil, !isDirty else { return }
         logTrace("invalidating attribute modifier")
         isDirty = true

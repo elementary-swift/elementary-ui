@@ -140,10 +140,10 @@ final class Scheduler {
     ) -> R {
         let currentFrameTime = tx.currentFrameTime
         let transaction = tx.transaction
-        return scratch.withMountFrames { layoutNodes, members in
+        return scratch.withMountFrames { layoutNodes, registrations in
             var ctx = _MountContext(
                 layoutNodes: layoutNodes,
-                members: members,
+                registrations: registrations,
                 dom: dom,
                 scheduler: self,
                 currentFrameTime: currentFrameTime,

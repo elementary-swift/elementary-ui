@@ -1,4 +1,4 @@
-/// The value one environment modifier provides, and the views that follow it.
+/// The value one environment modifier provides, and the views that depend on it.
 final class EnvironmentSlot: DependencyNode {
     var value: UniqueAny
 
@@ -8,14 +8,14 @@ final class EnvironmentSlot: DependencyNode {
     }
 }
 
-/// The node that reruns a view, for its `@Environment` properties to make it follow the
-/// slots they loaded.
-public struct _EnvironmentFollower {
+/// The node that reruns a view, for its `@Environment` properties to make it depend on
+/// the slots they loaded.
+public struct _EnvironmentDependent {
     let node: DependencyNode
 
     // inline(never): one copy for all `Environment<V>` (code size)
     @inline(never)
-    func follow(_ slot: EnvironmentSlot, ctx: inout _MountContext) {
-        ctx.follow(slot, with: node)
+    func addDependency(on slot: EnvironmentSlot, ctx: inout _MountContext) {
+        ctx.addDependency(of: node, on: slot)
     }
 }

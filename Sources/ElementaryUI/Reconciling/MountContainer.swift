@@ -217,7 +217,7 @@ extension MountContainer {
 
 extension MountContainer {
     /// One keyed child: its mounted node, the layout nodes it produced, and
-    /// the members (unmount work, transition elements, followed sources) registered while
+    /// the registrations (unmount work, transition elements, dependencies) made while
     /// mounting it.
     struct Slot: ~Copyable {
         enum Placement {
@@ -229,7 +229,7 @@ extension MountContainer {
         let key: _ViewKey
         var node: UniqueAny
         var layoutNodes: SlotLayoutNodes
-        var members: SlotMembers
+        var registrations: SlotRegistrations
         var placement: Placement
         var pendingRemoval: _PendingRemoval?
         /// Set when the current patch mounted this slot: its node is already up to date.
@@ -239,12 +239,12 @@ extension MountContainer {
             key: _ViewKey,
             node: consuming UniqueAny,
             layoutNodes: consuming SlotLayoutNodes,
-            members: consuming SlotMembers
+            registrations: consuming SlotRegistrations
         ) {
             self.key = key
             self.node = node
             self.layoutNodes = layoutNodes
-            self.members = members
+            self.registrations = registrations
             self.placement = .unchanged
             self.pendingRemoval = nil
         }
@@ -326,11 +326,11 @@ extension MountContainer {
             if placement != .added {
                 layoutNodes.collect(into: &ops, context: &context, op: .removed)
             }
-            members.unmount(&context)
+            registrations.unmount(&context)
         }
 
         consuming func unmount(_ context: inout _CommitContext) {
-            members.unmount(&context)
+            registrations.unmount(&context)
         }
     }
 }

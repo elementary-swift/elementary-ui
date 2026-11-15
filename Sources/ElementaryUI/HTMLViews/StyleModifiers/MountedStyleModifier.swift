@@ -24,7 +24,7 @@ final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: MountedSty
         super.init()
 
         for value in values {
-            context.follow(value.dependencySource, with: self)
+            context.addDependency(of: self, on: value.dependencySource)
         }
 
         if let combined = reduceCombinedSingleValue() {

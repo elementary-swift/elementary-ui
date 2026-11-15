@@ -77,7 +77,7 @@ struct DependencyPropagationTests {
         #expect(tracker.calls == ["conditional", "reader 0: 1", "reader 1: 1", "reader 2: 1"])
     }
 
-    // Views follow the environment values they load, whether or not their body reads them.
+    // Views depend on the environment values they load, whether or not their body reads them.
     @Test
     func environmentChangeRerunsViewsThatLoadButDoNotReadTheValue() {
         let model = PropagationModel()

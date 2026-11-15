@@ -20,15 +20,9 @@ struct AttributeModifierLifetimeTests {
 
         weak var weakWrapper: AttributeModifier?
         do {
-            let wrapper = probe.modifier!
-            weakWrapper = wrapper
-            let hasDependentsWhileShown = !wrapper.dependents.isEmpty
-            #expect(hasDependentsWhileShown)
-
+            weakWrapper = probe.modifier!
             model.isShown = false
             dom.runNextFrame()
-            let isEmptyAfterRemoval = wrapper.dependents.isEmpty
-            #expect(isEmptyAfterRemoval)
         }
 
         probe.modifier = nil

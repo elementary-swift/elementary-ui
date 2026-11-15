@@ -56,17 +56,17 @@ final class CSSValueSource<Value: CSSAnimatable & Equatable>: DependencyNode {
     func updateValue(_ value: consuming Value, _ context: inout _TransactionContext) {
         guard value != self.value else { return }
         self.value = value
-        dependents.invalidateAll(&context)
+        invalidateDependents(&context)
     }
 
-    /// An instance that follows this source until the enclosing slot is dropped.
+    /// An instance that depends on this source until the enclosing slot is dropped.
     func makeInstance(_ context: inout _MountContext) -> Instance {
         let instance = Instance(source: self)
-        context.follow(self, with: instance)
+        context.addDependency(of: instance, on: self)
         return instance
     }
 
-    /// Followed by the mounted modifier that combines its value.
+    /// The mounted modifier that combines its value depends on it.
     final class Instance: DependencyNode, CSSAnimatedValueInstance {
         let source: CSSValueSource<Value>
         private var animatedValue: AnimatedValue<Value>
@@ -105,7 +105,7 @@ final class CSSValueSource<Value: CSSAnimatable & Equatable>: DependencyNode {
         private func updateValue(_ context: inout _TransactionContext) {
             value = animatedValue.nextCSSAnimationValue(frameTime: context.currentFrameTime)
             isDirty = true
-            dependents.invalidateAll(&context)
+            invalidateDependents(&context)
         }
     }
 }
@@ -114,7 +114,7 @@ protocol CSSAnimatedValueInstance<CSSValue> {
     associatedtype CSSValue: CSSPropertyValue
     var value: CSSAnimatedValue<CSSValue> { get }
     var isDirty: Bool { get nonmutating set }
-    /// What a mounted modifier follows to learn that `value` changed.
+    /// What a mounted modifier depends on to learn that `value` changed.
     var dependencySource: DependencyNode { get }
     func unmount(_ context: inout _CommitContext)
     func progressAnimation(_ context: inout _TransactionContext)

@@ -6,9 +6,9 @@ public protocol __FunctionView: _Mountable, MarkupContent where Body: _Mountable
 
     static func __applyContext(_ context: borrowing _ViewContext, to view: inout Self)
     /// Whether the view has `@Environment` properties: it then reruns on its own when they change.
-    static var __followsEnvironment: Bool { get }
-    /// Makes `follower` follow the environment slots `view` loaded when its context was applied.
-    static func __followEnvironment(_ view: borrowing Self, _ follower: borrowing _EnvironmentFollower, ctx: inout _MountContext)
+    static var __hasEnvironmentDependencies: Bool { get }
+    /// Makes `dependent` depend on the environment slots `view` loaded when its context was applied.
+    static func __addEnvironmentDependencies(_ view: borrowing Self, _ dependent: borrowing _EnvironmentDependent, ctx: inout _MountContext)
 
     static func __areEqual(a: borrowing Self, b: borrowing Self) -> Bool
 }
@@ -33,8 +33,9 @@ public extension __FunctionView {
 }
 
 public extension __FunctionView {
-    static var __followsEnvironment: Bool { false }
-    static func __followEnvironment(_ view: borrowing Self, _ follower: borrowing _EnvironmentFollower, ctx: inout _MountContext) {}
+    static var __hasEnvironmentDependencies: Bool { false }
+    static func __addEnvironmentDependencies(_ view: borrowing Self, _ dependent: borrowing _EnvironmentDependent, ctx: inout _MountContext)
+    {}
     static func __initializeState(from view: borrowing Self) {}
     static func __restoreState(_ storage: __ViewState, in view: inout Self) {}
 }

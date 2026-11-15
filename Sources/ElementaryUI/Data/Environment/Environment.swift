@@ -99,11 +99,11 @@ public struct Environment<V> {
         }
     }
 
-    /// Makes `follower` follow the slot this property loaded, if it loaded one.
-    public func __follow(_ follower: borrowing _EnvironmentFollower, ctx: inout _MountContext) {
+    /// Makes `dependent` depend on the slot this property loaded, if it loaded one.
+    public func __addDependency(of dependent: borrowing _EnvironmentDependent, ctx: inout _MountContext) {
         switch storage {
         case let .slot(slot), let .objectReader(_, slot?):
-            follower.follow(slot, ctx: &ctx)
+            dependent.addDependency(on: slot, ctx: &ctx)
         default:
             break
         }

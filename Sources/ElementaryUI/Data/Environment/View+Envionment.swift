@@ -157,7 +157,7 @@ public struct _EnvironmentView<V, Wrapped: View>: View {
         let isUnchanged = view.isEqual?(slot.value[as: V.self], view.value) ?? false
         slot.value[as: V.self] = view.value
         if !isUnchanged {
-            slot.dependents.invalidateAll(&tx)
+            slot.invalidateDependents(&tx)
         }
 
         Wrapped._patchNode(view.wrapped, node: &node.child, tx: &tx)

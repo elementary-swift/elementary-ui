@@ -2,53 +2,56 @@ import Testing
 
 @testable import ElementaryUI
 
-struct DependentsTests {
+struct DependencyNodeTests {
     @Test func removesInAnyOrderAndReusesVacancies() {
         let log = InvalidationLog()
         let source = DependencyNode()
-        let dependents = (0..<8).map { Dependent($0, log) }
-        let positions = dependents[0..<6].map { source.dependents.add($0) }
+        let dependents = (0..<10).map { Dependent($0, log) }
+        for dependent in dependents[0..<6] {
+            dependent.attach(to: source)
+        }
 
         for index in [3, 2, 5, 4] {
-            source.dependents.remove(at: positions[index])
+            dependents[index].removeDependency()
         }
         #expect(invalidated(by: source, log) == [0, 1])
 
         // The most recent vacancy is taken first.
-        let later = dependents[6..<8].map { source.dependents.add($0) }
-        #expect(later == [positions[4], positions[5]])
-        #expect(invalidated(by: source, log) == [0, 1, 6, 7])
+        for dependent in dependents[6..<10] {
+            dependent.attach(to: source)
+        }
+        #expect(invalidated(by: source, log) == [0, 1, 8, 9, 6, 7])
     }
 
-    @Test func refillsTheFirstPositionAndStartsOverWhenEmpty() {
+    @Test func refillsTheFirstPosition() {
         let log = InvalidationLog()
         let source = DependencyNode()
         let dependents = (0..<6).map { Dependent($0, log) }
-        let positions = dependents[0..<3].map { source.dependents.add($0) }
+        for dependent in dependents[0..<3] {
+            dependent.attach(to: source)
+        }
 
-        source.dependents.remove(at: positions[0])
+        dependents[0].removeDependency()
         #expect(invalidated(by: source, log) == [1, 2])
 
-        let refilled = source.dependents.add(dependents[3])
-        #expect(refilled == positions[0])
+        dependents[3].attach(to: source)
         #expect(invalidated(by: source, log) == [3, 1, 2])
 
-        for position in [positions[2], refilled, positions[1]] {
-            source.dependents.remove(at: position)
+        for index in [2, 3, 1] {
+            dependents[index].removeDependency()
         }
-        let isEmpty = source.dependents.isEmpty
-        #expect(isEmpty)
         #expect(invalidated(by: source, log) == [])
 
-        let again = dependents[4..<6].map { source.dependents.add($0) }
-        #expect(again == Array(positions[0..<2]))
+        for dependent in dependents[4..<6] {
+            dependent.attach(to: source)
+        }
         #expect(invalidated(by: source, log) == [4, 5])
     }
 
     private func invalidated(by source: DependencyNode, _ log: InvalidationLog) -> [Int] {
         log.ids = []
         var context = _TransactionContext(scheduler: Scheduler(dom: TestDOM()), currentTime: 0)
-        source.dependents.invalidateAll(&context)
+        source.invalidateDependents(&context)
         context.drain()
         return log.ids
     }
@@ -61,10 +64,19 @@ private final class InvalidationLog {
 private final class Dependent: DependencyNode {
     let id: Int
     let log: InvalidationLog
+    private var dependency: Dependency?
 
     init(_ id: Int, _ log: InvalidationLog) {
         self.id = id
         self.log = log
+    }
+
+    func attach(to source: DependencyNode) {
+        dependency = addDependency(on: source)
+    }
+
+    func removeDependency() {
+        dependency.take()!.remove()
     }
 
     override func invalidate(_ context: inout _TransactionContext) {

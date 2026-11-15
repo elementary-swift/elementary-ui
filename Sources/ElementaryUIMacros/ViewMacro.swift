@@ -59,15 +59,15 @@ extension ViewMacro: ExtensionMacro {
                 )
             )
 
-            // add following environment properties
+            // add environment dependencies
             if !environmentNames.isEmpty {
-                let environmentFollows = environmentNames.map { "view._\($0).__follow(follower, ctx: &ctx)" }
+                let environmentDependencies = environmentNames.map { "view._\($0).__addDependency(of: dependent, ctx: &ctx)" }
                 decls.append(
                     DeclSyntax(
                         """
-                        \(access)static var __followsEnvironment: Bool { true }
-                        \(access)static func __followEnvironment(_ view: borrowing Self, _ follower: borrowing _EnvironmentFollower, ctx: inout _MountContext) {
-                            \(raw: environmentFollows.joined(separator: "\n"))
+                        \(access)static var __hasEnvironmentDependencies: Bool { true }
+                        \(access)static func __addEnvironmentDependencies(_ view: borrowing Self, _ dependent: borrowing _EnvironmentDependent, ctx: inout _MountContext) {
+                            \(raw: environmentDependencies.joined(separator: "\n"))
                         }
                         """
                     )
