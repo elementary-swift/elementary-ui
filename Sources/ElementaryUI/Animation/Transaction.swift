@@ -28,9 +28,6 @@
 /// ```
 public struct Transaction {
     // NOTE: do not let this get too big, it is passed around a lot
-    // TODO: either main actor or thread local for multi-threaded environments
-    internal static var _current: Transaction? = nil
-    internal static var lastId: UInt32 = 0
 
     let _id: UInt32
     let _animationTracker: AnimationTracker = .init()
