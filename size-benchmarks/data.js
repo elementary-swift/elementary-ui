@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794772382800,
+  "lastUpdate": 1794839924615,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -15036,6 +15036,53 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 143.02,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Simon Leeb",
+            "username": "sliemeobn",
+            "email": "52261246+sliemeobn@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "fb585fc386ed4cfecbfef50a509a8dcb1d778b44",
+          "message": "unify modifier and environment dependency tracking (#162)\n\n* add dependency propagation characterization tests\n\n* unify modifier and environment dependencies in one unretained dependency graph\n\n* return a Dependency from addDependency and retain dependents",
+          "timestamp": "2026-11-15T19:42:02Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/fb585fc386ed4cfecbfef50a509a8dcb1d778b44"
+        },
+        "date": 1794839923753,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 171.28,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 97.81,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81.4,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 130.03,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 143.01,
             "unit": "kB"
           }
         ]
