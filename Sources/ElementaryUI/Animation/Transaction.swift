@@ -1,3 +1,5 @@
+import _ThreadLocal
+
 /// A context for applying animations and other changes to the view hierarchy.
 ///
 /// `Transaction` defines how state changes are applied to views, including
@@ -29,7 +31,6 @@
 public struct Transaction {
     // NOTE: do not let this get too big, it is passed around a lot
 
-    let _id: UInt32
     let _animationTracker: AnimationTracker = .init()
 
     /// The animation to apply to state changes made within this transaction.
@@ -44,8 +45,6 @@ public struct Transaction {
     ///
     /// - Parameter animation: The animation to apply to state changes, or `nil` for no animation.
     public init(animation: Animation? = nil) {
-        defer { Transaction.lastId &+= 1 }
-        self._id = Transaction.lastId
         self.animation = animation
     }
 
@@ -99,12 +98,12 @@ public func withTransaction<Result, Failure>(
     _ transaction: Transaction,
     _ body: () throws(Failure) -> Result
 ) throws(Failure) -> Result {
-    let previous = Transaction._current
-    Transaction._current = transaction
-    defer {
-        Transaction._current = previous
+    try withUnsafePointer(to: transaction) { (pointer) throws(Failure) -> Result in
+        let previous = Transaction.slot.value
+        Transaction.slot.value = UnsafeMutableRawPointer(mutating: pointer)
+        defer { Transaction.slot.value = previous }
+        return try body()
     }
-    return try body()
 }
 
 /// Executes a closure with animation.
@@ -283,5 +282,13 @@ final class AnimationTracker {
         for callback in removalCallbacks {
             callback()
         }
+    }
+}
+
+extension Transaction {
+    static let slot = ThreadLocalSlot()
+
+    static var _current: Transaction? {
+        slot.value?.assumingMemoryBound(to: Transaction.self).pointee
     }
 }

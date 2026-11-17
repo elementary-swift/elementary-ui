@@ -30,6 +30,12 @@ let package = Package(
             ]
         ),
         .target(
+            name: "_ThreadLocal",
+            swiftSettings: [
+                .treatWarning("EmbeddedRestrictions", as: .warning)
+            ]
+        ),
+        .target(
             name: "ElementaryUI",
             dependencies: [
                 .product(name: "Elementary", package: "elementary"),
@@ -42,6 +48,7 @@ let package = Package(
                 .target(name: "_UTF8Internals"),
                 .target(name: "Reactivity"),
                 .target(name: "_ElementaryMath"),
+                .target(name: "_ThreadLocal"),
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v5),
@@ -138,6 +145,7 @@ let package = Package(
                 .product(name: "BasicContainers", package: "swift-collections"),
                 "ReactivityMacros",
                 "_UTF8Internals",
+                "_ThreadLocal",
             ],
             swiftSettings: [
                 .treatWarning("EmbeddedRestrictions", as: .warning)

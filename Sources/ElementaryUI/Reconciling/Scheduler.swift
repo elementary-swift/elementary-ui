@@ -79,7 +79,7 @@ final class Scheduler {
     func invalidateFunction(_ function: SchedulableNode) {
         ensureUpdateCycleScheduled()
 
-        if currentTransaction?._id != Transaction._current?._id {
+        if currentTransaction?._animationTracker !== Transaction._current?._animationTracker {
             reconcile(frameTime: dom.getCurrentTime())
             currentTransaction = Transaction._current
         }

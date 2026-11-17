@@ -41,6 +41,44 @@ struct TransactionTests {
         dom.runNextFrame()
         #expect(removed.entries == ["p"])
     }
+
+    @Test
+    func nestedTransactionAppliesOnlyInsideAndOuterOneIsRestored() {
+        let state = TransactionTestState()
+        let removed = TransactionTestLog()
+        let dom = TestDOM()
+        dom.mount { FadingPair(state: state, removed: removed) }
+        dom.runNextFrame()
+
+        withAnimation(.linear(duration: 1)) {
+            withTransaction(Transaction()) { state.visible = false }
+            state.otherVisible = false
+        }
+        dom.runNextFrame()
+        #expect(removed.entries == ["first"])
+
+        dom.finishAnimations()
+        dom.runNextFrame()
+        #expect(removed.entries == ["first", "second"])
+    }
+
+    @Test
+    func consecutiveTransactionsInOneTickAreKeptApart() {
+        let state = TransactionTestState()
+        let removed = TransactionTestLog()
+        let dom = TestDOM()
+        dom.mount { FadingPair(state: state, removed: removed) }
+        dom.runNextFrame()
+
+        withTransaction(Transaction()) { state.visible = false }
+        withAnimation(.linear(duration: 1)) { state.otherVisible = false }
+        dom.runNextFrame()
+        #expect(removed.entries == ["first"])
+
+        dom.finishAnimations()
+        dom.runNextFrame()
+        #expect(removed.entries == ["first", "second"])
+    }
 }
 
 private final class TransactionTestLog {
@@ -50,4 +88,22 @@ private final class TransactionTestLog {
 @Reactive
 private final class TransactionTestState {
     var visible = true
+    var otherVisible = true
+}
+
+@View
+private struct FadingPair {
+    var state: TransactionTestState
+    var removed: TransactionTestLog
+
+    var body: some View {
+        if state.visible {
+            div { p {}.onDisappear { removed.entries.append("first") } }
+                .transition(.fade)
+        }
+        if state.otherVisible {
+            div { p {}.onDisappear { removed.entries.append("second") } }
+                .transition(.fade)
+        }
+    }
 }
