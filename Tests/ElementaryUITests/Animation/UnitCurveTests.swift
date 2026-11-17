@@ -2,8 +2,6 @@ import Testing
 
 @testable import ElementaryUI
 
-// Reference values are CSS `cubic-bezier()` outputs: for elapsed fraction t, solve x(s) = t
-// for the curve parameter s and take y(s). They were computed by bisection in double precision.
 @Suite
 struct UnitCurveTests {
     @Test
@@ -103,6 +101,30 @@ struct UnitCurveTests {
         for t in [0.0, 0.5, 1.0] {
             #expect(points.curve.velocity(at: t).isFinite, "t = \(t)")
         }
+    }
+
+    @Test(arguments: [
+        (ControlPoints(-0.5, 0.2, 1.5, 0.8), ControlPoints(0, 0.2, 1, 0.8)),
+        (ControlPoints(1.4, 0, -0.3, 1), ControlPoints(1, 0, 0, 1)),
+    ])
+    func xControlPointsAreClampedToUnitInterval(given: ControlPoints, clamped: ControlPoints) {
+        for t in stride(from: 0.0, through: 1.0, by: 0.05) {
+            #expect(given.curve.value(at: t) == clamped.curve.value(at: t), "t = \(t)")
+        }
+    }
+
+    @Test
+    func springInterruptingAnEaseInheritsVelocityPerSecond() {
+        var context = AnimationContext()
+        let merged = Animation.smooth.shouldMerge(
+            previous: .easeInOut(duration: 2),
+            value: Float(10).animatableVector,
+            time: 1,
+            context: &context
+        )
+        #expect(merged)
+        let velocity = context.initialVelocity.map { Float(_animatableVector: $0) }
+        #expect(velocity.map { isClose($0, 10 * 1.724138 / 2) } == true)
     }
 
     @Test

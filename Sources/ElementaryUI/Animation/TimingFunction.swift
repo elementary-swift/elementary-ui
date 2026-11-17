@@ -30,7 +30,6 @@ public struct UnitCurve {
             if dxds > BezierAxis.flatSlope {
                 return y.slope(at: s) / dxds
             }
-            // x is momentarily flat in s; step a little into the curve and take the chord.
             let step: Float = 1e-3
             let s0 = max(s - step, 0)
             let s1 = min(s + step, 1)
@@ -44,7 +43,6 @@ public struct UnitCurve {
     }
 }
 
-/// One coordinate of a cubic bezier from (0, 0) to (1, 1), in polynomial form.
 private struct BezierAxis {
     static let flatSlope: Float = 1e-6
 
@@ -66,8 +64,6 @@ private struct BezierAxis {
         (3 * a * s + 2 * b) * s + c
     }
 
-    /// The parameter s in [0, 1] where this axis reaches `target`; assumes the axis is monotonic,
-    /// which CSS guarantees for x by keeping x1 and x2 in [0, 1].
     func parameter(forValue target: Float) -> Float {
         let tolerance: Float = 1e-6
         var s = target
@@ -98,7 +94,7 @@ extension UnitCurve {
     public static let linear: Self = .init(storage: .linear)
 
     public static func bezier(x1: Float, y1: Float, x2: Float, y2: Float) -> Self {
-        .init(storage: .bezier(x1: x1, y1: y1, x2: x2, y2: y2))
+        .init(storage: .bezier(x1: min(max(x1, 0), 1), y1: y1, x2: min(max(x2, 0), 1), y2: y2))
     }
 
     public static let easeInOut: Self = .bezier(x1: 0.42, y1: 0.0, x2: 0.58, y2: 1.0)
@@ -123,12 +119,12 @@ extension TimingFunction: CustomAnimation {
     }
 
     func velocity(value: AnimatableVector, time: Double, context: AnimationContext) -> AnimatableVector? {
-        guard time <= duration else {
+        guard time <= duration, duration > 0 else {
             return nil
         }
 
         let t = time / duration
-        let velocityFactor = curve.velocity(at: t)
+        let velocityFactor = curve.velocity(at: t) / Float(duration)
         return value * velocityFactor
     }
 }
