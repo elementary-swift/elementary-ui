@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794996066164,
+  "lastUpdate": 1794997603426,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -15179,6 +15179,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 143.01,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "klaus@vithanco.com",
+            "name": "Vithanco",
+            "username": "Vithanco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7eee9d9c4ce1ec967394306f2e98004d87467ea2",
+          "message": "Keep the current transaction per thread to fix flaky transition tests (#165)\n\n* keep the current transaction per thread on multithreaded runtimes\n\nTransaction._current was a process-wide static, so a state change on one\nthread could pick up another thread's animation. This made transition\ntests flaky under parallel test execution.\n\n* share a ThreadLocalSlot and keep the transaction as a scoped pointer\n\nwithTransaction now stores a pointer to its transaction for the duration\nof the body, so there is no box and no key destructor. The scheduler\ncompares animation trackers instead of ids, which removes the lastId\ncounter. Reactivity uses the same slot, which adds Musl support there.\n\n* store the slot value inline on single-threaded runtimes\n\nAllocating it made both slot globals lazily initialized on wasm, adding\nan init check to every reactive property read.",
+          "timestamp": "2026-11-18T11:16:04+01:00",
+          "tree_id": "985a91bd30c78f1752f68518471ce7350438e89c",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/7eee9d9c4ce1ec967394306f2e98004d87467ea2"
+        },
+        "date": 1794997602404,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 171.74,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 97.85,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81.38,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 130.07,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 143.09,
             "unit": "kB"
           }
         ]
