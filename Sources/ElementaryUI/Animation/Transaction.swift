@@ -286,7 +286,7 @@ final class AnimationTracker {
 }
 
 extension Transaction {
-    static let slot = ThreadLocalSlot()
+    nonisolated(unsafe) static var slot = ThreadLocalSlot()
 
     static var _current: Transaction? {
         slot.value?.assumingMemoryBound(to: Transaction.self).pointee

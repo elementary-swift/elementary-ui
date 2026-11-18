@@ -1,7 +1,7 @@
 import _ThreadLocal
 
 @usableFromInline
-let trackingSlot = ThreadLocalSlot()
+nonisolated(unsafe) var trackingSlot = ThreadLocalSlot()
 
 extension ReactiveTracking {
     /// The reactive properties read while tracking.

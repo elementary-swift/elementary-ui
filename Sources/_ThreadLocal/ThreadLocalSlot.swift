@@ -30,17 +30,17 @@ package struct ThreadLocalSlot: Sendable {
 @usableFromInline
 package struct ThreadLocalSlot: @unchecked Sendable {
     @usableFromInline
-    let storage: UnsafeMutablePointer<UnsafeMutableRawPointer?>
+    var storage: UnsafeMutableRawPointer?
 
+    @inlinable
     package init() {
-        storage = .allocate(capacity: 1)
-        storage.initialize(to: nil)
+        storage = nil
     }
 
     @inlinable
     package var value: UnsafeMutableRawPointer? {
-        get { storage.pointee }
-        nonmutating set { storage.pointee = newValue }
+        get { storage }
+        set { storage = newValue }
     }
 }
 #endif
