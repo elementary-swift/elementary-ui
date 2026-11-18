@@ -3,9 +3,7 @@ import Testing
 
 @testable import ElementaryUI
 
-// Serialized: `withAnimation` sets the global `Transaction._current`, which would split
-// the bursts counted by the other tests.
-@Suite(.serialized)
+@Suite
 struct PersistentRenderTrackingTests {
     @Test func replacesConditionalDependenciesAndRearmsAfterEachRender() {
         let model = ListenerRenderModel()

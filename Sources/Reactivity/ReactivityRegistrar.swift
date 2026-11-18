@@ -1,3 +1,5 @@
+import _ThreadLocal
+
 /// A registrar that manages reactive property access tracking and change notifications.
 ///
 /// `ReactivityRegistrar` is the core mechanism used by the ``Reactive()`` macro to integrate
@@ -22,7 +24,7 @@ public struct ReactivityRegistrar: Sendable {
     /// - Parameter property: The identifier of the property being accessed.
     @inlinable
     public func access(_ property: PropertyID) {
-        guard _ThreadLocal.value != nil else { return }
+        guard trackingSlot.value != nil else { return }
         record(property)
     }
 

@@ -1,3 +1,8 @@
+import _ThreadLocal
+
+@usableFromInline
+nonisolated(unsafe) var trackingSlot = ThreadLocalSlot()
+
 extension ReactiveTracking {
     /// The reactive properties read while tracking.
     ///
@@ -41,17 +46,17 @@ extension ReactiveTracking {
             pass.pointee.knownAccessCount = 0
             pass.pointee.newAccessCount = 0
             pass.pointee.enclosingPass = current
-            _ThreadLocal.value = UnsafeMutableRawPointer(pass)
+            trackingSlot.value = UnsafeMutableRawPointer(pass)
         }
 
         @usableFromInline
         static func endPass(_ pass: UnsafeMutablePointer<Self>) {
-            _ThreadLocal.value = pass.pointee.enclosingPass.map { UnsafeMutableRawPointer($0) }
+            trackingSlot.value = pass.pointee.enclosingPass.map { UnsafeMutableRawPointer($0) }
             pass.pointee.enclosingPass = nil
         }
 
         private static var current: UnsafeMutablePointer<Self>? {
-            _ThreadLocal.value?.assumingMemoryBound(to: Self.self)
+            trackingSlot.value?.assumingMemoryBound(to: Self.self)
         }
 
         /// Records a read in the current pass and all enclosing ones.
