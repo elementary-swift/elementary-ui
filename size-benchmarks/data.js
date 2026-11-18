@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794929353620,
+  "lastUpdate": 1794996066164,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -15130,6 +15130,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 143.03,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "klaus@vithanco.com",
+            "name": "Vithanco",
+            "username": "Vithanco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b24b19cb002a2b19845fdac5a86d31afa3244392",
+          "message": "Fix bezier timing curves to match CSS cubic-bezier() (#164)\n\n* fix bezier timing curves to solve for x like CSS cubic-bezier()\n\nvalue(at:) used elapsed time as the curve parameter and ignored x1/x2,\nso easeIn, easeOut and easeInOut all produced the same curve.\n\n* clamp bezier x control points and report timing velocity per second\n\nSpring.shouldMerge takes the interrupted animation's velocity as its\ninitial velocity, which is per second. The solver also assumes x1 and x2\nare in 0...1.",
+          "timestamp": "2026-11-18T10:50:15+01:00",
+          "tree_id": "eae63537c75efa2f106fd8c0367133434a1cea3e",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/b24b19cb002a2b19845fdac5a86d31afa3244392"
+        },
+        "date": 1794996064961,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 171.6,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 97.82,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81.41,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 130.03,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 143.01,
             "unit": "kB"
           }
         ]
