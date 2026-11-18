@@ -672,6 +672,31 @@ struct TransitionMountRootTests {
     }
 
     @Test
+    func animatedAndDirectRemovalOfFadingSiblingsInOneTick() {
+        let first = VisibilityState(true)
+        let second = VisibilityState(true)
+        let dom = TestDOM()
+
+        dom.mount {
+            div {
+                if first.value { p {}.transition(.fade) }
+                if second.value { span {}.transition(.fade) }
+            }
+        }
+        dom.runNextFrame()
+        dom.clearOps()
+
+        withAnimation(.linear(duration: 1)) { first.value = false }
+        second.value = false
+        dom.runNextFrame()
+        #expect(dom.ops.contains(.removeChild(parent: "<div>", child: "<span>")))
+
+        dom.finishAnimations()
+        dom.runNextFrame()
+        #expect(dom.ops.contains(.removeChild(parent: "<div>", child: "<p>")))
+    }
+
+    @Test
     func animateContainerLayoutDirectRemovalDoesNotUseLeavingAbsolutePositioning() {
         let state = StringItemsState(["A"])
         let dom = TestDOM()
