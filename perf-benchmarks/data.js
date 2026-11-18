@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794772240122,
+  "lastUpdate": 1794996058002,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -6081,6 +6081,90 @@ window.BENCHMARK_DATA = {
           {
             "name": "09_clear1k_x8",
             "value": 34.84,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.04,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.07,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.36,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "klaus@vithanco.com",
+            "name": "Vithanco",
+            "username": "Vithanco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b24b19cb002a2b19845fdac5a86d31afa3244392",
+          "message": "Fix bezier timing curves to match CSS cubic-bezier() (#164)\n\n* fix bezier timing curves to solve for x like CSS cubic-bezier()\n\nvalue(at:) used elapsed time as the curve parameter and ignored x1/x2,\nso easeIn, easeOut and easeInOut all produced the same curve.\n\n* clamp bezier x control points and report timing velocity per second\n\nSpring.shouldMerge takes the interrupted animation's velocity as its\ninitial velocity, which is per second. The solver also assumes x1 and x2\nare in 0...1.",
+          "timestamp": "2026-11-18T10:50:15+01:00",
+          "tree_id": "eae63537c75efa2f106fd8c0367133434a1cea3e",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/b24b19cb002a2b19845fdac5a86d31afa3244392"
+        },
+        "date": 1794996057454,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 94.94,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 121.88,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 192.76,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 10.84,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 49.58,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 38.32,
+            "unit": "ms"
+          },
+          {
+            "name": "07_create10k",
+            "value": 1123.76,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 149.97,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 57.57,
             "unit": "ms"
           },
           {
