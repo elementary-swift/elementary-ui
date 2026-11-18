@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794996058002,
+  "lastUpdate": 1794997474073,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -6165,6 +6165,90 @@ window.BENCHMARK_DATA = {
           {
             "name": "09_clear1k_x8",
             "value": 57.57,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.04,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.07,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.36,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "klaus@vithanco.com",
+            "name": "Vithanco",
+            "username": "Vithanco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7eee9d9c4ce1ec967394306f2e98004d87467ea2",
+          "message": "Keep the current transaction per thread to fix flaky transition tests (#165)\n\n* keep the current transaction per thread on multithreaded runtimes\n\nTransaction._current was a process-wide static, so a state change on one\nthread could pick up another thread's animation. This made transition\ntests flaky under parallel test execution.\n\n* share a ThreadLocalSlot and keep the transaction as a scoped pointer\n\nwithTransaction now stores a pointer to its transaction for the duration\nof the body, so there is no box and no key destructor. The scheduler\ncompares animation trackers instead of ids, which removes the lastId\ncounter. Reactivity uses the same slot, which adds Musl support there.\n\n* store the slot value inline on single-threaded runtimes\n\nAllocating it made both slot globals lazily initialized on wasm, adding\nan init check to every reactive property read.",
+          "timestamp": "2026-11-18T11:16:04+01:00",
+          "tree_id": "985a91bd30c78f1752f68518471ce7350438e89c",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/7eee9d9c4ce1ec967394306f2e98004d87467ea2"
+        },
+        "date": 1794997473295,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 76.22,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 91.24,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 165.81,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 9.43,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 44.95,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 31.82,
+            "unit": "ms"
+          },
+          {
+            "name": "07_create10k",
+            "value": 889.46,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 94.04,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 48.85,
             "unit": "ms"
           },
           {
