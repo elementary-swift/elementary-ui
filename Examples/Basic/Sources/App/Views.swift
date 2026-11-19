@@ -106,6 +106,8 @@ struct AppView {
             hr()
             PhaseAnimationsView()
             hr()
+            SVGTransformsView()
+            hr()
             TextField(value: #Binding(data.name))
 
             div {
