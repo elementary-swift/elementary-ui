@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795270107157,
+  "lastUpdate": 1795355399780,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -15396,6 +15396,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "Animations",
             "value": 171.72,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 97.84,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81.38,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 130.07,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 143.08,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "klaus@vithanco.com",
+            "name": "Vithanco",
+            "username": "Vithanco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8543efbf8730681eca395b3c95b26765daea6f4b",
+          "message": "skip style updates queued for a modifier that has since unmounted (#167)\n\nA fade removed without animation in the same tick as an animated sibling\nwas invalidated and then unmounted before its commit action ran, which\ntripped the \"values must not be empty\" precondition.",
+          "timestamp": "2026-11-22T14:39:43+01:00",
+          "tree_id": "de7ef48415331f09c55297c1f96ed5d96985c761",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/8543efbf8730681eca395b3c95b26765daea6f4b"
+        },
+        "date": 1795355399144,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 171.73,
             "unit": "kB"
           },
           {
