@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794997474073,
+  "lastUpdate": 1795355290791,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -6249,6 +6249,90 @@ window.BENCHMARK_DATA = {
           {
             "name": "09_clear1k_x8",
             "value": 48.85,
+            "unit": "ms"
+          },
+          {
+            "name": "21_ready-memory",
+            "value": 1.04,
+            "unit": "MB"
+          },
+          {
+            "name": "22_run-memory",
+            "value": 2.07,
+            "unit": "MB"
+          },
+          {
+            "name": "25_run-clear-memory",
+            "value": 1.36,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "klaus@vithanco.com",
+            "name": "Vithanco",
+            "username": "Vithanco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8543efbf8730681eca395b3c95b26765daea6f4b",
+          "message": "skip style updates queued for a modifier that has since unmounted (#167)\n\nA fade removed without animation in the same tick as an animated sibling\nwas invalidated and then unmounted before its commit action ran, which\ntripped the \"values must not be empty\" precondition.",
+          "timestamp": "2026-11-22T14:39:43+01:00",
+          "tree_id": "de7ef48415331f09c55297c1f96ed5d96985c761",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/8543efbf8730681eca395b3c95b26765daea6f4b"
+        },
+        "date": 1795355289893,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "01_run1k",
+            "value": 63.15,
+            "unit": "ms"
+          },
+          {
+            "name": "02_replace1k",
+            "value": 78,
+            "unit": "ms"
+          },
+          {
+            "name": "03_update10th1k_x16",
+            "value": 131.69,
+            "unit": "ms"
+          },
+          {
+            "name": "04_select1k",
+            "value": 9.89,
+            "unit": "ms"
+          },
+          {
+            "name": "05_swap1k",
+            "value": 45.74,
+            "unit": "ms"
+          },
+          {
+            "name": "06_remove-one-1k",
+            "value": 28.6,
+            "unit": "ms"
+          },
+          {
+            "name": "07_create10k",
+            "value": 730.41,
+            "unit": "ms"
+          },
+          {
+            "name": "08_create1k-after1k_x2",
+            "value": 74.63,
+            "unit": "ms"
+          },
+          {
+            "name": "09_clear1k_x8",
+            "value": 34.28,
             "unit": "ms"
           },
           {
