@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795355399780,
+  "lastUpdate": 1795355756713,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -15455,6 +15455,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "HelloWorld",
             "value": 81.38,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 130.07,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 143.08,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "klaus@vithanco.com",
+            "name": "Vithanco",
+            "username": "Vithanco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fcb3fbb7a8a5ff3e4d636d97e81f24bc48491af8",
+          "message": "fix rotationEffect and scaleEffect on SVG (#126)\n\nSVG resolves transform-origin against the viewBox, so rotation and scaling\npivoted on the canvas corner. Set transform-box: fill-box and\ntransform-origin: 50% 50% on rotated or scaled SVG elements, and demo the\nmodifiers in Examples/Basic.",
+          "timestamp": "2026-11-22T14:47:14+01:00",
+          "tree_id": "bc35f8e20a4b78aab29e06781dde6101b77cf89d",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/fcb3fbb7a8a5ff3e4d636d97e81f24bc48491af8"
+        },
+        "date": 1795355756070,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 171.75,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 97.86,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81.4,
             "unit": "kB"
           },
           {
