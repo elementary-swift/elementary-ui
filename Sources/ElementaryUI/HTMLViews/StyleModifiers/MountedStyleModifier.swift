@@ -41,6 +41,7 @@ final class MountedStyleModifier<Instance: CSSAnimatedValueInstance>: MountedSty
     }
 
     func updateDOMNode(_ context: inout _CommitContext) {
+        guard !values.isEmpty else { return }
         if let combined = reduceCombinedSingleValue() {
             clearAllAnimations()
             accessor.set(combined.cssString)
