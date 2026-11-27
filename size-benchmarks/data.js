@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795710042120,
+  "lastUpdate": 1795795552617,
   "repoUrl": "https://github.com/elementary-swift/elementary-ui",
   "entries": {
     "Benchmark": [
@@ -15749,6 +15749,53 @@ window.BENCHMARK_DATA = {
           {
             "name": "KeyedRows",
             "value": 143.08,
+            "unit": "kB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Vithanco",
+            "username": "Vithanco",
+            "email": "klaus@vithanco.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "fcb3fbb7a8a5ff3e4d636d97e81f24bc48491af8",
+          "message": "fix rotationEffect and scaleEffect on SVG (#126)\n\nSVG resolves transform-origin against the viewBox, so rotation and scaling\npivoted on the canvas corner. Set transform-box: fill-box and\ntransform-origin: 50% 50% on rotated or scaled SVG elements, and demo the\nmodifiers in Examples/Basic.",
+          "timestamp": "2026-11-22T13:47:14Z",
+          "url": "https://github.com/elementary-swift/elementary-ui/commit/fcb3fbb7a8a5ff3e4d636d97e81f24bc48491af8"
+        },
+        "date": 1795795551331,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Animations",
+            "value": 171.76,
+            "unit": "kB"
+          },
+          {
+            "name": "Counter",
+            "value": 97.87,
+            "unit": "kB"
+          },
+          {
+            "name": "HelloWorld",
+            "value": 81.41,
+            "unit": "kB"
+          },
+          {
+            "name": "Inputs",
+            "value": 130.07,
+            "unit": "kB"
+          },
+          {
+            "name": "KeyedRows",
+            "value": 143.09,
             "unit": "kB"
           }
         ]
